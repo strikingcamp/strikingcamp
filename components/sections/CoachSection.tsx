@@ -3,34 +3,26 @@
 import { motion } from "framer-motion";
 import { siteData } from "@/data/content";
 
-const timeline = [
-  "COMBATTANT",
-  "EXPÉRIENCE",
-  "COMPÉTITION",
-  "COACH",
-  "TRANSMISSION"
-];
-
 export default function CoachSection() {
   return (
-    <section id="le-coach" className="bg-brand-darkblue py-32 relative z-10">
+    <section id="le-coach" className="bg-[#0a1120] pt-8 pb-24 relative z-10 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="flex flex-col lg:flex-row gap-16 items-center">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
           
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1 }}
-            className="w-full lg:w-1/2 relative h-[600px] bg-brand-black border border-brand-white/10 flex items-center justify-center grayscale bg-cover bg-[center_15%]"
+            className="w-full lg:w-1/2 relative h-[500px] lg:h-[600px] bg-brand-black border border-brand-white/10 flex items-center justify-center grayscale bg-cover bg-[center_15%] rounded-lg overflow-hidden"
             style={{ backgroundImage: "url('/profil.jpeg?v=2')" }}
           >
             {/* Subtle blue accent */}
             <div className="absolute inset-0 bg-gradient-to-tr from-brand-blue/30 to-brand-black/50 mix-blend-overlay" />
           </motion.div>
 
-          <div className="w-full lg:w-1/2">
+          <div className="w-full lg:w-1/2 pt-4 lg:pt-12">
             <motion.h2 
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -51,7 +43,7 @@ export default function CoachSection() {
               {siteData.coach.title}
             </motion.h3>
 
-            <div className="space-y-6 mb-12">
+            <div className="space-y-6 mb-10">
               {siteData.coach.bio.map((paragraph, index) => (
                 <motion.p
                   key={index}
@@ -66,21 +58,18 @@ export default function CoachSection() {
               ))}
             </div>
 
-            <motion.div 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1, delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4 items-start sm:items-center text-xs font-bold text-brand-white/40 tracking-[0.2em] uppercase"
+              transition={{ duration: 0.8, delay: 0.6 }}
             >
-              {timeline.map((item, index) => (
-                <div key={item} className="flex items-center">
-                  <span>{item}</span>
-                  {index < timeline.length - 1 && (
-                    <span className="hidden sm:inline-block mx-4 text-brand-blue">↓</span>
-                  )}
-                </div>
-              ))}
+              <a 
+                href="/planning"
+                className="inline-block px-8 py-4 bg-[#00d8ff] text-[#0a1120] font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors rounded-sm shadow-lg hover:shadow-[#00d8ff]/20"
+              >
+                Planning des cours
+              </a>
             </motion.div>
           </div>
           

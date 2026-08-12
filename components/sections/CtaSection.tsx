@@ -37,9 +37,12 @@ export default function CtaSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
-          <button className="px-12 py-5 bg-brand-black text-brand-white font-black text-lg md:text-xl uppercase tracking-widest hover:bg-brand-white hover:text-brand-black transition-colors duration-500 shadow-2xl">
+          <a 
+            href="/planning"
+            className="inline-block px-12 py-5 bg-brand-black text-brand-white font-black text-lg md:text-xl uppercase tracking-widest hover:bg-brand-white hover:text-brand-black transition-colors duration-500 shadow-2xl"
+          >
             REJOINDRE STRIKING CAMP
-          </button>
+          </a>
         </motion.div>
       </div>
     </section>

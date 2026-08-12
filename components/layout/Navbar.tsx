@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Accueil" },
-  { href: "#le-club", label: "Le Club" },
-  { href: "#le-coach", label: "Le Coach" },
-  { href: "#contact", label: "Contact" },
+  { href: "/club", label: "Le Club" },
+  { href: "/coach", label: "Le Coach" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export default function Navbar() {
@@ -38,8 +38,8 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <Link href="/" className="text-xl font-heading font-bold uppercase tracking-widest text-brand-white">
-          STRIKING<br/><span className="text-brand-blue">CAMP</span>
+        <Link href="/" className="text-xl font-heading font-bold uppercase tracking-widest text-brand-blue">
+          STRIKING <span className="text-brand-white">CAMP</span>
         </Link>
 
         {/* Desktop Menu */}
@@ -54,10 +54,10 @@ export default function Navbar() {
             </Link>
           ))}
           <Link
-            href="#contact"
+            href="/planning"
             className="px-5 py-2.5 bg-brand-blue text-brand-black font-semibold text-sm uppercase tracking-wide hover:bg-brand-white transition-colors rounded-sm"
           >
-            Rejoindre le club
+            Planning des cours
           </Link>
         </div>
 
@@ -91,11 +91,11 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              href="#contact"
+              href="/planning"
               onClick={() => setIsMobileMenuOpen(false)}
               className="mt-4 px-8 py-4 bg-brand-blue text-brand-black font-bold text-lg uppercase tracking-wider w-[80%] text-center rounded-sm"
             >
-              Rejoindre le club
+              Planning des cours
             </Link>
           </motion.div>
         )}

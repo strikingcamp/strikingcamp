@@ -9,8 +9,7 @@ export const siteData = {
   contact: {
     email: "[contact@strikingcamp.com]", // Placeholder
     address: "[Adresse du club, 13000 Marseille]", // Placeholder
-    instagram: "https://instagram.com/[strikingcamp]", // Placeholder
-    facebook: "https://facebook.com/[strikingcamp]", // Placeholder
+    instagram: "https://www.instagram.com/boxing_camp13/",
     youtube: "https://youtube.com/[strikingcamp]" // Placeholder
   },
   hero: {
@@ -27,7 +26,7 @@ export const siteData = {
     bio: [
       "Mohamed Mahfoud est un combattant professionnel de kick-boxing avec une solide expérience du très haut niveau.",
       "Ayant affronté des adversaires de renommée internationale comme Cédric Doumbé, il connaît les exigences du ring et l'engagement nécessaire pour performer au sommet.",
-      "En tant que coach, il transmet son savoir et accompagne des combattants de premier plan, dont Wilson Varela, vers l'excellence sportive et mentale."
+      "En tant que coach, il transmet son savoir et accompagne des combattants de premier plan — dont Wilson Varela et de nombreux autres professionnels du circuit — avec un seul objectif : s'emparer de l'or et atteindre l'excellence sportive et mentale."
     ]
   },
   legal: {

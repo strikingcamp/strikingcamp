@@ -17,9 +17,18 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
-  title: "Striking Camp Marseille | Kickboxing & Muay Thai",
-  description: "Club de kick-boxing et Muay Thai à Marseille par Mohamed Mahfoud. Un entraînement exigeant, une méthode précise, une culture du combat.",
-  keywords: ["kickboxing Marseille", "kick boxing Marseille", "kick-boxing Marseille", "Muay Thai Marseille", "boxe thaï Marseille", "club kickboxing Marseille", "coach kickboxing Marseille", "striking Marseille", "MMA Marseille"],
+  title: 'Striking Camp | Le Meilleur Club de Boxe & Pieds-Poings à Marseille',
+  description: "Le club de référence à Marseille pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, et cours Lady Striking 100% femmes. Rejoignez l'excellence avec le meilleur coach individuel de la cité phocéenne.",
+  keywords: "club de boxe marseille, pieds poings marseille, kick boxing marseille, boxe thaï marseille, lady boxing, lady striking, meilleur coach boxe marseille, sport de combat 13010, salle de sport marseille, mma striking",
+  authors: [{ name: "Striking Camp" }],
+  openGraph: {
+    title: 'Striking Camp | Boxe & Pieds-Poings à Marseille',
+    description: "Le club de référence à Marseille pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï. Cours professionnels et section Lady 100% femmes.",
+    url: 'https://strikingcamp.com',
+    siteName: 'Striking Camp',
+    locale: 'fr_FR',
+    type: 'website',
+  },
 };
 
 export const viewport: Viewport = {
@@ -33,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${inter.variable} ${oswald.variable} antialiased scroll-smooth`}>
-      <body className="min-h-screen bg-brand-black text-brand-white flex flex-col font-sans">
+      <body suppressHydrationWarning className="min-h-screen bg-brand-black text-brand-white flex flex-col font-sans">
         <Navbar />
         <main className="flex-grow">{children}</main>
         <Footer />
