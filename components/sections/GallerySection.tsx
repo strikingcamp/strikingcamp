@@ -27,7 +27,7 @@ export default function GallerySection() {
         >
           <div 
             className="absolute inset-0 grayscale opacity-60 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 bg-cover bg-center"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=1000&auto=format&fit=crop')" }}
+            style={{ backgroundImage: "url('/voile.jpg')" }}
           />
         </motion.div>
 
@@ -40,7 +40,7 @@ export default function GallerySection() {
         >
           <div 
             className="absolute inset-0 grayscale opacity-60 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 bg-cover bg-center"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1517438476312-10d79c077509?q=80&w=1000&auto=format&fit=crop')" }}
+            style={{ backgroundImage: "url('/fille.jpg')" }}
           />
         </motion.div>
 
@@ -53,7 +53,7 @@ export default function GallerySection() {
         >
           <div 
             className="absolute inset-0 grayscale opacity-60 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 bg-cover bg-center"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1522898467493-49726bf28798?q=80&w=1000&auto=format&fit=crop')" }}
+            style={{ backgroundImage: "url('/boxe.webp')" }}
           />
         </motion.div>
 
@@ -66,7 +66,7 @@ export default function GallerySection() {
         >
           <div 
             className="absolute inset-0 grayscale opacity-60 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 bg-cover bg-center"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop')" }}
+            style={{ backgroundImage: "url('/sacSalle.jpg')" }}
           />
         </motion.div>
       </div>

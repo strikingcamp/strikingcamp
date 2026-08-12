@@ -23,8 +23,8 @@ export default function CoachSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1 }}
-            className="w-full lg:w-1/2 relative h-[600px] bg-brand-black border border-brand-white/10 flex items-center justify-center grayscale bg-cover bg-center"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1583468982228-19f19128a491?q=80&w=1000&auto=format&fit=crop')" }}
+            className="w-full lg:w-1/2 relative h-[600px] bg-brand-black border border-brand-white/10 flex items-center justify-center grayscale bg-cover bg-[center_15%]"
+            style={{ backgroundImage: "url('/profil.jpeg?v=2')" }}
           >
             {/* Subtle blue accent */}
             <div className="absolute inset-0 bg-gradient-to-tr from-brand-blue/30 to-brand-black/50 mix-blend-overlay" />

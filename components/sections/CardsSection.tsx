@@ -8,19 +8,19 @@ const cards = [
     title: "KICKBOXING",
     description: "La discipline absolue. Précision, vitesse et puissance.",
     bg: "bg-brand-darkblue/40",
-    image: "https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=1000&auto=format&fit=crop"
+    image: "/kickboxing.jpg"
   },
   {
     title: "MUAY THAI",
     description: "L'art des 8 membres. Clinch, coudes et genoux.",
     bg: "bg-brand-black",
-    image: "https://images.unsplash.com/photo-1522898467493-49726bf28798?q=80&w=1000&auto=format&fit=crop"
+    image: "/muaythai.jpg"
   },
   {
     title: "STRIKING",
     description: "Travail technique, déplacements, sparring spécifique.",
     bg: "bg-brand-blue/10",
-    image: "https://images.unsplash.com/photo-1517438476312-10d79c077509?q=80&w=1000&auto=format&fit=crop"
+    image: "/striking.jpg"
   }
 ];
 
@@ -37,11 +37,11 @@ export default function CardsSection() {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: index * 0.2 }}
               whileHover="hover"
-              className={`group relative overflow-hidden h-[400px] sm:h-[500px] rounded-sm flex flex-col justify-end p-8 border border-brand-white/5 ${card.bg}`}
+              className={`group relative overflow-hidden h-[300px] sm:h-[400px] rounded-sm flex flex-col justify-end p-8 border border-brand-white/5 ${card.bg}`}
             >
               {/* Image */}
               <div 
-                className="absolute inset-0 opacity-60 group-hover:opacity-90 transition-all duration-700 bg-cover bg-center"
+                className="absolute inset-0 opacity-60 group-hover:opacity-90 transition-all duration-700 bg-cover bg-top md:bg-[center_top]"
                 style={{ backgroundImage: `url(${card.image})` }}
               />
               
