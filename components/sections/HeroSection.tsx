@@ -10,10 +10,10 @@ export default function HeroSection() {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/80 to-transparent z-10" />
         <div className="absolute inset-0 bg-brand-black/40 z-10" />
-        {/* Replace with actual image later */}
+        {/* Background Image */}
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat grayscale opacity-50"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=2070&auto=format&fit=crop')` }}
+          style={{ backgroundImage: `url('/BGround.jpeg')` }}
         />
       </div>
 
