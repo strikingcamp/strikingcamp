@@ -52,9 +52,6 @@ export default function Footer() {
           <p className="text-brand-white/40 text-xs text-center md:text-left">
             {siteData.global.copyright}
           </p>
-          <p className="text-brand-white/40 text-xs mt-4 md:mt-0">
-            Design & Développement par <a href="https://mickaelcode.com/" target="_blank" rel="noopener noreferrer" className="text-brand-white hover:text-brand-blue transition-colors">Mickael</a>
-          </p>
         </div>
       </div>
     </footer>
