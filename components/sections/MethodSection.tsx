@@ -2,22 +2,18 @@
 
 import { motion } from "framer-motion";
 
-const methods = [
+const philosophies = [
   {
-    title: "BIOMÉCANIQUE & PRÉCISION",
-    desc: "Inspirée des meilleures écoles de Kick-Boxing et de Muay Thaï mondiales, notre méthode repose sur une biomécanique parfaite. La puissance dévastatrice naît de la précision des appuis et du transfert de poids, pas seulement de la force brute."
+    title: "L'INTENSITÉ COMME MOTEUR",
+    desc: "Nous croyons que la véritable croissance se trouve hors de la zone de confort. Nos entraînements sont conçus pour vous pousser à votre maximum, forgeant non seulement un corps plus fort mais aussi un mental d'acier."
   },
   {
-    title: "CONDITIONNEMENT ÉLITE",
-    desc: "Un striker n'est rien sans le cardio et l'explosivité. Nos circuits d'entraînement sont calqués sur les préparations physiques des combattants professionnels pour vous garantir une lucidité totale même sous une fatigue extrême."
+    title: "LA TECHNIQUE COMME FONDATION",
+    desc: "La puissance sans la maîtrise est vaine. Chaque coup, chaque mouvement est enseigné avec une attention méticuleuse au détail. Nous construisons des combattants intelligents, pas seulement des cogneurs."
   },
   {
-    title: "FIGHT IQ & INTELLIGENCE DE COMBAT",
-    desc: "Le striking est une partie d'échecs à haute vitesse. Nous vous apprenons à lire la garde de votre adversaire, à créer des ouvertures, à gérer la distance (footwork) et à anticiper les contres pour imposer votre rythme."
-  },
-  {
-    title: "MENTALITÉ DE CHAMPION",
-    desc: "La progression vient de la rigueur et de la discipline. Au Striking Camp, nous cultivons une culture du dépassement de soi. Chaque entraînement vous pousse à franchir un cap psychologique essentiel pour la compétition et le haut niveau."
+    title: "LE RESPECT COMME CODE",
+    desc: "L'ego reste à la porte. Striking Camp est une communauté soudée par la passion et l'entraide. Nous nous élevons ensemble, dans le respect de nos partenaires, de nos coachs et de l'art que nous pratiquons."
   }
 ];
 
@@ -34,7 +30,7 @@ export default function MethodSection() {
             transition={{ duration: 0.8 }}
             className="font-heading text-4xl md:text-5xl font-black text-white uppercase tracking-widest mb-6"
           >
-            LA MÉTHODE <span className="text-[#00d8ff]">STRIKING CAMP</span>
+            NOTRE PHILOSOPHIE <span className="text-[#00d8ff]">D&apos;ENTRAÎNEMENT</span>
           </motion.h2>
           <motion.div 
             initial={{ opacity: 0, scaleX: 0 }}
@@ -50,14 +46,14 @@ export default function MethodSection() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-gray-300 font-light text-lg md:text-xl leading-relaxed"
           >
-            Conçue par le meilleur coach individuel de Marseille et approuvée par les professionnels du circuit, notre méthodologie d'entraînement transforme votre approche du combat. Nous fusionnons la technique pure avec une préparation physique de pointe.
+            Plus qu&apos;une séance, une expérience transformative.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {methods.map((method, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {philosophies.map((item, index) => (
             <motion.div
-              key={method.title}
+              key={item.title}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
@@ -65,10 +61,10 @@ export default function MethodSection() {
               className="bg-[#1e2530] border border-gray-700/50 p-8 rounded-xl hover:border-[#00d8ff]/50 hover:shadow-[0_0_30px_rgba(0,216,255,0.1)] transition-all duration-500 group"
             >
               <h3 className="font-heading text-xl font-bold text-white uppercase tracking-wider mb-4 group-hover:text-[#00d8ff] transition-colors">
-                {method.title}
+                {item.title}
               </h3>
               <p className="text-gray-400 font-light leading-relaxed">
-                {method.desc}
+                {item.desc}
               </p>
             </motion.div>
           ))}
