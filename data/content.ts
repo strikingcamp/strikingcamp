@@ -21,12 +21,13 @@ export const siteData = {
     secondaryCta: "RENCONTRER LE COACH"
   },
   coach: {
-    name: "MOHAMED MAHFOUD",
-    title: "Combattant professionnel & Coach",
+    name: "MAHFOUD MOHAMED",
+    title: "COACH & FONDATEUR DE STRIKING CAMP",
     bio: [
-      "Mohamed Mahfoud est un combattant professionnel de kick-boxing avec une solide expérience du très haut niveau.",
-      "Ayant affronté des adversaires de renommée internationale comme Cédric Doumbé, il connaît les exigences du ring et l'engagement nécessaire pour performer au sommet.",
-      "En tant que coach, il transmet son savoir et accompagne des combattants de premier plan — dont Wilson Varela et de nombreux autres professionnels du circuit — avec un seul objectif : s'emparer de l'or et atteindre l'excellence sportive et mentale."
+      "Je m'appelle Mahfoud Mohamed et je suis originaire de Marseille. Je pratique les sports de combat depuis l'âge de 6 ans.",
+      "Mon parcours a commencé par le karaté traditionnel, notamment le kata, avant de découvrir d'autres disciplines comme l'Aïkido et le Jiu-Jitsu japonais, que j'ai pratiqué pendant deux ans.",
+      "À partir de mes 18 ans, je me suis consacré au Kick Boxing et à la Boxe Thaï, deux disciplines qui ont profondément marqué ma façon de pratiquer et d'enseigner les sports de combat.",
+      "Au fil des années, j'ai construit ma propre approche en m'appuyant sur les différentes expériences acquises dans ces disciplines."
     ]
   },
   legal: {
