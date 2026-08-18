@@ -18,7 +18,7 @@ export default function CtaSection() {
           transition={{ duration: 0.8 }}
           className="font-heading text-5xl md:text-7xl font-black text-brand-black uppercase tracking-tighter mb-6"
         >
-          PRÊT À ENTRER DANS LE CAMP ?
+          PRÊT À RELEVER LE DÉFI ?
         </motion.h2>
         
         <motion.p 
@@ -41,7 +41,7 @@ export default function CtaSection() {
             href="/planning"
             className="inline-block px-12 py-5 bg-brand-black text-brand-white font-black text-lg md:text-xl uppercase tracking-widest hover:bg-brand-white hover:text-brand-black transition-colors duration-500 shadow-2xl"
           >
-            REJOINDRE STRIKING CAMP
+            JE REJOINS LE CAMP
           </a>
         </motion.div>
       </div>

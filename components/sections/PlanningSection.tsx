@@ -13,86 +13,63 @@ type Course = {
   name: string;
   level?: string;
   time: string;
-  places: string;
+  places?: string;
 };
 
 const scheduleData: Record<Category, Record<Day, Course[]>> = {
   "Small Group": {
     Lundi: [
-      { name: "Boxe Anglaise", time: "09:00 - 09:45", places: "2/5" },
-      { name: "Pieds Poings", time: "10:00 - 10:45", places: "3/5" },
-      { name: "KB Shred", time: "12:15 - 13:00", places: "4/5" },
-      { name: "Boxe Anglaise", time: "15:00 - 15:45", places: "1/5" },
-      { name: "Pieds Poings", time: "16:00 - 16:45", places: "2/5" },
-      { name: "Boxe Anglaise", time: "20:30 - 21:15", places: "4/5" },
+      { name: "Boxing Bag", level: "Fondamentaux", time: "07:00" },
+      { name: "Kick Boxing", level: "Fondamentaux", time: "11:00" },
+      { name: "KB Shred", level: "Performance", time: "12:15" },
     ],
     Mardi: [
-      { name: "Pieds Poings", time: "10:00 - 10:45", places: "3/5" },
-      { name: "KB Shred", time: "12:15 - 13:00", places: "5/5" },
-      { name: "Boxe Anglaise", time: "15:00 - 15:45", places: "2/5" },
-      { name: "Pieds Poings", time: "16:45 - 17:30", places: "3/5" },
-      { name: "Lady Boxing", time: "17:30 - 18:15", places: "1/5" },
-      { name: "Pieds Poings", time: "21:00 - 21:45", places: "4/5" },
+      { name: "KB Shred", level: "Performance", time: "11:00" },
+      { name: "Striking", level: "Fondamentaux", time: "12:15" },
+      { name: "Kick Boxing", level: "Fondamentaux", time: "17:00" },
+      { name: "Lady Striking", level: "Fondamentaux", time: "18:00" },
+      { name: "Boxe Thaï", level: "Performance", time: "20:00" },
     ],
     Mercredi: [
-      { name: "Boxe Anglaise", time: "12:15 - 13:00", places: "3/5" },
-      { name: "Pieds Poings", time: "15:00 - 15:45", places: "2/5" },
-      { name: "KB Shred", time: "16:00 - 16:45", places: "4/5" },
-      { name: "Lady Boxing", time: "16:45 - 17:30", places: "1/5" },
-      { name: "Pieds Poings", time: "17:30 - 18:15", places: "3/5" },
-      { name: "Boxe Anglaise", time: "21:00 - 21:45", places: "2/5" },
+      { name: "Boxing Bag", level: "Performance", time: "07:00" },
+      { name: "Kick Boxing", level: "Fondamentaux", time: "11:00" },
+      { name: "KB Shred", level: "Performance", time: "12:15" },
+      { name: "Striking", level: "Performance", time: "18:30" },
+      { name: "Boxe Thaï", level: "Fondamentaux", time: "19:30" },
+      { name: "Kick Boxing", level: "Performance", time: "20:30" },
     ],
     Jeudi: [
-      { name: "Pieds Poings", time: "09:00 - 09:45", places: "2/5" },
-      { name: "Boxe Anglaise", time: "10:00 - 10:45", places: "3/5" },
-      { name: "KB Shred", time: "12:15 - 13:00", places: "4/5" },
-      { name: "Pieds Poings", time: "15:00 - 15:45", places: "1/5" },
-      { name: "Boxe Anglaise", time: "16:00 - 16:45", places: "2/5" },
-      { name: "Lady Boxing", time: "17:00 - 17:45", places: "3/5" },
-      { name: "Pieds Poings", time: "20:30 - 21:15", places: "5/5" },
+      { name: "Boxing Bag", level: "Fondamentaux", time: "11:00" },
+      { name: "Striking", level: "Performance", time: "12:15" },
+      { name: "Lady Striking", level: "100% féminin", time: "17:30" },
+      { name: "Kick Boxing", level: "Fondamentaux", time: "19:30" },
+      { name: "Boxe Thaï", level: "Performance", time: "20:30" },
     ],
     Vendredi: [
-      { name: "KB Shred", time: "09:00 - 09:45", places: "4/5" },
-      { name: "Pieds Poings", time: "10:00 - 10:45", places: "2/5" },
-      { name: "Boxe Anglaise", time: "15:00 - 15:45", places: "1/5" },
-      { name: "Pieds Poings", time: "16:00 - 16:45", places: "3/5" },
-      { name: "Boxe Anglaise", time: "17:15 - 18:00", places: "2/5" },
-      { name: "KB Shred", time: "21:00 - 21:45", places: "4/5" },
+      { name: "Boxing Bag", level: "Performance", time: "07:00" },
+      { name: "Boxe Thaï", level: "Performance", time: "17:00" },
+      { name: "Striking", level: "Fondamentaux", time: "18:00" },
+      { name: "Kick Boxing", level: "Performance", time: "19:30" },
     ],
     Samedi: [
-      { name: "KB Shred", time: "08:00 - 08:45", places: "5/5" },
-      { name: "Pieds Poings", time: "08:45 - 09:30", places: "3/5" },
-      { name: "Boxe Anglaise", time: "09:30 - 10:15", places: "2/5" },
+      { name: "Kick Boxing", level: "Sparring guidé", time: "11:00" },
+      { name: "Lady Striking", level: "Sparring guidé", time: "12:00" },
     ],
   },
   "Collectifs": {
-    Lundi: [
-      { name: "Pieds-Poings", level: "Fondamental", time: "11:00 - 12:00", places: "12/20" },
-      { name: "Striking", level: "Tous niveaux", time: "12:15 - 13:15", places: "15/20" },
-      { name: "Pieds-Poings", level: "Tous niveaux", time: "20:30 - 21:30", places: "18/20" },
-    ],
+    Lundi: [],
     Mardi: [
-      { name: "Boxe Thaï", level: "Fondamental", time: "11:00 - 12:00", places: "10/20" },
-      { name: "Pieds-Poings", level: "100% Femme", time: "17:30 - 18:30", places: "16/20" },
-      { name: "Striking", level: "Tous niveaux", time: "20:00 - 21:00", places: "19/20" },
+      { name: "Kick Boxing", level: "Fondamentaux", time: "19:00" },
     ],
     Mercredi: [
-      { name: "Kick Boxing", level: "Ados (11-15 ans)", time: "10:00 - 11:00", places: "7/20" },
-      { name: "Pieds-Poings", level: "Fondamental", time: "11:00 - 12:00", places: "11/20" },
+      { name: "Kick Boxing", level: "Performance", time: "17:30" },
     ],
     Jeudi: [
-      { name: "Boxe Thaï", level: "Tous niveaux", time: "11:00 - 12:00", places: "9/20" },
-      { name: "Striking", level: "Élite", time: "12:15 - 13:15", places: "14/20" },
-      { name: "Pieds-Poings", level: "Fondamental", time: "19:30 - 20:30", places: "20/20" },
+      { name: "Kick Boxing", level: "Fondamentaux", time: "18:30" },
     ],
-    Vendredi: [
-      { name: "Boxe Thaï", level: "100% Femme", time: "17:00 - 18:00", places: "13/20" },
-      { name: "Pieds-Poings", level: "Tous niveaux", time: "18:00 - 19:00", places: "17/20" },
-      { name: "Striking", level: "Élite", time: "19:00 - 20:00", places: "15/20" },
-    ],
+    Vendredi: [],
     Samedi: [
-      { name: "Kick Boxing", level: "Ados (11-15 ans)", time: "10:00 - 11:00", places: "8/20" },
-      { name: "Sparring", level: "Élite", time: "12:00 - 13:30", places: "10/20" },
+      { name: "Kick Boxing", level: "Sparring guidé", time: "11:00" },
     ],
   },
 };
@@ -102,10 +79,13 @@ const categories: Category[] = ["Small Group", "Collectifs"];
 
 function getBadgeColor(level?: string) {
   if (!level) return "bg-gray-500";
-  if (level.toLowerCase().includes("fondamental")) return "bg-[#3b82f6]"; // Blue
-  if (level.toLowerCase().includes("tous niveaux")) return "bg-[#22c55e]"; // Green
-  if (level.toLowerCase().includes("femme")) return "bg-pink-500";
-  if (level.toLowerCase().includes("élite")) return "bg-purple-500";
+  const lvl = level.toLowerCase();
+  if (lvl.includes("fondament")) return "bg-[#22c55e]"; // Green
+  if (lvl.includes("performance")) return "bg-[#3b82f6]"; // Blue
+  if (lvl.includes("sparring")) return "bg-[#ef4444]"; // Red
+  if (lvl.includes("femme") || lvl.includes("féminin") || lvl.includes("feminin")) return "bg-pink-500";
+  if (lvl.includes("tous niveaux")) return "bg-[#22c55e]"; // Green
+  if (lvl.includes("élite") || lvl.includes("elite")) return "bg-purple-500";
   return "bg-gray-500";
 }
 
@@ -219,11 +199,13 @@ export default function PlanningSection() {
                             <span className="text-[#00d8ff] font-medium">{course.time}</span>
                           </div>
                           
-                          <div className="flex items-center mt-2 md:mt-0">
-                            <span className="text-[#22c55e] font-bold text-sm">
-                              {course.places} places
-                            </span>
-                          </div>
+                          {course.places && (
+                            <div className="flex items-center mt-2 md:mt-0">
+                              <span className="text-[#22c55e] font-bold text-sm">
+                                {course.places} places
+                              </span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

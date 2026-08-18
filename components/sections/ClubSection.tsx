@@ -2,12 +2,28 @@
 
 import { motion } from "framer-motion";
 
+const pillars = [
+  {
+    title: "L'INTENSITÉ COMME MOTEUR",
+    desc: "Nous croyons que la véritable croissance se trouve hors de la zone de confort. Nos entraînements sont conçus pour vous pousser à votre maximum, forgeant non seulement un corps plus fort mais aussi un mental d'acier."
+  },
+  {
+    title: "LA TECHNIQUE COMME FONDATION",
+    desc: "La puissance sans la maîtrise est vaine. Chaque coup, chaque mouvement est enseigné avec une attention méticuleuse au détail. Nous construisons des combattants intelligents, pas seulement des cogneurs."
+  },
+  {
+    title: "LE RESPECT COMME CODE",
+    desc: "L'ego reste à la porte. Striking Camp est une communauté soudée par la passion et l'entraide. Nous nous élevons ensemble, dans le respect de nos partenaires, de nos coachs et de l'art que nous pratiquons."
+  }
+];
+
 export default function ClubSection() {
   return (
     <section id="le-club" className="bg-brand-black pt-8 pb-24 relative overflow-hidden min-h-[calc(100vh-80px)] font-sans">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
           
+          {/* Colonne gauche (Sticky Header) */}
           <div className="w-full lg:w-1/3 lg:sticky lg:top-32 pt-4 lg:pt-12">
             <motion.h2 
               initial={{ opacity: 0, x: -30 }}
@@ -20,62 +36,109 @@ export default function ClubSection() {
             </motion.h2>
           </div>
 
+          {/* Colonne droite (Contenu) */}
           <div className="w-full lg:w-2/3 pt-4 lg:pt-12">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6 }}
-              className="space-y-8"
+              className="space-y-12"
             >
-              <h3 className="text-3xl font-bold text-brand-blue uppercase tracking-wide mb-4">
-                Le meilleur club de pieds-poings & striking de Marseille
-              </h3>
-              
-              <p className="text-brand-white/80 font-light text-lg leading-relaxed">
-                Situé au cœur de la cité phocéenne, <strong>Striking Camp</strong> s'impose aujourd'hui comme la référence absolue des sports de combat à Marseille. Conçu pour ceux qui recherchent l'excellence, notre structure accueille aussi bien les passionnés déterminés que les athlètes professionnels. Ce n'est pas un hasard si les pros qui performent au niveau mondial viennent s'y préparer : l'exigence, la rigueur et l'encadrement sont dignes du très haut niveau.
-              </p>
-              
-              <h4 className="text-2xl font-bold text-brand-white uppercase tracking-wider mt-8 mb-4">
-                Le meilleur coach individuel de la région
-              </h4>
-              <p className="text-brand-white/80 font-light text-lg leading-relaxed">
-                Notre réputation repose sur l'expertise de notre encadrement. Sous la direction du <strong>meilleur coach individuel de Marseille</strong>, chaque séance est pensée pour décupler votre technique, votre puissance et votre conditionnement. Que vous souhaitiez maîtriser les bases, préparer un combat international, ou encore <strong>adapter votre striking aux exigences spécifiques du MMA</strong>, l'approche pédagogique reste la même : professionnelle, mature et orientée vers les résultats.
-              </p>
-              
-              <h4 className="text-2xl font-bold text-brand-white uppercase tracking-wider mt-8 mb-4">
-                Une section 100% féminine
-              </h4>
-              <p className="text-brand-white/80 font-light text-lg leading-relaxed">
-                Striking Camp s'engage à offrir un cadre d'entraînement optimal pour toutes. À travers nos cours <strong>Lady Striking</strong> et <strong>Lady Boxing</strong>, nous proposons des sessions exclusivement réservées aux femmes. Ce format en petit comité garantit une intimité totale et une atmosphère bienveillante, permettant à chacune de s'initier, de progresser et de se dépasser, sans jamais faire de compromis sur l'exigence technique et physique.
-              </p>
-              
-              <div className="bg-brand-white/5 border border-brand-white/10 rounded-lg p-8 mt-12">
-                <h4 className="text-2xl font-bold text-brand-blue uppercase tracking-wider mb-6">
-                  Nos Disciplines
-                </h4>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-brand-white/90 font-medium text-lg">
-                  <li className="flex items-center">
-                    <span className="text-brand-blue mr-3">✓</span> Boxe Anglaise
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-brand-blue mr-3">✓</span> Kick Boxing
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-brand-blue mr-3">✓</span> Boxe Thaï
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-brand-blue mr-3">✓</span> Lady Striking
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-brand-blue mr-3">✓</span> Lady Boxing
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-brand-blue mr-3">✓</span> Boxing Shred
-                  </li>
-                </ul>
+              {/* 1. BIENVENUE AU STRIKING CAMP */}
+              <div>
+                <h3 className="font-heading text-3xl md:text-4xl font-bold text-brand-blue uppercase tracking-wide mb-6">
+                  BIENVENUE AU STRIKING CAMP
+                </h3>
+                
+                <div className="space-y-4 text-brand-white/80 font-light text-lg leading-relaxed">
+                  <p>
+                    <strong>Striking Camp</strong> est un camp d’entraînement nouvelle génération dédié aux sports de percussion (striking).
+                  </p>
+                  <p>
+                    Notre mission est d’accompagner chaque personne dans sa progression, qu’elle souhaite découvrir l’univers des sports de combat, améliorer sa condition physique ou développer ses compétences techniques.
+                  </p>
+                  <p>
+                    Nous accueillons aussi bien les débutants que les pratiquants confirmés et les combattants qui souhaitent continuer à progresser.
+                  </p>
+                  <p>
+                    Notre approche repose sur trois éléments essentiels : <strong>la technique</strong>, <strong>la progression</strong> et <strong>la régularité</strong>. Chaque entraînement est pensé pour permettre à chacun de travailler à son niveau, dans un cadre structuré, exigeant et bienveillant.
+                  </p>
+                </div>
               </div>
 
+              {/* UN ACCOMPAGNEMENT ADAPTÉ À CHACUN */}
+              <div>
+                <h4 className="font-heading text-2xl font-bold text-brand-white uppercase tracking-wider mb-4">
+                  UN ACCOMPAGNEMENT ADAPTÉ À CHACUN
+                </h4>
+                <div className="space-y-4 text-brand-white/80 font-light text-lg leading-relaxed">
+                  <p>
+                    Que vous soyez débutant, pratiquant confirmé ou combattant, les entraînements sont construits autour de vos objectifs.
+                  </p>
+                  <p>
+                    Nous travaillons les fondamentaux, la technique, les déplacements, la précision, le conditionnement physique et la mise en situation.
+                  </p>
+                  <p>
+                    Pour les pratiquants de MMA, le travail du striking peut également être adapté aux exigences spécifiques du combat en cage.
+                  </p>
+                </div>
+              </div>
+
+              {/* UN ESPACE DÉDIÉ AUX FEMMES */}
+              <div>
+                <h4 className="font-heading text-2xl font-bold text-brand-white uppercase tracking-wider mb-4">
+                  UN ESPACE DÉDIÉ AUX FEMMES
+                </h4>
+                <div className="space-y-4 text-brand-white/80 font-light text-lg leading-relaxed">
+                  <p>
+                    Striking Camp propose également des séances 100 % féminines avec le <strong>Lady Striking</strong>.
+                  </p>
+                  <p>
+                    L’objectif est de permettre à chacune de découvrir ou de pratiquer les sports de combat dans un cadre bienveillant et motivant, tout en conservant une véritable exigence technique et physique.
+                  </p>
+                </div>
+              </div>
+
+              {/* Phrase de conclusion */}
+              <div className="p-6 bg-brand-white/5 border-l-4 border-brand-blue rounded-r-lg">
+                <p className="text-brand-white text-lg md:text-xl font-medium italic">
+                  « Ici, chacun vient avec son objectif. Nous vous aidons à construire votre progression. »
+                </p>
+              </div>
+
+              {/* 2. NOTRE PHILOSOPHIE D'ENTRAÎNEMENT */}
+              <div className="pt-8 border-t border-brand-white/10">
+                <h3 className="font-heading text-3xl md:text-4xl font-bold text-brand-white uppercase tracking-wide mb-2">
+                  NOTRE PHILOSOPHIE <span className="text-brand-blue">D&apos;ENTRAÎNEMENT</span>
+                </h3>
+                <p className="text-brand-white/70 font-light text-lg mb-8">
+                  Plus qu&apos;une séance, une expérience transformative.
+                </p>
+
+                {/* Les 3 Piliers */}
+                <div className="space-y-6">
+                  {pillars.map((pillar, index) => (
+                    <motion.div
+                      key={pillar.title}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 0.5, delay: index * 0.15 }}
+                      className="bg-brand-white/5 border border-brand-white/10 p-6 sm:p-8 rounded-xl hover:border-brand-blue/50 transition-all duration-500 group"
+                    >
+                      <h5 className="font-heading text-xl font-bold text-brand-white uppercase tracking-wider mb-3 group-hover:text-brand-blue transition-colors">
+                        {pillar.title}
+                      </h5>
+                      <p className="text-brand-white/70 font-light leading-relaxed text-base md:text-lg">
+                        {pillar.desc}
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA actuel de la page */}
               <div className="pt-8">
                 <a 
                   href="/planning"

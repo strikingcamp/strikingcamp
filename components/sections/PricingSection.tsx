@@ -6,97 +6,104 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PlanCategory = "Cours Privés" | "Small Group" | "Collectifs";
-type BillingCycle = "Mensuel" | "Annuel";
+type BillingCycle = "Unitaire" | "Mensuel" | "Annuel";
 
 type PlanDetails = {
   price: string;
+  subtitle?: string;
   features: string[];
 };
 
-const pricingData: Record<PlanCategory, Record<BillingCycle, PlanDetails>> = {
+const pricingData: Record<PlanCategory, { cycles: BillingCycle[]; plans: Record<string, PlanDetails> }> = {
   "Cours Privés": {
-    Mensuel: {
-      price: "490€/MOIS",
-      features: [
-        "12 Séances privées (60 min)",
-        "Entraînement pattes d'ours",
-        "Accès aux Small Groups",
-        "Accès aux cours collectifs",
-        "Circuit training",
-        "Matériel offert (gants + bandes)",
-        "Possibilité d'inviter un(e) ami(e)",
-        "Sans engagement",
-        "Frais d'inscription: 39,99€",
-      ],
-    },
-    Annuel: {
-      price: "390€/MOIS",
-      features: [
-        "12 Séances privées (60 min)",
-        "Entraînement pattes d'ours",
-        "Accès aux Small Groups",
-        "Accès aux cours collectifs",
-        "Circuit training",
-        "Matériel offert (gants + bandes)",
-        "Possibilité d'inviter un(e) ami(e)",
-        "Engagement 12 mois",
-        "Frais d'inscription: 39,99€",
-      ],
+    cycles: ["Unitaire", "Mensuel", "Annuel"],
+    plans: {
+      Unitaire: {
+        price: "50€",
+        subtitle: "(la séance)",
+        features: [
+          "Séance privée",
+          "Suivi technique",
+          "Style personnalisé",
+        ],
+      },
+      Mensuel: {
+        price: "390€ / mois",
+        features: [
+          "10 séances privées",
+          "Suivi technique",
+          "Style personnalisé",
+          "Accès illimité aux cours collectifs",
+        ],
+      },
+      Annuel: {
+        price: "290€ / mois",
+        features: [
+          "10 séances privées",
+          "Suivi technique",
+          "Style personnalisé",
+          "Accès illimité au Small Group",
+          "Deux mois offerts",
+        ],
+      },
     },
   },
   "Small Group": {
-    Mensuel: {
-      price: "199€/MOIS",
-      features: [
-        "12 Séances en small group (max 5)",
-        "Entraînement pattes d'ours",
-        "Suivi technique individuel",
-        "Circuit training",
-        "Matériel offert (gants + bandes)",
-        "Sans engagement",
-      ],
-    },
-    Annuel: {
-      price: "150€/MOIS",
-      features: [
-        "12 Séances en small group (max 5)",
-        "Entraînement pattes d'ours",
-        "Suivi technique individuel",
-        "Circuit training",
-        "Matériel offert (gants + bandes)",
-        "Engagement 12 mois",
-        "Frais d'inscription OFFERTS",
-      ],
+    cycles: ["Annuel", "Mensuel"],
+    plans: {
+      Annuel: {
+        price: "80€ / mois",
+        features: [
+          "Engagement 12 mois",
+          "Séances illimitées",
+          "Suivi technique",
+          "Frais d'inscription offerts",
+        ],
+      },
+      Mensuel: {
+        price: "120€ / mois",
+        features: [
+          "Engagement 1 mois",
+          "Séances illimitées",
+          "Suivi technique",
+          "Frais d'inscription : 39,00€",
+        ],
+      },
     },
   },
   Collectifs: {
-    Mensuel: {
-      price: "80€/MOIS",
-      features: [
-        "Accès illimité Cours Collectifs",
-        "Ambiance de groupe",
-        "Sans engagement",
-      ],
-    },
-    Annuel: {
-      price: "50€/MOIS",
-      features: [
-        "Accès illimité Cours Collectifs",
-        "Ambiance de groupe",
-        "Engagement 12 mois",
-      ],
+    cycles: ["Annuel", "Mensuel"],
+    plans: {
+      Annuel: {
+        price: "39€ / mois",
+        features: [
+          "Engagement 12 mois",
+          "Suivi technique",
+          "Cours collectifs illimités",
+        ],
+      },
+      Mensuel: {
+        price: "79€ / mois",
+        features: [
+          "Cours collectifs illimités",
+          "Suivi technique",
+          "Engagement 12 mois",
+        ],
+      },
     },
   },
 };
 
 const categories: PlanCategory[] = ["Cours Privés", "Small Group", "Collectifs"];
-const cycles: BillingCycle[] = ["Mensuel", "Annuel"];
 
 export default function PricingSection() {
   const [activeCategory, setActiveCategory] = useState<PlanCategory>("Cours Privés");
   const [activeCycle, setActiveCycle] = useState<BillingCycle>("Annuel");
 
-  const currentPlan = pricingData[activeCategory][activeCycle];
+  const currentCategoryData = pricingData[activeCategory];
+  const availableCycles = currentCategoryData.cycles;
+  const selectedCycle = availableCycles.includes(activeCycle) ? activeCycle : availableCycles[0];
+  const currentPlan = currentCategoryData.plans[selectedCycle];
 
   return (
     <section className="py-12 bg-[#0a1120] font-sans">
@@ -132,13 +139,13 @@ export default function PricingSection() {
         {/* Billing Cycle Tabs */}
         <div className="flex justify-center mb-12">
           <div className="flex bg-[#2a3441] rounded-lg p-1 w-full max-w-3xl">
-            {cycles.map((cycle) => (
+            {availableCycles.map((cycle) => (
               <button
                 key={cycle}
                 onClick={() => setActiveCycle(cycle)}
                 className={cn(
                   "flex-1 py-3 rounded-md text-sm md:text-base font-bold transition-all duration-300",
-                  activeCycle === cycle
+                  selectedCycle === cycle
                     ? "bg-[#00d8ff] text-white shadow-md"
                     : "text-gray-300 hover:text-white"
                 )}
@@ -153,7 +160,7 @@ export default function PricingSection() {
         <div className="flex justify-center">
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${activeCategory}-${activeCycle}`}
+              key={`${activeCategory}-${selectedCycle}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -163,8 +170,15 @@ export default function PricingSection() {
               <h3 className="text-2xl font-black text-white uppercase mb-2">
                 {activeCategory}
               </h3>
-              <div className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase mb-8">
-                {currentPlan.price}
+              <div className="mb-8">
+                <div className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase">
+                  {currentPlan.price}
+                </div>
+                {currentPlan.subtitle && (
+                  <p className="text-sm font-medium text-gray-400 mt-1">
+                    {currentPlan.subtitle}
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-4 mb-8">
