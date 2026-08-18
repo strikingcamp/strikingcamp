@@ -333,23 +333,6 @@ export default function CoachSection() {
             </motion.div>
           </div>
 
-          {/* ========================================================= */}
-          {/* CTA ACTUEL */}
-          {/* ========================================================= */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="pt-6"
-          >
-            <a 
-              href="/planning"
-              className="inline-block px-8 py-4 bg-[#00d8ff] text-[#0a1120] font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors rounded-sm shadow-lg hover:shadow-[#00d8ff]/20"
-            >
-              Planning des cours
-            </a>
-          </motion.div>
 
         </div>
       </div>

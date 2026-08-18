@@ -23,7 +23,7 @@ export default function HeroSection() {
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
           className="font-heading text-5xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.85] tracking-tighter mb-6"
         >
-          <span className="text-transparent bg-clip-text bg-gradient-to-br from-brand-blue to-brand-blue/50">{siteData.hero.title}</span>{" "}
+          <span className="text-brand-blue">{siteData.hero.title}</span>{" "}
           <span className="text-brand-white">{siteData.hero.title2}</span>
         </motion.h1>
 
