@@ -87,7 +87,6 @@ const pricingData: Record<PlanCategory, { cycles: BillingCycle[]; plans: Record<
         features: [
           "Cours collectifs illimités",
           "Suivi technique",
-          "Engagement 12 mois",
         ],
       },
     },

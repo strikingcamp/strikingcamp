@@ -93,7 +93,12 @@ export default function PlanningSection() {
   const [activeCategory, setActiveCategory] = useState<Category>("Collectifs");
   const [activeDay, setActiveDay] = useState<DayFilter>("Tous");
 
-  const daysToRender = activeDay === "Tous" ? days : [activeDay as Day];
+  // Jours ayant au moins un créneau dans la catégorie active
+  const activeDays = days.filter(
+    (day) => scheduleData[activeCategory][day].length > 0
+  );
+
+  const daysToRender = activeDay === "Tous" ? activeDays : [activeDay as Day];
 
   return (
     <section className="pt-8 pb-24 bg-[#0a1120] font-sans">
@@ -112,7 +117,10 @@ export default function PlanningSection() {
             {categories.map((category) => (
               <button
                 key={category}
-                onClick={() => setActiveCategory(category)}
+                onClick={() => {
+                  setActiveCategory(category);
+                  setActiveDay("Tous");
+                }}
                 className={cn(
                   "flex-1 py-3 rounded-md text-sm md:text-base font-bold transition-all duration-300",
                   activeCategory === category
@@ -126,7 +134,7 @@ export default function PlanningSection() {
           </div>
         </div>
 
-        {/* Days Filter */}
+        {/* Days Filter — n'affiche que les jours ayant des cours dans la catégorie active */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           <button
             onClick={() => setActiveDay("Tous")}
@@ -139,7 +147,7 @@ export default function PlanningSection() {
           >
             Tous
           </button>
-          {days.map((day) => (
+          {activeDays.map((day) => (
             <button
               key={day}
               onClick={() => setActiveDay(day)}
