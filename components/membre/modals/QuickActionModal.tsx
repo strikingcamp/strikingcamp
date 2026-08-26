@@ -1,22 +1,17 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Users, UserCheck, Calendar, Sparkles } from "lucide-react";
+import { X, Users, Calendar, Sparkles, ArrowRight } from "lucide-react";
 import { useMember } from "../MemberContext";
 import { useRouter } from "next/navigation";
 
 export default function QuickActionModal() {
-  const { isQuickActionOpen, closeQuickAction, openPrivateSession } = useMember();
+  const { isQuickActionOpen, closeQuickAction } = useMember();
   const router = useRouter();
 
   const handleSmallGroup = () => {
     closeQuickAction();
     router.push("/membre/planning");
-  };
-
-  const handlePrivateSession = () => {
-    closeQuickAction();
-    openPrivateSession();
   };
 
   return (
@@ -51,7 +46,7 @@ export default function QuickActionModal() {
                     Nouvelle Réservation
                   </h3>
                   <p className="text-xs text-brand-white/50">
-                    Choisissez votre formule d’entraînement
+                    Réservez votre prochain entraînement Small Group
                   </p>
                 </div>
               </div>
@@ -67,30 +62,7 @@ export default function QuickActionModal() {
 
             {/* Options */}
             <div className="space-y-3">
-              {/* Option 1: Séance Privée */}
-              <button
-                onClick={handlePrivateSession}
-                className="w-full text-left p-4 rounded-lg bg-brand-white/[0.03] hover:bg-brand-blue/10 border border-brand-white/10 hover:border-brand-blue/40 transition-all duration-200 group flex items-start gap-4 cursor-pointer"
-              >
-                <div className="w-12 h-12 rounded-lg bg-brand-blue/10 group-hover:bg-brand-blue text-brand-blue group-hover:text-brand-black flex items-center justify-center shrink-0 transition-colors">
-                  <UserCheck size={24} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-base font-heading font-bold uppercase tracking-wide text-brand-white group-hover:text-brand-blue transition-colors">
-                      1. Réserver une séance privée
-                    </h4>
-                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-brand-blue/20 text-brand-blue">
-                      1 to 1
-                    </span>
-                  </div>
-                  <p className="text-xs text-brand-white/60 mt-1 leading-relaxed">
-                    Coaching individuel personnalisé avec Mahfoud Mohamed. Travail sur-mesure de vos objectifs et de votre technique.
-                  </p>
-                </div>
-              </button>
-
-              {/* Option 2: Séance Small Group */}
+              {/* Option: Séance Small Group */}
               <button
                 onClick={handleSmallGroup}
                 className="w-full text-left p-4 rounded-lg bg-brand-white/[0.03] hover:bg-brand-blue/10 border border-brand-white/10 hover:border-brand-blue/40 transition-all duration-200 group flex items-start gap-4 cursor-pointer"
@@ -101,7 +73,7 @@ export default function QuickActionModal() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <h4 className="text-base font-heading font-bold uppercase tracking-wide text-brand-white group-hover:text-brand-blue transition-colors">
-                      2. Réserver une séance Small Group
+                      Réserver une séance Small Group
                     </h4>
                     <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e]">
                       Max 8 pers.
@@ -111,6 +83,27 @@ export default function QuickActionModal() {
                     Entraînement intensif en effectif réduit : Boxing Bag, Kick Boxing, KB Shred, Striking, Lady Striking, Boxe Thaï.
                   </p>
                 </div>
+              </button>
+
+              {/* Option: Consulter le planning */}
+              <button
+                onClick={handleSmallGroup}
+                className="w-full text-left p-4 rounded-lg bg-brand-white/[0.02] hover:bg-brand-white/5 border border-brand-white/5 hover:border-brand-white/20 transition-all duration-200 group flex items-center justify-between cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-brand-white/5 text-brand-white/70 group-hover:text-brand-white flex items-center justify-center shrink-0">
+                    <Calendar size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-heading font-bold uppercase tracking-wide text-brand-white">
+                      Voir tout le planning des cours
+                    </h4>
+                    <p className="text-xs text-brand-white/40">
+                      Horaires des cours Small Group et Collectifs de la semaine
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight size={18} className="text-brand-white/40 group-hover:text-brand-white transition-colors" />
               </button>
             </div>
 

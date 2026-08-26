@@ -10,8 +10,6 @@ import {
   Clock,
   Loader2,
   AlertCircle,
-  Info,
-  ShieldAlert,
 } from "lucide-react";
 import { useMember } from "../MemberContext";
 
@@ -21,7 +19,6 @@ export default function BookingCancelModal() {
     slotToCancel,
     closeBookingCancel,
     removeBooking,
-    cancelPrivateSession,
   } = useMember();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,38 +26,11 @@ export default function BookingCancelModal() {
 
   if (!slotToCancel && !isSuccess) return null;
 
-  // Calcul du délai avant la séance (règle des 24h)
-  const isPrivateSession =
-    slotToCancel?.sessionType === "Séance Privée" || slotToCancel?.isPrivate;
-
-  let isWithin24h = false;
-  if (slotToCancel?.startsAt) {
-    const startsAt = new Date(slotToCancel.startsAt);
-    const now = new Date();
-    const diffHours = (startsAt.getTime() - now.getTime()) / (1000 * 60 * 60);
-    isWithin24h = diffHours < 24;
-  }
-
-  const handleCancelConfirm = async () => {
+  const handleCancelConfirm = () => {
     setIsLoading(true);
     setError(null);
 
-    // Si c'est une réservation Supabase (ID réel sans préfixe mock)
-    if (
-      slotToCancel?.id &&
-      !slotToCancel.id.startsWith("mock-") &&
-      isPrivateSession
-    ) {
-      const result = await cancelPrivateSession(slotToCancel.id);
-      if (!result.success) {
-        setError(
-          result.error ||
-            "Une erreur est survenue lors de l'annulation de la séance."
-        );
-        setIsLoading(false);
-        return;
-      }
-    } else if (slotToCancel) {
+    if (slotToCancel) {
       removeBooking(
         slotToCancel.id || `${slotToCancel.day}-${slotToCancel.time}`
       );
@@ -118,12 +88,12 @@ export default function BookingCancelModal() {
                     Annuler la réservation ?
                   </h3>
                   <p className="text-xs text-brand-white/50 mt-1">
-                    Cette action libérera votre créneau pour un autre membre.
+                    Cette action libérera votre place pour un autre membre.
                   </p>
                 </div>
 
                 {/* Session Card Info */}
-                <div className="bg-brand-white/5 border border-brand-white/10 rounded-lg p-4 mb-4 space-y-2.5 text-xs">
+                <div className="bg-brand-white/5 border border-brand-white/10 rounded-lg p-4 mb-6 space-y-2.5 text-xs">
                   <div className="flex items-center justify-between pb-2 border-b border-brand-white/10">
                     <span className="text-brand-white/50 uppercase tracking-wider">
                       Discipline
@@ -156,38 +126,6 @@ export default function BookingCancelModal() {
                   </div>
                 </div>
 
-                {/* Règle des 24h pour les séances privées */}
-                {isPrivateSession && (
-                  <div className="mb-6">
-                    {isWithin24h ? (
-                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300 flex items-start gap-2.5">
-                        <ShieldAlert
-                          size={16}
-                          className="text-amber-400 shrink-0 mt-0.5"
-                        />
-                        <div>
-                          <strong className="block text-amber-200 uppercase font-bold">
-                            Annulation à moins de 24h
-                          </strong>
-                          Conformément au règlement du club, cette séance
-                          restera décomptée de votre quota mensuel.
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-3 bg-[#22c55e]/10 border border-[#22c55e]/20 rounded-lg text-xs text-[#22c55e] flex items-start gap-2.5">
-                        <Info size={16} className="shrink-0 mt-0.5" />
-                        <div>
-                          <strong className="block text-[#22c55e] uppercase font-bold">
-                            Annulation à plus de 24h
-                          </strong>
-                          Votre séance privée sera recréditée sur votre quota
-                          pour cette période.
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Message d'erreur */}
                 {error && (
                   <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-300 flex items-center gap-2">
@@ -204,7 +142,7 @@ export default function BookingCancelModal() {
                     disabled={isLoading}
                     className="w-full sm:flex-1 py-3 px-4 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors cursor-pointer text-center"
                   >
-                    GARDER MA RÉSERVATION
+                    GARDER MA PLACE
                   </button>
 
                   <button
@@ -238,8 +176,7 @@ export default function BookingCancelModal() {
                   Réservation annulée
                 </h3>
                 <p className="text-xs text-brand-white/60 mb-6 leading-relaxed max-w-xs mx-auto">
-                  Votre réservation a bien été annulée. Votre créneau est
-                  désormais libéré.
+                  Votre réservation a bien été annulée. Votre place a été libérée.
                 </p>
 
                 <button

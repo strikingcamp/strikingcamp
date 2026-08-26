@@ -151,7 +151,7 @@ export default function MemberHomeView({
               </p>
               <p className="text-xs text-brand-white/40 mt-1 max-w-sm mx-auto">
                 Consultez les créneaux disponibles dans le planning et réservez
-                votre prochaine session Small Group ou Privée.
+                votre prochaine session Small Group.
               </p>
             </div>
             <button

@@ -7,7 +7,6 @@ import MemberHeader from "@/components/membre/MemberHeader";
 import QuickActionModal from "@/components/membre/modals/QuickActionModal";
 import BookingConfirmModal from "@/components/membre/modals/BookingConfirmModal";
 import BookingCancelModal from "@/components/membre/modals/BookingCancelModal";
-import PrivateSessionModal from "@/components/membre/modals/PrivateSessionModal";
 
 export const metadata: Metadata = {
   title: "Espace Membre — Striking Camp",
@@ -59,7 +58,6 @@ export default async function MembreLayout({
         <QuickActionModal />
         <BookingConfirmModal />
         <BookingCancelModal />
-        <PrivateSessionModal />
       </div>
     </MemberProvider>
   );
