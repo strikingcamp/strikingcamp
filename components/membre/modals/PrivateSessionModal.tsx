@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -18,19 +18,19 @@ import {
 import { useMember } from "../MemberContext";
 import { cn } from "@/lib/utils";
 
-const morningSlots = [
+const defaultMorningSlots = [
   "08:00 – 08:50",
   "09:00 – 09:50",
   "10:00 – 10:50",
 ];
 
-const afternoonSlots = [
+const defaultAfternoonSlots = [
   "14:00 – 14:50",
   "15:00 – 15:50",
   "16:00 – 16:50",
 ];
 
-const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const defaultDays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 const disciplines = [
   "Kick Boxing",
@@ -44,38 +44,122 @@ export default function PrivateSessionModal() {
     isPrivateSessionOpen,
     closePrivateSession,
     hasPrivateAccess,
-    isPrivateSlotReserved,
-    addBooking,
+    privateQuota,
+    privateSlots,
+    bookPrivateSession,
+    refreshMemberData,
   } = useMember();
 
   const [selectedDay, setSelectedDay] = useState("Lundi");
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedSlotTime, setSelectedSlotTime] = useState<string | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [selectedDiscipline, setSelectedDiscipline] = useState("Kick Boxing");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleConfirmReservation = () => {
-    if (!selectedSlot || !hasPrivateAccess) return;
+  // Available days dynamically discovered from Supabase slots or defaults
+  const availableDays = useMemo(() => {
+    if (privateSlots.length > 0) {
+      const distinct = Array.from(new Set(privateSlots.map((s) => s.dayName)));
+      if (distinct.length > 0) return distinct;
+    }
+    return defaultDays;
+  }, [privateSlots]);
+
+  // Group slots for the active selected day
+  const { morningSlots, afternoonSlots } = useMemo(() => {
+    if (privateSlots.length > 0) {
+      const daySlots = privateSlots.filter(
+        (s) => s.dayName.toLowerCase() === selectedDay.toLowerCase()
+      );
+
+      if (daySlots.length > 0) {
+        const morning = daySlots
+          .filter((s) => {
+            const h = new Date(s.startsAt).getHours();
+            return h < 12;
+          })
+          .map((s) => ({
+            id: s.id,
+            time: s.timeSlot,
+            isReserved: s.isReserved,
+          }));
+
+        const afternoon = daySlots
+          .filter((s) => {
+            const h = new Date(s.startsAt).getHours();
+            return h >= 12;
+          })
+          .map((s) => ({
+            id: s.id,
+            time: s.timeSlot,
+            isReserved: s.isReserved,
+          }));
+
+        return { morningSlots: morning, afternoonSlots: afternoon };
+      }
+    }
+
+    // Fallback if no Supabase slots yet
+    return {
+      morningSlots: defaultMorningSlots.map((time) => ({
+        id: `mock-m-${time}`,
+        time,
+        isReserved: false,
+      })),
+      afternoonSlots: defaultAfternoonSlots.map((time) => ({
+        id: `mock-a-${time}`,
+        time,
+        isReserved: false,
+      })),
+    };
+  }, [privateSlots, selectedDay]);
+
+  const isQuotaExhausted =
+    privateQuota !== null &&
+    privateQuota.hasPrivateAccess &&
+    privateQuota.remainingQuota <= 0;
+
+  const handleSelectSlot = (slot: { id: string; time: string; isReserved: boolean }) => {
+    if (slot.isReserved) return;
+    setSelectedSlotTime(slot.time);
+    setSelectedSlotId(slot.id);
+    setErrorMessage(null);
+  };
+
+  const handleConfirmReservation = async () => {
+    if (!selectedSlotTime || !hasPrivateAccess || isQuotaExhausted) return;
 
     setIsLoading(true);
-    setTimeout(() => {
-      addBooking({
-        discipline: selectedDiscipline,
-        sessionType: "Séance Privée",
-        day: selectedDay,
-        time: selectedSlot,
-        level: "1 to 1 Sur-Mesure",
-        status: "Réservation confirmée",
-      });
-      setIsLoading(false);
-      setIsSuccess(true);
-    }, 600);
+    setErrorMessage(null);
+
+    // If we have a real slot ID from Supabase
+    if (selectedSlotId && !selectedSlotId.startsWith("mock-")) {
+      const result = await bookPrivateSession(selectedSlotId, selectedDiscipline);
+
+      if (!result.success) {
+        setErrorMessage(
+          result.error || "Ce créneau vient d'être réservé par un autre membre."
+        );
+        setSelectedSlotTime(null);
+        setSelectedSlotId(null);
+        setIsLoading(false);
+        await refreshMemberData();
+        return;
+      }
+    }
+
+    setIsLoading(false);
+    setIsSuccess(true);
   };
 
   const handleClose = () => {
     setIsSuccess(false);
     setIsLoading(false);
-    setSelectedSlot(null);
+    setSelectedSlotTime(null);
+    setSelectedSlotId(null);
+    setErrorMessage(null);
     closePrivateSession();
   };
 
@@ -126,6 +210,21 @@ export default function PrivateSessionModal() {
                   </p>
                 </div>
 
+                {/* Quota Banner */}
+                {hasPrivateAccess && privateQuota && (
+                  <div className="p-3 bg-brand-blue/10 border border-brand-blue/20 rounded-xl flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={16} className="text-brand-blue shrink-0" />
+                      <span className="text-brand-white font-medium">
+                        Quota de séances privées :
+                      </span>
+                    </div>
+                    <span className="font-heading font-bold text-brand-blue bg-brand-blue/20 px-2.5 py-0.5 rounded-full border border-brand-blue/30">
+                      Il vous reste {privateQuota.remainingQuota} séance{privateQuota.remainingQuota > 1 ? "s" : ""} sur {privateQuota.totalQuota}
+                    </span>
+                  </div>
+                )}
+
                 {/* Warning if no access */}
                 {!hasPrivateAccess && (
                   <motion.div
@@ -140,6 +239,35 @@ export default function PrivateSessionModal() {
                       </strong>
                       Votre abonnement actuel ne comprend pas les séances privées 1 to 1. Veuillez contacter le club pour activer cette option.
                     </div>
+                  </motion.div>
+                )}
+
+                {/* Warning if quota exhausted */}
+                {hasPrivateAccess && isQuotaExhausted && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3 text-xs text-amber-300"
+                  >
+                    <AlertCircle size={18} className="shrink-0 mt-0.5 text-amber-400" />
+                    <div>
+                      <strong className="block text-amber-200 font-bold uppercase tracking-wide">
+                        Quota épuisé
+                      </strong>
+                      Votre quota de séances privées est épuisé pour cette période.
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Error banner (e.g. race condition / slot taken) */}
+                {errorMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-red-500/10 border border-red-500/25 rounded-xl flex items-center gap-2.5 text-xs text-red-300"
+                  >
+                    <AlertCircle size={16} className="shrink-0 text-red-400" />
+                    <span>{errorMessage}</span>
                   </motion.div>
                 )}
 
@@ -167,13 +295,15 @@ export default function PrivateSessionModal() {
                     2. Jour de la séance
                   </label>
                   <div className="flex flex-wrap gap-1.5">
-                    {days.map((day) => (
+                    {availableDays.map((day) => (
                       <button
                         key={day}
                         type="button"
                         onClick={() => {
                           setSelectedDay(day);
-                          setSelectedSlot(null);
+                          setSelectedSlotTime(null);
+                          setSelectedSlotId(null);
+                          setErrorMessage(null);
                         }}
                         className={cn(
                           "px-3 py-1.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all cursor-pointer",
@@ -199,48 +329,59 @@ export default function PrivateSessionModal() {
                     <p className="text-[11px] font-semibold text-brand-white/40 uppercase tracking-wider flex items-center gap-1">
                       <Clock size={12} className="text-brand-blue" /> Matin
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {morningSlots.map((slot) => {
-                        const isReserved = isPrivateSlotReserved(selectedDay, slot);
-                        const isSelected = selectedSlot === slot;
+                    {morningSlots.length === 0 ? (
+                      <p className="text-xs text-brand-white/30 italic py-1">
+                        Aucun créneau matin ce jour-là.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {morningSlots.map((slot) => {
+                          const isSelected = selectedSlotTime === slot.time;
 
-                        if (isReserved) {
+                          if (slot.isReserved) {
+                            return (
+                              <div
+                                key={slot.id || slot.time}
+                                className="p-2.5 rounded-lg bg-brand-white/[0.02] border border-brand-white/5 text-brand-white/30 text-center cursor-not-allowed select-none opacity-50 flex flex-col justify-center items-center"
+                              >
+                                <span className="text-xs font-bold line-through">
+                                  {slot.time}
+                                </span>
+                                <span className="text-[9px] font-heading font-bold uppercase tracking-wider text-red-400 mt-0.5">
+                                  RÉSERVÉ
+                                </span>
+                              </div>
+                            );
+                          }
+
                           return (
-                            <div
-                              key={slot}
-                              className="p-2.5 rounded-lg bg-brand-white/[0.02] border border-brand-white/5 text-brand-white/30 text-center cursor-not-allowed select-none opacity-50 flex flex-col justify-center items-center"
+                            <button
+                              key={slot.id || slot.time}
+                              type="button"
+                              onClick={() => handleSelectSlot(slot)}
+                              className={cn(
+                                "p-2.5 rounded-lg border text-center transition-all cursor-pointer flex flex-col justify-center items-center",
+                                isSelected
+                                  ? "bg-brand-blue text-brand-black border-brand-blue font-bold shadow-md shadow-brand-blue/30 scale-[1.02]"
+                                  : "bg-[#162032] text-brand-white/80 hover:text-brand-white border-brand-white/10 hover:border-brand-blue/40"
+                              )}
                             >
-                              <span className="text-xs font-bold line-through">{slot}</span>
-                              <span className="text-[9px] font-heading font-bold uppercase tracking-wider text-red-400 mt-0.5">
-                                RÉSERVÉ
+                              <span className="text-xs font-bold">{slot.time}</span>
+                              <span
+                                className={cn(
+                                  "text-[9px] font-semibold uppercase mt-0.5",
+                                  isSelected
+                                    ? "text-brand-black/80"
+                                    : "text-[#22c55e]"
+                                )}
+                              >
+                                Disponible
                               </span>
-                            </div>
+                            </button>
                           );
-                        }
-
-                        return (
-                          <button
-                            key={slot}
-                            type="button"
-                            onClick={() => setSelectedSlot(slot)}
-                            className={cn(
-                              "p-2.5 rounded-lg border text-center transition-all cursor-pointer flex flex-col justify-center items-center",
-                              isSelected
-                                ? "bg-brand-blue text-brand-black border-brand-blue font-bold shadow-md shadow-brand-blue/30 scale-[1.02]"
-                                : "bg-[#162032] text-brand-white/80 hover:text-brand-white border-brand-white/10 hover:border-brand-blue/40"
-                            )}
-                          >
-                            <span className="text-xs font-bold">{slot}</span>
-                            <span className={cn(
-                              "text-[9px] font-semibold uppercase mt-0.5",
-                              isSelected ? "text-brand-black/80" : "text-[#22c55e]"
-                            )}>
-                              Disponible
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Après-midi */}
@@ -248,48 +389,59 @@ export default function PrivateSessionModal() {
                     <p className="text-[11px] font-semibold text-brand-white/40 uppercase tracking-wider flex items-center gap-1">
                       <Clock size={12} className="text-brand-blue" /> Après-midi
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {afternoonSlots.map((slot) => {
-                        const isReserved = isPrivateSlotReserved(selectedDay, slot);
-                        const isSelected = selectedSlot === slot;
+                    {afternoonSlots.length === 0 ? (
+                      <p className="text-xs text-brand-white/30 italic py-1">
+                        Aucun créneau après-midi ce jour-là.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {afternoonSlots.map((slot) => {
+                          const isSelected = selectedSlotTime === slot.time;
 
-                        if (isReserved) {
+                          if (slot.isReserved) {
+                            return (
+                              <div
+                                key={slot.id || slot.time}
+                                className="p-2.5 rounded-lg bg-brand-white/[0.02] border border-brand-white/5 text-brand-white/30 text-center cursor-not-allowed select-none opacity-50 flex flex-col justify-center items-center"
+                              >
+                                <span className="text-xs font-bold line-through">
+                                  {slot.time}
+                                </span>
+                                <span className="text-[9px] font-heading font-bold uppercase tracking-wider text-red-400 mt-0.5">
+                                  RÉSERVÉ
+                                </span>
+                              </div>
+                            );
+                          }
+
                           return (
-                            <div
-                              key={slot}
-                              className="p-2.5 rounded-lg bg-brand-white/[0.02] border border-brand-white/5 text-brand-white/30 text-center cursor-not-allowed select-none opacity-50 flex flex-col justify-center items-center"
+                            <button
+                              key={slot.id || slot.time}
+                              type="button"
+                              onClick={() => handleSelectSlot(slot)}
+                              className={cn(
+                                "p-2.5 rounded-lg border text-center transition-all cursor-pointer flex flex-col justify-center items-center",
+                                isSelected
+                                  ? "bg-brand-blue text-brand-black border-brand-blue font-bold shadow-md shadow-brand-blue/30 scale-[1.02]"
+                                  : "bg-[#162032] text-brand-white/80 hover:text-brand-white border-brand-white/10 hover:border-brand-blue/40"
+                              )}
                             >
-                              <span className="text-xs font-bold line-through">{slot}</span>
-                              <span className="text-[9px] font-heading font-bold uppercase tracking-wider text-red-400 mt-0.5">
-                                RÉSERVÉ
+                              <span className="text-xs font-bold">{slot.time}</span>
+                              <span
+                                className={cn(
+                                  "text-[9px] font-semibold uppercase mt-0.5",
+                                  isSelected
+                                    ? "text-brand-black/80"
+                                    : "text-[#22c55e]"
+                                )}
+                              >
+                                Disponible
                               </span>
-                            </div>
+                            </button>
                           );
-                        }
-
-                        return (
-                          <button
-                            key={slot}
-                            type="button"
-                            onClick={() => setSelectedSlot(slot)}
-                            className={cn(
-                              "p-2.5 rounded-lg border text-center transition-all cursor-pointer flex flex-col justify-center items-center",
-                              isSelected
-                                ? "bg-brand-blue text-brand-black border-brand-blue font-bold shadow-md shadow-brand-blue/30 scale-[1.02]"
-                                : "bg-[#162032] text-brand-white/80 hover:text-brand-white border-brand-white/10 hover:border-brand-blue/40"
-                            )}
-                          >
-                            <span className="text-xs font-bold">{slot}</span>
-                            <span className={cn(
-                              "text-[9px] font-semibold uppercase mt-0.5",
-                              isSelected ? "text-brand-black/80" : "text-[#22c55e]"
-                            )}>
-                              Disponible
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -305,11 +457,16 @@ export default function PrivateSessionModal() {
 
                   <button
                     type="button"
-                    disabled={!selectedSlot || !hasPrivateAccess || isLoading}
+                    disabled={
+                      !selectedSlotTime ||
+                      !hasPrivateAccess ||
+                      isQuotaExhausted ||
+                      isLoading
+                    }
                     onClick={handleConfirmReservation}
                     className={cn(
                       "flex-1 py-3 px-4 font-heading font-bold text-xs sm:text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2",
-                      !selectedSlot || !hasPrivateAccess
+                      !selectedSlotTime || !hasPrivateAccess || isQuotaExhausted
                         ? "bg-brand-white/10 text-brand-white/30 cursor-not-allowed"
                         : "bg-brand-blue hover:bg-brand-white text-brand-black cursor-pointer shadow-lg shadow-brand-blue/25"
                     )}
@@ -321,7 +478,9 @@ export default function PrivateSessionModal() {
                       </>
                     ) : !hasPrivateAccess ? (
                       "Accès privé requis"
-                    ) : !selectedSlot ? (
+                    ) : isQuotaExhausted ? (
+                      "Quota épuisé"
+                    ) : !selectedSlotTime ? (
                       "Choisir un créneau"
                     ) : (
                       "CONFIRMER LA SÉANCE"
@@ -343,7 +502,13 @@ export default function PrivateSessionModal() {
                   Réservation confirmée
                 </h3>
                 <p className="text-xs text-brand-white/60 mb-6 leading-relaxed max-w-sm mx-auto">
-                  Votre séance privée de <strong className="text-brand-white">{selectedDiscipline}</strong> avec Coach Mahfoud est confirmée pour le <strong className="text-brand-white">{selectedDay} ({selectedSlot})</strong>.
+                  Votre séance privée de{" "}
+                  <strong className="text-brand-white">{selectedDiscipline}</strong>{" "}
+                  avec Coach Mahfoud est confirmée pour le{" "}
+                  <strong className="text-brand-white">
+                    {selectedDay} ({selectedSlotTime})
+                  </strong>
+                  .
                 </p>
 
                 <div className="bg-[#162032] rounded-xl p-4 text-xs text-brand-white/70 mb-6 border border-brand-white/10 text-left space-y-1.5">
@@ -352,7 +517,8 @@ export default function PrivateSessionModal() {
                     Coaching individuel personnalisé
                   </p>
                   <p className="text-brand-white/50 text-[11px]">
-                    📍 Striking Camp Marseille. Matériel recommandé : gants, bandages et tenue sportive.
+                    📍 Striking Camp Marseille. Matériel recommandé : gants,
+                    bandages et tenue sportive.
                   </p>
                 </div>
 

@@ -37,7 +37,6 @@ export default function MemberHomeView({
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8 pt-2">
-      
       {/* ━━━━━━━━━━━━━━━━━━━━
           MESSAGE D'ACCUEIL
           ━━━━━━━━━━━━━━━━━━━━ */}
@@ -71,7 +70,9 @@ export default function MemberHomeView({
           <div className="w-9 h-9 rounded-lg bg-brand-blue/20 text-brand-blue group-hover:bg-brand-blue group-hover:text-brand-black flex items-center justify-center mb-3 transition-colors">
             <Plus size={20} />
           </div>
-          <p className="text-xs uppercase tracking-wider text-brand-white/50 font-semibold">Action</p>
+          <p className="text-xs uppercase tracking-wider text-brand-white/50 font-semibold">
+            Action
+          </p>
           <p className="text-sm sm:text-base font-heading font-bold uppercase tracking-wider text-brand-white group-hover:text-brand-blue transition-colors">
             Réserver un cours
           </p>
@@ -85,7 +86,9 @@ export default function MemberHomeView({
           <div className="w-9 h-9 rounded-lg bg-brand-white/5 text-brand-white/80 group-hover:bg-brand-white/10 flex items-center justify-center mb-3 transition-colors">
             <Calendar size={18} />
           </div>
-          <p className="text-xs uppercase tracking-wider text-brand-white/50 font-semibold">Horaires</p>
+          <p className="text-xs uppercase tracking-wider text-brand-white/50 font-semibold">
+            Horaires
+          </p>
           <p className="text-sm sm:text-base font-heading font-bold uppercase tracking-wider text-brand-white group-hover:text-brand-blue transition-colors">
             Voir le planning
           </p>
@@ -101,7 +104,9 @@ export default function MemberHomeView({
               <Bell size={18} />
             </div>
             <div className="mt-2 sm:mt-0">
-              <p className="text-xs uppercase tracking-wider text-brand-white/50 font-semibold">Notifications</p>
+              <p className="text-xs uppercase tracking-wider text-brand-white/50 font-semibold">
+                Notifications
+              </p>
               <p className="text-sm sm:text-base font-heading font-bold uppercase tracking-wider text-brand-white group-hover:text-brand-blue transition-colors">
                 Mes alertes
               </p>
@@ -124,7 +129,8 @@ export default function MemberHomeView({
           </div>
           {userBookings.length > 0 && (
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-blue/20 text-brand-blue border border-brand-blue/30">
-              {userBookings.length} {userBookings.length === 1 ? "séance" : "séances"}
+              {userBookings.length}{" "}
+              {userBookings.length === 1 ? "séance" : "séances"}
             </span>
           )}
         </div>
@@ -144,7 +150,8 @@ export default function MemberHomeView({
                 Aucune réservation à venir.
               </p>
               <p className="text-xs text-brand-white/40 mt-1 max-w-sm mx-auto">
-                Consultez les créneaux disponibles dans le planning et réservez votre prochaine session Small Group ou Privée.
+                Consultez les créneaux disponibles dans le planning et réservez
+                votre prochaine session Small Group ou Privée.
               </p>
             </div>
             <button
@@ -184,7 +191,8 @@ export default function MemberHomeView({
                   <div className="flex items-center gap-4 text-xs text-brand-white/70 font-medium">
                     <span className="flex items-center gap-1 text-brand-white">
                       <Calendar size={13} className="text-brand-blue" />
-                      {booking.day} · {booking.time}
+                      {booking.day}
+                      {booking.date ? ` (${booking.date})` : ""} · {booking.time}
                     </span>
                     <span className="flex items-center gap-1 text-[#22c55e]">
                       <ShieldCheck size={13} />
@@ -221,11 +229,11 @@ export default function MemberHomeView({
             Striking Camp Marseille
           </h4>
           <p className="text-xs text-brand-white/60 leading-relaxed">
-            Pensez à apporter vos gants, bandages, protège-tibias et une bouteille d’eau. Arrivée recommandée 10 minutes avant le début de votre séance.
+            Pensez à apporter vos gants, bandages, protège-tibias et une bouteille
+            d’eau. Arrivée recommandée 10 minutes avant le début de votre séance.
           </p>
         </div>
       </div>
-
     </div>
   );
 }
