@@ -1,20 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import MemberHomeView from "@/components/membre/MemberHomeView";
+import MemberProfileView from "@/components/membre/MemberProfileView";
 
 export const metadata: Metadata = {
-  title: "Accueil Membre — Striking Camp",
+  title: "Mon Profil — Espace Membre Striking Camp",
   robots: { index: false, follow: false },
 };
 
 /**
- * Page d'accueil de l'espace membre — /membre
+ * Page Profil de l'espace membre — /membre/profil
  *
- * Accessible uniquement aux utilisateurs connectés.
- * Récupère le prénom et les métadonnées de l'utilisateur pour un affichage dynamique.
+ * Affiche les informations de l'utilisateur connecté et permet la déconnexion.
  */
-export default async function MembrePage() {
+export default async function MembreProfilPage() {
   const supabase = await createClient();
 
   const {
@@ -28,15 +27,20 @@ export default async function MembrePage() {
   const meta = user.user_metadata || {};
   const firstName = meta.first_name || "";
   const lastName = meta.last_name || "";
-  const email = user.email || "";
+  const phone = meta.phone || "";
   const role = meta.role || "Membre";
 
   return (
-    <MemberHomeView
-      firstName={firstName}
-      lastName={lastName}
-      email={email}
-      role={role}
+    <MemberProfileView
+      initialUser={{
+        id: user.id,
+        email: user.email || "",
+        firstName,
+        lastName,
+        phone,
+        role,
+        createdAt: user.created_at,
+      }}
     />
   );
 }

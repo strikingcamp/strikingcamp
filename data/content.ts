@@ -18,7 +18,7 @@ export const siteData = {
     subtitle: "Kickboxing & Muay Thai — Marseille",
     description: "Un entraînement exigeant, une méthode précise, une culture du combat.",
     primaryCta: "DÉCOUVRIR LE CLUB",
-    secondaryCta: "RENCONTRER LE COACH"
+    secondaryCta: "REJOINDRE LE CAMP"
   },
   coach: {
     name: "MAHFOUD MOHAMED",
