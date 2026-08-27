@@ -6,10 +6,11 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * Rôles :
  * 1. Rafraîchit automatiquement les tokens Supabase à chaque requête.
- * 2. Protège les routes /membre/* en redirigeant les utilisateurs non
+ * 2. Protège les routes /admin/* en vérifiant le rôle ADMIN côté serveur.
+ * 3. Protège les routes /membre/* en redirigeant les utilisateurs non
  *    authentifiés vers /connexion.
- * 3. Redirige les utilisateurs déjà connectés qui accèdent aux pages
- *    d'auth (/connexion, /inscription) vers /membre.
+ * 4. Redirige les utilisateurs déjà connectés qui accèdent aux pages
+ *    d'auth (/connexion, /inscription) vers /membre ou /admin selon leur rôle.
  *
  * ⚠️ IMPORTANT : Ce proxy ne protège pas les Server Actions.
  * Toujours vérifier l'authentification à l'intérieur de chaque Server Action.
@@ -43,16 +44,29 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Rafraîchit la session si elle a expiré.
-  // getUser() est la méthode recommandée — elle valide le token côté serveur
-  // contrairement à getSession() qui se base uniquement sur le cookie local.
+  // Rafraîchit la session si elle a expiré via validation de token côté serveur
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+  const userRole = (user?.app_metadata?.role || "").toUpperCase();
 
-  // Routes protégées — accessible uniquement aux membres connectés
+  // 1. Protection des routes /admin — accessible STRICTEMENT au rôle ADMIN
+  if (pathname.startsWith("/admin")) {
+    if (!user) {
+      const redirectUrl = new URL("/connexion", request.url);
+      redirectUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    if (userRole !== "ADMIN") {
+      // Redirection vers l'espace membre pour les clients/coachs
+      return NextResponse.redirect(new URL("/membre", request.url));
+    }
+  }
+
+  // 2. Protection des routes /membre — accessible à tout utilisateur connecté
   if (pathname.startsWith("/membre")) {
     if (!user) {
       const redirectUrl = new URL("/connexion", request.url);
@@ -61,9 +75,12 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Pages d'auth — redirige les membres déjà connectés vers l'espace membre
+  // 3. Pages d'auth — redirige les utilisateurs déjà connectés
   const authPaths = ["/connexion", "/inscription"];
   if (authPaths.some((p) => pathname.startsWith(p)) && user) {
+    if (userRole === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
     return NextResponse.redirect(new URL("/membre", request.url));
   }
 

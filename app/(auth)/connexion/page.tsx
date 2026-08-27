@@ -27,7 +27,7 @@ function ConnexionForm() {
 
     const supabase = createClient();
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
@@ -42,7 +42,17 @@ function ConnexionForm() {
       return;
     }
 
-    router.push(next);
+    const role = (authData.user?.app_metadata?.role || "").toUpperCase();
+    const explicitNext = searchParams.get("next");
+
+    let destination = "/membre";
+    if (explicitNext) {
+      destination = explicitNext;
+    } else if (role === "ADMIN") {
+      destination = "/admin";
+    }
+
+    router.push(destination);
     router.refresh();
   }
 

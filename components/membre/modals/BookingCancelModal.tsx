@@ -18,7 +18,7 @@ export default function BookingCancelModal() {
     isBookingCancelOpen,
     slotToCancel,
     closeBookingCancel,
-    removeBooking,
+    cancelSmallGroup,
   } = useMember();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,14 +26,17 @@ export default function BookingCancelModal() {
 
   if (!slotToCancel && !isSuccess) return null;
 
-  const handleCancelConfirm = () => {
+  const handleCancelConfirm = async () => {
     setIsLoading(true);
     setError(null);
 
-    if (slotToCancel) {
-      removeBooking(
-        slotToCancel.id || `${slotToCancel.day}-${slotToCancel.time}`
-      );
+    if (slotToCancel?.id) {
+      const result = await cancelSmallGroup(slotToCancel.id);
+      if (!result.success) {
+        setError(result.error || "Une erreur est survenue lors de l'annulation.");
+        setIsLoading(false);
+        return;
+      }
     }
 
     setIsLoading(false);

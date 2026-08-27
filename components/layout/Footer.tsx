@@ -7,7 +7,7 @@ import { siteData } from "@/data/content";
 export default function Footer() {
   const pathname = usePathname();
 
-  if (pathname?.startsWith("/membre")) {
+  if (pathname?.startsWith("/membre") || pathname?.startsWith("/admin")) {
     return null;
   }
   return (

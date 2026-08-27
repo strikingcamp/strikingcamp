@@ -1,6 +1,22 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { createClient } from "@/lib/supabase/client";
+import {
+  getMemberPlanAccess,
+  getMemberUpcomingBookings,
+  getActiveClassSessions,
+  bookSmallGroupSession as apiBookSmallGroup,
+  cancelSmallGroupSession as apiCancelSmallGroup,
+  type ClassSession,
+  type SmallGroupBooking,
+} from "@/lib/supabase/small-group";
 
 export type BookingSlot = {
   id?: string;
@@ -11,6 +27,7 @@ export type BookingSlot = {
   level?: string;
   status?: string;
   date?: string;
+  classSessionId?: string;
 };
 
 interface MemberContextType {
@@ -31,10 +48,22 @@ interface MemberContextType {
   openBookingCancel: (slot: BookingSlot) => void;
   closeBookingCancel: () => void;
 
-  // Bookings list (Small Group)
+  // Member Subscription Rights
+  hasSmallGroupAccess: boolean;
+  hasCollectiveAccess: boolean;
+  planName: string;
+  isLoadingData: boolean;
+
+  // Available sessions in database
+  availableSessions: ClassSession[];
+
+  // Real bookings list from Supabase
   userBookings: BookingSlot[];
-  addBooking: (slot: BookingSlot) => void;
-  removeBooking: (slotIdOrTime: string) => void;
+
+  // Supabase RPC Actions
+  bookSmallGroup: (slot: BookingSlot) => Promise<{ success: boolean; error?: string }>;
+  cancelSmallGroup: (bookingId: string) => Promise<{ success: boolean; error?: string }>;
+  refreshMemberData: () => Promise<void>;
 }
 
 const MemberContext = createContext<MemberContextType | undefined>(undefined);
@@ -47,18 +76,66 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   const [isBookingCancelOpen, setIsBookingCancelOpen] = useState(false);
   const [slotToCancel, setSlotToCancel] = useState<BookingSlot | null>(null);
 
-  // Initialisation des réservations Small Group
-  const [userBookings, setUserBookings] = useState<BookingSlot[]>([
-    {
-      id: "booking-1",
-      discipline: "Kick Boxing",
-      sessionType: "Small Group",
-      day: "Mardi",
-      time: "18:00",
-      level: "Fondamentaux",
-      status: "Réservation confirmée",
-    },
-  ]);
+  const [hasSmallGroupAccess, setHasSmallGroupAccess] = useState(true);
+  const [hasCollectiveAccess, setHasCollectiveAccess] = useState(true);
+  const [planName, setPlanName] = useState("");
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Sessions disponibles et Réservations réelles depuis Supabase
+  const [availableSessions, setAvailableSessions] = useState<ClassSession[]>([]);
+  const [userBookings, setUserBookings] = useState<BookingSlot[]>([]);
+
+  const supabase = createClient();
+
+  const refreshMemberData = useCallback(async () => {
+    try {
+      setIsLoadingData(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      // 1. Récupération des droits d'accès
+      const access = await getMemberPlanAccess(supabase, user.id);
+      if (access.hasActiveSubscription) {
+        setHasSmallGroupAccess(access.hasSmallGroupAccess);
+        setHasCollectiveAccess(access.hasCollectiveAccess);
+        setPlanName(access.planName || "");
+      }
+
+      // 2. Récupération des sessions actives de cours
+      const sessions = await getActiveClassSessions(supabase);
+      setAvailableSessions(sessions);
+
+      // 3. Récupération des réservations réelles de l'utilisateur
+      const realBookings = await getMemberUpcomingBookings(supabase, user.id);
+      setUserBookings(
+        realBookings.map((b) => ({
+          id: b.id,
+          discipline: b.discipline,
+          sessionType: b.sessionType,
+          day: b.day,
+          time: b.time,
+          date: b.date,
+          level: b.level,
+          status: b.status,
+          classSessionId: b.class_session_id || undefined,
+        }))
+      );
+    } catch (err) {
+      console.error("Erreur lors de l'actualisation des données membre :", err);
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    refreshMemberData();
+  }, [refreshMemberData]);
 
   const openQuickAction = () => setIsQuickActionOpen(true);
   const closeQuickAction = () => setIsQuickActionOpen(false);
@@ -83,19 +160,50 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     setSlotToCancel(null);
   };
 
-  const addBooking = (slot: BookingSlot) => {
-    const newBooking: BookingSlot = {
-      ...slot,
-      id: `booking-${Date.now()}`,
-      status: "Réservation confirmée",
-    };
-    setUserBookings((prev) => [newBooking, ...prev]);
+  // Réservation via la fonction RPC Supabase create_small_group_booking (AUCUN FALLBACK LOCAL)
+  const bookSmallGroup = async (slot: BookingSlot) => {
+    let targetSessionId = slot.classSessionId;
+
+    // Si le slot n'a pas encore de classSessionId, chercher la correspondance dans availableSessions
+    if (!targetSessionId && availableSessions.length > 0) {
+      const match = availableSessions.find(
+        (s) =>
+          s.name.toLowerCase() === slot.discipline.toLowerCase() &&
+          s.type === "small_group"
+      );
+      if (match) {
+        targetSessionId = match.id;
+      }
+    }
+
+    if (!targetSessionId) {
+      console.error("Impossible de réserver : aucun identifiant class_session_id disponible.");
+      return {
+        success: false,
+        error: "Aucune séance correspondante trouvée dans la base de données (public.class_sessions).",
+      };
+    }
+
+    const res = await apiBookSmallGroup(supabase, targetSessionId);
+
+    if (res.success) {
+      await refreshMemberData();
+      return { success: true };
+    }
+
+    return { success: false, error: res.error };
   };
 
-  const removeBooking = (idOrTime: string) => {
-    setUserBookings((prev) =>
-      prev.filter((b) => b.id !== idOrTime && `${b.day}-${b.time}` !== idOrTime)
-    );
+  // Annulation via la fonction RPC Supabase cancel_small_group_booking
+  const cancelSmallGroup = async (bookingId: string) => {
+    const res = await apiCancelSmallGroup(supabase, bookingId);
+
+    if (res.success) {
+      await refreshMemberData();
+      return { success: true };
+    }
+
+    return { success: false, error: res.error };
   };
 
   return (
@@ -112,9 +220,15 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         slotToCancel,
         openBookingCancel,
         closeBookingCancel,
+        hasSmallGroupAccess,
+        hasCollectiveAccess,
+        planName,
+        isLoadingData,
+        availableSessions,
         userBookings,
-        addBooking,
-        removeBooking,
+        bookSmallGroup,
+        cancelSmallGroup,
+        refreshMemberData,
       }}
     >
       {children}

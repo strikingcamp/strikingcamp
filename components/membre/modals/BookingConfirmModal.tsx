@@ -2,30 +2,39 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle, Calendar, Clock, Award, ShieldCheck, Loader2 } from "lucide-react";
+import { X, CheckCircle, Calendar, Clock, Award, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 import { useMember } from "../MemberContext";
 
 export default function BookingConfirmModal() {
-  const { isBookingConfirmOpen, selectedSlot, closeBookingConfirm, addBooking } = useMember();
+  const { isBookingConfirmOpen, selectedSlot, closeBookingConfirm, bookSmallGroup } = useMember();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!selectedSlot && !isSuccess) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (!selectedSlot) return;
+
     setIsLoading(true);
-    setTimeout(() => {
-      if (selectedSlot) {
-        addBooking(selectedSlot);
-      }
+    setError(null);
+
+    const result = await bookSmallGroup(selectedSlot);
+
+    if (!result.success) {
+      setError(result.error || "Impossible de réserver ce cours.");
       setIsLoading(false);
-      setIsSuccess(true);
-    }, 600);
+      return;
+    }
+
+    setIsLoading(false);
+    setIsSuccess(true);
   };
 
   const handleClose = () => {
     setIsSuccess(false);
     setIsLoading(false);
+    setError(null);
     closeBookingConfirm();
   };
 
@@ -123,6 +132,14 @@ export default function BookingConfirmModal() {
                     </div>
                   )}
                 </div>
+
+                {/* Message d'erreur */}
+                {error && (
+                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-300 flex items-center gap-2">
+                    <AlertCircle size={15} className="text-red-400 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
