@@ -197,6 +197,22 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     const res = await apiBookSmallGroup(supabase, targetSessionId);
 
     if (res.success) {
+      // Déclenchement asynchrone de l'email sans bloquer l'UI
+      fetch("/api/bookings/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "booking",
+          classSessionId: targetSessionId,
+          slotInfo: {
+            discipline: slot.discipline,
+            sessionType: slot.sessionType,
+            date: slot.date,
+            time: slot.time,
+          },
+        }),
+      }).catch((err) => console.warn("[Notify] Erreur envoi email réservation :", err));
+
       await refreshMemberData();
       return { success: true };
     }
@@ -206,9 +222,30 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
   // Annulation via la fonction RPC Supabase cancel_small_group_booking
   const cancelSmallGroup = async (bookingId: string) => {
+    const cancelledSlot = userBookings.find((b) => b.id === bookingId) || slotToCancel;
+
     const res = await apiCancelSmallGroup(supabase, bookingId);
 
     if (res.success) {
+      // Déclenchement asynchrone de l'email d'annulation sans bloquer l'UI
+      fetch("/api/bookings/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "cancellation",
+          bookingId,
+          classSessionId: cancelledSlot?.classSessionId,
+          slotInfo: cancelledSlot
+            ? {
+                discipline: cancelledSlot.discipline,
+                sessionType: cancelledSlot.sessionType,
+                date: cancelledSlot.date,
+                time: cancelledSlot.time,
+              }
+            : undefined,
+        }),
+      }).catch((err) => console.warn("[Notify] Erreur envoi email annulation :", err));
+
       await refreshMemberData();
       return { success: true };
     }

@@ -22,6 +22,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [isLinkExpired, setIsLinkExpired] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -48,7 +49,20 @@ export default function ResetPasswordPage() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // 3. Délai de garde : si aucune session n'est détectée après 5s, déclarer le lien expiré
+    const timer = setTimeout(() => {
+      setSessionReady((ready) => {
+        if (!ready) {
+          setIsLinkExpired(true);
+        }
+        return ready;
+      });
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -69,7 +83,7 @@ export default function ResetPasswordPage() {
 
     const supabase = createClient();
 
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { data: updateData, error: updateError } = await supabase.auth.updateUser({ password });
 
     if (updateError) {
       setError("Impossible de mettre à jour le mot de passe. Veuillez réessayer.");
@@ -78,9 +92,17 @@ export default function ResetPasswordPage() {
     }
 
     setSuccess(true);
+    const role = (
+      updateData.user?.app_metadata?.role ||
+      updateData.user?.user_metadata?.role ||
+      ""
+    ).toUpperCase();
+
+    const destination = role === "ADMIN" ? "/admin" : "/membre";
+
     setTimeout(() => {
-      router.push("/membre");
-    }, 2500);
+      router.push(destination);
+    }, 2000);
   }
 
   if (success) {
@@ -132,7 +154,23 @@ export default function ResetPasswordPage() {
 
         {/* Formulaire */}
         <div className="bg-brand-white/5 border border-brand-white/10 rounded-sm p-8">
-          {!sessionReady ? (
+          {isLinkExpired && !sessionReady ? (
+            <div className="text-center space-y-4 py-2">
+              <AlertCircle size={36} className="text-amber-400 mx-auto" />
+              <h3 className="text-base font-heading font-bold uppercase text-brand-white">
+                Lien expiré ou invalide
+              </h3>
+              <p className="text-xs text-brand-white/60 leading-relaxed max-w-xs mx-auto">
+                Ce lien de réinitialisation est expiré ou a déjà été utilisé. Veuillez faire une nouvelle demande.
+              </p>
+              <Link
+                href="/mot-de-passe-oublie"
+                className="inline-block mt-2 px-5 py-2.5 bg-brand-blue text-brand-black font-semibold text-xs uppercase tracking-wider rounded-sm hover:bg-brand-white transition-colors"
+              >
+                Demander un nouveau lien
+              </Link>
+            </div>
+          ) : !sessionReady ? (
             <div className="flex items-center justify-center gap-2 text-brand-white/40 text-sm py-4">
               <Loader2 size={16} className="animate-spin" />
               Vérification du lien…

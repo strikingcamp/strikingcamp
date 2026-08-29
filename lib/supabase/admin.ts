@@ -1441,33 +1441,8 @@ export async function getAdminMembersData(
  * - En local : http://localhost:3000
  * - En production : https://strikingcamp.com (ou NEXT_PUBLIC_SITE_URL sur Vercel)
  */
-export function getAuthRedirectUrl(path: string = "/reset-password"): string {
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
-  // 1. Variable d'environnement prioritaire (Vercel ou .env)
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    const base = process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
-    return `${base}${cleanPath}`;
-  }
-
-  // 2. Environnement de production Vercel
-  if (process.env.VERCEL_ENV === "production") {
-    return `https://strikingcamp.com${cleanPath}`;
-  }
-
-  // 3. Prévisualisation Vercel (Preview deployments)
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}${cleanPath}`;
-  }
-
-  // 4. Mode Node production
-  if (process.env.NODE_ENV === "production") {
-    return `https://strikingcamp.com${cleanPath}`;
-  }
-
-  // 5. Environnement local de développement
-  return `http://localhost:3000${cleanPath}`;
-}
+import { getAuthRedirectUrl } from "@/lib/auth-helpers";
+export { getAuthRedirectUrl };
 
 /**
  * Crée un nouveau membre orchestré (Auth -> Profile -> Subscription)

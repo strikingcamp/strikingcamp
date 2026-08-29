@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthRedirectUrl } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
 import { Loader2, Mail, Lock, User, Phone, CheckSquare, Square, AlertCircle, CheckCircle } from "lucide-react";
 
@@ -74,8 +75,8 @@ export default function InscriptionPage() {
           phone: phone.trim(),
           role: "CLIENT", // Rôle par défaut (prêt pour CLIENT | COACH | ADMIN)
         },
-        // URL de redirection après confirmation email
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // URL de redirection canonique après confirmation email
+        emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
       },
     });
 
