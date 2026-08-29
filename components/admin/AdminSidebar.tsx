@@ -54,7 +54,7 @@ const navItems = [
     icon: Layers,
   },
   {
-    label: "Événements & Stages",
+    label: "Événements",
     href: "/admin/evenements",
     icon: Sparkles,
   },

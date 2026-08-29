@@ -3,7 +3,7 @@ export const siteData = {
     name: "Striking Camp",
     description: "Un entraînement exigeant, une méthode précise, une culture du combat.",
     location: "Marseille",
-    disciplines: "Kickboxing & Muay Thai",
+    disciplines: "Boxe Anglaise, Kickboxing & Muay Thai",
     copyright: "© 2026 Striking Camp. Tous droits réservés."
   },
   contact: {

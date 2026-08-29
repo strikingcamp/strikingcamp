@@ -6,9 +6,15 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 const disciplines = [
   {
+    title: "BOXE ANGLAISE",
+    shortDescription: "La Boxe Anglaise, le noble art par excellence, axé sur la précision des poings, la mobilité et la stratégie de combat.",
+    fullDescription: "La Boxe Anglaise développe l'art de frapper sans être touché. L'entraînement met l'accent sur le jeu de jambes, les esquives rotatives et axiales, la gestion de la distance, la vitesse de réaction et la précision des combinaisons. Chaque session combine apprentissage technique, travail aux paos, sac de frappe et sparring dirigé.",
+    image: "/boxe.webp"
+  },
+  {
     title: "BOXING BAG",
-    shortDescription: "Le cours de Boxing Bag se concentre sur les fondamentaux de la boxe anglaise et les techniques avancées.",
-    fullDescription: "Le cours de Boxing Bag se concentre sur les fondamentaux de la boxe anglaise et les techniques avancées. Vous apprendrez à perfectionner votre jeu de jambes, vos esquives, votre head movement et vos combinaisons de coups. Chaque séance inclut du travail au sac, avec le coach et du sparring à thème pour une mise en application contrôlée.",
+    shortDescription: "Le cours de Boxing Bag se concentre sur les fondamentaux de la frappe au sac et les techniques avancées.",
+    fullDescription: "Le cours de Boxing Bag se concentre sur les fondamentaux de la boxe et les techniques avancées. Vous apprendrez à perfectionner votre jeu de jambes, vos esquives, votre head movement et vos combinaisons de coups. Chaque séance inclut du travail au sac, avec le coach et du sparring à thème pour une mise en application contrôlée.",
     image: "/sacSalle.jpg"
   },
   {

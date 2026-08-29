@@ -1,26 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthRedirectUrl } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, User, Phone, CheckSquare, Square, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, Mail, Lock, User, Phone, CheckSquare, Square, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
 
-/**
- * Page d'inscription — /inscription
- *
- * Crée un compte Supabase avec :
- * - Prénom (first_name)
- * - Nom (last_name)
- * - Téléphone (phone)
- * - Email (email)
- * - Mot de passe (password)
- * - Confirmation de mot de passe
- * - Acceptation des CGU
- * - Rôle par défaut : CLIENT (dans raw_user_meta_data)
- */
-export default function InscriptionPage() {
+function InscriptionForm() {
+  const searchParams = useSearchParams();
+  const planParam = searchParams.get("plan");
+  const categoryParam = searchParams.get("category");
+  const commitmentParam = searchParams.get("commitment");
+  const priceParam = searchParams.get("price");
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -31,6 +25,9 @@ export default function InscriptionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Engagement label
+  const commitmentLabel = commitmentParam === "annual" ? "Engagement 12 mois" : commitmentParam === "monthly" ? "Sans engagement (1 mois)" : "";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -74,6 +71,9 @@ export default function InscriptionPage() {
           last_name: lastName.trim(),
           phone: phone.trim(),
           role: "CLIENT", // Rôle par défaut (prêt pour CLIENT | COACH | ADMIN)
+          selected_plan: planParam || undefined,
+          selected_category: categoryParam || undefined,
+          selected_commitment: commitmentParam || undefined,
         },
         // URL de redirection canonique après confirmation email
         emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
@@ -152,6 +152,40 @@ export default function InscriptionPage() {
             Rejoignez l&apos;espace membres Striking Camp
           </p>
         </div>
+
+        {/* Bannière Formule Sélectionnée */}
+        {categoryParam && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-[#00d8ff]/10 border border-[#00d8ff]/30 rounded-lg p-4 flex items-center justify-between gap-3 shadow-lg shadow-[#00d8ff]/5"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] flex items-center justify-center shrink-0">
+                <Sparkles size={16} />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-brand-white/50 tracking-wider block">
+                  Formule sélectionnée
+                </span>
+                <p className="text-sm font-heading font-bold uppercase text-white">
+                  {categoryParam} {priceParam ? `• ${priceParam}€ / mois` : ""}
+                </p>
+                {commitmentLabel && (
+                  <span className="text-[11px] text-[#00d8ff] font-medium block">
+                    {commitmentLabel}
+                  </span>
+                )}
+              </div>
+            </div>
+            <Link
+              href="/tarifs"
+              className="text-[11px] font-bold text-gray-300 hover:text-white underline underline-offset-2 shrink-0"
+            >
+              Modifier
+            </Link>
+          </motion.div>
+        )}
 
         {/* Formulaire */}
         <div className="bg-brand-white/5 border border-brand-white/10 rounded-sm p-8">
@@ -370,7 +404,7 @@ export default function InscriptionPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-blue text-brand-black font-semibold text-sm uppercase tracking-wide py-3 rounded-sm hover:bg-brand-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
+              className="w-full bg-brand-blue text-brand-black font-semibold text-sm uppercase tracking-wide py-3 rounded-sm hover:bg-brand-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -388,7 +422,7 @@ export default function InscriptionPage() {
         <p className="text-center mt-6 text-brand-white/40 text-sm">
           Déjà membre ?{" "}
           <Link
-            href="/connexion"
+            href={`/connexion${categoryParam ? `?plan=${encodeURIComponent(planParam || "")}&category=${encodeURIComponent(categoryParam || "")}` : ""}`}
             className="text-brand-blue hover:text-brand-white transition-colors font-medium"
           >
             Se connecter
@@ -396,5 +430,13 @@ export default function InscriptionPage() {
         </p>
       </motion.div>
     </section>
+  );
+}
+
+export default function InscriptionPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-brand-white/40 text-sm">Chargement…</div>}>
+      <InscriptionForm />
+    </Suspense>
   );
 }
