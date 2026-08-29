@@ -37,3 +37,28 @@ export async function createClient() {
     }
   );
 }
+
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Crée un client Supabase avec la clé service_role (Admin Privileged Client).
+ * ⚠️ STRICTEMENT RÉSERVÉ AU SERVEUR (Server Actions, Route Handlers).
+ * Ne JAMAIS exporter ni appeler côté client.
+ */
+export function createAdminClient(): SupabaseClient {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
+  if (!serviceRoleKey) {
+    throw new Error(
+      "La variable d'environnement SUPABASE_SERVICE_ROLE_KEY n'est pas configurée dans .env.local"
+    );
+  }
+
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}

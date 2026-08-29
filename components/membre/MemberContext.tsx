@@ -21,7 +21,7 @@ import {
 export type BookingSlot = {
   id?: string;
   discipline: string;
-  sessionType: "Small Group" | "Collectifs";
+  sessionType: "Cours Privé" | "Small Group" | "Collectifs";
   day: string;
   time: string;
   level?: string;
@@ -49,9 +49,13 @@ interface MemberContextType {
   closeBookingCancel: () => void;
 
   // Member Subscription Rights
+  hasActiveSubscription: boolean;
+  hasPrivateAccess: boolean;
   hasSmallGroupAccess: boolean;
   hasCollectiveAccess: boolean;
   planName: string;
+  activePlanNames: string[];
+  privateSessionsQuota: number | null;
   isLoadingData: boolean;
 
   // Available sessions in database
@@ -76,9 +80,13 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   const [isBookingCancelOpen, setIsBookingCancelOpen] = useState(false);
   const [slotToCancel, setSlotToCancel] = useState<BookingSlot | null>(null);
 
-  const [hasSmallGroupAccess, setHasSmallGroupAccess] = useState(true);
-  const [hasCollectiveAccess, setHasCollectiveAccess] = useState(true);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [hasPrivateAccess, setHasPrivateAccess] = useState(false);
+  const [hasSmallGroupAccess, setHasSmallGroupAccess] = useState(false);
+  const [hasCollectiveAccess, setHasCollectiveAccess] = useState(false);
   const [planName, setPlanName] = useState("");
+  const [activePlanNames, setActivePlanNames] = useState<string[]>([]);
+  const [privateSessionsQuota, setPrivateSessionsQuota] = useState<number | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Sessions disponibles et Réservations réelles depuis Supabase
@@ -99,13 +107,15 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 1. Récupération des droits d'accès
+      // 1. Récupération des droits d'accès cumulés
       const access = await getMemberPlanAccess(supabase, user.id);
-      if (access.hasActiveSubscription) {
-        setHasSmallGroupAccess(access.hasSmallGroupAccess);
-        setHasCollectiveAccess(access.hasCollectiveAccess);
-        setPlanName(access.planName || "");
-      }
+      setHasActiveSubscription(access.hasActiveSubscription);
+      setHasPrivateAccess(access.hasPrivateAccess);
+      setHasSmallGroupAccess(access.hasSmallGroupAccess);
+      setHasCollectiveAccess(access.hasCollectiveAccess);
+      setPlanName(access.planName || "");
+      setActivePlanNames(access.activePlanNames || []);
+      setPrivateSessionsQuota(access.privateSessionsQuota ?? null);
 
       // 2. Récupération des sessions actives de cours
       const sessions = await getActiveClassSessions(supabase);
@@ -168,7 +178,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     if (!targetSessionId && availableSessions.length > 0) {
       const match = availableSessions.find(
         (s) =>
-          s.name.toLowerCase() === slot.discipline.toLowerCase() &&
+          s.discipline.toLowerCase() === slot.discipline.toLowerCase() &&
           s.type === "small_group"
       );
       if (match) {
@@ -220,9 +230,13 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         slotToCancel,
         openBookingCancel,
         closeBookingCancel,
+        hasActiveSubscription,
+        hasPrivateAccess,
         hasSmallGroupAccess,
         hasCollectiveAccess,
         planName,
+        activePlanNames,
+        privateSessionsQuota,
         isLoadingData,
         availableSessions,
         userBookings,

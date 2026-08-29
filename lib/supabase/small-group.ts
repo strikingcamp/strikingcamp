@@ -1,21 +1,26 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { computeCumulativeAccess, type CumulativeMemberAccess } from "@/lib/access-control";
 
 export interface MemberPlanAccess {
   hasActiveSubscription: boolean;
   hasSmallGroupAccess: boolean;
   hasCollectiveAccess: boolean;
+  hasPrivateAccess: boolean;
+  privateSessionsQuota?: number | null;
   planName?: string;
   planType?: string;
+  activePlanNames?: string[];
+  validSubscriptionsCount?: number;
 }
 
 export interface ClassSession {
   id: string;
-  name: string;
+  discipline: string;
   type?: string | null;
   level?: string | null;
   starts_at: string;
   ends_at?: string | null;
-  capacity?: number | null;
+  max_capacity?: number | null;
   is_active?: boolean | null;
 }
 
@@ -24,7 +29,7 @@ export interface SmallGroupBooking {
   user_id: string;
   class_session_id?: string | null;
   discipline: string;
-  sessionType: "Small Group" | "Collectifs";
+  sessionType: "Cours Privé" | "Small Group" | "Collectifs";
   day: string;
   time: string;
   level?: string;
@@ -59,27 +64,21 @@ const MONTH_NAMES_FR = [
   "Décembre",
 ];
 
-function unwrapSingle<T>(val: T | T[] | null | undefined): T | null {
-  if (!val) return null;
-  if (Array.isArray(val)) return val.length > 0 ? val[0] : null;
-  return val;
-}
-
 /**
- * Récupère le type d'abonnement actif du membre pour déterminer ses droits d'accès
+ * Récupère l'ensemble des abonnements actifs du membre pour déterminer ses droits d'accès cumulés.
  */
 export async function getMemberPlanAccess(
   supabase: SupabaseClient,
   userId: string
 ): Promise<MemberPlanAccess> {
-  const { data, error } = await supabase
+  const { data: subscriptionsData, error } = await supabase
     .from("subscriptions")
-    .select("id, status, started_at, plan:plans(id, name, code, type, is_active)")
+    .select(
+      "id, status, started_at, ends_at, private_sessions_quota, plan:plans(id, name, type, commitment, allows_private, allows_small_group, allows_collective)"
+    )
     .eq("user_id", userId)
     .eq("status", "active")
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("started_at", { ascending: false });
 
   if (error) {
     console.error("Erreur récupération formule membre :", {
@@ -92,32 +91,29 @@ export async function getMemberPlanAccess(
       hasActiveSubscription: false,
       hasSmallGroupAccess: false,
       hasCollectiveAccess: false,
+      hasPrivateAccess: false,
+      privateSessionsQuota: null,
+      activePlanNames: [],
+      validSubscriptionsCount: 0,
     };
   }
 
-  if (!data || !data.plan) {
-    return {
-      hasActiveSubscription: false,
-      hasSmallGroupAccess: false,
-      hasCollectiveAccess: false,
-    };
-  }
+  const cumulative: CumulativeMemberAccess = computeCumulativeAccess(subscriptionsData || []);
 
-  const rawPlan = unwrapSingle(data.plan);
-  const planType = (rawPlan?.type || "").toLowerCase();
-  const planName = rawPlan?.name || "";
-
-  // Un membre small_group a accès aux Small Group ET aux Collectifs
-  const isSmallGroup = planType === "small_group" || planName.toLowerCase().includes("small group");
-  // Tout abonnement actif donne accès aux cours Collectifs
-  const isCollective = isSmallGroup || planType === "collective" || planName.toLowerCase().includes("collectif");
+  const primaryPlanName =
+    cumulative.activePlanNames.length > 0
+      ? cumulative.activePlanNames.join(" + ")
+      : undefined;
 
   return {
-    hasActiveSubscription: true,
-    hasSmallGroupAccess: isSmallGroup,
-    hasCollectiveAccess: isCollective,
-    planName,
-    planType,
+    hasActiveSubscription: cumulative.hasActiveSubscription,
+    hasSmallGroupAccess: cumulative.hasSmallGroupAccess,
+    hasCollectiveAccess: cumulative.hasCollectiveAccess,
+    hasPrivateAccess: cumulative.hasPrivateAccess,
+    privateSessionsQuota: cumulative.privateSessionsQuota,
+    planName: primaryPlanName,
+    activePlanNames: cumulative.activePlanNames,
+    validSubscriptionsCount: cumulative.validSubscriptionsCount,
   };
 }
 
@@ -165,7 +161,7 @@ export async function getMemberUpcomingBookings(
   if (sessionIds.length > 0) {
     const { data: sessions, error: sessionsError } = await supabase
       .from("class_sessions")
-      .select("id, name, type, level, starts_at, ends_at, capacity, is_active")
+      .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
       .in("id", sessionIds);
 
     if (sessionsError) {
@@ -207,16 +203,29 @@ export async function getMemberUpcomingBookings(
       }
     }
 
+    const rawType = (session?.type || "").toLowerCase().trim();
+    const isPrivate =
+      rawType === "private" ||
+      rawType === "prive" ||
+      (session?.discipline || "").toLowerCase().includes("privé") ||
+      (session?.discipline || "").toLowerCase().includes("prive");
+    const isCollective = rawType === "collective" || rawType === "collectif";
+    const sessionType: "Cours Privé" | "Small Group" | "Collectifs" = isPrivate
+      ? "Cours Privé"
+      : isCollective
+      ? "Collectifs"
+      : "Small Group";
+
     result.push({
       id: b.id,
       user_id: b.user_id,
       class_session_id: b.class_session_id,
-      discipline: session?.name || "Small Group",
-      sessionType: "Small Group",
+      discipline: session?.discipline || (isPrivate ? "Cours Privé" : "Small Group"),
+      sessionType,
       day: dayFormatted,
       time: timeFormatted,
       date: dateFormatted,
-      level: session?.level || "Fondamentaux",
+      level: session?.level || "Tous niveaux",
       status: "Réservation confirmée",
       created_at: b.created_at,
       class_session: session || null,
@@ -234,7 +243,7 @@ export async function getActiveClassSessions(
 ): Promise<ClassSession[]> {
   const { data, error } = await supabase
     .from("class_sessions")
-    .select("id, name, type, level, starts_at, ends_at, capacity, is_active")
+    .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
     .order("starts_at", { ascending: true });
 
   if (error) {

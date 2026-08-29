@@ -160,7 +160,7 @@ export default function AdminReservationsView({
   const absentCount = participants.filter((p) => p.status === "confirmed" && p.attendanceStatus === "absent").length;
   const pendingCount = participants.filter((p) => p.status === "confirmed" && p.attendanceStatus === "pending").length;
 
-  const capacity = session?.capacity || 20;
+  const capacity = session?.max_capacity || 20;
   const isSmallGroup = session?.type === "small_group" || !session?.type;
 
   const handleSessionChange = (sessionId: string) => {
@@ -223,7 +223,7 @@ export default function AdminReservationsView({
 
               return (
                 <option key={s.id} value={s.id}>
-                  {s.name.toUpperCase()} — {dayStr} {dateStr} à {sH}:{sM} ({s.type === "collective" ? "Collectif" : `${s.bookedCount}/${s.capacity} inscrits`})
+                  {s.discipline.toUpperCase()} — {dayStr} {dateStr} à {sH}:{sM} ({s.type === "collective" ? "Collectif" : `${s.bookedCount}/${s.max_capacity} inscrits`})
                 </option>
               );
             })}
@@ -267,7 +267,7 @@ export default function AdminReservationsView({
               </div>
 
               <h2 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-wider text-brand-white">
-                {session.name}
+                {session.discipline}
               </h2>
 
               <div className="flex items-center gap-4 text-xs sm:text-sm text-brand-white/60 flex-wrap">

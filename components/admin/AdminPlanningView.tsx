@@ -175,7 +175,7 @@ export default function AdminPlanningView({
   const refreshSessions = async () => {
     const { data } = await supabase
       .from("class_sessions")
-      .select("id, name, type, level, starts_at, ends_at, capacity, is_active")
+      .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
       .order("starts_at", { ascending: true });
 
     if (data) {
@@ -198,12 +198,12 @@ export default function AdminPlanningView({
       setSessions(
         data.map((s) => ({
           id: s.id,
-          name: s.name,
+          discipline: s.discipline,
           type: s.type || "small_group",
           level: s.level,
           starts_at: s.starts_at,
           ends_at: s.ends_at,
-          capacity: s.capacity || 20,
+          max_capacity: s.max_capacity || 20,
           bookedCount: counts.get(s.id) || 0,
           is_active: s.is_active ?? true,
         }))
@@ -241,7 +241,7 @@ export default function AdminPlanningView({
   // Ouvrir modal d'édition
   const openEditModal = (session: AdminClassSessionSummary) => {
     setEditingSession(session);
-    setFormDiscipline(session.name);
+    setFormDiscipline(session.discipline);
     setFormType(session.type === "collective" ? "collective" : "small_group");
     setFormLevel(session.level || LEVELS_LIST[0]);
     const sDate = new Date(session.starts_at);
@@ -259,7 +259,7 @@ export default function AdminPlanningView({
       setFormEndTime(`${sH}:${sM}`);
     }
 
-    setFormCapacity(session.capacity || 20);
+    setFormCapacity(session.max_capacity || 20);
     setActionError(null);
     setActionSuccess(null);
   };
@@ -274,12 +274,12 @@ export default function AdminPlanningView({
     const endsAtISO = new Date(`${formDate}T${formEndTime}:00`).toISOString();
 
     const payload: AdminSessionFormData = {
-      name: formDiscipline,
+      discipline: formDiscipline,
       type: formType,
       level: formLevel,
       starts_at: startsAtISO,
       ends_at: endsAtISO,
-      capacity: formCapacity,
+      max_capacity: formCapacity,
       is_active: true,
     };
 
@@ -306,12 +306,12 @@ export default function AdminPlanningView({
     const endsAtISO = new Date(`${formDate}T${formEndTime}:00`).toISOString();
 
     const payload: Partial<AdminSessionFormData> = {
-      name: formDiscipline,
+      discipline: formDiscipline,
       type: formType,
       level: formLevel,
       starts_at: startsAtISO,
       ends_at: endsAtISO,
-      capacity: formCapacity,
+      max_capacity: formCapacity,
     };
 
     const res = await updateClassSessionAdmin(supabase, editingSession.id, payload);
@@ -456,7 +456,7 @@ export default function AdminPlanningView({
 
                     const fillPercentage = Math.min(
                       100,
-                      Math.round((session.bookedCount / session.capacity) * 100)
+                      Math.round((session.bookedCount / session.max_capacity) * 100)
                     );
 
                     return (
@@ -473,7 +473,7 @@ export default function AdminPlanningView({
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-1">
                             <span className="font-heading font-bold text-base uppercase text-brand-white block leading-tight">
-                              {session.name}
+                              {session.discipline}
                             </span>
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/20">
@@ -506,14 +506,14 @@ export default function AdminPlanningView({
                                 Inscrits
                               </span>
                               <span className="font-bold text-brand-white text-xs">
-                                {session.bookedCount} / {session.capacity} pers.
+                                {session.bookedCount} / {session.max_capacity} pers.
                               </span>
                             </div>
                             <div className="w-full bg-brand-white/10 h-1.5 rounded-full overflow-hidden">
                               <div
                                 className={cn(
                                   "h-full rounded-full transition-all duration-300",
-                                  session.bookedCount >= session.capacity
+                                  session.bookedCount >= session.max_capacity
                                     ? "bg-red-500"
                                     : session.bookedCount >= 15
                                     ? "bg-amber-400"

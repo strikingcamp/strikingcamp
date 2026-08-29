@@ -35,7 +35,7 @@ export default function AdminDashboardView({
 
   // Calcul du taux d'occupation moyen du jour (sur base 20 places par session Small Group)
   const totalCapacityToday = upcomingSessionsToday.reduce(
-    (acc, s) => acc + (s.capacity || 20),
+    (acc, s) => acc + (s.max_capacity || 20),
     0
   );
   const occupancyRate =
@@ -203,7 +203,7 @@ export default function AdminDashboardView({
 
                   const fillPercentage = Math.min(
                     100,
-                    Math.round((session.bookedCount / session.capacity) * 100)
+                    Math.round((session.bookedCount / session.max_capacity) * 100)
                   );
 
                   return (
@@ -214,7 +214,7 @@ export default function AdminDashboardView({
                       <div className="space-y-1">
                         <div className="flex items-center gap-2.5 flex-wrap">
                           <span className="font-heading font-bold text-base uppercase text-brand-white">
-                            {session.name}
+                            {session.discipline}
                           </span>
                           <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/20">
                             {session.type === "small_group" ? "Small Group" : "Collectif"}
@@ -232,7 +232,7 @@ export default function AdminDashboardView({
                       <div className="flex items-center gap-4">
                         <div className="w-28 text-right space-y-1">
                           <div className="text-xs font-bold text-brand-white">
-                            {session.bookedCount} / {session.capacity} pers.
+                            {session.bookedCount} / {session.max_capacity} pers.
                           </div>
                           <div className="w-full bg-brand-white/10 h-1.5 rounded-full overflow-hidden">
                             <div

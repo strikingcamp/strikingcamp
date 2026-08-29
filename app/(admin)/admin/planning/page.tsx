@@ -12,16 +12,23 @@ export default async function AdminPlanningPage() {
   // 1. Récupération de toutes les séances depuis public.class_sessions
   const { data: sessions, error } = await supabase
     .from("class_sessions")
-    .select("id, name, type, level, starts_at, ends_at, capacity, is_active")
+    .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
     .order("starts_at", { ascending: true });
 
   if (error) {
-    console.error("Erreur chargement séances admin :", {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-    });
+    console.error(
+      "Erreur chargement séances admin :",
+      JSON.stringify(
+        {
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+        },
+        null,
+        2
+      )
+    );
   }
 
   const initialSessions: AdminClassSessionSummary[] = [];
@@ -51,12 +58,12 @@ export default async function AdminPlanningPage() {
     for (const s of sessions) {
       initialSessions.push({
         id: s.id,
-        name: s.name,
+        discipline: s.discipline,
         type: s.type || "small_group",
         level: s.level,
         starts_at: s.starts_at,
         ends_at: s.ends_at,
-        capacity: s.capacity || 20,
+        max_capacity: s.max_capacity || 20,
         bookedCount: countsMap.get(s.id) || 0,
         is_active: s.is_active ?? true,
       });

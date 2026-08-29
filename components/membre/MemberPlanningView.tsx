@@ -7,7 +7,7 @@ import { useMember } from "./MemberContext";
 import { cn } from "@/lib/utils";
 import type { ClassSession } from "@/lib/supabase/small-group";
 
-type Category = "Small Group" | "Collectifs";
+type Category = "Cours Privés" | "Small Group" | "Collectifs";
 type DayName = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
 type DayFilter = "Tous" | DayName;
 
@@ -55,7 +55,10 @@ export default function MemberPlanningView() {
   const {
     openBookingConfirm,
     userBookings,
+    hasPrivateAccess,
     hasSmallGroupAccess,
+    hasCollectiveAccess,
+    privateSessionsQuota,
     availableSessions,
   } = useMember();
 
@@ -111,10 +114,26 @@ export default function MemberPlanningView() {
       const sTime = sDate.getTime();
 
       if (sTime >= monTime && sTime <= sunTime) {
-        const isSmallGroup = s.type === "small_group" || s.type === "smallgroup" || !s.type;
-        const isCollective = s.type === "collective" || s.type === "collectif";
+        const rawType = (s.type || "").toLowerCase().trim();
+        const rawDisc = (s.discipline || "").toLowerCase().trim();
+
+        const isPrivate =
+          rawType === "private" ||
+          rawType === "prive" ||
+          rawDisc.includes("privé") ||
+          rawDisc.includes("prive");
+
+        const isCollective =
+          rawType === "collective" ||
+          rawType === "collectif";
+
+        const isSmallGroup =
+          rawType === "small_group" ||
+          rawType === "smallgroup" ||
+          (!rawType && !isPrivate && !isCollective);
 
         if (
+          (activeCategory === "Cours Privés" && isPrivate) ||
           (activeCategory === "Small Group" && isSmallGroup) ||
           (activeCategory === "Collectifs" && isCollective)
         ) {
@@ -144,12 +163,22 @@ export default function MemberPlanningView() {
 
   // Gestion du clic de réservation
   const handleBookSession = (session: ClassSession, dayName: string, timeFormatted: string) => {
-    if (!hasSmallGroupAccess) return;
     if (session.is_active === false) return;
 
+    const rawType = (session.type || "").toLowerCase().trim();
+    const rawDisc = (session.discipline || "").toLowerCase().trim();
+    const isPrivate =
+      rawType === "private" ||
+      rawType === "prive" ||
+      rawDisc.includes("privé") ||
+      rawDisc.includes("prive");
+
+    if (isPrivate && !hasPrivateAccess) return;
+    if (!isPrivate && !hasSmallGroupAccess) return;
+
     openBookingConfirm({
-      discipline: session.name,
-      sessionType: "Small Group",
+      discipline: session.discipline,
+      sessionType: isPrivate ? "Cours Privé" : "Small Group",
       day: dayName,
       time: timeFormatted,
       level: session.level || "Tous niveaux",
@@ -170,7 +199,7 @@ export default function MemberPlanningView() {
           Planning des cours
         </h1>
         <p className="text-xs sm:text-sm text-brand-white/50">
-          Consultez les créneaux officiels de la semaine et réservez vos séances Small Group.
+          Consultez les créneaux officiels de la semaine et réservez vos séances selon votre formule.
         </p>
       </div>
 
@@ -204,65 +233,116 @@ export default function MemberPlanningView() {
         </button>
       </div>
 
-      {/* Category Tabs: SMALL GROUP vs COLLECTIFS */}
-      <div className="bg-[#0f172a] p-1 rounded-xl border border-brand-white/10 flex">
+      {/* Category Tabs: COURS PRIVÉS vs SMALL GROUP vs COLLECTIFS */}
+      <div className="bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid grid-cols-1 sm:grid-cols-3 gap-1.5 shadow-lg shadow-black/20">
+        {/* Onglet 1: Cours Privés */}
+        <button
+          onClick={() => {
+            setActiveCategory("Cours Privés");
+            setActiveDay("Tous");
+          }}
+          className={cn(
+            "py-2.5 px-3 rounded-xl font-heading font-bold text-xs sm:text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+            activeCategory === "Cours Privés"
+              ? "bg-amber-400 text-brand-black shadow-md shadow-amber-400/20 font-black"
+              : "text-amber-400/80 hover:text-amber-400 hover:bg-amber-400/10"
+          )}
+        >
+          <ShieldCheck size={15} />
+          COURS PRIVÉS (INDIVIDUEL)
+        </button>
+
+        {/* Onglet 2: Small Group */}
         <button
           onClick={() => {
             setActiveCategory("Small Group");
             setActiveDay("Tous");
           }}
           className={cn(
-            "flex-1 py-3 px-4 rounded-lg font-heading font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+            "py-2.5 px-3 rounded-xl font-heading font-bold text-xs sm:text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
             activeCategory === "Small Group"
-              ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20"
-              : "text-brand-white/60 hover:text-brand-white"
+              ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20 font-black"
+              : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
           )}
         >
-          <Users size={16} />
+          <Users size={15} />
           SMALL GROUP (20 PLACES)
         </button>
 
+        {/* Onglet 3: Collectifs */}
         <button
           onClick={() => {
             setActiveCategory("Collectifs");
             setActiveDay("Tous");
           }}
           className={cn(
-            "flex-1 py-3 px-4 rounded-lg font-heading font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+            "py-2.5 px-3 rounded-xl font-heading font-bold text-xs sm:text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
             activeCategory === "Collectifs"
-              ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20"
-              : "text-brand-white/60 hover:text-brand-white"
+              ? "bg-emerald-500 text-brand-black shadow-md shadow-emerald-500/20 font-black"
+              : "text-emerald-400/80 hover:text-emerald-400 hover:bg-emerald-500/10"
           )}
         >
-          <Calendar size={16} />
+          <Calendar size={15} />
           COLLECTIFS (ACCÈS LIBRE)
         </button>
       </div>
 
-      {/* Notice Banner */}
-      {activeCategory === "Small Group" ? (
+      {/* Notice Banner Contextuelle */}
+      {activeCategory === "Cours Privés" ? (
+        hasPrivateAccess ? (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-300">
+            <div className="flex items-center gap-3">
+              <ShieldCheck size={18} className="shrink-0 text-amber-400" />
+              <span>
+                <strong>Cours Privé (séance individuelle) :</strong> Réservation de vos créneaux privés avec votre coach.
+              </span>
+            </div>
+            {typeof privateSessionsQuota === "number" && (
+              <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 whitespace-nowrap self-start sm:self-auto">
+                {privateSessionsQuota} séance{privateSessionsQuota > 1 ? "s" : ""} incluse{privateSessionsQuota > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 flex items-center gap-3 text-xs text-amber-300">
+            <Lock size={18} className="shrink-0 text-amber-400" />
+            <span>
+              <strong>Accès Cours Privé non inclus :</strong> Pour réserver des séances individuelles avec votre coach, souscrivez à une formule <strong>Cours Privé (Mensuel ou Annuel)</strong>.
+            </span>
+          </div>
+        )
+      ) : activeCategory === "Small Group" ? (
         hasSmallGroupAccess ? (
-          <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-lg p-3.5 flex items-center gap-3 text-xs text-brand-blue">
+          <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-xl p-3.5 flex items-center gap-3 text-xs text-brand-blue">
             <ShieldCheck size={18} className="shrink-0" />
             <span>
               <strong>Small Group (capacité max 20 pers.) :</strong> Réservation requise pour garantir votre place. Cliquez sur <strong>RÉSERVER</strong>.
             </span>
           </div>
         ) : (
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 flex items-center gap-3 text-xs text-amber-300">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 flex items-center gap-3 text-xs text-amber-300">
             <Lock size={18} className="shrink-0 text-amber-400" />
             <span>
-              <strong>Formule Collectif :</strong> Votre formule actuelle vous donne accès libre aux cours Collectifs. Pour réserver des créneaux Small Group, souscrivez à la formule Small Group.
+              <strong>Accès Small Group non inclus :</strong> Votre formule actuelle donne accès libre aux cours Collectifs. Pour réserver des créneaux Small Group, vous devez disposer d&apos;une formule <strong>Small Group</strong> ou <strong>Cours Privé</strong> active.
             </span>
           </div>
         )
       ) : (
-        <div className="bg-brand-white/5 border border-brand-white/10 rounded-lg p-3.5 flex items-center gap-3 text-xs text-brand-white/70">
-          <Info size={18} className="shrink-0 text-brand-white/50" />
-          <span>
-            <strong>Cours Collectifs :</strong> En accès libre pour tous les membres actifs du club. Aucune réservation nécessaire.
-          </span>
-        </div>
+        hasCollectiveAccess ? (
+          <div className="bg-brand-white/5 border border-brand-white/10 rounded-xl p-3.5 flex items-center gap-3 text-xs text-brand-white/70">
+            <Info size={18} className="shrink-0 text-brand-white/50" />
+            <span>
+              <strong>Cours Collectifs :</strong> En accès libre pour tous les membres actifs du club. Aucune réservation nécessaire.
+            </span>
+          </div>
+        ) : (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 flex items-center gap-3 text-xs text-amber-300">
+            <Lock size={18} className="shrink-0 text-amber-400" />
+            <span>
+              <strong>Abonnement actif requis :</strong> Souscrivez à une formule Striking Camp active pour accéder aux cours collectifs.
+            </span>
+          </div>
+        )
       )}
 
       {/* Days Filter */}
@@ -369,7 +449,7 @@ export default function MemberPlanningView() {
                                   isCancelled ? "text-brand-white/50 line-through" : "text-brand-white"
                                 )}
                               >
-                                {session.name}
+                                {session.discipline}
                               </span>
                               {session.level && (
                                 <span
@@ -394,6 +474,11 @@ export default function MemberPlanningView() {
                                 <Clock size={13} />
                                 {timeStr}
                               </span>
+                              {activeCategory === "Cours Privés" && (
+                                <span className="text-amber-400/80 font-medium">
+                                  • Séance individuelle avec coach
+                                </span>
+                              )}
                               {activeCategory === "Small Group" && (
                                 <span className="text-brand-white/40">
                                   • Effectif max 20 pers.
@@ -403,14 +488,42 @@ export default function MemberPlanningView() {
                           </div>
 
                           {/* CTA Actions */}
-                          {activeCategory === "Small Group" && (
+                          {activeCategory === "Cours Privés" && (
                             <div className="flex items-center justify-end">
                               {isCancelled ? (
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-sm text-xs font-semibold uppercase">
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs font-semibold uppercase">
                                   Séance non disponible
                                 </div>
                               ) : booked ? (
-                                <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e]/15 border border-[#22c55e]/30 text-[#22c55e] rounded-sm text-xs font-bold uppercase tracking-wider">
+                                <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e]/15 border border-[#22c55e]/30 text-[#22c55e] rounded-lg text-xs font-bold uppercase tracking-wider">
+                                  <Check size={14} />
+                                  Inscription active
+                                </div>
+                              ) : hasPrivateAccess ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleBookSession(session, day, timeStr)}
+                                  className="w-full sm:w-auto px-5 py-2.5 bg-amber-400 hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md shadow-amber-400/20 hover:shadow-none"
+                                >
+                                  RÉSERVER
+                                </button>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-white/5 border border-brand-white/10 text-brand-white/40 rounded-lg text-xs font-medium uppercase tracking-wider">
+                                  <Lock size={12} />
+                                  Formule Cours Privé requise
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {activeCategory === "Small Group" && (
+                            <div className="flex items-center justify-end">
+                              {isCancelled ? (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs font-semibold uppercase">
+                                  Séance non disponible
+                                </div>
+                              ) : booked ? (
+                                <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e]/15 border border-[#22c55e]/30 text-[#22c55e] rounded-lg text-xs font-bold uppercase tracking-wider">
                                   <Check size={14} />
                                   Inscription active
                                 </div>
@@ -418,12 +531,12 @@ export default function MemberPlanningView() {
                                 <button
                                   type="button"
                                   onClick={() => handleBookSession(session, day, timeStr)}
-                                  className="w-full sm:w-auto px-5 py-2.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-all cursor-pointer shadow-md shadow-brand-blue/20 hover:shadow-none"
+                                  className="w-full sm:w-auto px-5 py-2.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md shadow-brand-blue/20 hover:shadow-none"
                                 >
                                   RÉSERVER
                                 </button>
                               ) : (
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-white/5 border border-brand-white/10 text-brand-white/40 rounded-sm text-xs font-medium uppercase tracking-wider">
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-white/5 border border-brand-white/10 text-brand-white/40 rounded-lg text-xs font-medium uppercase tracking-wider">
                                   <Lock size={12} />
                                   Formule Small Group requise
                                 </div>

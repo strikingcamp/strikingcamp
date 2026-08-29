@@ -24,14 +24,26 @@ export default function ResetPasswordPage() {
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Supabase traite le fragment #access_token présent dans l'URL
-    // et émet un événement PASSWORD_RECOVERY lorsque la session est établie.
     const supabase = createClient();
 
+    // 1. Vérification immédiate si la session est déjà établie
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSessionReady(true);
+      }
+    });
+
+    // 2. Écoute des événements d'authentification (Invitation, Récupération, etc.)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === "PASSWORD_RECOVERY") {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (
+        event === "PASSWORD_RECOVERY" ||
+        event === "SIGNED_IN" ||
+        event === "INITIAL_SESSION" ||
+        event === "USER_UPDATED" ||
+        session !== null
+      ) {
         setSessionReady(true);
       }
     });

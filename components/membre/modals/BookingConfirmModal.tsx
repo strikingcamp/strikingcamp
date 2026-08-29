@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle, Calendar, Clock, Award, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 import { useMember } from "../MemberContext";
+import { cn } from "@/lib/utils";
 
 export default function BookingConfirmModal() {
   const { isBookingConfirmOpen, selectedSlot, closeBookingConfirm, bookSmallGroup } = useMember();
@@ -72,9 +73,18 @@ export default function BookingConfirmModal() {
               <div>
                 {/* Header */}
                 <div className="mb-6">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-wider mb-3">
+                  <div
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 border",
+                      selectedSlot?.sessionType === "Cours Privé"
+                        ? "bg-amber-400/10 border-amber-400/20 text-amber-400"
+                        : "bg-brand-blue/10 border-brand-blue/20 text-brand-blue"
+                    )}
+                  >
                     <ShieldCheck size={14} />
-                    Réservation Small Group
+                    {selectedSlot?.sessionType === "Cours Privé"
+                      ? "Réservation Cours Privé"
+                      : "Réservation Small Group"}
                   </div>
                   <h3 className="text-2xl font-heading font-bold uppercase tracking-wider text-brand-white">
                     Confirmer votre réservation
@@ -95,8 +105,15 @@ export default function BookingConfirmModal() {
 
                   <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
                     <span className="text-xs uppercase tracking-wider text-brand-white/50">Type de séance</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-brand-blue/20 text-brand-blue border border-brand-blue/30 uppercase">
-                      {selectedSlot?.sessionType || "Small Group"}
+                    <span
+                      className={cn(
+                        "text-xs font-semibold px-2 py-0.5 rounded border uppercase",
+                        selectedSlot?.sessionType === "Cours Privé"
+                          ? "bg-amber-400/20 text-amber-400 border-amber-400/30"
+                          : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
+                      )}
+                    >
+                      {selectedSlot?.sessionType || "Séance"}
                     </span>
                   </div>
 
