@@ -48,8 +48,8 @@ export default function HeroSection() {
           className="flex justify-center w-full sm:w-auto"
         >
           <a
-            href="/coach"
-            className="px-8 py-4 bg-brand-blue text-brand-black font-bold uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md text-center"
+            href="/connexion"
+            className="px-8 py-4 bg-brand-blue text-brand-black font-heading font-bold uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md text-center shadow-lg shadow-brand-blue/20"
           >
             {siteData.hero.secondaryCta}
           </a>

@@ -7,7 +7,7 @@ export const siteData = {
     copyright: "© 2026 Striking Camp. Tous droits réservés."
   },
   contact: {
-    email: "[contact@strikingcamp.com]", // Placeholder
+    email: "strikingcamp13@gmail.com",
     address: "[Adresse du club, 13000 Marseille]", // Placeholder
     instagram: "https://www.instagram.com/boxing_camp13/",
     youtube: "https://youtube.com/[strikingcamp]" // Placeholder
@@ -18,7 +18,7 @@ export const siteData = {
     subtitle: "Kickboxing & Muay Thai — Marseille",
     description: "Un entraînement exigeant, une méthode précise, une culture du combat.",
     primaryCta: "DÉCOUVRIR LE CLUB",
-    secondaryCta: "RENCONTRER LE COACH"
+    secondaryCta: "REJOINDRE LE CAMP"
   },
   coach: {
     name: "MAHFOUD MOHAMED",
