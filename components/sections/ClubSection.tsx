@@ -23,7 +23,7 @@ const pillars = [
 
 export default function ClubSection() {
   return (
-    <section id="le-club" className="bg-brand-black pt-8 pb-24 relative overflow-hidden min-h-[calc(100vh-80px)] font-sans">
+    <section id="le-club" className="bg-transparent pt-8 pb-24 relative overflow-hidden min-h-[calc(100vh-80px)] font-sans">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* En-tête de section */}

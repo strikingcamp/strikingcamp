@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Oswald } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import GlobalBackground from "@/components/layout/GlobalBackground";
 import "./globals.css";
 
 const inter = Inter({
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#020817",
 };
 
 export default function RootLayout({
@@ -42,9 +43,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${inter.variable} ${oswald.variable} antialiased scroll-smooth`}>
-      <body suppressHydrationWarning className="min-h-screen bg-brand-black text-brand-white flex flex-col font-sans">
+      <body suppressHydrationWarning className="min-h-screen bg-[#020817] text-brand-white flex flex-col font-sans relative">
+        <GlobalBackground />
         <Navbar />
-        <main className="flex-grow">{children}</main>
+        <main className="flex-grow relative z-10">{children}</main>
         <Footer />
       </body>
     </html>

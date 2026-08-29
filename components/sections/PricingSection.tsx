@@ -181,7 +181,7 @@ export default function PricingSection() {
   const registerUrl = `/inscription?plan=${encodeURIComponent(currentPlan.planKey)}&category=${encodeURIComponent(activeCategory)}&commitment=${encodeURIComponent(currentPlan.commitmentKey)}&price=${currentPlan.priceValue}`;
 
   return (
-    <section className="py-12 sm:py-20 bg-[#0a1120] font-sans">
+    <section className="py-12 sm:py-20 bg-transparent font-sans">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}

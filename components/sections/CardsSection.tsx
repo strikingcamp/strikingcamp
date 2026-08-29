@@ -60,7 +60,7 @@ export default function CardsSection() {
   };
 
   return (
-    <section id="disciplines" className="bg-brand-black py-28 relative z-10 border-t border-brand-white/5 font-sans">
+    <section id="disciplines" className="bg-transparent py-28 relative z-10 border-t border-brand-white/5 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* En-tête de section */}

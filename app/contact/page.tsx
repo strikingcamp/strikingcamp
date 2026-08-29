@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="pt-20 bg-[#0a1120]">
+    <div className="pt-20 bg-transparent min-h-screen">
       <ContactSection />
     </div>
   );

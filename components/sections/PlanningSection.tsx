@@ -101,7 +101,7 @@ export default function PlanningSection() {
   const daysToRender = activeDay === "Tous" ? activeDays : [activeDay as Day];
 
   return (
-    <section className="pt-8 pb-24 bg-[#0a1120] font-sans">
+    <section className="pt-8 pb-24 bg-transparent font-sans">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}

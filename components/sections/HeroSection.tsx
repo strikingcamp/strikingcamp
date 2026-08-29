@@ -5,7 +5,7 @@ import { siteData } from "@/data/content";
 
 export default function HeroSection() {
   return (
-    <section id="accueil" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-brand-black pt-20">
+    <section id="accueil" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#020817] pt-20">
       {/* Background Image */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-top bg-no-repeat grayscale opacity-60"

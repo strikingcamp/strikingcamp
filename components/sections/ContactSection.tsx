@@ -45,7 +45,7 @@ export default function ContactSection() {
   };
 
   return (
-    <section className="pt-8 pb-24 bg-[#0a1120] min-h-[calc(100vh-80px)] font-sans">
+    <section className="pt-8 pb-24 bg-transparent min-h-[calc(100vh-80px)] font-sans">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}

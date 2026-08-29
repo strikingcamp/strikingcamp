@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function ClubPage() {
   return (
-    <div className="pt-20 bg-brand-black min-h-screen">
+    <div className="pt-20 bg-transparent min-h-screen">
       <ClubSection />
     </div>
   );

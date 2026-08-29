@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import PricingSection from "@/components/sections/PricingSection";
 
 export const metadata: Metadata = {
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TarifsPage() {
   return (
-    <div className="pt-20 bg-[#0a1120] min-h-screen">
+    <div className="pt-20 bg-transparent min-h-screen">
       <PricingSection />
     </div>
   );
