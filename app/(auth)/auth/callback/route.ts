@@ -60,6 +60,19 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const urlError = searchParams.get("error");
+  const urlErrorCode = searchParams.get("error_code");
+
+  // Si Supabase renvoie une erreur sur un lien de recovery, rediriger vers /reset-password avec l'erreur
+  if (urlError || urlErrorCode) {
+    if (type === "recovery" || rawNext === "/reset-password") {
+      const resetErrorRedirect = new URL("/reset-password", request.url);
+      if (urlError) resetErrorRedirect.searchParams.set("error", urlError);
+      if (urlErrorCode) resetErrorRedirect.searchParams.set("error_code", urlErrorCode);
+      return NextResponse.redirect(resetErrorRedirect);
+    }
+  }
+
   // Redirection vers une page d'erreur en cas d'échec
   const errorRedirect = new URL("/connexion", request.url);
   errorRedirect.searchParams.set("error", "callback_error");

@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
-import { Loader2, Lock, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, Lock, AlertCircle, CheckCircle, ArrowRight, ShieldCheck } from "lucide-react";
 
 /**
  * Page de saisie du nouveau mot de passe — /reset-password
  *
- * Accessible uniquement depuis le lien envoyé par Supabase par email.
- * Supabase injecte le token de session dans l'URL (#access_token=...).
- * Le client Supabase le détecte automatiquement et établit une session temporaire.
+ * Gère de manière universelle :
+ * 1. Le flux PKCE (paramètre ?code=...)
+ * 2. Le flux Implicit Tokens (hash fragment #access_token=...&type=recovery)
+ * 3. Les sessions déjà établies
+ * 4. La détection et l'affichage immédiat des liens expirés ou invalides
  */
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -22,46 +24,116 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
-  const [isLinkExpired, setIsLinkExpired] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const supabase = createClient();
 
-    // 1. Vérification immédiate si la session est déjà établie
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSessionReady(true);
-      }
-    });
+    async function initRecovery() {
+      try {
+        // 1. Vérification des erreurs dans l'URL (query params et hash fragment)
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 
-    // 2. Écoute des événements d'authentification (Invitation, Récupération, etc.)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (
-        event === "PASSWORD_RECOVERY" ||
-        event === "SIGNED_IN" ||
-        event === "INITIAL_SESSION" ||
-        event === "USER_UPDATED" ||
-        session !== null
-      ) {
-        setSessionReady(true);
-      }
-    });
+        const urlError = searchParams.get("error") || hashParams.get("error");
+        const urlErrorDesc = searchParams.get("error_description") || hashParams.get("error_description");
+        const urlErrorCode = searchParams.get("error_code") || hashParams.get("error_code");
 
-    // 3. Délai de garde : si aucune session n'est détectée après 5s, déclarer le lien expiré
-    const timer = setTimeout(() => {
-      setSessionReady((ready) => {
-        if (!ready) {
-          setIsLinkExpired(true);
+        if (urlError || urlErrorCode === "otp_expired") {
+          if (isMounted) {
+            setErrorMessage(
+              urlErrorCode === "otp_expired" || urlErrorDesc?.includes("expired")
+                ? "Ce lien de réinitialisation a expiré ou a déjà été utilisé."
+                : urlErrorDesc || "Le lien de réinitialisation est invalide."
+            );
+            setIsVerifying(false);
+          }
+          return;
         }
-        return ready;
-      });
-    }, 5000);
+
+        // 2. Échange automatique du code PKCE (?code=...) si présent
+        const code = searchParams.get("code");
+        if (code) {
+          console.log("[ResetPassword] Échange du code d'authentification en cours...");
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+          if (exchangeError) {
+            console.error("[ResetPassword] Erreur exchangeCodeForSession :", exchangeError);
+            if (isMounted) {
+              setErrorMessage("Le lien de réinitialisation a expiré ou a déjà été utilisé. Veuillez faire une nouvelle demande.");
+              setIsVerifying(false);
+            }
+            return;
+          }
+
+          if (data?.session && isMounted) {
+            console.log("[ResetPassword] Session de récupération validée via PKCE.");
+            setSessionReady(true);
+            setIsVerifying(false);
+            // Nettoie l'URL sans recharger la page
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+          }
+        }
+
+        // 3. Vérification immédiate si la session est déjà établie
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session && isMounted) {
+          setSessionReady(true);
+          setIsVerifying(false);
+          return;
+        }
+
+        // 4. Écoute des événements d'authentification (tokens hash ou background exchange)
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((event, session) => {
+          if (
+            event === "PASSWORD_RECOVERY" ||
+            event === "SIGNED_IN" ||
+            event === "INITIAL_SESSION" ||
+            event === "USER_UPDATED" ||
+            session !== null
+          ) {
+            if (isMounted) {
+              setSessionReady(true);
+              setIsVerifying(false);
+            }
+          }
+        });
+
+        // 5. Délai de garde (5 secondes) : si aucune session n'est détectée
+        const timer = setTimeout(() => {
+          if (isMounted) {
+            setSessionReady((ready) => {
+              if (!ready) {
+                setErrorMessage("Aucune session de récupération valide détectée. Ce lien est peut-être expiré.");
+                setIsVerifying(false);
+              }
+              return ready;
+            });
+          }
+        }, 5000);
+
+        return () => {
+          subscription.unsubscribe();
+          clearTimeout(timer);
+        };
+      } catch (err) {
+        console.error("[ResetPassword] Erreur d'initialisation :", err);
+        if (isMounted) {
+          setErrorMessage("Une erreur inattendue est survenue lors de la vérification du lien.");
+          setIsVerifying(false);
+        }
+      }
+    }
+
+    initRecovery();
 
     return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
+      isMounted = false;
     };
   }, []);
 
@@ -81,28 +153,35 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const { data: updateData, error: updateError } = await supabase.auth.updateUser({ password });
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password.trim(),
+      });
 
-    if (updateError) {
-      setError("Impossible de mettre à jour le mot de passe. Veuillez réessayer.");
+      if (updateError) {
+        console.error("[ResetPassword] Erreur updateUser :", updateError);
+        setError(updateError.message || "Impossible de mettre à jour le mot de passe. Veuillez réessayer.");
+        setLoading(false);
+        return;
+      }
+
+      setSuccess(true);
       setLoading(false);
-      return;
+
+      // Déconnexion propre de la session de récupération pour forcer la reconnexion sécurisée
+      await supabase.auth.signOut();
+
+      // Redirection vers /connexion avec confirmation
+      setTimeout(() => {
+        router.push("/connexion?reset=success");
+      }, 2000);
+    } catch (err: unknown) {
+      console.error("[ResetPassword] Exception handleSubmit :", err);
+      setError("Une erreur inattendue est survenue.");
+      setLoading(false);
     }
-
-    setSuccess(true);
-    const role = (
-      updateData.user?.app_metadata?.role ||
-      updateData.user?.user_metadata?.role ||
-      ""
-    ).toUpperCase();
-
-    const destination = role === "ADMIN" ? "/admin" : "/membre";
-
-    setTimeout(() => {
-      router.push(destination);
-    }, 2000);
   }
 
   if (success) {
@@ -115,13 +194,17 @@ export default function ResetPasswordPage() {
           className="w-full max-w-md text-center"
         >
           <div className="bg-brand-white/5 border border-brand-white/10 rounded-sm p-10">
-            <CheckCircle size={48} className="text-brand-blue mx-auto mb-6" />
+            <CheckCircle size={48} className="text-emerald-400 mx-auto mb-6" />
             <h2 className="text-2xl font-heading font-bold uppercase tracking-wider text-brand-white mb-3">
-              Mot de passe mis à jour
+              Mot de passe mis à jour !
             </h2>
-            <p className="text-brand-white/50 text-sm">
-              Redirection vers votre espace membre…
+            <p className="text-brand-white/60 text-sm mb-6">
+              Votre nouveau mot de passe a été enregistré. Redirection vers la page de connexion…
             </p>
+            <div className="inline-flex items-center gap-2 text-brand-blue text-xs font-semibold uppercase tracking-wider">
+              <Loader2 size={14} className="animate-spin" />
+              Connexion en cours…
+            </div>
           </div>
         </motion.div>
       </section>
@@ -148,35 +231,43 @@ export default function ResetPasswordPage() {
             Nouveau mot de passe
           </h1>
           <p className="mt-2 text-brand-white/50 text-sm">
-            Choisissez un nouveau mot de passe sécurisé
+            Définissez votre nouveau mot de passe sécurisé
           </p>
         </div>
 
-        {/* Formulaire */}
+        {/* Contenu principal */}
         <div className="bg-brand-white/5 border border-brand-white/10 rounded-sm p-8">
-          {isLinkExpired && !sessionReady ? (
-            <div className="text-center space-y-4 py-2">
-              <AlertCircle size={36} className="text-amber-400 mx-auto" />
-              <h3 className="text-base font-heading font-bold uppercase text-brand-white">
+          {isVerifying ? (
+            <div className="flex flex-col items-center justify-center gap-3 text-brand-white/60 text-sm py-8">
+              <Loader2 size={24} className="animate-spin text-brand-blue" />
+              <span>Vérification et validation du lien de sécurité…</span>
+            </div>
+          ) : errorMessage || !sessionReady ? (
+            <div className="text-center space-y-4 py-3">
+              <AlertCircle size={40} className="text-amber-400 mx-auto" />
+              <h3 className="text-lg font-heading font-bold uppercase text-brand-white">
                 Lien expiré ou invalide
               </h3>
               <p className="text-xs text-brand-white/60 leading-relaxed max-w-xs mx-auto">
-                Ce lien de réinitialisation est expiré ou a déjà été utilisé. Veuillez faire une nouvelle demande.
+                {errorMessage || "Ce lien de réinitialisation a expiré ou a déjà été utilisé. Veuillez faire une nouvelle demande."}
               </p>
-              <Link
-                href="/mot-de-passe-oublie"
-                className="inline-block mt-2 px-5 py-2.5 bg-brand-blue text-brand-black font-semibold text-xs uppercase tracking-wider rounded-sm hover:bg-brand-white transition-colors"
-              >
-                Demander un nouveau lien
-              </Link>
-            </div>
-          ) : !sessionReady ? (
-            <div className="flex items-center justify-center gap-2 text-brand-white/40 text-sm py-4">
-              <Loader2 size={16} className="animate-spin" />
-              Vérification du lien…
+              <div className="pt-2">
+                <Link
+                  href="/mot-de-passe-oublie"
+                  className="inline-flex items-center gap-2 px-5 py-3 bg-brand-blue text-brand-black font-semibold text-xs uppercase tracking-wider rounded-sm hover:bg-brand-white transition-colors"
+                >
+                  Demander un nouveau lien
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-sm text-emerald-400 text-xs mb-2">
+                <ShieldCheck size={16} className="shrink-0" />
+                <span>Session de récupération validée avec succès.</span>
+              </div>
+
               {/* Nouveau mot de passe */}
               <div>
                 <label
@@ -247,20 +338,31 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-blue text-brand-black font-semibold text-sm uppercase tracking-wide py-3 rounded-sm hover:bg-brand-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-brand-blue text-brand-black font-semibold text-sm uppercase tracking-wide py-3.5 rounded-sm hover:bg-brand-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2 cursor-pointer"
               >
                 {loading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Mise à jour…
+                    Enregistrement du mot de passe…
                   </>
                 ) : (
-                  "Mettre à jour le mot de passe"
+                  "Enregistrer le nouveau mot de passe"
                 )}
               </button>
             </form>
           )}
         </div>
+
+        {/* Retour connexion */}
+        <p className="text-center mt-6 text-brand-white/40 text-sm">
+          Vous vous souvenez de votre mot de passe ?{" "}
+          <Link
+            href="/connexion"
+            className="text-brand-blue hover:text-brand-white transition-colors font-medium"
+          >
+            Se connecter
+          </Link>
+        </p>
       </motion.div>
     </section>
   );

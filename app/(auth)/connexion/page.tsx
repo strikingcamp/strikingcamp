@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Lock, AlertCircle, CheckCircle } from "lucide-react";
 
 function ConnexionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/membre";
   const callbackError = searchParams.get("error");
+  const resetSuccess = searchParams.get("reset") === "success";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,6 +82,17 @@ function ConnexionForm() {
 
       {/* Formulaire */}
       <div className="bg-brand-white/5 border border-brand-white/10 rounded-sm p-8">
+        {resetSuccess && !error && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2.5 text-emerald-400 text-xs sm:text-sm bg-emerald-400/10 border border-emerald-400/20 rounded-sm p-3 mb-5 leading-relaxed"
+          >
+            <CheckCircle size={18} className="shrink-0 text-emerald-400" />
+            <span>Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.</span>
+          </motion.div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
