@@ -60,13 +60,13 @@ export default function EventsSection() {
       <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
           <Sparkles size={14} />
-          Stages & Immersion Striking
+          Calendrier des sessions
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white">
-          ÉVÉNEMENTS <span className="text-brand-blue">& STAGES</span>
+          ÉVÉNEMENTS
         </h1>
         <p className="mt-4 text-brand-white/60 text-sm sm:text-base leading-relaxed">
-          Participez à nos stages techniques exclusifs, camps intensifs et rassemblements inter-clubs animés par Mahfoud Mohamed au Striking Camp Marseille.
+          Découvrez nos prochains stages techniques, immersions et rassemblements au Striking Camp Marseille.
         </p>
       </div>
 
@@ -194,7 +194,7 @@ export default function EventsSection() {
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━
-          GRILLE DES ÉVÉNEMENTS
+          GRILLE DES ÉVÉNEMENTS (CARTES ALLÉGÉES & VISUELLES)
           ━━━━━━━━━━━━━━━━━━━━ */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -212,10 +212,10 @@ export default function EventsSection() {
               <div
                 key={event.id}
                 className={cn(
-                  "rounded-2xl p-6 sm:p-7 border flex flex-col justify-between transition-all duration-200",
+                  "rounded-2xl p-6 border flex flex-col justify-between transition-all duration-200 group hover:translate-y-[-2px]",
                   isPast
                     ? "bg-[#0a0f1d]/50 border-brand-white/5 opacity-80"
-                    : "bg-[#0c1322] border-brand-white/10 hover:border-brand-blue/40 shadow-xl"
+                    : "bg-[#0c1322] border-brand-white/10 hover:border-brand-blue/40 shadow-xl hover:shadow-brand-blue/5"
                 )}
               >
                 <div className="space-y-4">
@@ -233,55 +233,34 @@ export default function EventsSection() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl sm:text-2xl font-heading font-bold uppercase tracking-wider text-brand-white">
+                  <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white group-hover:text-brand-blue transition-colors">
                     {event.title}
                   </h3>
 
-                  {/* Description */}
-                  <p className="text-xs sm:text-sm text-brand-white/60 leading-relaxed">
+                  {/* Concise Description */}
+                  <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed line-clamp-2">
                     {event.description}
                   </p>
 
-                  {/* Metadata */}
-                  <div className="space-y-1.5 pt-2 text-xs text-brand-white/70 border-t border-brand-white/5">
+                  {/* Concise Key Metadata */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-brand-white/5 text-xs text-brand-white/75">
                     <div className="flex items-center gap-2">
                       <Calendar size={14} className="text-brand-blue shrink-0" />
                       <span>{event.date}</span>
-                      <span className="text-brand-white/30">•</span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <Clock size={14} className="text-brand-blue shrink-0" />
                       <span>{event.time}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 sm:col-span-2">
                       <MapPin size={14} className="text-brand-blue shrink-0" />
-                      <span>{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User size={14} className="text-brand-blue shrink-0" />
-                      <span>Encadré par {event.coach}</span>
+                      <span className="truncate">{event.location}</span>
                     </div>
                   </div>
-
-                  {/* Highlights list */}
-                  {event.highlights && (
-                    <div className="space-y-1 pt-1">
-                      {event.highlights.map((hl, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs text-brand-white/60">
-                          <CheckCircle2 size={12} className={cn("shrink-0", isPast ? "text-brand-white/30" : "text-[#22c55e]")} />
-                          <span>{hl}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {event.recap && (
-                    <p className="text-xs italic text-brand-white/50 bg-brand-white/[0.02] p-3 rounded border border-brand-white/5">
-                      « {event.recap} »
-                    </p>
-                  )}
                 </div>
 
                 {/* Bottom Action */}
-                <div className="pt-6 mt-4 border-t border-brand-white/5">
+                <div className="pt-5 mt-4 border-t border-brand-white/5">
                   {isPast ? (
                     <div className="flex items-center gap-1.5 text-xs text-brand-white/40 font-medium">
                       <History size={14} />
@@ -290,13 +269,13 @@ export default function EventsSection() {
                   ) : (
                     <div className="flex items-center justify-between gap-3">
                       {event.spots && (
-                        <span className="text-xs text-brand-white/50 font-medium">
+                        <span className="text-xs text-[#22c55e] font-semibold">
                           {event.spots}
                         </span>
                       )}
                       <Link
                         href="/connexion"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors ml-auto shadow-md shadow-brand-blue/10"
                       >
                         S'INSCRIRE
                         <ArrowRight size={13} />

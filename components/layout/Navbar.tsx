@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/", label: "Accueil" },
   { href: "/club", label: "Le Club" },
-  { href: "/coach", label: "Le Coach" },
   { href: "/evenements", label: "Événements" },
+  { href: "/planning", label: "Planning" },
+  { href: "/tarifs", label: "Tarifs" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -61,12 +62,6 @@ export default function Navbar() {
             </Link>
           ))}
           <Link
-            href="/planning"
-            className="px-4 py-2 bg-brand-white/10 text-brand-white hover:bg-brand-white hover:text-brand-black font-semibold text-xs uppercase tracking-wider transition-colors rounded-sm border border-brand-white/15"
-          >
-            Planning
-          </Link>
-          <Link
             href="/connexion"
             className="px-5 py-2.5 bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider hover:bg-brand-white transition-colors rounded-sm shadow-md shadow-brand-blue/20"
           >
@@ -103,13 +98,6 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/planning"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="px-8 py-3 bg-brand-white/10 text-brand-white font-bold text-sm uppercase tracking-wider w-[80%] text-center rounded-sm border border-brand-white/20"
-            >
-              Planning des cours
-            </Link>
             <Link
               href="/connexion"
               onClick={() => setIsMobileMenuOpen(false)}

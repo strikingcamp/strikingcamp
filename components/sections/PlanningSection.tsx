@@ -107,7 +107,7 @@ export default function PlanningSection() {
         {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
-            PLANNING DES COURS
+            PLANNING
           </h2>
         </div>
 

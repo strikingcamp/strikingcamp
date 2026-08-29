@@ -9,7 +9,7 @@ import { Resend } from "resend";
  * - CONTACT_RECIPIENT_EMAIL : Adresse de réception des messages (défaut : "strikingcamp13@gmail.com")
  */
 
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Striking Camp <contact@strikingcamp.com>";
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Striking Camp <onboarding@resend.dev>";
 const DEFAULT_ADMIN_RECIPIENT = process.env.CONTACT_RECIPIENT_EMAIL || "strikingcamp13@gmail.com";
 const CLUB_LOCATION = "Striking Camp Marseille — 13008 Marseille";
 
@@ -17,8 +17,7 @@ let resendInstance: Resend | null = null;
 
 export function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn("[Resend] Variable RESEND_API_KEY non configurée.");
+  if (!apiKey || apiKey.trim() === "") {
     return null;
   }
 
@@ -63,11 +62,17 @@ export async function sendContactNotificationEmail(
 ): Promise<{ success: boolean; error?: string }> {
   const resend = getResendClient();
 
+  // Mode développement ou clé absente : log en console et validation fluide
   if (!resend) {
-    return {
-      success: false,
-      error: "Service d'envoi d'emails non configuré (RESEND_API_KEY manquante).",
-    };
+    console.info(
+      `[Contact - Mode Simulation] Message reçu pour ${DEFAULT_ADMIN_RECIPIENT} :`,
+      {
+        fromName: params.name,
+        fromEmail: params.email,
+        messagePreview: params.message.substring(0, 100),
+      }
+    );
+    return { success: true };
   }
 
   try {

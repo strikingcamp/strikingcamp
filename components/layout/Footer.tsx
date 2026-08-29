@@ -28,9 +28,10 @@ export default function Footer() {
             <h4 className="text-brand-white font-bold uppercase tracking-wider mb-6 text-sm">Navigation</h4>
             <ul className="space-y-4">
               <li><Link href="/" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Accueil</Link></li>
-              <li><Link href="#le-club" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Le Club</Link></li>
-              <li><Link href="#le-coach" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Le Coach</Link></li>
-              <li><Link href="#contact" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Contact</Link></li>
+              <li><Link href="/club" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Le Club</Link></li>
+              <li><Link href="/planning" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Planning</Link></li>
+              <li><Link href="/tarifs" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Tarifs</Link></li>
+              <li><Link href="/contact" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm">Contact</Link></li>
             </ul>
           </div>
 

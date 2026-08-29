@@ -384,7 +384,7 @@ export default function AdminFormulesView({
               {stats.privateCount}
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              8 & 12 séances / mois
+              8 séances / mois
             </span>
           </div>
         </div>

@@ -188,7 +188,7 @@ function ConnexionForm() {
       <p className="text-center mt-6 text-brand-white/40 text-sm">
         Pas encore membre ?{" "}
         <Link
-          href="/inscription"
+          href={`/inscription${searchParams.toString() ? `?${searchParams.toString()}` : ""}`}
           className="text-brand-blue hover:text-brand-white transition-colors font-medium"
         >
           Créer un compte
