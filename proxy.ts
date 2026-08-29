@@ -49,20 +49,29 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Helper pour créer une redirection en conservant systématiquement les cookies rafraîchis
+  const createRedirectWithCookies = (url: URL | string) => {
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  };
+
   const { pathname } = request.nextUrl;
-  const userRole = (user?.app_metadata?.role || "").toUpperCase();
+  const userRole = (user?.app_metadata?.role || user?.user_metadata?.role || "").toUpperCase();
 
   // 1. Protection des routes /admin — accessible STRICTEMENT au rôle ADMIN
   if (pathname.startsWith("/admin")) {
     if (!user) {
       const redirectUrl = new URL("/connexion", request.url);
       redirectUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(redirectUrl);
+      return createRedirectWithCookies(redirectUrl);
     }
 
     if (userRole !== "ADMIN") {
-      // Redirection vers l'espace membre pour les clients/coachs
-      return NextResponse.redirect(new URL("/membre", request.url));
+      // Redirection vers l'espace membre pour les clients/coachs non-admins
+      return createRedirectWithCookies(new URL("/membre", request.url));
     }
   }
 
@@ -71,17 +80,28 @@ export async function proxy(request: NextRequest) {
     if (!user) {
       const redirectUrl = new URL("/connexion", request.url);
       redirectUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(redirectUrl);
+      return createRedirectWithCookies(redirectUrl);
     }
   }
 
-  // 3. Pages d'auth — redirige les utilisateurs déjà connectés
+  // 3. Pages d'auth — redirige les utilisateurs déjà connectés vers leur destination
   const authPaths = ["/connexion", "/inscription"];
   if (authPaths.some((p) => pathname.startsWith(p)) && user) {
-    if (userRole === "ADMIN") {
-      return NextResponse.redirect(new URL("/admin", request.url));
+    const rawNext = request.nextUrl.searchParams.get("next");
+    const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
+    if (nextPath) {
+      // Si la destination cible est /admin/* mais que l'utilisateur n'est pas ADMIN
+      if (nextPath.startsWith("/admin") && userRole !== "ADMIN") {
+        return createRedirectWithCookies(new URL("/membre", request.url));
+      }
+      return createRedirectWithCookies(new URL(nextPath, request.url));
     }
-    return NextResponse.redirect(new URL("/membre", request.url));
+
+    if (userRole === "ADMIN") {
+      return createRedirectWithCookies(new URL("/admin", request.url));
+    }
+    return createRedirectWithCookies(new URL("/membre", request.url));
   }
 
   return supabaseResponse;
