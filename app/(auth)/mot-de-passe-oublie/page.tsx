@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthRedirectUrl } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
 import { Loader2, Mail, AlertCircle, CheckCircle } from "lucide-react";
 
@@ -35,7 +36,7 @@ export default function MotDePasseOubliePage() {
       const { error: authError } = await supabase.auth.resetPasswordForEmail(
         cleanEmail,
         {
-          redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+          redirectTo: getAuthRedirectUrl("/auth/callback?next=/reset-password"),
         }
       );
 

@@ -6,30 +6,62 @@ import { createClient } from "@/lib/supabase/server";
  * Route de callback OAuth/Email — GET /auth/callback
  *
  * Supabase redirige ici après :
- * - Confirmation d'email à l'inscription
- * - Réinitialisation de mot de passe (via resetPasswordForEmail)
- * - (futur) OAuth (Google, etc.)
+ * - Confirmation d'email à l'inscription (type: signup) -> /membre
+ * - Réinitialisation de mot de passe (type: recovery) -> /reset-password
+ * - Invitation administrateur (type: invite) -> /reset-password
  *
  * Le paramètre `code` est échangé contre une session via PKCE.
- * Le paramètre `next` détermine la redirection finale.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/membre";
+  const type = searchParams.get("type");
+  const rawNext = searchParams.get("next");
+
+  // Détermination stricte de la destination selon le type d'événement
+  let next = "/membre";
+  if (rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")) {
+    next = rawNext;
+  } else if (type === "recovery" || type === "invite") {
+    next = "/reset-password";
+  }
 
   if (code) {
     const supabase = await createClient();
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+    if (!error && data?.user) {
+      const user = data.user;
+      const meta = user.user_metadata || {};
+
+      // Synchronisation de sécurité dans public.profiles si le profil n'existe pas encore
+      const firstName = meta.first_name || null;
+      const lastName = meta.last_name || null;
+      const phone = meta.phone || null;
+
+      if (firstName || lastName || phone) {
+        await supabase
+          .from("profiles")
+          .upsert(
+            {
+              id: user.id,
+              first_name: firstName,
+              last_name: lastName,
+              phone: phone,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          );
+      }
+
+      const redirectUrl = new URL(next, request.url);
+      return NextResponse.redirect(redirectUrl);
     }
   }
 
   // Redirection vers une page d'erreur en cas d'échec
-  return NextResponse.redirect(
-    `${origin}/connexion?error=callback_error`
-  );
+  const errorRedirect = new URL("/connexion", request.url);
+  errorRedirect.searchParams.set("error", "callback_error");
+  return NextResponse.redirect(errorRedirect);
 }
