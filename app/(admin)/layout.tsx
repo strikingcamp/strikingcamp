@@ -28,8 +28,8 @@ export default async function AdminLayout({
     redirect("/connexion?next=/admin");
   }
 
-  // 2. Validation stricte du rôle ADMIN côté serveur via app_metadata
-  const userRole = (user.app_metadata?.role || "").toUpperCase();
+  // 2. Validation stricte du rôle ADMIN côté serveur
+  const userRole = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
   if (userRole !== "ADMIN") {
     redirect("/membre");
   }
