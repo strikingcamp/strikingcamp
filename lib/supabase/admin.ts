@@ -1185,8 +1185,8 @@ export async function updatePlanAdmin(
     }
 
     if (payload.private_sessions_per_period !== undefined && payload.private_sessions_per_period !== null) {
-      if (payload.private_sessions_per_period !== 8 && payload.private_sessions_per_period !== 12) {
-        return { success: false, error: "Le nombre de séances privées doit être de 8 ou 12." };
+      if (payload.private_sessions_per_period !== 8) {
+        return { success: false, error: "Le nombre de séances privées doit être strictement de 8." };
       }
     }
 

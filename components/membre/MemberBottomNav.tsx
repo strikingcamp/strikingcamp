@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Plus, Bell, User } from "lucide-react";
+import { Home, Trophy, Plus, Bell, User } from "lucide-react";
 import { motion } from "framer-motion";
-import { useMember } from "./MemberContext";
 import { cn } from "@/lib/utils";
 
 export default function MemberBottomNav() {
   const pathname = usePathname();
-  const { openQuickAction } = useMember();
 
   const isRouteActive = (route: string) => {
     if (route === "/membre") {
@@ -48,19 +46,19 @@ export default function MemberBottomNav() {
             </span>
           </Link>
 
-          {/* 2. PLANNING */}
+          {/* 2. DÉFIS */}
           <Link
-            href="/membre/planning"
+            href="/membre/defis"
             className={cn(
               "flex-1 flex flex-col items-center justify-center py-2 transition-colors relative group",
-              isRouteActive("/membre/planning")
+              isRouteActive("/membre/defis")
                 ? "text-brand-blue"
                 : "text-brand-white/50 hover:text-brand-white"
             )}
           >
             <div className="relative">
-              <Calendar size={20} className="transition-transform group-hover:scale-110" />
-              {isRouteActive("/membre/planning") && (
+              <Trophy size={20} className="transition-transform group-hover:scale-110" />
+              {isRouteActive("/membre/defis") && (
                 <motion.div
                   layoutId="activeTabIndicator"
                   className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-brand-blue rounded-full"
@@ -68,23 +66,23 @@ export default function MemberBottomNav() {
               )}
             </div>
             <span className="text-[10px] font-heading uppercase font-bold tracking-wider mt-1">
-              Planning
+              Défis
             </span>
           </Link>
 
-          {/* 3. BOUTON + (CENTRE, ROND, SURÉLEVÉ) */}
+          {/* 3. BOUTON + (CENTRE, POINT D'ACCÈS PRINCIPAL À LA RÉSERVATION) */}
           <div className="flex-1 flex justify-center items-center relative -top-3">
-            <button
-              onClick={openQuickAction}
+            <Link
+              href="/membre/planning"
               className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-brand-blue to-[#00d8ff] text-brand-black flex items-center justify-center shadow-[0_0_20px_rgba(47,174,224,0.5)] border-4 border-[#0a1120] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer group"
-              aria-label="Nouvelle réservation"
+              aria-label="Réserver un cours"
             >
               <Plus
                 size={26}
                 strokeWidth={2.8}
                 className="group-hover:rotate-90 transition-transform duration-300"
               />
-            </button>
+            </Link>
           </div>
 
           {/* 4. ALERTES */}

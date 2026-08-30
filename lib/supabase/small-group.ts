@@ -28,6 +28,7 @@ export interface SmallGroupBooking {
   id: string;
   user_id: string;
   class_session_id?: string | null;
+  classSessionId?: string | null;
   discipline: string;
   sessionType: "Cours Privé" | "Small Group" | "Collectifs";
   day: string;
@@ -220,6 +221,7 @@ export async function getMemberUpcomingBookings(
       id: b.id,
       user_id: b.user_id,
       class_session_id: b.class_session_id,
+      classSessionId: b.class_session_id,
       discipline: session?.discipline || (isPrivate ? "Cours Privé" : "Small Group"),
       sessionType,
       day: dayFormatted,
@@ -293,16 +295,17 @@ export async function bookSmallGroupSession(
   }
 
   if (data && typeof data === "object") {
-    if (!data.success) {
+    const res = data as Record<string, unknown>;
+    if (res.success === false) {
       return {
         success: false,
-        error: (data.error as string) || "Impossible de réserver ce cours.",
+        error: (res.message as string) || (res.error as string) || "Impossible de réserver ce cours.",
       };
     }
 
     return {
       success: true,
-      bookingId: data.booking_id as string,
+      bookingId: (res.booking_id as string) || undefined,
     };
   }
 
@@ -346,10 +349,11 @@ export async function cancelSmallGroupSession(
   }
 
   if (data && typeof data === "object") {
-    if (!data.success) {
+    const res = data as Record<string, unknown>;
+    if (res.success === false) {
       return {
         success: false,
-        error: (data.error as string) || "Impossible d'annuler ce cours.",
+        error: (res.message as string) || (res.error as string) || "Impossible d'annuler ce cours.",
       };
     }
 

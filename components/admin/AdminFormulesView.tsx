@@ -113,7 +113,7 @@ export default function AdminFormulesView({
     setEditCommitment((plan.commitment as "monthly" | "annual") || "monthly");
     setEditPrivateSessions(
       plan.type === "private"
-        ? (plan.private_sessions_per_period === 12 ? 12 : 8)
+        ? (plan.private_sessions_per_period || 8)
         : null
     );
     setEditIsActive(plan.is_active);
@@ -716,10 +716,9 @@ export default function AdminFormulesView({
                     className="w-full bg-[#020617] border border-amber-500/30 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-amber-400 outline-none cursor-pointer"
                   >
                     <option value={8}>8 séances privées / mois</option>
-                    <option value={12}>12 séances privées / mois</option>
                   </select>
                   <span className="text-[11px] text-amber-300/70 block mt-1">
-                    Conformément aux règles du club, les formules privées acceptent 8 ou 12 séances.
+                    Conformément aux règles du club, les formules privées comprennent strictement 8 séances.
                   </span>
                 </div>
               )}

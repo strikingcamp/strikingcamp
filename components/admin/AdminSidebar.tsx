@@ -13,6 +13,8 @@ import {
   Settings,
   ArrowLeft,
   Shield,
+  Trophy,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +34,16 @@ const navItems = [
     label: "Planning & Cours",
     href: "/admin/planning",
     icon: Calendar,
+  },
+  {
+    label: "Défis",
+    href: "/admin/defis",
+    icon: Trophy,
+  },
+  {
+    label: "Alertes",
+    href: "/admin/alertes",
+    icon: Bell,
   },
   {
     label: "Membres",
@@ -101,7 +113,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               <span className="font-heading font-black text-base uppercase tracking-wider text-brand-white">
                 STRIKING <span className="text-brand-blue">CAMP</span>
               </span>
-              <span className="block text-[9px] font-bold text-brand-blue uppercase tracking-widest -mt-1 flex items-center gap-1">
+              <span className="text-[9px] font-bold text-brand-blue uppercase tracking-widest -mt-1 flex items-center gap-1">
                 <Shield size={10} />
                 ESPACE ADMIN
               </span>

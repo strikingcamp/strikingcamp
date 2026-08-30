@@ -219,3 +219,113 @@ export function computeCumulativeAccess(
     validSubscriptionsCount: validCount,
   };
 }
+
+export interface BillingCycle {
+  cycleStart: Date;
+  cycleEnd: Date;
+}
+
+/**
+ * Calcule déterministement le cycle mensuel d'un abonnement basé sur subscriptions.started_at
+ */
+export function computeBillingCycle(
+  startedAt: string | Date,
+  now: Date = new Date()
+): BillingCycle {
+  const startDate = new Date(startedAt);
+  if (isNaN(startDate.getTime())) {
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0);
+    return { cycleStart: startOfCurrentMonth, cycleEnd: endOfCurrentMonth };
+  }
+
+  let monthsElapsed =
+    (now.getFullYear() - startDate.getFullYear()) * 12 +
+    (now.getMonth() - startDate.getMonth());
+
+  let cycleStart = new Date(startDate);
+  cycleStart.setMonth(cycleStart.getMonth() + monthsElapsed);
+
+  if (cycleStart.getTime() > now.getTime()) {
+    monthsElapsed -= 1;
+    cycleStart = new Date(startDate);
+    cycleStart.setMonth(cycleStart.getMonth() + monthsElapsed);
+  }
+
+  const cycleEnd = new Date(cycleStart);
+  cycleEnd.setMonth(cycleEnd.getMonth() + 1);
+
+  return { cycleStart, cycleEnd };
+}
+
+export interface PrivateBookingLike {
+  id?: string;
+  status?: string | null;
+  is_late_cancellation?: boolean | null;
+  starts_at?: string | null;
+}
+
+export interface PrivateQuotaBalance {
+  quotaTotal: number;
+  sessionsConsumed: number;
+  sessionsRemaining: number;
+  cycleStart: Date;
+  cycleEnd: Date;
+  hasActivePrivatePlan: boolean;
+}
+
+/**
+ * Calcule le solde dynamique des cours privés pour le cycle en cours selon les règles métiers :
+ * - Séances actives (confirmed) = CONSOMMÉ
+ * - Annulations tardives (<24h, is_late_cancellation=true) = CONSOMMÉ
+ * - Annulations normales (>=24h, is_late_cancellation=false) = NON CONSOMMÉ
+ */
+export function computePrivateQuotaBalance(
+  quotaTotal: number,
+  cycleStart: Date,
+  cycleEnd: Date,
+  bookings: PrivateBookingLike[],
+  hasActivePrivatePlan: boolean = true
+): PrivateQuotaBalance {
+  if (!hasActivePrivatePlan) {
+    return {
+      quotaTotal: 0,
+      sessionsConsumed: 0,
+      sessionsRemaining: 0,
+      cycleStart,
+      cycleEnd,
+      hasActivePrivatePlan: false,
+    };
+  }
+
+  const startMs = cycleStart.getTime();
+  const endMs = cycleEnd.getTime();
+
+  let consumedCount = 0;
+
+  for (const b of bookings) {
+    if (!b.starts_at) continue;
+    const sessionTime = new Date(b.starts_at).getTime();
+    if (isNaN(sessionTime)) continue;
+
+    if (sessionTime >= startMs && sessionTime < endMs) {
+      const isConfirmed = b.status === "confirmed";
+      const isLateCancelled = b.status === "cancelled" && b.is_late_cancellation === true;
+      if (isConfirmed || isLateCancelled) {
+        consumedCount++;
+      }
+    }
+  }
+
+  const remaining = Math.max(0, quotaTotal - consumedCount);
+
+  return {
+    quotaTotal,
+    sessionsConsumed: consumedCount,
+    sessionsRemaining: remaining,
+    cycleStart,
+    cycleEnd,
+    hasActivePrivatePlan: true,
+  };
+}
+
