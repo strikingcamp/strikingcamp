@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Trophy, Plus, Bell, User } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function MemberBottomNav() {
   const pathname = usePathname();
+  const { unreadCount } = useNotifications({ targetRole: "member" });
 
   const isRouteActive = (route: string) => {
     if (route === "/membre") {
@@ -97,6 +99,18 @@ export default function MemberBottomNav() {
           >
             <div className="relative">
               <Bell size={20} className="transition-transform group-hover:scale-110" />
+              <AnimatePresence>
+                {unreadCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-1 -right-2 min-w-[15px] h-[15px] px-0.5 rounded-full bg-[#00d8ff] text-black font-heading font-black text-[9px] leading-none flex items-center justify-center border border-[#0a1120]"
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
               {isRouteActive("/membre/alertes") && (
                 <motion.div
                   layoutId="activeTabIndicator"

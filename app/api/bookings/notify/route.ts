@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
   sendBookingConfirmationEmail,
   sendBookingCancellationEmail,
@@ -7,10 +7,13 @@ import {
 } from "@/lib/email";
 
 /**
- * Route serveur pour l'envoi asynchrone et sécurisé des emails de réservation.
+ * Route serveur sécurisée pour la notification et l'envoi d'emails transactionnels de réservation.
  * 
- * ⚠️ N'est appelée qu'après confirmation réelle de la réservation / annulation dans Supabase.
- * Ne bloque jamais l'interface utilisateur en cas d'erreur réseau sur l'email.
+ * Sécurité stricte :
+ * 1. Vérification de l'authentification de l'utilisateur.
+ * 2. Vérification d'existence réelle de la réservation en BDD (propriété ou rôle admin).
+ * 3. Récupération des données officielles de séance depuis la base (aucune confiance aveugle au body).
+ * 4. Traitement asynchrone sécurisé (ne bloque jamais la réservation).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -27,46 +30,68 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, classSessionId, bookingId, slotInfo } = body;
+    const { action, bookingId, classSessionId } = body;
 
     if (!action || (action !== "booking" && action !== "cancellation")) {
       return NextResponse.json({ error: "Action invalide" }, { status: 400 });
     }
 
-    // 2. Récupération des informations utilisateur
-    const userMeta = user.user_metadata || {};
-    let memberName = `${userMeta.first_name || ""} ${userMeta.last_name || ""}`.trim();
+    // 2. Contrôle de sécurité BDD sur la réservation réelle si bookingId est fourni
+    let resolvedClassSessionId = classSessionId;
+    let resolvedUserId = user.id;
 
-    if (!memberName) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("first_name, last_name")
-        .eq("id", user.id)
+    if (bookingId) {
+      const { data: booking, error: bookingErr } = await supabase
+        .from("bookings")
+        .select("id, user_id, class_session_id, status")
+        .eq("id", bookingId)
         .single();
 
-      if (profile) {
-        memberName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+      if (bookingErr || !booking) {
+        console.warn("[/api/bookings/notify] Réservation introuvable en BDD :", bookingId);
+        return NextResponse.json({ error: "Réservation introuvable" }, { status: 404 });
       }
+
+      // Vérification de propriété : l'utilisateur doit être le propriétaire ou un admin
+      const role = (user.app_metadata?.role || "").toUpperCase();
+      if (booking.user_id !== user.id && role !== "ADMIN") {
+        return NextResponse.json({ error: "Accès refusé à cette réservation" }, { status: 403 });
+      }
+
+      resolvedClassSessionId = booking.class_session_id || resolvedClassSessionId;
+      resolvedUserId = booking.user_id;
     }
 
-    if (!memberName) {
-      memberName = "Membre Striking Camp";
+    // 3. Récupération des informations vérifiées du profil membre
+    let memberName = "Membre Striking Camp";
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, phone")
+      .eq("id", resolvedUserId)
+      .single();
+
+    if (profile && (profile.first_name || profile.last_name)) {
+      memberName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+    } else {
+      const meta = user.user_metadata || {};
+      if (meta.first_name || meta.last_name) {
+        memberName = `${meta.first_name || ""} ${meta.last_name || ""}`.trim();
+      }
     }
 
     const memberEmail = user.email || "";
 
-    // 3. Récupération des détails de la séance
-    let discipline = slotInfo?.discipline || "Boxe Anglaise";
-    let sessionType = slotInfo?.sessionType || "Small Group";
-    let formattedDate = slotInfo?.date || "Date confirmée";
-    let formattedTime = slotInfo?.time || "Horaire confirmé";
+    // 4. Récupération des détails officiels de la séance en base
+    let discipline = "Boxe";
+    let sessionType = "Small Group";
+    let formattedDate = "Date confirmée";
+    let formattedTime = "Horaire confirmé";
 
-    // Si un classSessionId est fourni, récupérer les données officielles
-    if (classSessionId) {
+    if (resolvedClassSessionId) {
       const { data: session } = await supabase
         .from("class_sessions")
         .select("discipline, type, starts_at, ends_at")
-        .eq("id", classSessionId)
+        .eq("id", resolvedClassSessionId)
         .single();
 
       if (session) {
@@ -99,7 +124,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Déclenchement des emails en parallèle
+    // 5. Envoi des emails transactionnels en parallèle (non-bloquant)
     const emailPayload = {
       memberEmail,
       memberName,
@@ -139,8 +164,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[POST /api/bookings/notify] Erreur :", error);
-    // On retourne quand même 200/succès pour ne pas bloquer le flux de l'utilisateur
-    return NextResponse.json({ success: false, error: "Erreur envoi notification" }, { status: 200 });
+    console.error("[POST /api/bookings/notify] Exception :", error);
+    return NextResponse.json(
+      { success: false, error: (error as Error).message || "Erreur notification" },
+      { status: 200 }
+    );
   }
 }

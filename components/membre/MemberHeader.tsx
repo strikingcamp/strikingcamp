@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, User } from "lucide-react";
+import { User } from "lucide-react";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 interface MemberHeaderProps {
   firstName?: string;
@@ -29,14 +30,12 @@ export default function MemberHeader({ firstName, lastName, role = "Membre" }: M
 
         {/* Quick Nav Right */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link
+          <NotificationBell
             href="/membre/alertes"
-            className="w-9 h-9 rounded-full bg-brand-white/5 hover:bg-brand-white/10 border border-brand-white/10 flex items-center justify-center text-brand-white/70 hover:text-brand-white transition-colors relative"
-            aria-label="Alertes"
-          >
-            <Bell size={16} />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-blue animate-pulse" />
-          </Link>
+            targetRole="member"
+            iconSize={16}
+            ariaLabel="Alertes et notifications membre"
+          />
 
           <Link
             href="/membre/profil"
