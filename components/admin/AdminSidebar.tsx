@@ -16,6 +16,7 @@ import {
   Shield,
   Trophy,
   Bell,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,11 @@ const navItems = [
     label: "Planning & Cours",
     href: "/admin/planning",
     icon: Calendar,
+  },
+  {
+    label: "Validation Adhésions",
+    href: "/admin/adhesions",
+    icon: UserCheck,
   },
   {
     label: "Gestion des services",

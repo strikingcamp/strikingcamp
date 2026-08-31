@@ -50,6 +50,7 @@ export default function MemberHomeView({
     currentUserId,
     userBookings,
     openBookingCancel,
+    hasActiveSubscription,
     hasPrivateAccess,
     isPrivateEnabled,
     privateQuota,
@@ -136,6 +137,42 @@ export default function MemberHomeView({
           Prêt à vous dépasser aujourd’hui ?
         </p>
       </motion.div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━
+          BANDEAU ADHÉSION (SI SANS ABONNEMENT ACTIF)
+          ━━━━━━━━━━━━━━━━━━━━ */}
+      {!hasActiveSubscription && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-[#172033] to-[#0f172a] border border-brand-blue/30 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30 shrink-0">
+              <Sparkles size={24} />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-heading font-black text-brand-blue uppercase tracking-widest px-2.5 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 inline-block">
+                Finaliser votre adhésion
+              </span>
+              <h3 className="text-base font-heading font-black uppercase text-brand-white">
+                Choisissez votre formule d&apos;entraînement
+              </h3>
+              <p className="text-xs text-brand-white/60 max-w-md">
+                Sélectionnez votre formule (Cours Privé, Small Group ou Collectif) pour activer vos réservations.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/membre/adhesion"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-brand-blue/20 shrink-0"
+          >
+            Choisir une formule
+            <ArrowRight size={14} />
+          </Link>
+        </motion.div>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━
           BANDEAU QUOTA COURS PRIVÉS (SI ABONNÉ PRIVÉ ET SERVICE ACTIVÉ)
