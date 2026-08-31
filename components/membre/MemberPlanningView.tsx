@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -360,6 +360,8 @@ export default function MemberPlanningView() {
     allConfirmedBookings,
     privateQuota,
     hasPrivateAccess,
+    isSmallGroupEnabled,
+    isPrivateEnabled,
     bookSmallGroup,
     cancelSmallGroup,
     bookSlot,
@@ -372,6 +374,15 @@ export default function MemberPlanningView() {
   const [activeCategory, setActiveCategory] = useState<Category>("Cours privés");
   const [activeDayFilter, setActiveDayFilter] = useState<DayFilter>("Tous");
   const [weekOffset, setWeekOffset] = useState<number>(0);
+
+  // Synchronisation automatique de la catégorie active selon les services activés
+  useEffect(() => {
+    if (!isPrivateEnabled && activeCategory === "Cours privés") {
+      setActiveCategory(isSmallGroupEnabled ? "Small Group" : "Collectifs");
+    } else if (!isSmallGroupEnabled && activeCategory === "Small Group") {
+      setActiveCategory(isPrivateEnabled ? "Cours privés" : "Collectifs");
+    }
+  }, [isPrivateEnabled, isSmallGroupEnabled, activeCategory]);
 
   // État du parcours en entonnoir pour Cours Privés
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>(PRIVATE_DISCIPLINES[0].name);
@@ -437,9 +448,9 @@ export default function MemberPlanningView() {
     return map;
   }, [mondayDate]);
 
-  // Génération dynamique des créneaux connectés à la base Supabase
+  // Génération dynamique des créneaux connectés à la base Supabase (filtrés selon les services activés)
   const slots = useMemo(() => {
-    return generateSlotsFromData(
+    const rawSlots = generateSlotsFromData(
       availableSessions,
       userBookings,
       allConfirmedBookings,
@@ -447,7 +458,12 @@ export default function MemberPlanningView() {
       mondayDate,
       dayDateMap
     );
-  }, [availableSessions, userBookings, allConfirmedBookings, currentUserId, mondayDate, dayDateMap]);
+    return rawSlots.filter(s => {
+      if (s.category === "Small Group" && !isSmallGroupEnabled) return false;
+      if (s.category === "Cours privés" && !isPrivateEnabled) return false;
+      return true;
+    });
+  }, [availableSessions, userBookings, allConfirmedBookings, currentUserId, mondayDate, dayDateMap, isSmallGroupEnabled, isPrivateEnabled]);
 
   // Créneaux privés pour le jour sélectionné (triés chronologiquement)
   const privateSlotsForSelectedDay = useMemo(() => {
@@ -632,34 +648,42 @@ export default function MemberPlanningView() {
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          ONGLETS DES 3 CATÉGORIES (TITRES PURS)
+          ONGLETS DES CATÉGORIES ACTIVÉES
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid grid-cols-3 gap-1.5 shadow-xl shadow-black/30">
-        <button
-          onClick={() => setActiveCategory("Cours privés")}
-          className={cn(
-            "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-            activeCategory === "Cours privés"
-              ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-              : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-          )}
-        >
-          <Sparkles size={16} />
-          <span>Cours privés</span>
-        </button>
+      <div className={cn(
+        "bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid gap-1.5 shadow-xl shadow-black/30",
+        (isPrivateEnabled && isSmallGroupEnabled) ? "grid-cols-3" :
+        (isPrivateEnabled || isSmallGroupEnabled) ? "grid-cols-2" : "grid-cols-1"
+      )}>
+        {isPrivateEnabled && (
+          <button
+            onClick={() => setActiveCategory("Cours privés")}
+            className={cn(
+              "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+              activeCategory === "Cours privés"
+                ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
+                : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+            )}
+          >
+            <Sparkles size={16} />
+            <span>Cours privés</span>
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveCategory("Small Group")}
-          className={cn(
-            "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-            activeCategory === "Small Group"
-              ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-              : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-          )}
-        >
-          <Users size={16} />
-          <span>Small Group</span>
-        </button>
+        {isSmallGroupEnabled && (
+          <button
+            onClick={() => setActiveCategory("Small Group")}
+            className={cn(
+              "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+              activeCategory === "Small Group"
+                ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
+                : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+            )}
+          >
+            <Users size={16} />
+            <span>Small Group</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveCategory("Collectifs")}

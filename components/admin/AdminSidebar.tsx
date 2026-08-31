@@ -12,6 +12,7 @@ import {
   Sparkles,
   Settings,
   ArrowLeft,
+  Sliders,
   Shield,
   Trophy,
   Bell,
@@ -34,6 +35,11 @@ const navItems = [
     label: "Planning & Cours",
     href: "/admin/planning",
     icon: Calendar,
+  },
+  {
+    label: "Gestion des services",
+    href: "/admin/services",
+    icon: Sliders,
   },
   {
     label: "Défis",

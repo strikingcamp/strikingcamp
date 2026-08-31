@@ -32,7 +32,7 @@ export default function MemberHomeView({
   email,
   role,
 }: MemberHomeViewProps) {
-  const { userBookings, openBookingCancel, hasPrivateAccess, privateQuota } = useMember();
+  const { userBookings, openBookingCancel, hasPrivateAccess, isPrivateEnabled, privateQuota } = useMember();
 
   const greetingName = firstName ? ` ${firstName}` : "";
   const quotaRemaining = privateQuota?.sessionsRemaining ?? 6;
@@ -63,9 +63,9 @@ export default function MemberHomeView({
       </motion.div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━
-          BANDEAU QUOTA COURS PRIVÉS (SI ABONNÉ PRIVÉ)
+          BANDEAU QUOTA COURS PRIVÉS (SI ABONNÉ PRIVÉ ET SERVICE ACTIVÉ)
           ━━━━━━━━━━━━━━━━━━━━ */}
-      {hasPrivateAccess && (
+      {hasPrivateAccess && isPrivateEnabled && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

@@ -22,6 +22,10 @@ import {
   cancelPrivateSession as apiCancelPrivate,
   type MemberPrivateQuotaStatus,
 } from "@/lib/supabase/private-sessions";
+import {
+  getServiceSettingsMap,
+  DEFAULT_SERVICE_SETTINGS,
+} from "@/lib/supabase/services";
 
 export type BookingSlot = {
   id?: string;
@@ -114,6 +118,12 @@ interface MemberContextType {
   availableSessions: ClassSession[];
   allConfirmedBookings: ConfirmedBookingInfo[];
 
+  // Service Feature Flags (Gestion des services)
+  serviceSettings: Record<string, boolean>;
+  isSmallGroupEnabled: boolean;
+  isPrivateEnabled: boolean;
+  isEventsEnabled: boolean;
+
   // Real & Synchronized User Bookings
   userBookings: BookingSlot[];
 
@@ -161,6 +171,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
   const [availableSessions, setAvailableSessions] = useState<ClassSession[]>([]);
   const [allConfirmedBookings, setAllConfirmedBookings] = useState<ConfirmedBookingInfo[]>([]);
+  const [serviceSettings, setServiceSettings] = useState<Record<string, boolean>>(DEFAULT_SERVICE_SETTINGS);
   
   // État partagé et synchronisé des réservations (initialisation identique SSR et Client)
   const [userBookings, setUserBookings] = useState<BookingSlot[]>(DEFAULT_DEMO_BOOKINGS);
@@ -265,6 +276,10 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   const refreshMemberData = useCallback(async () => {
     try {
       console.log("[MemberContext] --> refreshMemberData() démarré...");
+
+      // 0. Charger les paramètres globaux des services (Feature flags)
+      const settings = await getServiceSettingsMap(supabase);
+      setServiceSettings(settings);
 
       // 1. Toujours charger les sessions réelles et les réservations globales (accès public/anon ou auth)
       const sessions = await getActiveClassSessions(supabase);
@@ -464,6 +479,10 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     return cancelSmallGroup(bookingId);
   };
 
+  const isSmallGroupEnabled = serviceSettings.small_group !== false;
+  const isPrivateEnabled = serviceSettings.private !== false;
+  const isEventsEnabled = serviceSettings.events !== false;
+
   return (
     <MemberContext.Provider
       value={{
@@ -490,6 +509,10 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         isLoadingData,
         availableSessions,
         allConfirmedBookings,
+        serviceSettings,
+        isSmallGroupEnabled,
+        isPrivateEnabled,
+        isEventsEnabled,
         userBookings,
         addSynchronizedBooking,
         removeSynchronizedBooking,
