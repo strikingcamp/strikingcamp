@@ -39,71 +39,74 @@ export const INITIAL_SERVICES_METADATA: Omit<ServiceSetting, "id">[] = [
 
 /**
  * Récupère le dictionnaire des statuts des services { private: boolean, small_group: boolean, events: boolean }
+ * Lève une erreur explicite si la lecture échoue afin d'éviter tout écrasement silencieux des états.
  */
 export async function getServiceSettingsMap(
   supabase: SupabaseClient
 ): Promise<Record<string, boolean>> {
-  try {
-    const { data, error } = await supabase
-      .from("service_settings")
-      .select("service_key, is_active");
+  const { data, error } = await supabase
+    .from("service_settings")
+    .select("service_key, is_active");
 
-    if (error || !data || data.length === 0) {
-      return { ...DEFAULT_SERVICE_SETTINGS };
-    }
-
-    const map: Record<string, boolean> = { ...DEFAULT_SERVICE_SETTINGS };
-    for (const item of data) {
-      if (item.service_key) {
-        map[item.service_key] = Boolean(item.is_active);
-      }
-    }
-    return map;
-  } catch (err) {
-    console.warn("[getServiceSettingsMap] Erreur lecture service_settings, fallback aux valeurs par défaut :", err);
-    return { ...DEFAULT_SERVICE_SETTINGS };
+  if (error) {
+    console.error("[getServiceSettingsMap] Erreur lecture Supabase service_settings :", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(`[getServiceSettingsMap] ${error.message}`);
   }
+
+  const map: Record<string, boolean> = {};
+  for (const item of data || []) {
+    if (item.service_key) {
+      map[item.service_key] = Boolean(item.is_active);
+    }
+  }
+
+  console.log("[getServiceSettingsMap] Statuts des services chargés depuis la BDD :", map);
+  return map;
 }
 
 /**
- * Récupère la liste complète des services avec métadonnées pour l'interface Admin
+ * Récupère la liste complète des services avec métadonnées pour l'interface Admin.
+ * Lève une exception explicite en cas d'erreur Supabase pour ne pas masquer la cause racine.
  */
 export async function getAdminServiceSettingsList(
   supabase: SupabaseClient
 ): Promise<ServiceSetting[]> {
-  try {
-    const { data, error } = await supabase
-      .from("service_settings")
-      .select("id, service_key, service_name, description, is_active, created_at, updated_at")
-      .order("created_at", { ascending: true });
+  const { data, error } = await supabase
+    .from("service_settings")
+    .select("id, service_key, service_name, description, is_active, created_at, updated_at")
+    .order("created_at", { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      return INITIAL_SERVICES_METADATA.map((s, idx) => ({
-        id: `mock_${idx}`,
-        ...s,
-      }));
-    }
-
-    return data as ServiceSetting[];
-  } catch (err) {
-    console.error("[getAdminServiceSettingsList] Erreur :", err);
-    return INITIAL_SERVICES_METADATA.map((s, idx) => ({
-      id: `mock_${idx}`,
-      ...s,
-    }));
+  if (error) {
+    console.error("[getAdminServiceSettingsList] Erreur lecture Supabase :", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(`[getAdminServiceSettingsList] ${error.message}`);
   }
+
+  console.log("[getAdminServiceSettingsList] Services chargés depuis la BDD :", data);
+  return (data || []) as ServiceSetting[];
 }
 
 /**
- * Met à jour le statut d'un service côté Admin (avec persistance en base)
+ * Met à jour le statut d'un service côté Admin via la RPC sécurisée admin_update_service_status.
+ * N'utilise AUCUN update direct sur la table pour garantir la sécurité et l'isolation des droits.
  */
 export async function updateAdminServiceStatus(
   supabase: SupabaseClient,
   serviceKey: string,
-  isActive: boolean
+  isActive: boolean,
+  previousValue?: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // 1. Essai via la RPC sécurisée admin_update_service_status
+    // Appel strict et exclusif de la RPC sécurisée admin_update_service_status
     const { data: rpcData, error: rpcError } = await supabase.rpc(
       "admin_update_service_status",
       {
@@ -112,25 +115,32 @@ export async function updateAdminServiceStatus(
       }
     );
 
-    if (!rpcError && rpcData && typeof rpcData === "object") {
-      const res = rpcData as { success?: boolean; error?: string; message?: string };
-      if (res.success !== false) {
-        return { success: true };
-      }
+    console.log("[updateAdminServiceStatus RPC Result]", {
+      serviceId: serviceKey,
+      previousValue: previousValue ?? !isActive,
+      newValue: isActive,
+      supabaseResponse: rpcData,
+      error: rpcError,
+    });
+
+    if (rpcError) {
+      console.error("[updateAdminServiceStatus] Erreur RPC admin_update_service_status :", {
+        message: rpcError.message,
+        code: rpcError.code,
+        details: rpcError.details,
+        hint: rpcError.hint,
+      });
+      return { success: false, error: rpcError.message };
     }
 
-    // 2. Fallback direct update via table service_settings si l'utilisateur est admin
-    const { error: updateError } = await supabase
-      .from("service_settings")
-      .update({
-        is_active: isActive,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("service_key", serviceKey);
-
-    if (updateError) {
-      console.error("[updateAdminServiceStatus] Erreur update :", updateError);
-      return { success: false, error: updateError.message };
+    if (rpcData && typeof rpcData === "object") {
+      const res = rpcData as { success?: boolean; error?: string; message?: string };
+      if (res.success === false) {
+        return {
+          success: false,
+          error: res.message || res.error || "Échec de la mise à jour du statut.",
+        };
+      }
     }
 
     return { success: true };

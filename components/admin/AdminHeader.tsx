@@ -2,7 +2,6 @@
 
 import { Menu, Shield, LogOut } from "lucide-react";
 import Link from "next/link";
-import NotificationBell from "@/components/notifications/NotificationBell";
 
 interface AdminHeaderProps {
   onToggleSidebar?: () => void;
@@ -37,14 +36,6 @@ export default function AdminHeader({
 
       {/* Right: Admin badge & Actions */}
       <div className="flex items-center gap-3 sm:gap-4">
-        {/* Notification Bell Admin */}
-        <NotificationBell
-          href="/admin/alertes"
-          targetRole="admin"
-          iconSize={16}
-          ariaLabel="Alertes et notifications administrateur"
-        />
-
         {/* Admin Tag */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
           <Shield size={14} />

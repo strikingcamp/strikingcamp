@@ -1,366 +1,558 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  Info,
+  Plus,
+  Send,
+  Trash2,
+  Edit2,
   Calendar,
-  Sparkles,
-  ArrowRight,
-  CheckCheck,
-  Check,
-  RotateCw,
-  UserPlus,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  Eye,
+  X,
   Users,
-  BookmarkCheck,
-  Radio,
 } from "lucide-react";
-import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useNotifications, formatRelativeTime } from "@/hooks/useNotifications";
-import type { Notification } from "@/lib/supabase/notifications";
+
+interface AlerteClub {
+  id: string;
+  title: string;
+  category: "Info Club" | "Modification planning" | "Événement" | "Urgent";
+  targetAudience: "Tous les membres" | "Cours Privés" | "Small Group";
+  message: string;
+  isActive: boolean;
+  createdAt: string;
+  expiresAt?: string;
+  status: "Publiée" | "Brouillon" | "Archivée";
+}
+
+const mockAlertesInit: AlerteClub[] = [
+  {
+    id: "1",
+    title: "Stage Spécial Boxe Anglaise - Inscriptions ouvertes",
+    category: "Événement",
+    targetAudience: "Tous les membres",
+    message: "Le stage intensif du 15 Septembre est en ligne. Réservation obligatoire.",
+    isActive: true,
+    createdAt: "2026-08-30",
+    expiresAt: "2026-09-15",
+    status: "Publiée",
+  },
+  {
+    id: "2",
+    title: "Séances de sparring du Vendredi : protège-tibias obligatoires",
+    category: "Info Club",
+    targetAudience: "Tous les membres",
+    message: "Rappel sécurité pour tous les participants aux sessions du vendredi soir.",
+    isActive: true,
+    createdAt: "2026-08-28",
+    status: "Publiée",
+  },
+  {
+    id: "3",
+    title: "Maintenance salle de musculation",
+    category: "Modification planning",
+    targetAudience: "Tous les membres",
+    message: "L'espace musculation sera indisponible le lundi 8 septembre de 8h à 12h.",
+    isActive: false,
+    createdAt: "2026-08-20",
+    status: "Archivée",
+  },
+];
 
 export default function AdminAlertesView() {
-  const router = useRouter();
-  const {
-    notifications,
-    unreadCount,
-    isLoading,
-    error,
-    refresh,
-    markAsRead,
-    markAllAsRead,
-  } = useNotifications({
-    targetRole: "admin",
-    limit: 50,
-    autoSubscribe: true,
-  });
+  const [alertes, setAlertes] = useState<AlerteClub[]>(mockAlertesInit);
+  const [selectedFilter, setSelectedFilter] = useState<string>("Toutes");
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [editingAlerte, setEditingAlerte] = useState<AlerteClub | null>(null);
 
-  const [filter, setFilter] = useState<"all" | "unread">("all");
-  const [isMarkingAll, setIsMarkingAll] = useState(false);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  // Formulaire d'ajout
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategory, setNewCategory] = useState<AlerteClub["category"]>("Info Club");
+  const [newTarget, setNewTarget] = useState<AlerteClub["targetAudience"]>("Tous les membres");
+  const [newMessage, setNewMessage] = useState("");
+  const [newExpiresAt, setNewExpiresAt] = useState("");
+  const [newStatus, setNewStatus] = useState<AlerteClub["status"]>("Publiée");
 
-  // Filtrage local
-  const filteredNotifications = notifications.filter((notif) => {
-    if (filter === "unread") return !notif.is_read;
+  const filteredAlertes = alertes.filter((a) => {
+    if (selectedFilter === "Toutes") return true;
+    if (selectedFilter === "Actives") return a.isActive;
+    if (selectedFilter === "Publiées") return a.status === "Publiée";
+    if (selectedFilter === "Brouillons") return a.status === "Brouillon";
+    if (selectedFilter === "Archivées") return a.status === "Archivée";
     return true;
   });
 
-  // Gestion du clic sur notification admin (lecture + redirection éventuelle)
-  const handleNotificationClick = async (notif: Notification) => {
-    setActionLoadingId(notif.id);
-    try {
-      if (!notif.is_read) {
-        await markAsRead(notif.id);
-      }
-      if (notif.action_url) {
-        router.push(notif.action_url);
-      }
-    } catch (err) {
-      console.error("[AdminAlertesView] Erreur clic notification :", err);
-      if (notif.action_url) {
-        router.push(notif.action_url);
-      }
-    } finally {
-      setActionLoadingId(null);
-    }
+  const handleCreateAlerte = () => {
+    if (!newTitle || !newMessage) return;
+
+    const alerte: AlerteClub = {
+      id: Date.now().toString(),
+      title: newTitle,
+      category: newCategory,
+      targetAudience: newTarget,
+      message: newMessage,
+      isActive: newStatus === "Publiée",
+      createdAt: new Date().toISOString().split("T")[0],
+      expiresAt: newExpiresAt || undefined,
+      status: newStatus,
+    };
+
+    setAlertes([alerte, ...alertes]);
+    setIsAddModalOpen(false);
+    // Reset form
+    setNewTitle("");
+    setNewMessage("");
+    setNewExpiresAt("");
   };
 
-  // Marquer toutes les notifications admin comme lues
-  const handleMarkAllAsRead = async () => {
-    if (unreadCount === 0 || isMarkingAll) return;
-    setIsMarkingAll(true);
-    try {
-      await markAllAsRead();
-    } finally {
-      setIsMarkingAll(false);
-    }
+  const handleToggleActive = (id: string) => {
+    setAlertes(
+      alertes.map((a) =>
+        a.id === id ? { ...a, isActive: !a.isActive, status: !a.isActive ? "Publiée" : "Archivée" } : a
+      )
+    );
   };
 
-  // Icône contextuelle selon le type
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "new_registration":
-      case "new_member":
-        return <UserPlus size={18} className="text-[#00d8ff]" />;
-      case "new_booking":
-      case "booking_confirmed":
-        return <BookmarkCheck size={18} className="text-[#22c55e]" />;
-      case "booking_cancelled":
-      case "cancellation_admin":
-        return <AlertTriangle size={18} className="text-red-400" />;
-      case "challenge_completed":
-      case "challenge_published":
-        return <Sparkles size={18} className="text-amber-400" />;
-      case "system":
-      case "club_info":
-      default:
-        return <Info size={18} className="text-brand-blue" />;
-    }
+  const handleDelete = (id: string) => {
+    setAlertes(alertes.filter((a) => a.id !== id));
   };
 
-  // Badge contextuel selon le type
-  const getNotificationBadgeClass = (type: string) => {
-    switch (type) {
-      case "new_registration":
-      case "new_member":
-        return "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30";
-      case "new_booking":
-      case "booking_confirmed":
-        return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
-      case "booking_cancelled":
-      case "cancellation_admin":
+  const handleSaveEdit = () => {
+    if (!editingAlerte) return;
+    setAlertes(alertes.map((a) => (a.id === editingAlerte.id ? editingAlerte : a)));
+    setEditingAlerte(null);
+  };
+
+  const getCategoryBadge = (cat: AlerteClub["category"]) => {
+    switch (cat) {
+      case "Urgent":
         return "bg-red-500/15 text-red-400 border-red-500/30";
-      case "challenge_completed":
-      case "challenge_published":
+      case "Événement":
         return "bg-amber-500/15 text-amber-300 border-amber-500/30";
-      case "system":
-      case "club_info":
-      default:
+      case "Modification planning":
+        return "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30";
+      case "Info Club":
         return "bg-brand-blue/15 text-brand-blue border-brand-blue/30";
     }
   };
 
   return (
-    <div className="p-6 sm:p-8 space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto">
       
-      {/* En-tête de la vue Admin */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-white/10 pb-6">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue/10 border border-brand-blue/30 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-wider mb-1">
-            <Bell size={13} />
-            <span>Centre de notifications administrateur</span>
-          </div>
-          <div className="flex items-center gap-3">
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          EN-TÊTE : TITRE + ACTION PRINCIPALE
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-brand-white/10">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Bell size={24} className="text-[#00d8ff]" />
             <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
-              Alertes & Activités Club
+              Gestion des Alertes & Notifications
             </h1>
-            {unreadCount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-[#00d8ff] text-black font-heading font-black text-xs shadow-[0_0_10px_rgba(0,216,255,0.5)]">
-                {unreadCount > 99 ? "99+" : unreadCount} non lue{unreadCount > 1 ? "s" : ""}
-              </span>
-            )}
           </div>
-          <p className="text-xs sm:text-sm text-brand-white/50">
-            Flux d'événements opérationnels en temps réel : inscriptions, réservations et alertes du club.
+          <p className="text-xs sm:text-sm text-brand-white/60">
+            Diffusez des annonces, rappels et informations importantes sur l&apos;espace membre.
           </p>
         </div>
 
-        {/* Actions d'en-tête */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllAsRead}
-              disabled={isMarkingAll}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand-blue text-brand-black hover:bg-brand-white font-heading font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-md shadow-brand-blue/10"
-            >
-              <CheckCheck size={14} />
-              <span>{isMarkingAll ? "Mise à jour..." : "Tout marquer comme lu"}</span>
-            </button>
-          )}
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#00d8ff]/20 cursor-pointer self-start sm:self-auto"
+        >
+          <Plus size={16} strokeWidth={3} />
+          Créer une alerte
+        </button>
+      </div>
 
-          <button
-            onClick={() => refresh()}
-            className="p-2.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/60 hover:text-brand-white border border-brand-white/10 transition-colors cursor-pointer"
-            title="Rafraîchir"
-            aria-label="Rafraîchir"
-          >
-            <RotateCw size={16} className={cn(isLoading && "animate-spin text-brand-blue")} />
-          </button>
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          STATISTIQUES RAPIDES
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-4">
+          <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-white/40 block mb-1">
+            Total alertes
+          </span>
+          <span className="text-2xl font-heading font-black text-brand-white">{alertes.length}</span>
+        </div>
+        <div className="bg-[#0f172a] border border-[#00d8ff]/20 rounded-2xl p-4">
+          <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-[#00d8ff] block mb-1">
+            Actives & Visibles
+          </span>
+          <span className="text-2xl font-heading font-black text-[#00d8ff]">
+            {alertes.filter((a) => a.isActive).length}
+          </span>
+        </div>
+        <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-4">
+          <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-white/40 block mb-1">
+            Événements
+          </span>
+          <span className="text-2xl font-heading font-black text-amber-300">
+            {alertes.filter((a) => a.category === "Événement").length}
+          </span>
+        </div>
+        <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-4">
+          <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-white/40 block mb-1">
+            Archivées
+          </span>
+          <span className="text-2xl font-heading font-black text-brand-white/40">
+            {alertes.filter((a) => a.status === "Archivée").length}
+          </span>
         </div>
       </div>
 
-      {/* Onglets de filtrage */}
-      <div className="flex items-center gap-2 border-b border-brand-white/10 pb-3">
-        <button
-          onClick={() => setFilter("all")}
-          className={cn(
-            "px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all cursor-pointer",
-            filter === "all"
-              ? "bg-brand-blue text-brand-black shadow-sm"
-              : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
-          )}
-        >
-          Toutes les notifications ({notifications.length})
-        </button>
-        <button
-          onClick={() => setFilter("unread")}
-          className={cn(
-            "px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer",
-            filter === "unread"
-              ? "bg-brand-blue text-brand-black shadow-sm"
-              : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
-          )}
-        >
-          <span>Non lues</span>
-          {unreadCount > 0 && (
-            <span
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          FILTRES
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="flex flex-wrap gap-2">
+        {["Toutes", "Actives", "Publiées", "Archivées"].map((filter) => (
+          <button
+            key={filter}
+            onClick={() => setSelectedFilter(filter)}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all cursor-pointer border",
+              selectedFilter === filter
+                ? "bg-brand-blue text-brand-black border-brand-blue"
+                : "bg-[#0f172a] text-brand-white/60 border-brand-white/10 hover:border-brand-white/20 hover:text-brand-white"
+            )}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          LISTE DES ALERTES
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="space-y-3">
+        {filteredAlertes.length === 0 ? (
+          <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-2xl p-12 text-center text-brand-white/40 font-heading text-sm uppercase tracking-wider">
+            Aucune alerte trouvée dans cette catégorie.
+          </div>
+        ) : (
+          filteredAlertes.map((alerte) => (
+            <motion.div
+              key={alerte.id}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
               className={cn(
-                "px-1.5 py-0.5 rounded-full text-[10px] font-black",
-                filter === "unread" ? "bg-brand-black text-brand-blue" : "bg-[#00d8ff] text-black"
+                "bg-[#0f172a] border rounded-2xl p-5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4",
+                alerte.isActive ? "border-[#00d8ff]/30 shadow-lg shadow-[#00d8ff]/5" : "border-brand-white/10 opacity-75"
               )}
             >
-              {unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* État de chargement initial */}
-      {isLoading && notifications.length === 0 ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="rounded-xl p-5 bg-[#080d1a] border border-brand-white/5 animate-pulse flex items-start gap-4"
-            >
-              <div className="w-10 h-10 rounded-lg bg-brand-white/10 shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="flex justify-between items-center">
-                  <div className="h-4 w-36 bg-brand-white/10 rounded" />
-                  <div className="h-3 w-20 bg-brand-white/5 rounded" />
+              <div className="space-y-2 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={cn("text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded border", getCategoryBadge(alerte.category))}>
+                    {alerte.category}
+                  </span>
+                  <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70 flex items-center gap-1">
+                    <Users size={11} />
+                    {alerte.targetAudience}
+                  </span>
+                  <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded", alerte.isActive ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-neutral-500/15 text-neutral-400 border border-neutral-500/30")}>
+                    {alerte.status}
+                  </span>
                 </div>
-                <div className="h-3 w-full bg-brand-white/5 rounded" />
-                <div className="h-3 w-3/4 bg-brand-white/5 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : filteredNotifications.length === 0 ? (
-        /* État vide */
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#080d1a]/50 border border-brand-white/10 border-dashed rounded-xl p-12 text-center space-y-4 my-8"
-        >
-          <div className="w-16 h-16 rounded-full bg-brand-white/5 text-brand-white/30 flex items-center justify-center mx-auto">
-            <Bell size={28} />
-          </div>
-          <div>
-            <h2 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white/80">
-              {filter === "unread"
-                ? "Aucune alerte administrative non lue"
-                : "Aucune notification administrative pour le moment"}
-            </h2>
-            <p className="text-xs text-brand-white/40 mt-1 max-w-sm mx-auto">
-              {filter === "unread"
-                ? "Toutes les alertes ont été consultées."
-                : "Les nouvelles inscriptions, réservations et annulations apparaîtront ici."}
-            </p>
-          </div>
-          <div className="pt-2 flex justify-center gap-3">
-            <Link
-              href="/admin/reservations"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white border border-brand-white/10 font-heading font-bold text-xs uppercase tracking-wider rounded-lg transition-colors"
-            >
-              <BookmarkCheck size={14} className="text-brand-blue" />
-              Voir les réservations
-            </Link>
-          </div>
-        </motion.div>
-      ) : (
-        /* Liste des notifications admin */
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-3"
-        >
-          <AnimatePresence initial={false}>
-            {filteredNotifications.map((notif) => {
-              const isUnread = !notif.is_read;
 
-              return (
-                <motion.div
-                  key={notif.id}
-                  layout
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  onClick={() => handleNotificationClick(notif)}
+                <h3 className="text-base font-heading font-bold text-brand-white tracking-wide">
+                  {alerte.title}
+                </h3>
+
+                <p className="text-xs text-brand-white/70 leading-relaxed max-w-3xl">
+                  {alerte.message}
+                </p>
+
+                <div className="flex items-center gap-4 text-[11px] text-brand-white/40 pt-1">
+                  <span>Créée le {alerte.createdAt}</span>
+                  {alerte.expiresAt && <span>• Expire le {alerte.expiresAt}</span>}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 self-end md:self-center pt-2 md:pt-0 border-t md:border-t-0 border-brand-white/5 w-full md:w-auto justify-end">
+                <button
+                  onClick={() => handleToggleActive(alerte.id)}
                   className={cn(
-                    "group relative rounded-xl p-5 flex items-start gap-4 transition-all duration-200 border cursor-pointer select-none",
-                    isUnread
-                      ? "bg-gradient-to-r from-[#0c1629] to-[#080d1a] border-[#00d8ff]/30 shadow-lg shadow-[#00d8ff]/5 hover:border-[#00d8ff]/60"
-                      : "bg-[#080d1a] border-brand-white/10 hover:border-brand-white/20 hover:bg-[#0c1426] opacity-85 hover:opacity-100"
+                    "px-3 py-1.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all border cursor-pointer",
+                    alerte.isActive
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                      : "bg-brand-white/5 text-brand-white/50 border-brand-white/10 hover:text-brand-white"
                   )}
                 >
-                  {/* Pastille non lue */}
-                  {isUnread && (
-                    <span className="absolute top-3.5 right-3.5 w-2 h-2 rounded-full bg-[#00d8ff] shadow-[0_0_8px_#00d8ff] animate-pulse" />
-                  )}
+                  {alerte.isActive ? "Désactiver" : "Activer"}
+                </button>
 
-                  {/* Icône */}
-                  <div
-                    className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border",
-                      isUnread
-                        ? "bg-brand-blue/15 border-brand-blue/30"
-                        : "bg-brand-white/5 border-brand-white/10 text-brand-white/40"
-                    )}
-                  >
-                    {getNotificationIcon(notif.type)}
-                  </div>
+                <button
+                  onClick={() => setEditingAlerte(alerte)}
+                  className="p-2 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white rounded-lg border border-brand-white/10 transition-colors cursor-pointer"
+                  title="Modifier"
+                >
+                  <Edit2 size={14} />
+                </button>
 
-                  {/* Détails */}
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "text-[10px] font-heading font-black uppercase px-2 py-0.5 rounded border tracking-wider",
-                            getNotificationBadgeClass(notif.type)
-                          )}
-                        >
-                          {notif.title}
-                        </span>
-                        {notif.is_read && (
-                          <span className="text-[10px] font-bold text-brand-white/30 flex items-center gap-1">
-                            <Check size={12} className="text-[#22c55e]" /> Consultée
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] font-medium text-brand-white/40">
-                        {formatRelativeTime(notif.created_at)}
-                      </span>
-                    </div>
+                <button
+                  onClick={() => handleDelete(alerte.id)}
+                  className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors cursor-pointer"
+                  title="Supprimer"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
 
-                    <p
-                      className={cn(
-                        "text-xs sm:text-sm leading-relaxed",
-                        isUnread ? "text-brand-white font-medium" : "text-brand-white/70"
-                      )}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MODAL 1 : CRÉER UNE ALERTE
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsAddModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
+                <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+                  Nouvelle Alerte Club
+                </h3>
+                <button onClick={() => setIsAddModalOpen(false)} className="text-brand-white/50 hover:text-brand-white">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                <div>
+                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Titre du message</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Rappel stage de boxe"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white focus:border-[#00d8ff] outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Catégorie</label>
+                    <select
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value as any)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white focus:border-[#00d8ff] outline-none"
                     >
-                      {notif.message}
-                    </p>
-
-                    {/* Bouton d'action si présent */}
-                    {notif.action_url && (
-                      <div className="pt-2">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-heading font-bold uppercase tracking-wider transition-all",
-                            isUnread
-                              ? "bg-brand-blue text-brand-black hover:bg-brand-white shadow-sm"
-                              : "bg-brand-white/10 hover:bg-brand-white/20 text-brand-white/80"
-                          )}
-                        >
-                          <span>{notif.action_label || "Consulter"}</span>
-                          <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-                        </span>
-                      </div>
-                    )}
+                      <option value="Info Club">Info Club</option>
+                      <option value="Modification planning">Modification planning</option>
+                      <option value="Événement">Événement</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
                   </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
-      )}
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Public cible</label>
+                    <select
+                      value={newTarget}
+                      onChange={(e) => setNewTarget(e.target.value as any)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white focus:border-[#00d8ff] outline-none"
+                    >
+                      <option value="Tous les membres">Tous les membres</option>
+                      <option value="Cours Privés">Cours Privés</option>
+                      <option value="Small Group">Small Group</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Message complet</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Rédigez le texte qui sera affiché aux membres..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white focus:border-[#00d8ff] outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Date d&apos;expiration (optionnel)</label>
+                    <input
+                      type="date"
+                      value={newExpiresAt}
+                      onChange={(e) => setNewExpiresAt(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white focus:border-[#00d8ff] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Statut initial</label>
+                    <select
+                      value={newStatus}
+                      onChange={(e) => setNewStatus(e.target.value as any)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white focus:border-[#00d8ff] outline-none"
+                    >
+                      <option value="Publiée">Publiée</option>
+                      <option value="Brouillon">Brouillon</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleCreateAlerte}
+                  className="flex-1 py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20"
+                >
+                  Publier l&apos;alerte
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MODAL 2 : MODIFIER UNE ALERTE
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <AnimatePresence>
+        {editingAlerte && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setEditingAlerte(null)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
+                <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+                  Modifier l&apos;alerte
+                </h3>
+                <button onClick={() => setEditingAlerte(null)} className="text-brand-white/50 hover:text-brand-white">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                <div>
+                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Titre du message</label>
+                  <input
+                    type="text"
+                    value={editingAlerte.title}
+                    onChange={(e) => setEditingAlerte({ ...editingAlerte, title: e.target.value })}
+                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Catégorie</label>
+                    <select
+                      value={editingAlerte.category}
+                      onChange={(e) => setEditingAlerte({ ...editingAlerte, category: e.target.value as any })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
+                    >
+                      <option value="Info Club">Info Club</option>
+                      <option value="Modification planning">Modification planning</option>
+                      <option value="Événement">Événement</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Public cible</label>
+                    <select
+                      value={editingAlerte.targetAudience}
+                      onChange={(e) => setEditingAlerte({ ...editingAlerte, targetAudience: e.target.value as any })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
+                    >
+                      <option value="Tous les membres">Tous les membres</option>
+                      <option value="Cours Privés">Cours Privés</option>
+                      <option value="Small Group">Small Group</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Message complet</label>
+                  <textarea
+                    rows={3}
+                    value={editingAlerte.message}
+                    onChange={(e) => setEditingAlerte({ ...editingAlerte, message: e.target.value })}
+                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Date d&apos;expiration</label>
+                    <input
+                      type="date"
+                      value={editingAlerte.expiresAt || ""}
+                      onChange={(e) => setEditingAlerte({ ...editingAlerte, expiresAt: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Statut</label>
+                    <select
+                      value={editingAlerte.status}
+                      onChange={(e) => setEditingAlerte({ ...editingAlerte, status: e.target.value as any })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
+                    >
+                      <option value="Publiée">Publiée</option>
+                      <option value="Brouillon">Brouillon</option>
+                      <option value="Archivée">Archivée</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-brand-white/10">
+                  <span className="text-brand-white font-bold uppercase">Active & Visible</span>
+                  <input
+                    type="checkbox"
+                    checked={editingAlerte.isActive}
+                    onChange={(e) => setEditingAlerte({ ...editingAlerte, isActive: e.target.checked })}
+                    className="w-5 h-5 accent-[#00d8ff] rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setEditingAlerte(null)}
+                  className="flex-1 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

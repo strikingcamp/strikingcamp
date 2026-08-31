@@ -30,16 +30,19 @@ export default function AdminServicesView() {
   const [supabase] = useState(() => createClient());
   const [services, setServices] = useState<ServiceSetting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [updatingKey, setUpdatingKey] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const list = await getAdminServiceSettingsList(supabase);
       setServices(list);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[AdminServicesView] Erreur chargement services :", err);
+      setFetchError(err?.message || "Impossible de charger la configuration des services depuis Supabase.");
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +64,7 @@ export default function AdminServicesView() {
       )
     );
 
-    const res = await updateAdminServiceStatus(supabase, service.service_key, newStatus);
+    const res = await updateAdminServiceStatus(supabase, service.service_key, newStatus, service.is_active);
 
     if (res.success) {
       setToastMessage({
@@ -184,6 +187,19 @@ export default function AdminServicesView() {
               <AlertTriangle size={18} className="text-red-400 shrink-0" />
             )}
             <span>{toastMessage.text}</span>
+          </motion.div>
+        )}
+        {fetchError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl border border-red-500/40 bg-red-950/80 text-red-300 flex items-center gap-3 text-xs font-medium shadow-xl"
+          >
+            <AlertTriangle size={18} className="text-red-400 shrink-0" />
+            <div>
+              <p className="font-bold">Erreur de synchronisation Supabase :</p>
+              <p className="text-red-300/80">{fetchError}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

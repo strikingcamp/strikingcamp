@@ -18,7 +18,6 @@ import {
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNotifications } from "@/hooks/useNotifications";
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -86,7 +85,6 @@ const navItems = [
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
-  const { unreadCount } = useNotifications({ targetRole: "admin" });
 
   const isActive = (item: (typeof navItems)[0]) => {
     if (item.exact) {
@@ -138,7 +136,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           {navItems.map((item) => {
             const active = isActive(item);
             const Icon = item.icon;
-            const isAlertItem = item.href === "/admin/alertes";
 
             return (
               <Link
@@ -146,29 +143,14 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200",
                   active
                     ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
                     : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} className={cn(active ? "text-brand-black" : "text-brand-blue/80")} />
-                  <span>{item.label}</span>
-                </div>
-
-                {isAlertItem && unreadCount > 0 && (
-                  <span
-                    className={cn(
-                      "px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none",
-                      active
-                        ? "bg-brand-black text-brand-blue"
-                        : "bg-[#00d8ff] text-black shadow-[0_0_8px_rgba(0,216,255,0.6)]"
-                    )}
-                  >
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
+                <Icon size={18} className={cn(active ? "text-brand-black" : "text-brand-blue/80")} />
+                <span>{item.label}</span>
               </Link>
             );
           })}

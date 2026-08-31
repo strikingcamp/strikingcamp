@@ -197,7 +197,12 @@ export async function bookPrivateSession(
     });
 
     if (error) {
-      console.error("[bookPrivateSession] Erreur RPC create_private_booking :", error);
+      console.error("[bookPrivateSession] Erreur RPC create_private_booking :", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return {
         success: false,
         error: error.message || "Impossible d'effectuer la réservation du cours privé.",
@@ -249,10 +254,15 @@ export async function cancelPrivateSession(
     });
 
     if (error) {
-      console.error("[cancelPrivateSession] Erreur RPC cancel_private_booking :", error);
+      console.error("[cancelPrivateSession] Erreur RPC cancel_private_booking :", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return {
         success: false,
-        error: error.message || "Impossible d'annuler le cours privé.",
+        error: error.message || "Impossible d'annuler la réservation du cours privé.",
         code: (error as { code?: string })?.code,
       };
     }

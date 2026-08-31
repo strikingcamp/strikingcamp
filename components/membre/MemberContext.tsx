@@ -278,8 +278,12 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
       console.log("[MemberContext] --> refreshMemberData() démarré...");
 
       // 0. Charger les paramètres globaux des services (Feature flags)
-      const settings = await getServiceSettingsMap(supabase);
-      setServiceSettings(settings);
+      try {
+        const settings = await getServiceSettingsMap(supabase);
+        setServiceSettings(settings);
+      } catch (settingsErr) {
+        console.warn("[MemberContext] Erreur lecture service_settings (conservation de l'état précédent) :", settingsErr);
+      }
 
       // 1. Toujours charger les sessions réelles et les réservations globales (accès public/anon ou auth)
       const sessions = await getActiveClassSessions(supabase);

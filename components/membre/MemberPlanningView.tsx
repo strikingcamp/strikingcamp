@@ -286,6 +286,30 @@ function generateSlotsFromData(
         }
       }
 
+      // Compléter les créneaux de cours collectifs récurrents pour toutes les semaines
+      // Vérification unitaire de chaque créneau officiel (Mardi 18h, Vendredi 18h, Samedi 10h)
+      OFFICIAL_COLLECTIVE.forEach((col, idx) => {
+        const dStr = dayDateMap[col.day]?.dateStr || mondayStr;
+        const alreadyExists = slots.some(
+          (sl) =>
+            sl.category === "Collectifs" &&
+            sl.day === col.day &&
+            sl.startTime === col.startTime
+        );
+
+        if (!alreadyExists) {
+          slots.push({
+            id: `col_${col.day}_${idx}_${dStr}`,
+            ...col,
+            dateStr: dStr,
+            bookedCount: 0,
+            isOccupiedByOther: false,
+            isBookedByMe: false,
+            startsAtIso: `${dStr}T${col.startTime}:00`,
+          });
+        }
+      });
+
       console.log("[MemberPlanningView] Total slots générés depuis les class_sessions réelles :", slots.length);
       return slots;
     }
@@ -342,7 +366,7 @@ function generateSlotsFromData(
       id: `col_${col.day}_${idx}`,
       ...col,
       dateStr: dStr,
-      bookedCount: 18 + (idx * 3),
+      bookedCount: 0,
       isOccupiedByOther: false,
       isBookedByMe: false,
       startsAtIso: `${dStr}T${col.startTime}:00`,
