@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight, ShieldCheck, Users, Layers } from "lucide-react";
-import Link from "next/link";
+import { Check, ShieldCheck, Users, Layers } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -177,9 +176,6 @@ export default function PricingSection() {
 
   const currentPlan = livePricing[activeCategory][activeCycle];
 
-  // URL d'inscription pré-remplie
-  const registerUrl = `/inscription?plan=${encodeURIComponent(currentPlan.planKey)}&category=${encodeURIComponent(activeCategory)}&commitment=${encodeURIComponent(currentPlan.commitmentKey)}&price=${currentPlan.priceValue}`;
-
   return (
     <section className="py-12 sm:py-20 bg-transparent font-sans">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -284,7 +280,7 @@ export default function PricingSection() {
                 </div>
 
                 {/* Features List */}
-                <div className="space-y-3 mb-8">
+                <div className="space-y-3 mb-6">
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
                     Ce qui est inclus :
                   </p>
@@ -301,16 +297,9 @@ export default function PricingSection() {
                 </div>
               </div>
 
-              {/* Action Button: S'INSCRIRE */}
-              <div className="pt-4 border-t border-gray-700/50">
-                <Link
-                  href={registerUrl}
-                  className="w-full py-4 px-6 bg-[#00d8ff] hover:bg-white text-[#0a1120] font-heading font-black text-sm uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#00d8ff]/20 cursor-pointer"
-                >
-                  <span>S&apos;INSCRIRE</span>
-                  <ArrowRight size={16} />
-                </Link>
-                <p className="text-center text-[11px] text-gray-400 mt-2.5">
+              {/* Note informative */}
+              <div className="pt-4 border-t border-gray-700/50 text-center">
+                <p className="text-xs text-gray-400">
                   Sans frais cachés • Accompagnement dès la première séance
                 </p>
               </div>
