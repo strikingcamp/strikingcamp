@@ -5,6 +5,18 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
+      disallow: [
+        '/admin',
+        '/admin/*',
+        '/membre',
+        '/membre/*',
+        '/api/*',
+        '/connexion',
+        '/inscription',
+        '/deconnexion',
+        '/reset-password',
+        '/mot-de-passe-oublie',
+      ],
     },
     sitemap: 'https://strikingcamp.com/sitemap.xml',
   };

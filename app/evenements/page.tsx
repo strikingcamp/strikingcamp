@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import EventsSection from "@/components/sections/EventsSection";
 
 export const metadata: Metadata = {
-  title: "Événements | Striking Camp Marseille",
-  description: "Découvrez les prochains événements du Striking Camp à Marseille : stages intensifs, masterclasses et camps d'entraînement.",
+  title: "Événements & Stages de Sports de Combat à Marseille | Striking Camp",
+  description:
+    "Participez aux stages intensifs, masterclasses et camps d'entraînement de Boxe Anglaise, Kick Boxing et Muay Thaï au Striking Camp Marseille (13010).",
 };
 
 export default function EvenementsPage() {

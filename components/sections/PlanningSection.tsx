@@ -106,9 +106,15 @@ export default function PlanningSection() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
-            PLANNING
-          </h2>
+          <span className="inline-block text-xs font-heading font-bold uppercase tracking-widest text-[#00d8ff] bg-[#00d8ff]/10 border border-[#00d8ff]/20 px-3.5 py-1 rounded-full mb-3">
+            Horaires & Créneaux — Marseille 13010
+          </span>
+          <h1 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
+            PLANNING DES COURS <span className="text-white">DE BOXE & STRIKING</span>
+          </h1>
+          <p className="text-sm sm:text-base text-gray-300 mt-2 max-w-xl mx-auto font-light">
+            Découvrez nos créneaux du matin, du midi et du soir : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking et KB Shred.
+          </p>
         </div>
 
         {/* Category Tabs */}

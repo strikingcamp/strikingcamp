@@ -16,15 +16,36 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-12 mb-14">
           
-          {/* COLONNE 1 : MARQUE */}
-          <div className="col-span-1">
-            <Link href="/" className="text-2xl font-heading font-black uppercase tracking-widest text-brand-white block mb-4">
+          {/* COLONNE 1 : MARQUE & LOCALISATION */}
+          <div className="col-span-1 space-y-3">
+            <Link href="/" className="text-2xl font-heading font-black uppercase tracking-widest text-brand-white block mb-2">
               STRIKING <span className="text-brand-blue">CAMP</span>
             </Link>
-            <p className="text-brand-white/60 text-sm leading-relaxed">
-              Boxe Anglaise, Kickboxing & Muay Thaï<br/>
-              Marseille
+            <p className="text-brand-white/80 text-sm leading-relaxed">
+              Boxe Anglaise, Kickboxing & Muay Thaï
             </p>
+            <address className="not-italic text-brand-white/60 text-xs leading-relaxed space-y-1">
+              <p>268 avenue de la Capelette</p>
+              <p>13010 Marseille — France</p>
+              <p className="pt-1">
+                Tél :{" "}
+                <a
+                  href={`tel:${siteData.contact.phoneTel}`}
+                  className="text-brand-blue hover:text-brand-white transition-colors font-medium"
+                >
+                  {siteData.contact.phone}
+                </a>
+              </p>
+              <p>
+                Email :{" "}
+                <a
+                  href={`mailto:${siteData.contact.email}`}
+                  className="text-brand-white/80 hover:text-brand-blue transition-colors"
+                >
+                  {siteData.contact.email}
+                </a>
+              </p>
+            </address>
           </div>
           
           {/* COLONNE 2 : NAVIGATION */}

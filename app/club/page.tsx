@@ -1,8 +1,9 @@
 import ClubSection from "@/components/sections/ClubSection";
 
 export const metadata = {
-  title: 'Le Meilleur Club de Boxe et Kick Boxing à Marseille - Striking Camp',
-  description: 'Rejoignez le meilleur club de pieds-poings et striking de Marseille. Boxe anglaise, Kick Boxing, Boxe Thaï avec le meilleur coach individuel de la cité phocéenne. Entraînement niveau mondial.',
+  title: "Striking Camp Marseille 13010 | Notre Club, Notre Méthode et Notre Philosophie",
+  description:
+    "Découvrez le club Striking Camp au 268 avenue de la Capelette (13010 Marseille) : notre histoire, la méthode du coach Mahfoud Mohamed, nos disciplines et nos cours Lady Striking.",
 };
 
 export default function ClubPage() {

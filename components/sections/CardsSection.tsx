@@ -1,51 +1,59 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const disciplines = [
   {
     title: "BOXE ANGLAISE",
-    shortDescription: "La Boxe Anglaise, le noble art par excellence, axé sur la précision des poings, la mobilité et la stratégie de combat.",
-    fullDescription: "La Boxe Anglaise développe l'art de frapper sans être touché. L'entraînement met l'accent sur le jeu de jambes, les esquives rotatives et axiales, la gestion de la distance, la vitesse de réaction et la précision des combinaisons. Chaque session combine apprentissage technique, travail aux paos, sac de frappe et sparring dirigé.",
+    alt: "Cours de Boxe Anglaise à Marseille 13010 - Striking Camp",
+    shortDescription: "La Boxe Anglaise à Marseille : le noble art par excellence, axé sur la précision des poings, les esquives, la mobilité et la stratégie de combat.",
+    fullDescription: "La Boxe Anglaise développe l'art de frapper sans être touché. L'entraînement au Striking Camp Marseille met l'accent sur le jeu de jambes, les esquives rotatives et axiales, la gestion de la distance, la vitesse de réaction et la précision des combinaisons. Chaque session combine apprentissage technique pas-à-pas, travail aux paos, sacs de frappe et drills guidés adaptés aux débutants comme aux confirmés.",
     image: "/boxe.webp"
-  },
-  {
-    title: "BOXING BAG",
-    shortDescription: "Le cours de Boxing Bag se concentre sur les fondamentaux de la frappe au sac et les techniques avancées.",
-    fullDescription: "Le cours de Boxing Bag se concentre sur les fondamentaux de la boxe et les techniques avancées. Vous apprendrez à perfectionner votre jeu de jambes, vos esquives, votre head movement et vos combinaisons de coups. Chaque séance inclut du travail au sac, avec le coach et du sparring à thème pour une mise en application contrôlée.",
-    image: "/sacSalle.jpg"
   },
   {
     title: "KICK BOXING",
-    shortDescription: "Notre programme de Kick Boxing intègre les techniques de poings et les coups de pied.",
-    fullDescription: "Notre programme de Kick Boxing intègre les techniques de poings et les coups de pied. L’accent est mis sur la fluidité des enchaînements pieds-poings, la gestion de la distance et le développement de la puissance explosive. Un travail complet permettant de développer à la fois la technique et la condition physique.",
+    alt: "Entraînement de Kick Boxing à Marseille - Striking Camp",
+    shortDescription: "Notre programme de Kick Boxing à Marseille intègre la fluidité des enchaînements pieds-poings, la puissance et le cardio.",
+    fullDescription: "Notre programme de Kick Boxing intègre les techniques de poings et les coups de pied sous toutes leurs formes (low kicks, middle, high kicks). L’accent est mis sur la fluidité des enchaînements pieds-poings, la gestion du timing et le développement de la puissance explosive. Un travail complet permettant de forger à la fois la technique de combat et une condition physique athlétique.",
     image: "/kickboxing.jpg"
   },
   {
-    title: "STRIKING",
-    shortDescription: "Ce cours est destiné aux pratiquants souhaitant développer leur jeu debout, notamment dans le contexte du MMA.",
-    fullDescription: "Ce cours est destiné aux pratiquants souhaitant développer leur jeu debout, notamment dans le contexte du MMA. Nous travaillons les techniques de frappe, les coudes et les genoux en clinch, la défense contre les amenées au sol et les transitions entre la frappe et la lutte.",
-    image: "/striking.jpg"
-  },
-  {
-    title: "BOXE THAÏ",
-    shortDescription: "La Boxe Thaï, ou Muay Thai, utilise les poings, les pieds, les coudes et les genoux.",
-    fullDescription: "La Boxe Thaï, ou Muay Thai, utilise les poings, les pieds, les coudes et les genoux. Les cours comprennent le travail technique, le clinch, les projections et le conditionnement physique spécifique à la discipline.",
+    title: "BOXE THAÏ (MUAY THAÏ)",
+    alt: "Cours de Boxe Thaï et Muay Thaï à Marseille 10e - Striking Camp",
+    shortDescription: "L'art des 8 membres à Marseille : poings, pieds, coudes, genoux et travail du corps-à-corps (clinch).",
+    fullDescription: "La Boxe Thaï, ou Muay Thaï, est une discipline ancestrale et complète utilisant les poings, les pieds, les coudes et les genoux. Les entraînements encadrés par le coach Mahfoud comprennent le travail technique aux paos thaï, le clinch (saisie et corps-à-corps), les balayages et le conditionnement physique spécifique, dans le respect et la sécurité de chacun.",
     image: "/muaythai.jpg"
   },
   {
-    title: "KB SHRED",
-    shortDescription: "KB Shred est notre cours de conditionnement physique basé notamment sur le travail avec kettlebells.",
-    fullDescription: "KB Shred est notre cours de conditionnement physique basé notamment sur le travail avec kettlebells. Les séances combinent mouvements balistiques, exercices de force et travail cardio afin de développer la condition physique, la force fonctionnelle et l’explosivité.",
-    image: "/boxe.webp"
+    title: "STRIKING (MMA DEBOUT)",
+    alt: "Cours de Striking MMA à Marseille - Striking Camp",
+    shortDescription: "Développez votre jeu de percussion debout adapté au MMA : transitions frappes-lutte, coudes et genoux en clinch.",
+    fullDescription: "Ce cours spécialisé s'adresse aux pratiquants souhaitant maîtriser le combat debout moderne et les spécificités du MMA. Nous travaillons les feintes, les trajectoires de frappe imprévisibles, les genoux et coudes au corps-à-corps, la défense active contre les amenées au sol (sprawls) et les transitions fluides entre la frappe et la cage.",
+    image: "/striking.jpg"
   },
   {
-    title: "LADY STRIKING",
-    shortDescription: "Le Lady Striking est un cours 100 % féminin destiné à tous les niveaux.",
-    fullDescription: "Le Lady Striking est un cours 100 % féminin destiné à tous les niveaux. Les séances combinent technique, cardio et renforcement musculaire dans un cadre bienveillant et motivant.",
+    title: "LADY STRIKING (100% FEMMES)",
+    alt: "Cours de Boxe et Striking 100% Femmes à Marseille - Lady Striking",
+    shortDescription: "Cours exclusivement réservé aux femmes à Marseille. Apprentissage technique, cardio intense et renforcement dans un cadre bienveillant.",
+    fullDescription: "Le Lady Striking est un programme 100 % féminin accessible à toutes, sans aucun prérequis sportif. Conçu pour apprendre les techniques de frappe (boxe et pieds-poings) sans risque de coups violents, chaque cours associe apprentissage technique, défoulement au sac et renforcement musculaire complet. Une ambiance motivante, sécurisante et stimulante pour gagner en confiance, en tonicité et en énergie.",
     image: "/fille.jpg"
+  },
+  {
+    title: "BOXING BAG",
+    alt: "Séance de Boxing Bag frappe au sac à Marseille - Striking Camp",
+    shortDescription: "Séance rythmée axée sur les combinaisons au sac de frappe, la dépense calorique et le perfectionnement de l'impact.",
+    fullDescription: "Le cours de Boxing Bag se concentre sur les fondamentaux de la boxe et l'intensité du travail au sac lourd. Vous perfectionnez vos combinaisons, votre placement, votre souffle et votre puissance de frappe sans opposition directe. Idéal pour un défoulement total, brûler un maximum de calories et améliorer sa technique de frappe.",
+    image: "/sacSalle.jpg"
+  },
+  {
+    title: "KB SHRED (CONDITIONNEMENT)",
+    alt: "Entraînement KB Shred Kettlebell et renforcement à Marseille - Striking Camp",
+    shortDescription: "Conditionnement physique de haute intensité avec kettlebells et mouvements fonctionnels pour explosivité et endurance.",
+    fullDescription: "KB Shred est notre programme de préparation physique basé sur l'utilisation des kettlebells et du poids du corps. Les séances combinent mouvements balistiques (swings, snatches), exercices de force fonctionnelle et intervalles cardio pour développer l'endurance musculaire, le gainage et l'explosivité indispensables aux sports de combat.",
+    image: "/boxe.webp"
   }
 ];
 
@@ -72,18 +80,21 @@ export default function CardsSection() {
             transition={{ duration: 0.8 }}
             className="font-heading text-4xl md:text-5xl font-black text-brand-white uppercase tracking-widest mb-6"
           >
-            NOS <span className="text-brand-blue">DISCIPLINES</span>
+            NOS <span className="text-brand-blue">DISCIPLINES</span> À MARSEILLE
           </motion.h2>
           <motion.div 
             initial={{ opacity: 0, scaleX: 0 }}
             whileInView={{ opacity: 1, scaleX: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="w-24 h-1 bg-brand-blue mx-auto"
+            className="w-24 h-1 bg-brand-blue mx-auto mb-4"
           />
+          <p className="text-brand-white/70 text-base sm:text-lg font-light max-w-2xl mx-auto">
+            Des programmes d’entraînement complets et progressifs, encadrés par le coach Mahfoud, adaptés aux débutants comme aux compétiteurs.
+          </p>
         </div>
 
-        {/* Grille des 6 cartes de disciplines */}
+        {/* Grille des cartes de disciplines */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
           {disciplines.map((card, index) => {
             const isExpanded = !!expanded[card.title];
@@ -96,13 +107,18 @@ export default function CardsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.4, delay: index * 0.08 }}
-                className="group relative overflow-hidden min-h-[300px] rounded-xl flex flex-col justify-end p-6 sm:p-8 border border-brand-white/10 bg-brand-white/5 transition-colors duration-300 hover:border-brand-blue/50"
+                className="group relative overflow-hidden min-h-[320px] rounded-xl flex flex-col justify-end p-6 sm:p-8 border border-brand-white/10 bg-brand-white/5 transition-colors duration-300 hover:border-brand-blue/50"
               >
-                {/* Image de fond */}
-                <div 
-                  className="absolute inset-0 opacity-35 group-hover:opacity-55 transition-opacity duration-500 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${card.image})` }}
-                />
+                {/* Image Next.js avec alt descriptif */}
+                <div className="absolute inset-0 opacity-35 group-hover:opacity-55 transition-opacity duration-500 overflow-hidden">
+                  <Image
+                    src={card.image}
+                    alt={card.alt}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </div>
                 
                 {/* Overlay Dégradé pour lisibilité parfaite */}
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/90 to-brand-black/40 opacity-95" />
@@ -125,7 +141,7 @@ export default function CardsSection() {
                     className="mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-brand-blue hover:text-brand-white uppercase tracking-wider transition-colors duration-200 cursor-pointer focus:outline-none"
                     aria-expanded={isExpanded}
                   >
-                    <span>{isExpanded ? "Lire moins" : "Lire plus"}</span>
+                    <span>{isExpanded ? "Lire moins" : "En savoir plus"}</span>
                     {isExpanded ? (
                       <ChevronUp size={16} className="transition-transform duration-200" />
                     ) : (

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import PricingSection from "@/components/sections/PricingSection";
 
 export const metadata: Metadata = {
-  title: "Tarifs & Formules | Striking Camp Marseille",
-  description: "Découvrez les tarifs et formules de Striking Camp à Marseille : Cours Collectifs, Small Group et Cours Privés (8 séances). Formules annuelles et mensuelles.",
+  title: "Tarifs et Formules de Boxe à Marseille | Striking Camp",
+  description:
+    "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Collectifs, Small Group et Cours Privés (8 séances/mois). Sans engagement ou annuel.",
 };
 
 export default function TarifsPage() {

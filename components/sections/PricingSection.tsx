@@ -182,11 +182,14 @@ export default function PricingSection() {
         
         {/* Header */}
         <div className="text-center mb-10 sm:mb-14">
-          <h2 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
-            NOS TARIFS
-          </h2>
+          <span className="inline-block text-xs font-heading font-bold uppercase tracking-widest text-[#00d8ff] bg-[#00d8ff]/10 border border-[#00d8ff]/20 px-3.5 py-1 rounded-full mb-3">
+            Formules & Abonnements — Marseille 13010
+          </span>
+          <h1 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
+            TARIFS & FORMULES <span className="text-white">DE BOXE</span>
+          </h1>
           <p className="text-sm sm:text-base text-gray-300 mt-2 max-w-xl mx-auto font-light">
-            Choisissez la formule qui correspond à vos objectifs et entraînez-vous dans les meilleures conditions.
+            Cours Collectifs, Small Group et Coaching Privé au Striking Camp Marseille. Choisissez la formule adaptée à votre progression.
           </p>
         </div>
 

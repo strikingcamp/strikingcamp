@@ -32,18 +32,21 @@ export default function ClubSection() {
           {/* Colonne gauche (Sticky Header + Image d'ambiance) */}
           <div className="w-full lg:w-1/3 lg:sticky lg:top-32 pt-4 lg:pt-12 space-y-8">
             <div>
-              <motion.h2 
+              <span className="inline-block text-xs font-heading font-bold uppercase tracking-widest text-brand-blue bg-brand-blue/10 border border-brand-blue/20 px-3.5 py-1 rounded-full mb-3">
+                Marseille 13010 — Capelette
+              </span>
+              <motion.h1 
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.8 }}
-                className="font-heading text-5xl md:text-7xl font-bold text-brand-white uppercase tracking-tighter mb-4"
+                className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-brand-white uppercase tracking-tighter mb-4"
               >
-                LE CLUB
-              </motion.h2>
+                LE CLUB <span className="text-brand-blue">STRIKING CAMP</span>
+              </motion.h1>
               <div className="w-20 h-1 bg-brand-blue mb-6" />
-              <p className="text-brand-white/60 text-sm leading-relaxed">
-                Un environnement dédié à l’exigence, au dépassement de soi et à l’apprentissage des sports de percussion.
+              <p className="text-brand-white/70 text-sm sm:text-base leading-relaxed">
+                Notre club, notre méthode et notre philosophie d’entraînement au cœur du 10e arrondissement de Marseille.
               </p>
             </div>
 
@@ -57,7 +60,7 @@ export default function ClubSection() {
             >
               <Image
                 src="/sacSalle.jpg"
-                alt="Salle d'entraînement Striking Camp"
+                alt="Salle de Boxe et Striking Camp à Marseille 13010"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 sizes="(max-width: 1024px) 100vw, 33vw"
@@ -68,7 +71,7 @@ export default function ClubSection() {
                   Salle d&apos;entraînement
                 </span>
                 <p className="text-xs text-brand-white/80 font-medium mt-0.5">
-                  Équipements professionnels & sacs de frappe
+                  268 avenue de la Capelette, 13010 Marseille
                 </p>
               </div>
             </motion.div>
@@ -85,15 +88,15 @@ export default function ClubSection() {
             >
               {/* 1. BIENVENUE AU STRIKING CAMP */}
               <div>
-                <h3 className="font-heading text-3xl md:text-4xl font-bold text-brand-blue uppercase tracking-wide mb-6">
-                  BIENVENUE AU STRIKING CAMP
-                </h3>
+                <h2 className="font-heading text-3xl md:text-4xl font-bold text-brand-blue uppercase tracking-wide mb-6">
+                  BIENVENUE AU STRIKING CAMP MARSEILLE
+                </h2>
                 
                 {/* Image mobile de la salle */}
                 <div className="relative h-56 rounded-xl overflow-hidden border border-brand-white/10 mb-6 lg:hidden">
                   <Image
                     src="/sacSalle.jpg"
-                    alt="Salle Striking Camp"
+                    alt="Salle de Boxe Striking Camp Marseille"
                     fill
                     className="object-cover"
                     sizes="100vw"
@@ -103,7 +106,7 @@ export default function ClubSection() {
 
                 <div className="space-y-4 text-brand-white/80 font-light text-lg leading-relaxed">
                   <p>
-                    <strong>Striking Camp</strong> est un camp d’entraînement nouvelle génération dédié aux sports de percussion (striking).
+                    <strong>Striking Camp</strong> est un camp d’entraînement nouvelle génération dédié aux sports de percussion (striking), situé au <strong>268 avenue de la Capelette dans le 10e arrondissement de Marseille</strong>.
                   </p>
                   <p>
                     Notre mission est d’accompagner chaque personne dans sa progression, qu’elle souhaite découvrir l’univers des sports de combat, améliorer sa condition physique ou développer ses compétences techniques.
@@ -117,21 +120,76 @@ export default function ClubSection() {
                 </div>
               </div>
 
+              {/* SECTION COACH & EXPERTISE */}
+              <div className="pt-8 border-t border-brand-white/10">
+                <div className="mb-6">
+                  <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-blue">
+                    Direction technique & pédagogie
+                  </span>
+                  <h2 className="font-heading text-3xl md:text-4xl font-bold text-brand-white uppercase tracking-wide mt-1">
+                    MAHFOUD MOHAMED — <span className="text-brand-blue">COACH & FONDATEUR</span>
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center mb-6">
+                  <div className="space-y-4 text-brand-white/80 font-light text-base md:text-lg leading-relaxed">
+                    <p>
+                      Originaire de Marseille, Mahfoud Mohamed pratique les sports de combat depuis l’âge de 6 ans.
+                    </p>
+                    <p>
+                      Son parcours a débuté par le Karaté traditionnel (kata), avant d’explorer l’Aïkido et le Jiu-Jitsu japonais pendant deux ans. À partir de ses 18 ans, il s’est entièrement consacré au Kick Boxing et à la Boxe Thaï (Muay Thaï).
+                    </p>
+                    <p>
+                      Au fil des années, il a forgé une méthode d’enseignement moderne et accessible : privilégier l’apprentissage technique fin, la motricité, la sécurité et le dépassement de soi, pour amener chaque élève au sommet de son potentiel.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="relative h-52 rounded-xl overflow-hidden border border-brand-white/10">
+                      <Image
+                        src="/coach-parcours.jpg"
+                        alt="Coach Mahfoud Mohamed en entraînement au Striking Camp Marseille"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-black/80 via-transparent to-transparent" />
+                      <span className="absolute bottom-2 left-2 text-[10px] font-heading font-bold text-brand-white uppercase">
+                        Expérience & Rigueur
+                      </span>
+                    </div>
+                    <div className="relative h-52 rounded-xl overflow-hidden border border-brand-white/10">
+                      <Image
+                        src="/coach-vision.jpg"
+                        alt="Vision technique et pédagogique de Mahfoud Mohamed"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-black/80 via-transparent to-transparent" />
+                      <span className="absolute bottom-2 left-2 text-[10px] font-heading font-bold text-brand-white uppercase">
+                        Méthode & Précision
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* UN ACCOMPAGNEMENT ADAPTÉ À CHACUN */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center pt-8 border-t border-brand-white/10">
                 <div>
-                  <h4 className="font-heading text-2xl font-bold text-brand-white uppercase tracking-wider mb-4">
+                  <h3 className="font-heading text-2xl font-bold text-brand-white uppercase tracking-wider mb-4">
                     UN ACCOMPAGNEMENT ADAPTÉ À CHACUN
-                  </h4>
+                  </h3>
                   <div className="space-y-3 text-brand-white/80 font-light text-base md:text-lg leading-relaxed">
                     <p>
-                      Que vous soyez débutant, pratiquant confirmé ou combattant, les entraînements sont construits autour de vos objectifs.
+                      Que vous soyez débutant sans condition préalable, pratiquant confirmé ou combattant, les entraînements sont construits autour de vos objectifs.
                     </p>
                     <p>
-                      Nous travaillons les fondamentaux, la technique, les déplacements, la précision, le conditionnement physique et la mise en situation.
+                      Nous travaillons les fondamentaux, la posture, les déplacements, la précision des frappes, le conditionnement physique et la mise en situation contrôlée.
                     </p>
                     <p>
-                      Pour les pratiquants de MMA, le travail du striking peut également être adapté aux exigences spécifiques du combat en cage.
+                      Pour les pratiquants de MMA, le travail du striking est également adapté aux exigences du combat debout et des transitions avec la lutte.
                     </p>
                   </div>
                 </div>
@@ -139,7 +197,7 @@ export default function ClubSection() {
                 <div className="relative h-64 sm:h-72 rounded-xl overflow-hidden border border-brand-white/10 shadow-xl group">
                   <Image
                     src="/striking.jpg"
-                    alt="Accompagnement Striking Camp"
+                    alt="Accompagnement technique personnalisé Striking Camp Marseille"
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 50vw"
@@ -151,12 +209,12 @@ export default function ClubSection() {
                 </div>
               </div>
 
-              {/* UN ESPACE DÉDIÉ AUX FEMMES */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              {/* UN ESPACE DÉDIÉ AUX FEMMES (LADY STRIKING) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center pt-8 border-t border-brand-white/10">
                 <div className="order-2 md:order-1 relative h-64 sm:h-72 rounded-xl overflow-hidden border border-brand-white/10 shadow-xl group">
                   <Image
                     src="/fille.jpg"
-                    alt="Lady Striking Marseille"
+                    alt="Cours de boxe et Lady Striking 100% Femmes à Marseille 13010"
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 50vw"
@@ -168,15 +226,21 @@ export default function ClubSection() {
                 </div>
 
                 <div className="order-1 md:order-2">
-                  <h4 className="font-heading text-2xl font-bold text-brand-white uppercase tracking-wider mb-4">
-                    UN ESPACE DÉDIÉ AUX FEMMES
-                  </h4>
+                  <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-blue">
+                    Offre 100% Féminine
+                  </span>
+                  <h3 className="font-heading text-2xl md:text-3xl font-bold text-brand-white uppercase tracking-wider mb-4 mt-1">
+                    LADY STRIKING : COURS 100% FEMMES
+                  </h3>
                   <div className="space-y-3 text-brand-white/80 font-light text-base md:text-lg leading-relaxed">
                     <p>
-                      Striking Camp propose également des séances 100 % féminines avec le <strong>Lady Striking</strong>.
+                      Striking Camp propose des créneaux exclusivement féminins avec le programme <strong>Lady Striking</strong>.
                     </p>
                     <p>
-                      L’objectif est de permettre à chacune de découvrir ou de pratiquer les sports de combat dans un cadre bienveillant et motivant, tout en conservant une véritable exigence technique et physique.
+                      Ce cours permet à chacune de s’initier ou de se perfectionner aux sports de percussion dans un cadre bienveillant, convivial et sans jugement.
+                    </p>
+                    <p>
+                      Accessible à toutes les débutantes, le cours met l’accent sur la gestuelle technique, le travail au sac de frappe, le renforcement du corps et la dépense cardio, sans sparring dur.
                     </p>
                   </div>
                 </div>
@@ -191,9 +255,9 @@ export default function ClubSection() {
 
               {/* 2. NOTRE PHILOSOPHIE D'ENTRAÎNEMENT */}
               <div className="pt-8 border-t border-brand-white/10">
-                <h3 className="font-heading text-3xl md:text-4xl font-bold text-brand-white uppercase tracking-wide mb-2">
+                <h2 className="font-heading text-3xl md:text-4xl font-bold text-brand-white uppercase tracking-wide mb-2">
                   NOTRE PHILOSOPHIE <span className="text-brand-blue">D&apos;ENTRAÎNEMENT</span>
-                </h3>
+                </h2>
                 <p className="text-brand-white/70 font-light text-lg mb-8">
                   Plus qu&apos;une séance, une expérience transformative.
                 </p>
@@ -222,9 +286,9 @@ export default function ClubSection() {
                       
                       <div className="p-6 flex-1 flex flex-col justify-between">
                         <div>
-                          <h5 className="font-heading text-lg font-bold text-brand-white uppercase tracking-wider mb-2 group-hover:text-brand-blue transition-colors">
+                          <h3 className="font-heading text-lg font-bold text-brand-white uppercase tracking-wider mb-2 group-hover:text-brand-blue transition-colors">
                             {pillar.title}
-                          </h5>
+                          </h3>
                           <p className="text-brand-white/70 font-light leading-relaxed text-sm">
                             {pillar.desc}
                           </p>
@@ -241,7 +305,7 @@ export default function ClubSection() {
                   href="/planning"
                   className="inline-block px-8 py-4 bg-brand-blue text-brand-black font-bold uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md shadow-lg"
                 >
-                  Découvrir les cours
+                  Découvrir les cours & le planning
                 </a>
               </div>
 

@@ -3,6 +3,7 @@ import { Inter, Oswald } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import GlobalBackground from "@/components/layout/GlobalBackground";
+import JsonLd from "@/components/seo/JsonLd";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,17 +21,20 @@ const oswald = Oswald({
 export const metadata: Metadata = {
   metadataBase: new URL("https://strikingcamp.com"),
   title: {
-    default: "Striking Camp | Le Meilleur Club de Boxe & Pieds-Poings à Marseille",
+    default: "Striking Camp | Club de Boxe & Sports de Combat à Marseille (13010)",
     template: "%s | Striking Camp",
   },
-  description: "Le club de référence à Marseille pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, et cours Lady Striking 100% femmes. Rejoignez l'excellence avec le meilleur coach individuel de la cité phocéenne.",
-  keywords: "club de boxe marseille, pieds poings marseille, kick boxing marseille, boxe thaï marseille, lady boxing, lady striking, meilleur coach boxe marseille, sport de combat 13010, salle de sport marseille, mma striking",
+  description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking MMA et cours Lady 100% femmes. Coaching individuel et Small Group.",
+  keywords: "club de boxe marseille, salle de boxe marseille 13010, kick boxing marseille, boxe thaï marseille, lady striking marseille, cours boxe femme marseille, meilleur coach boxe marseille, capelette 13010, mma striking marseille",
   authors: [{ name: "Striking Camp" }],
   creator: "Striking Camp",
   publisher: "Striking Camp",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Striking Camp | Boxe & Pieds-Poings à Marseille",
-    description: "Le club de référence à Marseille pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï. Cours professionnels et section Lady 100% femmes.",
+    title: "Striking Camp | Club de Boxe & Sports de Combat à Marseille",
+    description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes.",
     url: "https://strikingcamp.com",
     siteName: "Striking Camp",
     locale: "fr_FR",
@@ -38,8 +42,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Striking Camp | Boxe & Pieds-Poings à Marseille",
-    description: "Le club de référence à Marseille pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï. Cours professionnels et section Lady 100% femmes.",
+    title: "Striking Camp | Club de Boxe & Sports de Combat à Marseille",
+    description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes.",
   },
 };
 
@@ -54,6 +58,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${inter.variable} ${oswald.variable} antialiased scroll-smooth`}>
+      <head>
+        <JsonLd />
+      </head>
       <body suppressHydrationWarning className="min-h-screen bg-[#020817] text-brand-white flex flex-col font-sans relative">
         <GlobalBackground />
         <Navbar />

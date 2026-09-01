@@ -1,8 +1,9 @@
 import PlanningSection from "@/components/sections/PlanningSection";
 
 export const metadata = {
-  title: 'Planning des Cours | Boxe Anglaise, Kick Boxing, Muay Thaï Marseille',
-  description: "Découvrez notre planning de cours : Boxe Anglaise, Kick Boxing, Muay Thaï et cours Lady 100% femmes. Small groups et cours privés au Striking Camp Marseille.",
+  title: "Planning des Cours de Boxe et Sports de Combat à Marseille | Striking Camp",
+  description:
+    "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Small Group et cours privés du lundi au samedi.",
 };
 
 export default function PlanningPage() {
