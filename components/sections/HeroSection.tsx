@@ -23,9 +23,6 @@ export default function HeroSection() {
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
           className="mb-6 max-w-4xl"
         >
-          <span className="inline-block text-xs sm:text-sm font-heading font-bold uppercase tracking-widest text-brand-blue bg-brand-blue/10 border border-brand-blue/20 px-4 py-1.5 rounded-full mb-4">
-            Club de Boxe & Sports de Combat à Marseille 13010
-          </span>
           <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.85] tracking-tighter">
             <span className="text-brand-blue">{siteData.hero.title}</span>{" "}
             <span className="text-brand-white">{siteData.hero.title2}</span>
