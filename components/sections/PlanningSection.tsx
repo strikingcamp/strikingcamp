@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
+import { Sparkles, Clock, Users, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 import {
@@ -17,16 +18,16 @@ type DayFilter = "Tous" | Day;
 const categories: Category[] = ["Collectifs", "Small Group"];
 
 function getBadgeColor(level?: string) {
-  if (!level) return "bg-gray-500";
+  if (!level) return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
   const lvl = level.toLowerCase();
-  if (lvl.includes("fondament")) return "bg-[#22c55e]"; // Green
-  if (lvl.includes("performance")) return "bg-[#3b82f6]"; // Blue
-  if (lvl.includes("sparring")) return "bg-[#ef4444]"; // Red
-  if (lvl.includes("femme") || lvl.includes("féminin") || lvl.includes("feminin")) return "bg-pink-500";
-  if (lvl.includes("tous niveaux")) return "bg-[#22c55e]"; // Green
-  if (lvl.includes("élite") || lvl.includes("elite")) return "bg-purple-500";
-  if (lvl.includes("cardio")) return "bg-[#f97316]"; // Orange
-  return "bg-gray-500";
+  if (lvl.includes("fondament")) return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
+  if (lvl.includes("performance")) return "bg-brand-blue/15 text-brand-blue border-brand-blue/30";
+  if (lvl.includes("sparring")) return "bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/30";
+  if (lvl.includes("femme") || lvl.includes("féminin") || lvl.includes("feminin")) return "bg-pink-500/15 text-pink-400 border-pink-500/30";
+  if (lvl.includes("tous niveaux")) return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
+  if (lvl.includes("élite") || lvl.includes("elite")) return "bg-purple-500/15 text-purple-400 border-purple-500/30";
+  if (lvl.includes("cardio")) return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+  return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
 }
 
 export default function PlanningSection() {
@@ -35,32 +36,34 @@ export default function PlanningSection() {
 
   // Jours ayant au moins un créneau dans la catégorie active
   const activeDays = days.filter(
-    (day) => scheduleData[activeCategory][day].length > 0
+    (day) => scheduleData[activeCategory][day]?.length > 0
   );
 
   const daysToRender = activeDay === "Tous" ? activeDays : [activeDay as Day];
 
   return (
-    <section className="pt-8 pb-24 bg-transparent font-sans">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="text-center mb-8">
-          <span className="inline-block text-xs font-heading font-bold uppercase tracking-widest text-[#00d8ff] bg-[#00d8ff]/10 border border-[#00d8ff]/20 px-3.5 py-1 rounded-full mb-3">
-            Horaires & Créneaux
-          </span>
-          <h1 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
-            PLANNING <span className="text-white">DES COURS</span>
-          </h1>
-          <p className="text-sm sm:text-base text-gray-300 mt-2 max-w-xl mx-auto font-light">
-            Découvrez nos créneaux du matin, du midi et du soir : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking et KB Shred.
-          </p>
+    <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">
+      
+      {/* Header */}
+      <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
+          <Sparkles size={14} />
+          Horaires & Créneaux
         </div>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white">
+          PLANNING <span className="text-brand-blue">DES COURS</span>
+        </h1>
+        <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          Découvrez nos créneaux du matin, du midi et du soir : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking et KB Shred.
+        </p>
+      </div>
 
-        {/* Category Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="flex bg-[#2a3441] rounded-lg p-1 w-full max-w-2xl">
-            {categories.map((category) => (
+      {/* Category Switcher Tabs */}
+      <div className="flex justify-center mb-6 sm:mb-8">
+        <div className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-xl max-w-md w-full">
+          {categories.map((category) => {
+            const isActive = activeCategory === category;
+            return (
               <button
                 key={category}
                 onClick={() => {
@@ -68,109 +71,163 @@ export default function PlanningSection() {
                   setActiveDay("Tous");
                 }}
                 className={cn(
-                  "flex-1 py-3 rounded-md text-sm md:text-base font-bold transition-all duration-300",
-                  activeCategory === category
-                    ? "bg-[#00d8ff] text-white shadow-md"
-                    : "text-gray-300 hover:text-white"
+                  "flex-1 py-3 px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer text-center",
+                  isActive
+                    ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/25 font-black"
+                    : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
                 )}
               >
                 {category}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Days Filter — n'affiche que les jours ayant des cours dans la catégorie active */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+      {/* Days Filter (Pills) */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-12">
+        <button
+          onClick={() => setActiveDay("Tous")}
+          className={cn(
+            "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
+            activeDay === "Tous"
+              ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
+              : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
+          )}
+        >
+          Tous les jours
+        </button>
+        {activeDays.map((day) => (
           <button
-            onClick={() => setActiveDay("Tous")}
+            key={day}
+            onClick={() => setActiveDay(day)}
             className={cn(
-              "px-5 py-2 rounded-full text-sm font-bold transition-all duration-300",
-              activeDay === "Tous"
-                ? "bg-[#00d8ff] text-white"
-                : "bg-[#334155] text-gray-300 hover:bg-[#475569]"
+              "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
+              activeDay === day
+                ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
+                : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
             )}
           >
-            Tous
+            {day}
           </button>
-          {activeDays.map((day) => (
-            <button
-              key={day}
-              onClick={() => setActiveDay(day)}
-              className={cn(
-                "px-5 py-2 rounded-full text-sm font-bold transition-all duration-300",
-                activeDay === day
-                  ? "bg-[#00d8ff] text-white"
-                  : "bg-[#334155] text-gray-300 hover:bg-[#475569]"
-              )}
-            >
-              {day}
-            </button>
-          ))}
-        </div>
+        ))}
+      </div>
 
-        {/* Schedule Content */}
-        <div className="min-h-[400px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${activeCategory}-${activeDay}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-10"
-            >
-              {daysToRender.map((day) => {
-                const courses = scheduleData[activeCategory][day];
-                if (!courses || courses.length === 0) return null;
+      {/* Schedule Content */}
+      <div className="max-w-4xl mx-auto min-h-[380px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${activeCategory}-${activeDay}`}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-10"
+          >
+            {daysToRender.map((day) => {
+              const courses = scheduleData[activeCategory][day];
+              if (!courses || courses.length === 0) return null;
 
-                return (
-                  <div key={day} className="space-y-4">
-                    {/* Day Header */}
-                    <div className="border-b-2 border-[#00d8ff] pb-2 mb-4">
-                      <h3 className="text-2xl font-bold text-white">{day}</h3>
-                    </div>
+              return (
+                <div key={day} className="space-y-4">
+                  {/* Day Header with accent */}
+                  <div className="flex items-center gap-3 pb-3 border-b border-brand-white/10">
+                    <div className="w-2 h-2 rounded-full bg-brand-blue shadow-[0_0_8px_rgba(47,174,224,0.8)]" />
+                    <h2 className="text-xl sm:text-2xl font-heading font-bold uppercase tracking-wider text-brand-white">
+                      {day}
+                    </h2>
+                    <span className="text-xs text-brand-white/40 font-medium">
+                      ({courses.length} créneau{courses.length > 1 ? "x" : ""})
+                    </span>
+                  </div>
 
-                    {/* Course Cards */}
-                    <div className="space-y-3">
-                      {courses.map((course, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-[#2a3441] rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between shadow-lg"
-                        >
-                          <div className="mb-2 md:mb-0 flex flex-col">
-                            <div className="flex items-center gap-3 mb-1">
-                              <span className="text-lg font-bold text-white">{course.name}</span>
+                  {/* Course Cards Grid */}
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                    {courses.map((course, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-xl hover:shadow-brand-blue/5 transition-all duration-200 group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        {/* Course Info */}
+                        <div className="flex items-start sm:items-center gap-3.5">
+                          <div className="w-10 h-10 rounded-lg bg-brand-blue/10 border border-brand-blue/20 text-brand-blue flex items-center justify-center shrink-0">
+                            <Clock size={18} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                              <h3 className="text-base sm:text-lg font-heading font-bold uppercase tracking-wider text-brand-white group-hover:text-brand-blue transition-colors">
+                                {course.name}
+                              </h3>
                               {course.level && (
-                                <span className={cn(
-                                  "text-[10px] font-bold text-white px-2 py-0.5 rounded-full uppercase tracking-wider",
-                                  getBadgeColor(course.level)
-                                )}>
+                                <span
+                                  className={cn(
+                                    "px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase border tracking-wider",
+                                    getBadgeColor(course.level)
+                                  )}
+                                >
                                   {course.level}
                                 </span>
                               )}
                             </div>
-                            <span className="text-[#00d8ff] font-medium">{course.time}</span>
+                            <span className="text-xs text-brand-white/50 font-light block mt-0.5">
+                              Séance encadrée par le coach
+                            </span>
                           </div>
-                          
-                          {course.places && (
-                            <div className="flex items-center mt-2 md:mt-0">
-                              <span className="text-[#22c55e] font-bold text-sm">
-                                {course.places} places
-                              </span>
-                            </div>
-                          )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </motion.div>
-          </AnimatePresence>
-        </div>
 
+                        {/* Right: Time & Places */}
+                        <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t border-brand-white/5 sm:border-0">
+                          {course.places ? (
+                            <span className="text-xs font-semibold text-[#22c55e] flex items-center gap-1 bg-[#22c55e]/10 px-2.5 py-1 rounded-full border border-[#22c55e]/20">
+                              <Users size={12} />
+                              {course.places} places max
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold text-brand-white/60 bg-brand-white/5 px-2.5 py-1 rounded-full border border-brand-white/10">
+                              Accès libre
+                            </span>
+                          )}
+                          <div className="text-right">
+                            <span className="text-xl sm:text-2xl font-heading font-bold text-brand-blue">
+                              {course.time}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* Bottom Notice / Reservation Banner */}
+      <div className="mt-14 sm:mt-16 text-center p-8 bg-[#0c1322] border border-brand-white/10 rounded-2xl max-w-2xl mx-auto space-y-4">
+        <h3 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white">
+          Envie de rejoindre une séance ?
+        </h3>
+        <p className="text-xs sm:text-sm text-brand-white/60 leading-relaxed max-w-lg mx-auto">
+          Les réservations de séances se font directement depuis l&apos;espace membre en ligne afin de garantir un encadrement personnalisé en effectif réduit.
+        </p>
+        <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
+          <Link
+            href="/connexion"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg shadow-brand-blue/20"
+          >
+            RÉSERVER UN CRÉNEAU
+            <ArrowRight size={14} />
+          </Link>
+          <Link
+            href="/tarifs"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 font-heading font-bold text-xs uppercase tracking-wider rounded-sm border border-brand-white/10 transition-colors"
+          >
+            VOIR LES FORMULES
+          </Link>
+        </div>
+      </div>
+
     </section>
   );
 }

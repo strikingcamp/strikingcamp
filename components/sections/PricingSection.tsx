@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ShieldCheck, Users, Layers } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Users, Layers, Sparkles, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -30,11 +31,11 @@ const defaultPricing: Record<
       planKey: "private_8_annual",
       commitmentKey: "annual",
       features: [
-        "8 séances privées",
-        "Suivi technique sur mesure",
-        "Accès illimité aux Small Group",
+        "8 séances privées par mois",
+        "Suivi technique sur-mesure avec le coach",
+        "Accès illimité aux séances Small Group",
         "Accès illimité aux cours collectifs",
-        "Frais d'adhésion : Offerts",
+        "Frais d'adhésion offerts",
       ],
     },
     Mensuel: {
@@ -44,12 +45,12 @@ const defaultPricing: Record<
       planKey: "private_8_monthly",
       commitmentKey: "monthly",
       features: [
-        "8 séances privées",
-        "Suivi technique sur mesure",
-        "Accès illimité aux Small Group",
+        "8 séances privées par mois",
+        "Suivi technique sur-mesure avec le coach",
+        "Accès illimité aux séances Small Group",
         "Accès illimité aux cours collectifs",
-        "Inviter un(e) ami(e)",
-        "Frais d'adhésion : Offerts",
+        "Possibilité d'inviter un(e) ami(e)",
+        "Frais d'adhésion offerts",
       ],
     },
   },
@@ -61,10 +62,10 @@ const defaultPricing: Record<
       planKey: "small_group_annual",
       commitmentKey: "annual",
       features: [
-        "Accès illimité aux Small Group",
-        "Accès limité aux cours collectifs",
-        "Suivi technique personnalisé",
-        "Toutes les disciplines",
+        "Accès illimité aux séances Small Group",
+        "Accès illimité aux cours collectifs",
+        "Suivi technique personnalisé en groupe réduit",
+        "Toutes disciplines incluses (Boxe, Kick, Thaï)",
         "Frais d'adhésion : 39€",
       ],
     },
@@ -75,10 +76,10 @@ const defaultPricing: Record<
       planKey: "small_group_monthly",
       commitmentKey: "monthly",
       features: [
-        "Accès illimité aux Small Group",
-        "Accès limité aux cours collectifs",
-        "Suivi technique personnalisé",
-        "Toutes les disciplines",
+        "Accès illimité aux séances Small Group",
+        "Accès illimité aux cours collectifs",
+        "Suivi technique personnalisé en groupe réduit",
+        "Toutes disciplines incluses (Boxe, Kick, Thaï)",
         "Frais d'adhésion : 39€",
       ],
     },
@@ -91,9 +92,9 @@ const defaultPricing: Record<
       planKey: "collective_annual",
       commitmentKey: "annual",
       features: [
-        "Accès illimité aux cours collectifs",
-        "Kick Boxing",
-        "Striking",
+        "Accès illimité aux cours collectifs officiels",
+        "Kick Boxing & Striking",
+        "Préparation physique & cardio combat",
         "Frais d'adhésion : 39€",
       ],
     },
@@ -104,19 +105,19 @@ const defaultPricing: Record<
       planKey: "collective_monthly",
       commitmentKey: "monthly",
       features: [
-        "Accès illimité aux cours collectifs",
-        "Kick Boxing",
-        "Striking",
+        "Accès illimité aux cours collectifs officiels",
+        "Kick Boxing & Striking",
+        "Préparation physique & cardio combat",
         "Frais d'adhésion : 39€",
       ],
     },
   },
 };
 
-const categories: { id: PlanCategory; label: string; icon: typeof ShieldCheck }[] = [
-  { id: "Cours Privés", label: "Cours Privés", icon: ShieldCheck },
-  { id: "Small Group", label: "Small Group", icon: Users },
-  { id: "Collectifs", label: "Collectifs", icon: Layers },
+const categories: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
+  { id: "Small Group", label: "Small Group", icon: Users, badge: "Recommandé" },
+  { id: "Collectifs", label: "Collectifs", icon: Layers, badge: "Accès libre" },
+  { id: "Cours Privés", label: "Cours Privés", icon: ShieldCheck, badge: "Sur-mesure" },
 ];
 
 export default function PricingSection() {
@@ -125,7 +126,7 @@ export default function PricingSection() {
   const [activeCycle, setActiveCycle] = useState<BillingCycle>("Annuel");
   const [livePricing, setLivePricing] = useState(defaultPricing);
 
-  // Synchronisation dynamique optionnelle avec public.plans
+  // Synchronisation dynamique avec public.plans (Supabase)
   useEffect(() => {
     async function syncPlans() {
       try {
@@ -177,138 +178,186 @@ export default function PricingSection() {
   const currentPlan = livePricing[activeCategory][activeCycle];
 
   return (
-    <section className="py-12 sm:py-20 bg-transparent font-sans">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="text-center mb-10 sm:mb-14">
-          <h1 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
-            TARIFS
-          </h1>
-          <p className="text-sm sm:text-base text-gray-300 mt-2 max-w-xl mx-auto font-light">
-            Cours Collectifs, Small Group et Coaching Privé au Striking Camp. Choisissez la formule adaptée à votre progression.
-          </p>
+    <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">
+      
+      {/* Header */}
+      <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
+          <Sparkles size={14} />
+          Formules & Abonnements
         </div>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white">
+          NOS <span className="text-brand-blue">TARIFS</span>
+        </h1>
+        <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          Cours Collectifs, Small Group et Coaching Privé au Striking Camp. Choisissez la formule adaptée à vos objectifs et votre rythme.
+        </p>
+      </div>
 
-        {/* Category Tabs */}
-        <div className="flex justify-center mb-6">
-          <div className="grid grid-cols-3 bg-[#1e2530] rounded-xl p-1.5 w-full max-w-2xl border border-gray-700/50 shadow-lg">
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.id;
+      {/* Category Tabs (Pills) */}
+      <div className="flex justify-center mb-6">
+        <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl w-full">
+          {categories.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = activeCategory === cat.id;
 
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={cn(
-                    "py-3 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2",
-                    isActive
-                      ? "bg-[#00d8ff] text-[#0a1120] shadow-md shadow-[#00d8ff]/20 font-black"
-                      : "text-gray-300 hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  <Icon size={16} className={cn("shrink-0", isActive ? "text-[#0a1120]" : "text-[#00d8ff]")} />
-                  <span className="truncate">{cat.label}</span>
-                </button>
-              );
-            })}
-          </div>
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={cn(
+                  "py-3 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+                  isActive
+                    ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
+                    : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
+                )}
+              >
+                <Icon size={16} className={cn("shrink-0", isActive ? "text-brand-black" : "text-brand-blue")} />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Billing Cycle Tabs (Annuel / Mensuel) */}
-        <div className="flex justify-center mb-10">
-          <div className="flex bg-[#1e2530] rounded-lg p-1 w-full max-w-xs border border-gray-700/50">
-            {(["Annuel", "Mensuel"] as BillingCycle[]).map((cycle) => (
+      {/* Billing Cycle Switcher (Annuel / Mensuel) */}
+      <div className="flex justify-center mb-10 sm:mb-12">
+        <div className="inline-flex p-1 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg">
+          {(["Annuel", "Mensuel"] as BillingCycle[]).map((cycle) => {
+            const isActive = activeCycle === cycle;
+            return (
               <button
                 key={cycle}
                 onClick={() => setActiveCycle(cycle)}
                 className={cn(
-                  "flex-1 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
-                  activeCycle === cycle
-                    ? "bg-[#00d8ff] text-[#0a1120] font-black shadow-sm"
-                    : "text-gray-400 hover:text-white"
+                  "py-2 px-5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
+                  isActive
+                    ? "bg-brand-blue/20 text-brand-blue border border-brand-blue/30 font-black shadow-sm"
+                    : "text-brand-white/60 hover:text-brand-white"
                 )}
               >
-                {cycle}
+                {cycle === "Annuel" ? "Engagement 12 mois" : "Sans engagement"}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Pricing Card */}
-        <div className="flex justify-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${activeCategory}-${activeCycle}`}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="w-full max-w-lg bg-[#1e2530] rounded-2xl p-6 sm:p-8 shadow-2xl border border-gray-700/60 flex flex-col justify-between"
-            >
-              <div>
-                {/* Card Header */}
-                <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-700/50">
-                  <div>
-                    <span className="text-[11px] font-bold text-[#00d8ff] uppercase tracking-widest block">
-                      Formule
-                    </span>
-                    <h3 className="text-2xl sm:text-3xl font-heading font-black text-white uppercase tracking-wide">
-                      {activeCategory}
-                    </h3>
-                  </div>
+      {/* Pricing Featured Card (Matching /evenements Hero Card Style) */}
+      <div className="max-w-3xl mx-auto">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${activeCategory}-${activeCycle}`}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25 }}
+            className="relative rounded-2xl bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border border-brand-blue/40 p-6 sm:p-10 shadow-[0_0_50px_rgba(47,174,224,0.15)] overflow-hidden"
+          >
+            {/* Ambient Radial Glow */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-brand-blue/10 rounded-full blur-3xl pointer-events-none" />
 
-                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#00d8ff]/10 text-[#00d8ff] border border-[#00d8ff]/30">
-                    {activeCycle}
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+              
+              {/* Left & Center: Details & Features */}
+              <div className="md:col-span-2 space-y-5">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="px-3 py-1 rounded-full bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider">
+                    FORMULE {activeCategory.toUpperCase()}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase border bg-brand-blue/20 text-brand-blue border-brand-blue/30">
+                    {activeCycle === "Annuel" ? "12 Mois" : "Mensuel"}
+                  </span>
+                  <span className="text-xs text-[#22c55e] font-bold">
+                    • Accès immédiat
                   </span>
                 </div>
 
-                {/* Price Display */}
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl sm:text-5xl font-black text-[#00d8ff] font-heading">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold uppercase tracking-wider text-brand-white">
+                    {activeCategory}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-brand-white/70 mt-1">
+                    {currentPlan.subtitle} • Accompagnement pédagogique complet
+                  </p>
+                </div>
+
+                {/* Features list */}
+                <div className="space-y-2.5 pt-2">
+                  <p className="text-xs font-heading font-bold uppercase tracking-wider text-brand-blue">
+                    Inclus dans votre formule :
+                  </p>
+                  <div className="space-y-2 text-xs sm:text-sm text-brand-white/80">
+                    {currentPlan.features.map((feature, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5">
+                        <CheckCircle2 size={16} className="text-[#22c55e] shrink-0 mt-0.5" />
+                        <span className="leading-relaxed">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: CTA & Price Card */}
+              <div className="bg-[#070c16]/80 border border-brand-white/10 rounded-xl p-6 text-center space-y-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-brand-white/50">
+                    Tarif d&apos;abonnement
+                  </p>
+                  <div className="flex items-baseline justify-center gap-1 mt-1">
+                    <span className="text-4xl sm:text-5xl font-heading font-black text-brand-blue">
                       {currentPlan.price}
                     </span>
-                    <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">
+                    <span className="text-xs text-brand-white/60 font-medium uppercase tracking-wider">
                       / mois
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-300 mt-1 font-light">
-                    {currentPlan.subtitle}
-                  </p>
                 </div>
 
-                {/* Features List */}
-                <div className="space-y-3 mb-6">
-                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                    Ce qui est inclus :
-                  </p>
-                  <ul className="space-y-3">
-                    {currentPlan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-gray-200">
-                        <div className="w-5 h-5 rounded-full bg-[#00d8ff]/15 text-[#00d8ff] flex items-center justify-center shrink-0 mt-0.5 border border-[#00d8ff]/30">
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                        <span className="leading-relaxed">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="space-y-2 pt-2">
+                  <Link
+                    href="/connexion"
+                    className="w-full py-3.5 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-blue/30"
+                  >
+                    SOUSCRIRE EN LIGNE
+                    <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href="/contact"
+                    className="block w-full py-2.5 px-4 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors"
+                  >
+                    Une question sur les tarifs ?
+                  </Link>
                 </div>
-              </div>
 
-              {/* Note informative */}
-              <div className="pt-4 border-t border-gray-700/50 text-center">
-                <p className="text-xs text-gray-400">
-                  Sans frais cachés • Accompagnement dès la première séance
+                <p className="text-[11px] text-brand-white/40 leading-tight">
+                  Paiement sécurisé • Aucun engagement caché.
                 </p>
               </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
 
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* Bottom Info Notice */}
+      <div className="mt-14 sm:mt-16 text-center p-8 bg-[#0c1322] border border-brand-white/10 rounded-2xl max-w-2xl mx-auto space-y-3">
+        <h3 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white">
+          Besoin d&apos;un conseil sur la formule adaptée ?
+        </h3>
+        <p className="text-xs sm:text-sm text-brand-white/60 leading-relaxed max-w-lg mx-auto">
+          Contactez le coach Mahfoud pour échanger sur vos objectifs et déterminer le programme le plus adapté à votre progression.
+        </p>
+        <div className="pt-2">
+          <Link
+            href="/contact"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors"
+          >
+            CONTACTER LE CLUB
+          </Link>
+        </div>
+      </div>
+
     </section>
   );
 }
-
