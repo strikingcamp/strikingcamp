@@ -60,13 +60,13 @@ export default function EventsSection() {
       <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
           <Sparkles size={14} />
-          Stages & Masterclasses — Marseille 13010
+          Stages & Masterclasses
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white">
-          ÉVÉNEMENTS & STAGES <span className="text-brand-blue">À MARSEILLE</span>
+          ÉVÉNEMENTS
         </h1>
         <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed">
-          Découvrez nos prochains stages techniques de boxe anglaise, kickboxing, muay thaï et immersions au Striking Camp Marseille.
+          Découvrez nos prochains stages techniques de boxe anglaise, kickboxing, muay thaï et immersions au Striking Camp.
         </p>
       </div>
 

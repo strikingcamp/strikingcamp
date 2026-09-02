@@ -37,13 +37,13 @@ export default function FaqPageView() {
       {/* En-tête de la page */}
       <div className="text-center mb-12 sm:mb-16">
         <span className="inline-block text-xs font-heading font-bold uppercase tracking-widest text-brand-blue bg-brand-blue/10 border border-brand-blue/20 px-3.5 py-1.5 rounded-full mb-4">
-          Centre d&apos;aide & Questions Fréquentes — Marseille 13010
+          Centre d&apos;aide & Questions Fréquentes
         </span>
         <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-black text-brand-white uppercase tracking-tight mb-4">
           FOIRE AUX QUESTIONS <span className="text-brand-blue">(FAQ)</span>
         </h1>
         <p className="text-brand-white/70 text-base sm:text-lg font-light max-w-2xl mx-auto leading-relaxed">
-          Retrouvez toutes les réponses sur nos cours de boxe, kick-boxing, muay thaï, notre section Lady Striking et nos formules d&apos;entraînement à Marseille.
+          Retrouvez toutes les réponses sur nos cours de boxe, kick-boxing, muay thaï, notre section Lady Striking et nos formules d&apos;entraînement.
         </p>
       </div>
 

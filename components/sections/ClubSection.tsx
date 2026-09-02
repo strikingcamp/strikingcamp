@@ -33,7 +33,7 @@ export default function ClubSection() {
           <div className="w-full lg:w-1/3 lg:sticky lg:top-32 pt-4 lg:pt-12 space-y-8">
             <div>
               <span className="inline-block text-xs font-heading font-bold uppercase tracking-widest text-brand-blue bg-brand-blue/10 border border-brand-blue/20 px-3.5 py-1 rounded-full mb-3">
-                Marseille 13010 — Capelette
+                Le Club
               </span>
               <motion.h1 
                 initial={{ opacity: 0, x: -30 }}
@@ -89,7 +89,7 @@ export default function ClubSection() {
               {/* 1. BIENVENUE AU STRIKING CAMP */}
               <div>
                 <h2 className="font-heading text-3xl md:text-4xl font-bold text-brand-blue uppercase tracking-wide mb-6">
-                  BIENVENUE AU STRIKING CAMP MARSEILLE
+                  BIENVENUE AU STRIKING CAMP
                 </h2>
                 
                 {/* Image mobile de la salle */}

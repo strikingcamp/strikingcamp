@@ -9,21 +9,21 @@ const disciplines = [
   {
     title: "BOXE ANGLAISE",
     alt: "Cours de Boxe Anglaise à Marseille 13010 - Striking Camp",
-    shortDescription: "La Boxe Anglaise à Marseille : le noble art par excellence, axé sur la précision des poings, les esquives, la mobilité et la stratégie de combat.",
-    fullDescription: "La Boxe Anglaise développe l'art de frapper sans être touché. L'entraînement au Striking Camp Marseille met l'accent sur le jeu de jambes, les esquives rotatives et axiales, la gestion de la distance, la vitesse de réaction et la précision des combinaisons. Chaque session combine apprentissage technique pas-à-pas, travail aux paos, sacs de frappe et drills guidés adaptés aux débutants comme aux confirmés.",
+    shortDescription: "La Boxe Anglaise : le noble art par excellence, axé sur la précision des poings, les esquives, la mobilité et la stratégie de combat.",
+    fullDescription: "La Boxe Anglaise développe l'art de frapper sans être touché. L'entraînement au Striking Camp met l'accent sur le jeu de jambes, les esquives rotatives et axiales, la gestion de la distance, la vitesse de réaction et la précision des combinaisons. Chaque session combine apprentissage technique pas-à-pas, travail aux paos, sacs de frappe et drills guidés adaptés aux débutants comme aux confirmés.",
     image: "/boxe.webp"
   },
   {
     title: "KICK BOXING",
     alt: "Entraînement de Kick Boxing à Marseille - Striking Camp",
-    shortDescription: "Notre programme de Kick Boxing à Marseille intègre la fluidité des enchaînements pieds-poings, la puissance et le cardio.",
+    shortDescription: "Notre programme de Kick Boxing intègre la fluidité des enchaînements pieds-poings, la puissance et le cardio.",
     fullDescription: "Notre programme de Kick Boxing intègre les techniques de poings et les coups de pied sous toutes leurs formes (low kicks, middle, high kicks). L’accent est mis sur la fluidité des enchaînements pieds-poings, la gestion du timing et le développement de la puissance explosive. Un travail complet permettant de forger à la fois la technique de combat et une condition physique athlétique.",
     image: "/kickboxing.jpg"
   },
   {
     title: "BOXE THAÏ (MUAY THAÏ)",
     alt: "Cours de Boxe Thaï et Muay Thaï à Marseille 10e - Striking Camp",
-    shortDescription: "L'art des 8 membres à Marseille : poings, pieds, coudes, genoux et travail du corps-à-corps (clinch).",
+    shortDescription: "L'art des 8 membres : poings, pieds, coudes, genoux et travail du corps-à-corps (clinch).",
     fullDescription: "La Boxe Thaï, ou Muay Thaï, est une discipline ancestrale et complète utilisant les poings, les pieds, les coudes et les genoux. Les entraînements encadrés par le coach Mahfoud comprennent le travail technique aux paos thaï, le clinch (saisie et corps-à-corps), les balayages et le conditionnement physique spécifique, dans le respect et la sécurité de chacun.",
     image: "/muaythai.jpg"
   },
@@ -37,7 +37,7 @@ const disciplines = [
   {
     title: "LADY STRIKING (100% FEMMES)",
     alt: "Cours de Boxe et Striking 100% Femmes à Marseille - Lady Striking",
-    shortDescription: "Cours exclusivement réservé aux femmes à Marseille. Apprentissage technique, cardio intense et renforcement dans un cadre bienveillant.",
+    shortDescription: "Cours exclusivement réservé aux femmes. Apprentissage technique, cardio intense et renforcement dans un cadre bienveillant.",
     fullDescription: "Le Lady Striking est un programme 100 % féminin accessible à toutes, sans aucun prérequis sportif. Conçu pour apprendre les techniques de frappe (boxe et pieds-poings) sans risque de coups violents, chaque cours associe apprentissage technique, défoulement au sac et renforcement musculaire complet. Une ambiance motivante, sécurisante et stimulante pour gagner en confiance, en tonicité et en énergie.",
     image: "/fille.jpg"
   },
@@ -80,7 +80,7 @@ export default function CardsSection() {
             transition={{ duration: 0.8 }}
             className="font-heading text-4xl md:text-5xl font-black text-brand-white uppercase tracking-widest mb-6"
           >
-            NOS <span className="text-brand-blue">DISCIPLINES</span> À MARSEILLE
+            NOS <span className="text-brand-blue">DISCIPLINES</span>
           </motion.h2>
           <motion.div 
             initial={{ opacity: 0, scaleX: 0 }}

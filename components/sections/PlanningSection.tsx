@@ -5,77 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Category = "Small Group" | "Collectifs";
-type Day = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
+import {
+  type DayName as Day,
+  type PlanningCategory as Category,
+  DAYS_ORDER as days,
+  publicScheduleData as scheduleData,
+} from "@/data/planning";
+
 type DayFilter = "Tous" | Day;
 
-type Course = {
-  name: string;
-  level?: string;
-  time: string;
-  places?: string;
-};
-
-const scheduleData: Record<Category, Record<Day, Course[]>> = {
-  "Small Group": {
-    Lundi: [
-      { name: "Boxing Bag", level: "Fondamentaux", time: "07:00" },
-      { name: "Kick Boxing", level: "Fondamentaux", time: "11:00" },
-      { name: "KB Shred", level: "Performance", time: "12:15" },
-    ],
-    Mardi: [
-      { name: "KB Shred", level: "Performance", time: "11:00" },
-      { name: "Striking", level: "Fondamentaux", time: "12:15" },
-      { name: "Kick Boxing", level: "Fondamentaux", time: "17:00" },
-      { name: "Lady Striking", level: "Fondamentaux", time: "18:00" },
-      { name: "Boxe Thaï", level: "Performance", time: "20:00" },
-    ],
-    Mercredi: [
-      { name: "Boxing Bag", level: "Performance", time: "07:00" },
-      { name: "Kick Boxing", level: "Fondamentaux", time: "11:00" },
-      { name: "KB Shred", level: "Performance", time: "12:15" },
-      { name: "Striking", level: "Performance", time: "18:30" },
-      { name: "Boxe Thaï", level: "Fondamentaux", time: "19:30" },
-      { name: "Kick Boxing", level: "Performance", time: "20:30" },
-    ],
-    Jeudi: [
-      { name: "Boxing Bag", level: "Fondamentaux", time: "11:00" },
-      { name: "Striking", level: "Performance", time: "12:15" },
-      { name: "Lady Striking", level: "100% féminin", time: "17:30" },
-      { name: "Kick Boxing", level: "Fondamentaux", time: "19:30" },
-      { name: "Boxe Thaï", level: "Performance", time: "20:30" },
-    ],
-    Vendredi: [
-      { name: "Boxing Bag", level: "Performance", time: "07:00" },
-      { name: "Boxe Thaï", level: "Performance", time: "17:00" },
-      { name: "Striking", level: "Fondamentaux", time: "18:00" },
-      { name: "Kick Boxing", level: "Performance", time: "19:30" },
-    ],
-    Samedi: [
-      { name: "Kick Boxing", level: "Sparring guidé", time: "11:00" },
-      { name: "Lady Striking", level: "Sparring guidé", time: "12:00" },
-    ],
-  },
-  "Collectifs": {
-    Lundi: [],
-    Mardi: [
-      { name: "Kick Boxing", level: "Fondamentaux", time: "19:00" },
-    ],
-    Mercredi: [
-      { name: "Kick Boxing", level: "Performance", time: "17:30" },
-    ],
-    Jeudi: [
-      { name: "Kick Boxing", level: "Fondamentaux", time: "18:30" },
-    ],
-    Vendredi: [],
-    Samedi: [
-      { name: "Kick Boxing", level: "Sparring guidé", time: "11:00" },
-    ],
-  },
-};
-
-const days: Day[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-const categories: Category[] = ["Small Group", "Collectifs"];
+const categories: Category[] = ["Collectifs", "Small Group"];
 
 function getBadgeColor(level?: string) {
   if (!level) return "bg-gray-500";
@@ -86,6 +25,7 @@ function getBadgeColor(level?: string) {
   if (lvl.includes("femme") || lvl.includes("féminin") || lvl.includes("feminin")) return "bg-pink-500";
   if (lvl.includes("tous niveaux")) return "bg-[#22c55e]"; // Green
   if (lvl.includes("élite") || lvl.includes("elite")) return "bg-purple-500";
+  if (lvl.includes("cardio")) return "bg-[#f97316]"; // Orange
   return "bg-gray-500";
 }
 
@@ -107,10 +47,10 @@ export default function PlanningSection() {
         {/* Header */}
         <div className="text-center mb-8">
           <span className="inline-block text-xs font-heading font-bold uppercase tracking-widest text-[#00d8ff] bg-[#00d8ff]/10 border border-[#00d8ff]/20 px-3.5 py-1 rounded-full mb-3">
-            Horaires & Créneaux — Marseille 13010
+            Horaires & Créneaux
           </span>
           <h1 className="text-4xl md:text-5xl font-black text-[#00d8ff] uppercase tracking-wide">
-            PLANNING DES COURS <span className="text-white">DE BOXE & STRIKING</span>
+            PLANNING <span className="text-white">DES COURS</span>
           </h1>
           <p className="text-sm sm:text-base text-gray-300 mt-2 max-w-xl mx-auto font-light">
             Découvrez nos créneaux du matin, du midi et du soir : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking et KB Shred.

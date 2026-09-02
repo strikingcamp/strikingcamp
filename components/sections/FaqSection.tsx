@@ -14,7 +14,7 @@ interface FaqSectionProps {
 
 export default function FaqSection({
   title = "QUESTIONS FRÉQUENTES (FAQ)",
-  subtitle = "Tout ce que vous devez savoir pour débuter ou progresser au Striking Camp Marseille.",
+  subtitle = "Tout ce que vous devez savoir pour débuter ou progresser au Striking Camp.",
   className,
 }: FaqSectionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
