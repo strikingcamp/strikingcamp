@@ -142,6 +142,30 @@ const OFFICIAL_COLLECTIVE: Omit<DemoSlot, "id" | "dateStr" | "startsAtIso" | "bo
   { category: "Collectifs", day: "Samedi", startTime: "10:00", endTime: "11:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", maxCapacity: 35 },
 ];
 
+function getCurrentWeekMonday(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  // Dimanche = 0 (décalage de -6 jours), sinon (1 - day) jours pour atteindre Lundi
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0);
+  return monday;
+}
+
+function getCurrentDayName(): DayName {
+  const now = new Date();
+  const dayIndex = now.getDay(); // 0 = Dimanche, 1 = Lundi, 2 = Mardi, 3 = Mercredi, 4 = Jeudi, 5 = Vendredi, 6 = Samedi
+  const map: Record<number, DayName> = {
+    1: "Lundi",
+    2: "Mardi",
+    3: "Mercredi",
+    4: "Jeudi",
+    5: "Vendredi",
+    6: "Samedi",
+    0: "Lundi", // Le dimanche, sélectionne le Lundi
+  };
+  return map[dayIndex] || "Lundi";
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // GÉNÉRATEUR DES CRÉNEAUX CONNECTÉ À SUPABASE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -162,16 +186,17 @@ function generateSlotsFromData(
     mondayDateStr: dayDateMap["Lundi"]?.dateStr,
   });
 
+  const defaultMondayStr = dayDateMap["Lundi"]?.dateStr || mondayDate.toISOString().slice(0, 10);
   const slots: DemoSlot[] = [];
 
   if (availableSessions && availableSessions.length > 0) {
-    const mondayStr = dayDateMap["Lundi"]?.dateStr || "2026-08-31";
-    const saturdayStr = dayDateMap["Samedi"]?.dateStr || "2026-09-05";
+    const mondayStr = dayDateMap["Lundi"]?.dateStr || defaultMondayStr;
+    const saturdayStr = dayDateMap["Samedi"]?.dateStr || "";
 
     // Filtrer les sessions de la semaine demandée
     const weekSessions = availableSessions.filter((s) => {
       const sDateStr = s.starts_at.slice(0, 10);
-      return sDateStr >= mondayStr && sDateStr <= saturdayStr;
+      return sDateStr >= mondayStr && (!saturdayStr || sDateStr <= saturdayStr);
     });
 
     console.log(`[MemberPlanningView] ${weekSessions.length} séances trouvées pour la semaine ${mondayStr} -> ${saturdayStr}`);
@@ -260,7 +285,7 @@ function generateSlotsFromData(
       const hasPrivate = slots.some((sl) => sl.category === "Cours privés");
       if (!hasPrivate) {
         for (const day of DAYS_ORDER) {
-          const dStr = dayDateMap[day]?.dateStr || "2026-08-31";
+          const dStr = dayDateMap[day]?.dateStr || defaultMondayStr;
           OFFICIAL_PRIVATE_HOURS.forEach((h, idx) => {
             const isOcc = (day === "Mardi" && idx === 1) || (day === "Jeudi" && idx === 3) || (day === "Samedi" && idx === 4);
             const isMine = userBookingsList.some(
@@ -318,7 +343,7 @@ function generateSlotsFromData(
   // Fallback initial en attendant le chargement
   console.warn("[MemberPlanningView] Fallback initial actif (attente des données Supabase)");
   for (const day of DAYS_ORDER) {
-    const dStr = dayDateMap[day]?.dateStr || "2026-08-31";
+    const dStr = dayDateMap[day]?.dateStr || defaultMondayStr;
     OFFICIAL_PRIVATE_HOURS.forEach((h, idx) => {
       const isOcc = (day === "Mardi" && idx === 1) || (day === "Jeudi" && idx === 3) || (day === "Samedi" && idx === 4);
       const isMine = userBookingsList.some(
@@ -344,7 +369,7 @@ function generateSlotsFromData(
   }
 
   OFFICIAL_SMALL_GROUP.forEach((sg, idx) => {
-    const dStr = dayDateMap[sg.day]?.dateStr || "2026-08-31";
+    const dStr = dayDateMap[sg.day]?.dateStr || defaultMondayStr;
     const isMine = userBookingsList.some(
       (b) => b.sessionType === "Small Group" && b.day === sg.day && b.time.startsWith(sg.startTime)
     );
@@ -361,7 +386,7 @@ function generateSlotsFromData(
   });
 
   OFFICIAL_COLLECTIVE.forEach((col, idx) => {
-    const dStr = dayDateMap[col.day]?.dateStr || "2026-08-31";
+    const dStr = dayDateMap[col.day]?.dateStr || defaultMondayStr;
     slots.push({
       id: `col_${col.day}_${idx}`,
       ...col,
@@ -411,7 +436,7 @@ export default function MemberPlanningView() {
   // État du parcours en entonnoir pour Cours Privés
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>(PRIVATE_DISCIPLINES[0].name);
   const [selectedLevel, setSelectedLevel] = useState<string>(PRIVATE_LEVELS[0].name);
-  const [selectedDayName, setSelectedDayName] = useState<DayName>("Lundi");
+  const [selectedDayName, setSelectedDayName] = useState<DayName>(() => getCurrentDayName());
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<DemoSlot | null>(null);
 
   // Modals d'annulation et alertes
@@ -427,9 +452,9 @@ export default function MemberPlanningView() {
   const remainingQuota = privateQuota?.sessionsRemaining ?? 6;
   const totalQuota = privateQuota?.quotaTotal ?? 8;
 
-  // Dates de la semaine
+  // Dates de la semaine (calcul dynamique à partir de la date réelle du jour)
   const mondayDate = useMemo(() => {
-    const d = new Date("2026-08-31T00:00:00");
+    const d = getCurrentWeekMonday();
     d.setDate(d.getDate() + (weekOffset * 7));
     return d;
   }, [weekOffset]);
