@@ -15,6 +15,7 @@ export interface MemberPlanAccess {
 
 export interface ClassSession {
   id: string;
+  template_id?: string | null;
   discipline: string;
   type?: string | null;
   level?: string | null;
@@ -22,6 +23,7 @@ export interface ClassSession {
   ends_at?: string | null;
   max_capacity?: number | null;
   is_active?: boolean | null;
+  created_at?: string | null;
 }
 
 export interface SmallGroupBooking {
@@ -245,7 +247,7 @@ export async function getActiveClassSessions(
 ): Promise<ClassSession[]> {
   const { data, error } = await supabase
     .from("class_sessions")
-    .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
+    .select("id, template_id, discipline, type, level, starts_at, ends_at, max_capacity, is_active, created_at")
     .order("starts_at", { ascending: true });
 
   if (error) {

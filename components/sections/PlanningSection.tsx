@@ -9,8 +9,9 @@ import { cn } from "@/lib/utils";
 import {
   type DayName as Day,
   type PlanningCategory as Category,
+  type ScheduleCourse,
   DAYS_ORDER as days,
-  publicScheduleData as scheduleData,
+  publicScheduleData as defaultScheduleData,
 } from "@/data/planning";
 
 type DayFilter = "Tous" | Day;
@@ -30,13 +31,18 @@ function getBadgeColor(level?: string) {
   return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
 }
 
-export default function PlanningSection() {
+interface PlanningSectionProps {
+  initialScheduleData?: Record<Category, Record<Day, ScheduleCourse[]>>;
+}
+
+export default function PlanningSection({ initialScheduleData }: PlanningSectionProps = {}) {
+  const scheduleData = initialScheduleData || defaultScheduleData;
   const [activeCategory, setActiveCategory] = useState<Category>("Collectifs");
   const [activeDay, setActiveDay] = useState<DayFilter>("Tous");
 
   // Jours ayant au moins un créneau dans la catégorie active
   const activeDays = days.filter(
-    (day) => scheduleData[activeCategory][day]?.length > 0
+    (day) => scheduleData[activeCategory]?.[day]?.length > 0
   );
 
   const daysToRender = activeDay === "Tous" ? activeDays : [activeDay as Day];

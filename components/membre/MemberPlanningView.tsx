@@ -41,6 +41,7 @@ type DayFilter = "Tous" | DayName;
 
 interface DemoSlot {
   id: string;
+  templateId?: string | null;
   classSessionId?: string;
   bookingId?: string;
   category: Category;
@@ -89,57 +90,6 @@ const OFFICIAL_PRIVATE_HOURS = [
   { start: "14:00", end: "14:50" },
   { start: "15:00", end: "15:50" },
   { start: "16:00", end: "16:50" },
-];
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 2. SMALL GROUP : 23 SÉANCES OFFICIELLES PAR SEMAINE (FALLBACK)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-const OFFICIAL_SMALL_GROUP: Omit<DemoSlot, "id" | "dateStr" | "startsAtIso" | "bookedCount" | "isOccupiedByOther" | "isBookedByMe">[] = [
-  // LUNDI (3 cours)
-  { category: "Small Group", day: "Lundi", startTime: "07:00", endTime: "07:50", discipline: "Boxing Bag", level: "Fondamentaux", maxCapacity: 20 },
-  { category: "Small Group", day: "Lundi", startTime: "11:00", endTime: "11:50", discipline: "Boxing", level: "Fondamentaux", maxCapacity: 20 },
-  { category: "Small Group", day: "Lundi", startTime: "12:15", endTime: "13:05", discipline: "Boxing Shred", level: "Performance", maxCapacity: 20 },
-
-  // MARDI (4 cours)
-  { category: "Small Group", day: "Mardi", startTime: "11:00", endTime: "11:50", discipline: "Boxing Shred", level: "Cardio", maxCapacity: 20 },
-  { category: "Small Group", day: "Mardi", startTime: "12:15", endTime: "13:05", discipline: "Boxing Bag", level: "Cardio", maxCapacity: 20 },
-  { category: "Small Group", day: "Mardi", startTime: "17:00", endTime: "17:50", discipline: "Lady Striking", level: "100% femme", maxCapacity: 20 },
-  { category: "Small Group", day: "Mardi", startTime: "18:00", endTime: "18:50", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 20 },
-
-  // MERCREDI (6 cours)
-  { category: "Small Group", day: "Mercredi", startTime: "07:00", endTime: "07:50", discipline: "Boxing Bag", level: "Performance", maxCapacity: 20 },
-  { category: "Small Group", day: "Mercredi", startTime: "11:00", endTime: "11:50", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 20 },
-  { category: "Small Group", day: "Mercredi", startTime: "12:15", endTime: "13:05", discipline: "Boxing Shred", level: "Performance", maxCapacity: 20 },
-  { category: "Small Group", day: "Mercredi", startTime: "17:30", endTime: "18:20", discipline: "Striking", level: "Performance", maxCapacity: 20 },
-  { category: "Small Group", day: "Mercredi", startTime: "19:30", endTime: "20:20", discipline: "Boxe Thaï", level: "Fondamentaux", maxCapacity: 20 },
-  { category: "Small Group", day: "Mercredi", startTime: "20:30", endTime: "21:20", discipline: "Kick Boxing", level: "Performance", maxCapacity: 20 },
-
-  // JEUDI (5 cours)
-  { category: "Small Group", day: "Jeudi", startTime: "11:00", endTime: "11:50", discipline: "Boxing Shred", level: "Performance", maxCapacity: 20 },
-  { category: "Small Group", day: "Jeudi", startTime: "12:15", endTime: "13:05", discipline: "Striking", level: "Performance", maxCapacity: 20 },
-  { category: "Small Group", day: "Jeudi", startTime: "17:30", endTime: "18:20", discipline: "Lady Striking", level: "Cours féminin", maxCapacity: 20 },
-  { category: "Small Group", day: "Jeudi", startTime: "19:30", endTime: "20:20", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 20 },
-  { category: "Small Group", day: "Jeudi", startTime: "20:30", endTime: "21:20", discipline: "Boxe Thaï", level: "Élite", maxCapacity: 20 },
-
-  // VENDREDI (3 cours)
-  { category: "Small Group", day: "Vendredi", startTime: "07:00", endTime: "07:50", discipline: "Boxing Bag", level: "Fondamentaux", maxCapacity: 20 },
-  { category: "Small Group", day: "Vendredi", startTime: "17:00", endTime: "17:50", discipline: "Boxe Thaï", level: "Fondamentaux", maxCapacity: 20 },
-  { category: "Small Group", day: "Vendredi", startTime: "19:30", endTime: "20:20", discipline: "Striking", level: "Performance", maxCapacity: 20 },
-
-  // SAMEDI (2 cours - sans Boxing Bag)
-  { category: "Small Group", day: "Samedi", startTime: "11:00", endTime: "11:50", discipline: "Kick Boxing", level: "Élite", maxCapacity: 20 },
-  { category: "Small Group", day: "Samedi", startTime: "12:00", endTime: "12:50", discipline: "Lady Striking", level: "Élite", maxCapacity: 20 },
-];
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 3. COLLECTIFS : 3 SÉANCES STRICTES (AUCUN BOUTON RÉSERVER)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-const OFFICIAL_COLLECTIVE: Omit<DemoSlot, "id" | "dateStr" | "startsAtIso" | "bookedCount" | "isOccupiedByOther" | "isBookedByMe">[] = [
-  { category: "Collectifs", day: "Mardi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", maxCapacity: 35 },
-  { category: "Collectifs", day: "Vendredi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", maxCapacity: 35 },
-  { category: "Collectifs", day: "Samedi", startTime: "10:00", endTime: "11:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", maxCapacity: 35 },
 ];
 
 function getCurrentWeekMonday(): Date {
@@ -193,8 +143,9 @@ function generateSlotsFromData(
     const mondayStr = dayDateMap["Lundi"]?.dateStr || defaultMondayStr;
     const saturdayStr = dayDateMap["Samedi"]?.dateStr || "";
 
-    // Filtrer les sessions de la semaine demandée
+    // Filtrer les sessions actives de la semaine demandée
     const weekSessions = availableSessions.filter((s) => {
+      if (s.is_active === false) return false;
       const sDateStr = s.starts_at.slice(0, 10);
       return sDateStr >= mondayStr && (!saturdayStr || sDateStr <= saturdayStr);
     });
@@ -202,6 +153,30 @@ function generateSlotsFromData(
     console.log(`[MemberPlanningView] ${weekSessions.length} séances trouvées pour la semaine ${mondayStr} -> ${saturdayStr}`);
 
     if (weekSessions.length > 0) {
+      // Regrouper par template_id + date pour détecter d'éventuelles séances déplacées
+      // conservées pour protéger les réservations historiques
+      const templateDateMap = new Map<string, ClassSession[]>();
+      for (const s of weekSessions) {
+        if (s.template_id) {
+          const key = `${s.template_id}_${s.starts_at.slice(0, 10)}`;
+          const list = templateDateMap.get(key) || [];
+          list.push(s);
+          templateDateMap.set(key, list);
+        }
+      }
+
+      // Pour les templates multi-séances sur le même jour, trier par created_at décroissant
+      // La plus récemment créée est la séance canonique officielle
+      templateDateMap.forEach((list) => {
+        if (list.length > 1) {
+          list.sort((a, b) => {
+            const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return timeB - timeA;
+          });
+        }
+      });
+
       for (const s of weekSessions) {
         const sDateStr = s.starts_at.slice(0, 10);
 
@@ -258,12 +233,37 @@ function generateSlotsFromData(
             ))
         );
 
+        // Règle d'affichage des séances legacy (template_id === null / undefined) :
+        // - Si template_id !== null -> afficher normalement.
+        // - Si template_id === null ET que le membre connecté possède une réservation sur cette séance -> conserver la séance visible afin de préserver son accès à sa réservation.
+        // - Si template_id === null ET qu'il n'y a aucune réservation du membre connecté -> ne pas afficher la séance.
+        if (!isPriv && !s.template_id) {
+          if (!isBookedByMe) {
+            continue;
+          }
+        }
+
+        // Détection de séance déplacée / doublon pour le même template sur le même jour :
+        if (s.template_id) {
+          const key = `${s.template_id}_${sDateStr}`;
+          const siblings = templateDateMap.get(key);
+          if (siblings && siblings.length > 1) {
+            const isCanonical = siblings[0].id === s.id;
+            // Si ce n'est pas la séance officielle (canonique) et que le membre connecté n'y est pas inscrit,
+            // on ne l'affiche pas afin d'éviter tout doublon incohérent dans le planning.
+            if (!isCanonical && !isBookedByMe) {
+              continue;
+            }
+          }
+        }
+
         const isOccupiedByOther = isPriv
           ? bookedCount >= 1 && !isBookedByMe
           : bookedCount >= maxCapacity && !isBookedByMe;
 
         slots.push({
           id: s.id,
+          templateId: s.template_id,
           classSessionId: s.id,
           bookingId: userBookingMatch?.id,
           category,
@@ -311,30 +311,6 @@ function generateSlotsFromData(
         }
       }
 
-      // Compléter les créneaux de cours collectifs récurrents pour toutes les semaines
-      // Vérification unitaire de chaque créneau officiel (Mardi 18h, Vendredi 18h, Samedi 10h)
-      OFFICIAL_COLLECTIVE.forEach((col, idx) => {
-        const dStr = dayDateMap[col.day]?.dateStr || mondayStr;
-        const alreadyExists = slots.some(
-          (sl) =>
-            sl.category === "Collectifs" &&
-            sl.day === col.day &&
-            sl.startTime === col.startTime
-        );
-
-        if (!alreadyExists) {
-          slots.push({
-            id: `col_${col.day}_${idx}_${dStr}`,
-            ...col,
-            dateStr: dStr,
-            bookedCount: 0,
-            isOccupiedByOther: false,
-            isBookedByMe: false,
-            startsAtIso: `${dStr}T${col.startTime}:00`,
-          });
-        }
-      });
-
       console.log("[MemberPlanningView] Total slots générés depuis les class_sessions réelles :", slots.length);
       return slots;
     }
@@ -367,36 +343,6 @@ function generateSlotsFromData(
       });
     });
   }
-
-  OFFICIAL_SMALL_GROUP.forEach((sg, idx) => {
-    const dStr = dayDateMap[sg.day]?.dateStr || defaultMondayStr;
-    const isMine = userBookingsList.some(
-      (b) => b.sessionType === "Small Group" && b.day === sg.day && b.time.startsWith(sg.startTime)
-    );
-
-    slots.push({
-      id: `sg_${sg.day}_${idx}`,
-      ...sg,
-      dateStr: dStr,
-      bookedCount: isMine ? 14 : 7 + (idx % 11),
-      isOccupiedByOther: false,
-      isBookedByMe: isMine,
-      startsAtIso: `${dStr}T${sg.startTime}:00`,
-    });
-  });
-
-  OFFICIAL_COLLECTIVE.forEach((col, idx) => {
-    const dStr = dayDateMap[col.day]?.dateStr || defaultMondayStr;
-    slots.push({
-      id: `col_${col.day}_${idx}`,
-      ...col,
-      dateStr: dStr,
-      bookedCount: 0,
-      isOccupiedByOther: false,
-      isBookedByMe: false,
-      startsAtIso: `${dStr}T${col.startTime}:00`,
-    });
-  });
 
   return slots;
 }
@@ -1165,6 +1111,16 @@ export default function MemberPlanningView() {
 
           {/* Liste des séances */}
           <div className="space-y-6">
+            {activeDaysWithSessions.length === 0 && (
+              <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
+                <p className="text-sm font-heading font-bold uppercase text-brand-white">
+                  Aucune séance Small Group disponible cette semaine
+                </p>
+                <p className="text-xs text-brand-white/50">
+                  Les créneaux de cours sont actualisés en direct par le club.
+                </p>
+              </div>
+            )}
             {daysToRender.map(day => {
               const daySessions = weekSessionsByDay[day];
               if (!daySessions || daySessions.length === 0) return null;
@@ -1278,6 +1234,16 @@ export default function MemberPlanningView() {
           </div>
 
           <div className="space-y-3">
+            {activeDaysWithSessions.length === 0 && (
+              <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
+                <p className="text-sm font-heading font-bold uppercase text-brand-white">
+                  Aucun cours collectif programmé cette semaine
+                </p>
+                <p className="text-xs text-brand-white/50">
+                  Consultez les autres semaines ou contactez l&apos;accueil du club.
+                </p>
+              </div>
+            )}
             {DAYS_ORDER.map(day => {
               const daySessions = weekSessionsByDay[day];
               if (!daySessions || daySessions.length === 0) return null;
