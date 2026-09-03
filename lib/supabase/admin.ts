@@ -34,12 +34,22 @@ export interface AdminBookingParticipant {
   attendanceStatus: "pending" | "present" | "absent";
   attendedAt?: string | null;
   createdAt: string;
+  cancellationReason?: string | null;
+  isLateCancellation?: boolean;
 }
 
 export interface AdminSessionReservationsData {
   session: AdminClassSessionSummary | null;
   participants: AdminBookingParticipant[];
   allSessionsList: AdminClassSessionSummary[];
+}
+
+export interface AdminWeeklyReservationsData {
+  weekMonday: string;
+  weekSaturday: string;
+  smallGroupSessions: AdminClassSessionSummary[];
+  privateSessions: AdminClassSessionSummary[];
+  bookingsBySessionId: Record<string, AdminBookingParticipant[]>;
 }
 
 export interface AdminBookingSummary {
@@ -686,6 +696,348 @@ export async function getAdminSessionReservations(
 
 function rawProf(first?: string, last?: string): string {
   return `${last || ""}`.trim();
+}
+
+/**
+ * Convertit un timestamp ISO ou objet Date en YYYY-MM-DD strict en heure de Paris
+ */
+export function formatToParisDate(isoOrDate: string | Date): string {
+  const d = typeof isoOrDate === "string" ? new Date(isoOrDate) : isoOrDate;
+  return new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+/**
+ * Convertit un timestamp ISO ou objet Date en HH:MM strict en heure de Paris
+ */
+export function formatToParisTime(isoOrDate: string | Date): string {
+  const d = typeof isoOrDate === "string" ? new Date(isoOrDate) : isoOrDate;
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+}
+
+/**
+ * Récupère toutes les séances (Small Group & Privées) et toutes les réservations d'une semaine.
+ * SOURCE DE VÉRITÉ : Le planning officiel est défini par `recurring_schedule_templates`.
+ * Les réservations réelles proviennent de `class_sessions` -> `bookings`.
+ * Protection absolue des séances ayant des réservations réelles existantes.
+ */
+export async function getAdminWeeklyReservationsData(
+  supabase: SupabaseClient,
+  mondayStr: string,
+  saturdayStr: string
+): Promise<AdminWeeklyReservationsData> {
+  try {
+    // Calcul précis des dates du Lundi au Samedi (index 0 à 5)
+    const mondayParts = mondayStr.split("-").map(Number);
+    const dayDateStrings: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(Date.UTC(mondayParts[0], mondayParts[1] - 1, mondayParts[2] + i, 12, 0, 0));
+      const yyyy = d.getUTCFullYear();
+      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(d.getUTCDate()).padStart(2, "0");
+      dayDateStrings.push(`${yyyy}-${mm}-${dd}`);
+    }
+
+    // 1. Récupération des templates récurrents officiels Small Group (SOURCE DE VÉRITÉ)
+    const { data: rawTemplates, error: tmplErr } = await supabase
+      .from("recurring_schedule_templates")
+      .select("id, day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
+      .eq("is_active", true)
+      .eq("type", "small_group")
+      .order("day_of_week", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    if (tmplErr) {
+      console.error("[getAdminWeeklyReservationsData] Erreur templates récurrents :", tmplErr);
+    }
+
+    // 2. Récupération des séances physiques de la plage (avec marge 1 jour avant/après pour UTC)
+    const rangeStart = new Date(`${mondayStr}T00:00:00Z`);
+    rangeStart.setDate(rangeStart.getDate() - 1);
+    const rangeEnd = new Date(`${saturdayStr}T23:59:59Z`);
+    rangeEnd.setDate(rangeEnd.getDate() + 2);
+
+    const { data: rawSessions, error: sessErr } = await supabase
+      .from("class_sessions")
+      .select("id, template_id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
+      .gte("starts_at", rangeStart.toISOString())
+      .lte("starts_at", rangeEnd.toISOString())
+      .order("starts_at", { ascending: true });
+
+    if (sessErr) {
+      console.error("[getAdminWeeklyReservationsData] Erreur sessions :", sessErr);
+    }
+
+    // Filtrage déterministe en fuseau horaire Europe/Paris
+    const weekSessions = (rawSessions || []).filter((s) => {
+      const pDate = formatToParisDate(s.starts_at);
+      return pDate >= mondayStr && pDate <= saturdayStr;
+    });
+
+    const sessionIds = weekSessions.map((s) => s.id);
+
+    // 3. Récupération des réservations réelles associées
+    let allBookings: any[] = [];
+    if (sessionIds.length > 0) {
+      const { data: bData, error: bErr } = await supabase
+        .from("bookings")
+        .select("id, user_id, class_session_id, status, attendance_status, attended_at, is_late_cancellation, cancellation_reason, created_at")
+        .in("class_session_id", sessionIds)
+        .order("created_at", { ascending: true });
+
+      if (bErr) {
+        console.error("[getAdminWeeklyReservationsData] Erreur bookings :", bErr);
+      } else {
+        allBookings = bData || [];
+      }
+    }
+
+    // 4. Récupération des profils et abonnements des membres
+    const userIds = Array.from(new Set(allBookings.map((b) => b.user_id)));
+    const profilesMap = new Map<string, { first_name?: string; last_name?: string; phone?: string }>();
+    const subsMap = new Map<string, string>();
+
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, phone")
+        .in("id", userIds);
+
+      if (profilesData) {
+        for (const p of profilesData) {
+          profilesMap.set(p.id, p);
+        }
+      }
+
+      const { data: subsData } = await supabase
+        .from("subscriptions")
+        .select("id, user_id, status, plan:plans(name, type)")
+        .in("user_id", userIds)
+        .eq("status", "active");
+
+      if (subsData) {
+        for (const sub of subsData) {
+          const rawPlan = Array.isArray(sub.plan) ? sub.plan[0] : sub.plan;
+          if (rawPlan?.name) {
+            subsMap.set(sub.user_id, rawPlan.name);
+          }
+        }
+      }
+    }
+
+    // 5. Indexation des réservations par class_session_id
+    const bookingsBySessionId: Record<string, AdminBookingParticipant[]> = {};
+    const confirmedCountsMap = new Map<string, number>();
+
+    for (const b of allBookings) {
+      const prof = profilesMap.get(b.user_id);
+      const memberName = prof
+        ? `${prof.first_name || ""} ${rawProf(prof.first_name, prof.last_name)}`.trim() || "Membre"
+        : "Membre";
+
+      const phone = prof?.phone || "—";
+      const planName = subsMap.get(b.user_id) || "Formule Active";
+
+      let formattedDate = "—";
+      if (b.created_at) {
+        const d = new Date(b.created_at);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const hours = String(d.getHours()).padStart(2, "0");
+        const mins = String(d.getMinutes()).padStart(2, "0");
+        formattedDate = `${day}/${month}/${d.getFullYear()} à ${hours}:${mins}`;
+      }
+
+      let formattedAttendedAt: string | null = null;
+      if (b.attended_at) {
+        const ad = new Date(b.attended_at);
+        const ah = String(ad.getHours()).padStart(2, "0");
+        const am = String(ad.getMinutes()).padStart(2, "0");
+        formattedAttendedAt = `${ah}:${am}`;
+      }
+
+      const participant: AdminBookingParticipant = {
+        bookingId: b.id,
+        userId: b.user_id,
+        memberName,
+        phone,
+        planName,
+        status: b.status || "confirmed",
+        attendanceStatus: (b.attendance_status as "pending" | "present" | "absent") || "pending",
+        attendedAt: formattedAttendedAt,
+        createdAt: formattedDate,
+        cancellationReason: b.cancellation_reason || null,
+        isLateCancellation: Boolean(b.is_late_cancellation),
+      };
+
+      if (!bookingsBySessionId[b.class_session_id]) {
+        bookingsBySessionId[b.class_session_id] = [];
+      }
+      bookingsBySessionId[b.class_session_id].push(participant);
+
+      if (b.status === "confirmed") {
+        confirmedCountsMap.set(
+          b.class_session_id,
+          (confirmedCountsMap.get(b.class_session_id) || 0) + 1
+        );
+      }
+    }
+
+    // 6. Extraction des Cours Privés (max_capacity = 1)
+    const privateSessions: AdminClassSessionSummary[] = [];
+    for (const s of weekSessions) {
+      const rawType = (s.type || "").toLowerCase().trim();
+      const isPriv =
+        rawType === "private" ||
+        rawType === "prive" ||
+        (s.discipline || "").toLowerCase().includes("privé") ||
+        (s.discipline || "").toLowerCase().includes("prive");
+
+      if (isPriv) {
+        privateSessions.push({
+          id: s.id,
+          discipline: s.discipline,
+          type: "private",
+          level: s.level || "Individuel",
+          starts_at: s.starts_at,
+          ends_at: s.ends_at,
+          max_capacity: s.max_capacity || 1,
+          bookedCount: confirmedCountsMap.get(s.id) || 0,
+          is_active: s.is_active ?? true,
+        });
+      }
+    }
+
+    // 7. Construction du planning officiel SMALL GROUP
+    // On exclut les cours collectifs (type = 'collective') et les cours privés
+    const physicalSmallGroupSessions = weekSessions.filter((s) => {
+      const rawType = (s.type || "").toLowerCase().trim();
+      const isPriv =
+        rawType === "private" ||
+        rawType === "prive" ||
+        (s.discipline || "").toLowerCase().includes("privé") ||
+        (s.discipline || "").toLowerCase().includes("prive");
+      const isCol = rawType === "collective";
+      return !isPriv && !isCol;
+    });
+
+    const smallGroupSessions: AdminClassSessionSummary[] = [];
+    const matchedPhysicalSessionIds = new Set<string>();
+
+    // Étape A : Pour chaque jour (Lundi = 0 ... Samedi = 5), projeter les templates officiels
+    for (let dayIdx = 0; dayIdx < 6; dayIdx++) {
+      const dayDateStr = dayDateStrings[dayIdx];
+      const dayTemplates = (rawTemplates || []).filter((t) => t.day_of_week === dayIdx);
+
+      for (const t of dayTemplates) {
+        const tmplStartHm = t.start_time.slice(0, 5);
+        const tmplEndHm = t.end_time.slice(0, 5);
+
+        // Recherche d'une session physique correspondante sur cette date
+        const match = physicalSmallGroupSessions.find((ps) => {
+          if (matchedPhysicalSessionIds.has(ps.id)) return false;
+          const pDate = formatToParisDate(ps.starts_at);
+          if (pDate !== dayDateStr) return false;
+
+          // Correspondance par template_id prioritaire
+          if (ps.template_id && ps.template_id === t.id) return true;
+
+          // Ou correspondance par heure locale Paris + discipline
+          const pTime = formatToParisTime(ps.starts_at);
+          if (pTime === tmplStartHm && (ps.discipline.toLowerCase() === t.discipline.toLowerCase() || ps.template_id === t.id)) {
+            return true;
+          }
+          return false;
+        });
+
+        if (match) {
+          matchedPhysicalSessionIds.add(match.id);
+          smallGroupSessions.push({
+            id: match.id,
+            discipline: t.discipline,
+            type: "small_group",
+            level: t.level || match.level || "Tous niveaux",
+            starts_at: match.starts_at,
+            ends_at: match.ends_at,
+            max_capacity: t.max_capacity || match.max_capacity || 20,
+            bookedCount: confirmedCountsMap.get(match.id) || 0,
+            is_active: match.is_active ?? true,
+          });
+        } else {
+          // Créneau officiel non encore matérialisé dans class_sessions :
+          // Affichage officiel obligatoire avec 0 / 20 inscrits
+          const virtualId = `tmpl_${t.id}_${dayDateStr}`;
+          const virtualStartIso = `${dayDateStr}T${tmplStartHm}:00+02:00`;
+          const virtualEndIso = `${dayDateStr}T${tmplEndHm}:00+02:00`;
+
+          smallGroupSessions.push({
+            id: virtualId,
+            discipline: t.discipline,
+            type: "small_group",
+            level: t.level || "Tous niveaux",
+            starts_at: virtualStartIso,
+            ends_at: virtualEndIso,
+            max_capacity: t.max_capacity || 20,
+            bookedCount: 0,
+            is_active: true,
+          });
+        }
+      }
+    }
+
+    // Étape B : Protection absolue des séances ayant des réservations existantes !
+    // Si une session physique possède au moins une réservation confirmée mais n'a pas été
+    // rattachée à un template officiel (séance ponctuelle ou historique), elle est préservée.
+    for (const ps of physicalSmallGroupSessions) {
+      if (!matchedPhysicalSessionIds.has(ps.id)) {
+        const count = confirmedCountsMap.get(ps.id) || 0;
+        if (count > 0) {
+          smallGroupSessions.push({
+            id: ps.id,
+            discipline: ps.discipline,
+            type: "small_group",
+            level: ps.level || "Session exceptionnelle",
+            starts_at: ps.starts_at,
+            ends_at: ps.ends_at,
+            max_capacity: ps.max_capacity || 20,
+            bookedCount: count,
+            is_active: ps.is_active ?? true,
+          });
+        }
+      }
+    }
+
+    // Tri chronologique des séances Small Group
+    smallGroupSessions.sort(
+      (a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
+    );
+
+    return {
+      weekMonday: mondayStr,
+      weekSaturday: saturdayStr,
+      smallGroupSessions,
+      privateSessions,
+      bookingsBySessionId,
+    };
+  } catch (err) {
+    console.error("[getAdminWeeklyReservationsData] Exception :", err);
+    return {
+      weekMonday: mondayStr,
+      weekSaturday: saturdayStr,
+      smallGroupSessions: [],
+      privateSessions: [],
+      bookingsBySessionId: {},
+    };
+  }
 }
 
 /**
