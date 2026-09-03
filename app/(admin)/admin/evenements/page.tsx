@@ -1,35 +1,17 @@
-import Link from "next/link";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getAdminEventsData } from "@/lib/supabase/admin";
+import AdminEvenementsView from "@/components/admin/AdminEvenementsView";
 
-export default function AdminEvenementsPage() {
-  return (
-    <div className="space-y-6">
-      <div className="border-b border-brand-white/10 pb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
-            Gestion des <span className="text-brand-blue">Événements</span>
-          </h1>
-          <p className="text-xs text-brand-white/60 mt-1">
-            Stages, masterclasses et camps d&apos;entraînement de Striking Camp.
-          </p>
-        </div>
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-semibold rounded uppercase tracking-wider border border-brand-white/10"
-        >
-          <ArrowLeft size={14} /> Retour Dashboard
-        </Link>
-      </div>
+export const dynamic = "force-dynamic";
 
-      <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-xl p-12 text-center space-y-3">
-        <Sparkles size={32} className="mx-auto text-brand-blue/60" />
-        <h3 className="text-lg font-heading font-bold uppercase text-brand-white">
-          Module Événements Admin
-        </h3>
-        <p className="text-xs text-brand-white/50 max-w-md mx-auto">
-          Ce module permettra de gérer les événements, stages techniques et masterclasses affichés sur le site.
-        </p>
-      </div>
-    </div>
-  );
+export const metadata = {
+  title: "Gestion des Événements | Administration Striking Camp",
+  description: "Création, modification et gestion des stages et masterclasses du Striking Camp.",
+};
+
+export default async function AdminEvenementsPage() {
+  const supabase = await createClient();
+  const events = await getAdminEventsData(supabase);
+
+  return <AdminEvenementsView initialEvents={events} />;
 }

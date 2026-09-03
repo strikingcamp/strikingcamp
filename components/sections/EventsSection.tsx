@@ -29,12 +29,17 @@ const filterTabs: { id: FilterTab; label: string }[] = [
   { id: "passe", label: "Événements passés" },
 ];
 
-export default function EventsSection() {
+interface EventsSectionProps {
+  initialEvents?: ClubEvent[];
+}
+
+export default function EventsSection({ initialEvents }: EventsSectionProps) {
+  const events = initialEvents && initialEvents.length > 0 ? initialEvents : clubEvents;
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
-  const featuredEvent = clubEvents.find((e) => e.isFeatured);
+  const featuredEvent = events.find((e) => e.isFeatured) || events[0];
 
-  const filteredEvents = clubEvents.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     if (activeTab === "all") return true;
     if (activeTab === "featured") return event.isFeatured;
     return event.category === activeTab;
@@ -150,7 +155,7 @@ export default function EventsSection() {
 
                 <div className="space-y-2">
                   <Link
-                    href="/connexion"
+                    href={featuredEvent.registrationUrl || "/connexion"}
                     className="w-full py-3.5 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-blue/30"
                   >
                     RÉSERVER MA PLACE
@@ -274,7 +279,7 @@ export default function EventsSection() {
                         </span>
                       )}
                       <Link
-                        href="/connexion"
+                        href={event.registrationUrl || "/connexion"}
                         className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors ml-auto shadow-md shadow-brand-blue/10"
                       >
                         S'INSCRIRE

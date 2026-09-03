@@ -407,10 +407,30 @@ export async function getAdminDashboardData(
       }
     }
 
-    // 5. Événements à venir (issus des données officielles data/events.ts)
-    const featuredEvents = clubEvents
-      .filter((e) => e.status === "published" || e.status === "confirmed")
-      .slice(0, 3);
+    // 5. Événements à venir (Supabase en priorité, repli gracieux sur clubEvents)
+    let featuredEvents: ClubEvent[] = [];
+    try {
+      const { data: dbEvents, error: eventsErr } = await supabase
+        .from("events")
+        .select("*")
+        .in("status", ["published", "confirmed"])
+        .order("is_featured", { ascending: false })
+        .order("starts_at", { ascending: true, nullsFirst: false })
+        .limit(3);
+
+      if (!eventsErr && dbEvents && dbEvents.length > 0) {
+        const { mapDbEventToClubEvent } = await import("./events");
+        featuredEvents = dbEvents.map(mapDbEventToClubEvent);
+      } else {
+        featuredEvents = clubEvents
+          .filter((e) => e.status === "published" || e.status === "confirmed")
+          .slice(0, 3);
+      }
+    } catch {
+      featuredEvents = clubEvents
+        .filter((e) => e.status === "published" || e.status === "confirmed")
+        .slice(0, 3);
+    }
 
     return {
       totalMembers: totalMembersCount || 0,
@@ -2076,5 +2096,31 @@ export async function updateMemberAdmin(
     });
     const formattedError = `[Code ${code}] ${message}${details ? ` | Détails: ${details}` : ""}${hint ? ` | Hint: ${hint}` : ""}`;
     return { success: false, error: formattedError };
+  }
+}
+
+/**
+ * Récupère l'ensemble des événements du club pour l'administration.
+ * Tente d'abord Supabase, avec fallback résilient sur clubEvents.
+ */
+export async function getAdminEventsData(supabase: SupabaseClient): Promise<ClubEvent[]> {
+  try {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      if (error) {
+        console.warn("[getAdminEventsData] Repli sur clubEvents statiques :", error.message);
+      }
+      return clubEvents;
+    }
+
+    const { mapDbEventToClubEvent } = await import("./events");
+    return data.map(mapDbEventToClubEvent);
+  } catch (err) {
+    console.warn("[getAdminEventsData] Exception, repli sur clubEvents :", err);
+    return clubEvents;
   }
 }

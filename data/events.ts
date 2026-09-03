@@ -12,13 +12,19 @@ export interface ClubEvent {
   isFeatured?: boolean;
   date: string;
   time: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
   location: string;
   coach: string;
   price: string;
   spots?: string;
   description: string;
   highlights: string[];
+  registrationUrl?: string;
+  imageUrl?: string;
   recap?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const clubEvents: ClubEvent[] = [
