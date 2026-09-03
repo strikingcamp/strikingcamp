@@ -43,14 +43,17 @@ export default function AdminHeader({
           <span className="sm:hidden">Admin</span>
         </div>
 
-        {/* Logout button */}
-        <Link
-          href="/deconnexion"
-          className="p-2 rounded-lg text-brand-white/60 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
-          title="Déconnexion"
-        >
-          <LogOut size={18} />
-        </Link>
+        {/* Logout button — POST sécurisé (aucun prefetch destructif) */}
+        <form action="/deconnexion" method="POST" className="flex items-center">
+          <button
+            type="submit"
+            className="p-2 rounded-lg text-brand-white/60 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
+            title="Déconnexion"
+            aria-label="Déconnexion"
+          >
+            <LogOut size={18} />
+          </button>
+        </form>
       </div>
     </header>
   );

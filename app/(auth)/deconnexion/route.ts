@@ -3,11 +3,13 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Route de déconnexion — POST ou GET /deconnexion
+ * Route de déconnexion sécurisée — POST /deconnexion
  *
- * Invalide la session Supabase côté serveur et redirige vers l'accueil.
+ * Invalide la session Supabase côté serveur et redirige vers /connexion.
+ * La méthode GET ne détruit JAMAIS la session afin d'éviter toute déconnexion
+ * involontaire provoquée par le prefetch automatique de Next.js ou par le navigateur.
  */
-async function handleSignOut(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
   const {
@@ -18,13 +20,12 @@ async function handleSignOut(request: NextRequest) {
     await supabase.auth.signOut();
   }
 
-  return NextResponse.redirect(new URL("/", request.url), { status: 302 });
+  return NextResponse.redirect(new URL("/connexion", request.url), { status: 303 });
 }
 
-export async function POST(request: NextRequest) {
-  return handleSignOut(request);
-}
-
+/**
+ * GET /deconnexion — Réponse neutre et non destructive (redirection sans déconnexion)
+ */
 export async function GET(request: NextRequest) {
-  return handleSignOut(request);
+  return NextResponse.redirect(new URL("/connexion", request.url), { status: 302 });
 }

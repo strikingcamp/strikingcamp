@@ -147,6 +147,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 onClick={onClose}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200",
@@ -166,6 +167,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         <div className="p-4 border-t border-brand-white/10 space-y-2">
           <Link
             href="/membre"
+            prefetch={false}
             className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5 rounded-lg transition-colors"
           >
             <ArrowLeft size={14} className="text-brand-blue" />
