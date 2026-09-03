@@ -27,9 +27,11 @@ import { createClient } from "@/lib/supabase/client";
 import {
   type MembershipRequestItem,
   getAdminMembershipRequestsList,
-  adminApproveMembershipRequest,
-  adminRejectMembershipRequest,
 } from "@/lib/supabase/membership-requests";
+import {
+  approveMembershipRequestServerAction,
+  rejectMembershipRequestServerAction,
+} from "@/app/(admin)/admin/adhesions/actions";
 import { cn } from "@/lib/utils";
 
 export default function AdminMembershipRequestsView() {
@@ -66,7 +68,7 @@ export default function AdminMembershipRequestsView() {
     if (!approvingReq) return;
     setActionLoading(true);
 
-    const res = await adminApproveMembershipRequest(supabase, approvingReq.id, adminNotes);
+    const res = await approveMembershipRequestServerAction(approvingReq.id, adminNotes);
 
     if (res.success) {
       setToastMessage({
@@ -93,7 +95,7 @@ export default function AdminMembershipRequestsView() {
     if (!rejectingReq) return;
     setActionLoading(true);
 
-    const res = await adminRejectMembershipRequest(supabase, rejectingReq.id, adminNotes);
+    const res = await rejectMembershipRequestServerAction(rejectingReq.id, adminNotes);
 
     if (res.success) {
       setToastMessage({
