@@ -68,54 +68,70 @@ export default function AdminMembershipRequestsView() {
     if (!approvingReq) return;
     setActionLoading(true);
 
-    const res = await approveMembershipRequestServerAction(approvingReq.id, adminNotes);
+    try {
+      const res = await approveMembershipRequestServerAction(approvingReq.id, adminNotes);
 
-    if (res.success) {
-      setToastMessage({
-        type: "success",
-        text: `Demande de ${approvingReq.profile?.first_name || "Membre"} validée. Abonnement actif créé.`,
-      });
-      setApprovingReq(null);
-      setAdminNotes("");
-      await fetchRequests();
-    } else {
+      if (res.success) {
+        setToastMessage({
+          type: "success",
+          text: `Demande de ${approvingReq.profile?.first_name || "Membre"} validée. Abonnement actif créé.`,
+        });
+        setApprovingReq(null);
+        setAdminNotes("");
+        await fetchRequests();
+      } else {
+        setToastMessage({
+          type: "error",
+          text: res.error || "Impossible de valider la demande.",
+        });
+      }
+    } catch (err) {
+      console.error("[handleApprove] Erreur validation adhésion :", err);
       setToastMessage({
         type: "error",
-        text: res.error || "Impossible de valider la demande.",
+        text: (err as Error)?.message || "Une erreur inattendue est survenue lors de la validation.",
       });
+    } finally {
+      setActionLoading(false);
+      setTimeout(() => {
+        setToastMessage((c) => (c?.type === "success" ? null : c));
+      }, 4000);
     }
-
-    setActionLoading(false);
-    setTimeout(() => {
-      setToastMessage((c) => (c?.type === "success" ? null : c));
-    }, 4000);
   };
 
   const handleReject = async () => {
     if (!rejectingReq) return;
     setActionLoading(true);
 
-    const res = await rejectMembershipRequestServerAction(rejectingReq.id, adminNotes);
+    try {
+      const res = await rejectMembershipRequestServerAction(rejectingReq.id, adminNotes);
 
-    if (res.success) {
-      setToastMessage({
-        type: "success",
-        text: `Demande de ${rejectingReq.profile?.first_name || "Membre"} refusée.`,
-      });
-      setRejectingReq(null);
-      setAdminNotes("");
-      await fetchRequests();
-    } else {
+      if (res.success) {
+        setToastMessage({
+          type: "success",
+          text: `Demande de ${rejectingReq.profile?.first_name || "Membre"} refusée.`,
+        });
+        setRejectingReq(null);
+        setAdminNotes("");
+        await fetchRequests();
+      } else {
+        setToastMessage({
+          type: "error",
+          text: res.error || "Impossible de refuser la demande.",
+        });
+      }
+    } catch (err) {
+      console.error("[handleReject] Erreur refus adhésion :", err);
       setToastMessage({
         type: "error",
-        text: res.error || "Impossible de refuser la demande.",
+        text: (err as Error)?.message || "Une erreur inattendue est survenue lors du refus.",
       });
+    } finally {
+      setActionLoading(false);
+      setTimeout(() => {
+        setToastMessage((c) => (c?.type === "success" ? null : c));
+      }, 4000);
     }
-
-    setActionLoading(false);
-    setTimeout(() => {
-      setToastMessage((c) => (c?.type === "success" ? null : c));
-    }, 4000);
   };
 
   // Filtrage

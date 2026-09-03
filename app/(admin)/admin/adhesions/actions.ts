@@ -20,9 +20,9 @@ export interface RejectMembershipResult {
  * Server Action : Valide une demande d'adhésion côté administrateur.
  *
  * Exécutée exclusivement côté serveur avec vérification d'authentification
- * et du rôle ADMIN sur la session active.
+ * et du rôle ADMIN sur la session active via getUser().
  *
- * Processus métier :
+ * Processus métier atomique :
  * 1. Vérification de la session et du rôle ADMIN.
  * 2. Vérification que la demande existe et est en statut "pending".
  * 3. Récupération de la formule choisie (plans) et calcul des dates :
@@ -41,7 +41,7 @@ export async function approveMembershipRequestServerAction(
       return { success: false, error: "Identifiant de demande d'adhésion invalide." };
     }
 
-    // 1. Validation de la session et du rôle ADMIN côté serveur
+    // 1. Validation stricte de la session et du rôle ADMIN côté serveur via les cookies de session
     const supabase = await createClient();
     const {
       data: { user },
@@ -63,40 +63,18 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    const cleanNotes = adminNotes?.trim() || null;
-
-    // 2. Tentative via RPC Postgres sécurisée (avec contexte JWT admin)
-    const { data: rpcData, error: rpcError } = await supabase.rpc("admin_approve_membership_request", {
-      p_request_id: requestId,
-      p_admin_notes: cleanNotes,
-    });
-
-    const rpcRes = rpcData as { success?: boolean; subscription_id?: string; error?: string; message?: string } | null;
-
-    if (!rpcError && rpcRes && rpcRes.success === true) {
-      revalidatePath("/admin/adhesions");
-      revalidatePath("/admin/abonnements");
-      revalidatePath("/admin");
-      return {
-        success: true,
-        subscriptionId: rpcRes.subscription_id,
-        message: rpcRes.message || "Demande validée avec succès. L'abonnement actif du membre a été créé.",
-      };
-    }
-
-    // Si la RPC a retourné une erreur métier explicite (autre que FORBIDDEN)
-    if (rpcRes && rpcRes.success === false && rpcRes.error !== "FORBIDDEN") {
+    // 2. Vérification de la clé secrète service_role
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return {
         success: false,
-        error: rpcRes.message || rpcRes.error || "Impossible de valider la demande.",
+        error: "Configuration serveur incomplète : SUPABASE_SERVICE_ROLE_KEY non disponible.",
       };
     }
 
-    // 3. Exécution sécurisée avec privilèges serveur (service_role)
-    // Résout les cas où les cookies client ne propagent pas auth.uid() à la RPC
+    const cleanNotes = adminNotes?.trim() || null;
     const adminSupabase = createAdminClient();
 
-    // A. Récupérer et verrouiller la demande
+    // 3. Récupération et vérification de la demande
     const { data: req, error: reqFetchError } = await adminSupabase
       .from("membership_requests")
       .select("id, user_id, plan_id, status, commitment_type")
@@ -117,7 +95,7 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // B. Récupération de la formule
+    // 4. Récupération de la formule
     const { data: plan, error: planFetchError } = await adminSupabase
       .from("plans")
       .select("id, name, type, private_sessions_per_period")
@@ -131,7 +109,7 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // C. Calcul des dates selon l'engagement
+    // 5. Calcul des dates selon l'engagement
     const startedAt = new Date();
     const endsAt = new Date(startedAt);
     if (req.commitment_type === "annual") {
@@ -142,7 +120,7 @@ export async function approveMembershipRequestServerAction(
 
     const quota = typeof plan.private_sessions_per_period === "number" ? plan.private_sessions_per_period : 8;
 
-    // D. Création de l'abonnement actif
+    // 6. Création de l'abonnement actif
     const { data: sub, error: subError } = await adminSupabase
       .from("subscriptions")
       .insert({
@@ -166,7 +144,7 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // E. Mise à jour de la demande en approved
+    // 7. Mise à jour de la demande en approved avec traçabilité de l'administrateur
     const { error: updateReqError } = await adminSupabase
       .from("membership_requests")
       .update({
@@ -209,7 +187,7 @@ export async function approveMembershipRequestServerAction(
  * Server Action : Refuse une demande d'adhésion côté administrateur.
  *
  * Exécutée exclusivement côté serveur avec vérification d'authentification
- * et du rôle ADMIN sur la session active.
+ * et du rôle ADMIN sur la session active via getUser().
  */
 export async function rejectMembershipRequestServerAction(
   requestId: string,
@@ -220,7 +198,7 @@ export async function rejectMembershipRequestServerAction(
       return { success: false, error: "Identifiant de demande d'adhésion invalide." };
     }
 
-    // 1. Validation de la session et du rôle ADMIN côté serveur
+    // 1. Validation stricte de la session et du rôle ADMIN côté serveur
     const supabase = await createClient();
     const {
       data: { user },
@@ -242,34 +220,17 @@ export async function rejectMembershipRequestServerAction(
       };
     }
 
-    const cleanNotes = adminNotes?.trim() || null;
-
-    // 2. Tentative via RPC Postgres sécurisée
-    const { data: rpcData, error: rpcError } = await supabase.rpc("admin_reject_membership_request", {
-      p_request_id: requestId,
-      p_admin_notes: cleanNotes,
-    });
-
-    const rpcRes = rpcData as { success?: boolean; error?: string; message?: string } | null;
-
-    if (!rpcError && rpcRes && rpcRes.success === true) {
-      revalidatePath("/admin/adhesions");
-      return {
-        success: true,
-        message: rpcRes.message || "La demande d'adhésion a été refusée.",
-      };
-    }
-
-    if (rpcRes && rpcRes.success === false && rpcRes.error !== "FORBIDDEN") {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return {
         success: false,
-        error: rpcRes.message || rpcRes.error || "Impossible de refuser la demande.",
+        error: "Configuration serveur incomplète : SUPABASE_SERVICE_ROLE_KEY non disponible.",
       };
     }
 
-    // 3. Exécution sécurisée avec privilèges serveur (service_role)
+    const cleanNotes = adminNotes?.trim() || null;
     const adminSupabase = createAdminClient();
 
+    // 2. Vérification que la demande existe et est en attente
     const { data: req, error: reqFetchError } = await adminSupabase
       .from("membership_requests")
       .select("id, status")
@@ -290,6 +251,7 @@ export async function rejectMembershipRequestServerAction(
       };
     }
 
+    // 3. Mise à jour de la demande en rejected
     const { error: updateError } = await adminSupabase
       .from("membership_requests")
       .update({
