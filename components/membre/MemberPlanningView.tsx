@@ -56,6 +56,8 @@ interface DemoSlot {
   isOccupiedByOther?: boolean;
   isBookedByMe?: boolean;
   startsAtIso: string;
+  endsAtIso?: string | null;
+  isPast?: boolean;
 }
 
 const DAYS_ORDER: DayName[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
@@ -261,6 +263,12 @@ function generateSlotsFromData(
           ? bookedCount >= 1 && !isBookedByMe
           : bookedCount >= maxCapacity && !isBookedByMe;
 
+        const endsAtIso = s.ends_at || null;
+        // Règle temporelle exacte :
+        // - now < ends_at  => cours actif (isPast = false)
+        // - now >= ends_at => cours passé et verrouillé (isPast = true)
+        const isPast = Boolean(endsAtIso && Date.now() >= new Date(endsAtIso).getTime());
+
         slots.push({
           id: s.id,
           templateId: s.template_id,
@@ -278,6 +286,8 @@ function generateSlotsFromData(
           isOccupiedByOther,
           isBookedByMe,
           startsAtIso: s.starts_at,
+          endsAtIso,
+          isPast,
         });
       }
 
@@ -494,6 +504,11 @@ export default function MemberPlanningView() {
   // Gestion du clic d'annulation (Règle stricte des 24 heures)
   const handleCancelClick = (session: DemoSlot) => {
     setBookingError(null);
+    // Verrouillage absolu : les séances terminées ne peuvent pas être annulées
+    if (session.isPast) {
+      return;
+    }
+
     let isLessThan24Hours = false;
     if (session.startsAtIso) {
       const sessionStartTime = new Date(session.startsAtIso).getTime();
@@ -513,6 +528,12 @@ export default function MemberPlanningView() {
   // Confirmation réservation (RPC Supabase pour Small Group)
   const handleConfirmBooking = async () => {
     if (!selectedSlotForBooking) return;
+
+    // Verrouillage absolu : impossible de réserver une séance terminée
+    if (selectedSlotForBooking.isPast) {
+      setBookingError("Cette séance est terminée et ne peut plus être réservée.");
+      return;
+    }
 
     console.log("[MemberPlanningView] --> Clic bouton « Confirmer la réservation » :", {
       slot: selectedSlotForBooking,
@@ -935,6 +956,32 @@ export default function MemberPlanningView() {
 
                   // 🔷 1. MA RÉSERVATION EXISTANTE
                   if (isMine) {
+                    if (slot.isPast) {
+                      return (
+                        <div
+                          key={slot.id}
+                          className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/80 opacity-70 flex flex-col justify-between gap-3 shadow-md shadow-black/20 select-none"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-base font-heading font-bold text-zinc-400 flex items-center gap-1.5">
+                              <Clock size={15} />
+                              {slot.startTime} → {slot.endTime}
+                            </span>
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                              SÉANCE PASSÉE
+                            </span>
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            {slot.discipline} ({slot.level})
+                          </div>
+                          <div className="w-full py-2 bg-zinc-800/80 border border-zinc-700/80 rounded-lg text-xs font-semibold uppercase text-zinc-300 text-center flex items-center justify-center gap-1.5">
+                            <Check size={14} className="text-[#00d8ff]" />
+                            Séance passée
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div
                         key={slot.id}
@@ -958,6 +1005,32 @@ export default function MemberPlanningView() {
                         >
                           Annuler ma séance
                         </button>
+                      </div>
+                    );
+                  }
+
+                  // ⚪ 2. HORAIRE PASSÉ (NON RÉSERVÉ PAR MOI)
+                  if (slot.isPast) {
+                    return (
+                      <div
+                        key={slot.id}
+                        className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/60 opacity-50 flex flex-col justify-between gap-3 cursor-not-allowed select-none"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-base font-heading font-bold text-zinc-500 flex items-center gap-1.5">
+                            <Clock size={15} />
+                            {slot.startTime} → {slot.endTime}
+                          </span>
+                          <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700">
+                            Terminé
+                          </span>
+                        </div>
+                        <div className="text-xs text-zinc-600">
+                          Horaire dépassé
+                        </div>
+                        <div className="w-full py-2 bg-zinc-900/80 border border-zinc-800 rounded-lg text-xs font-semibold uppercase text-zinc-600 text-center">
+                          Séance terminée
+                        </div>
                       </div>
                     );
                   }
@@ -1141,13 +1214,18 @@ export default function MemberPlanningView() {
                     {daySessions.map(session => {
                       const isMine = session.isBookedByMe;
                       const isFull = session.bookedCount >= session.maxCapacity;
+                      const isPast = Boolean(session.isPast);
 
                       return (
                         <div
                           key={session.id}
                           className={cn(
                             "border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200",
-                            isMine
+                            isPast
+                              ? isMine
+                                ? "bg-[#0b1320]/80 border-zinc-800/80 opacity-70"
+                                : "bg-zinc-950/60 border-zinc-800/60 opacity-50 select-none"
+                              : isMine
                               ? "bg-gradient-to-r from-brand-blue/15 to-[#0f172a] border-brand-blue"
                               : isFull
                               ? "bg-zinc-900/50 border-zinc-800 opacity-60"
@@ -1156,24 +1234,37 @@ export default function MemberPlanningView() {
                         >
                           <div className="space-y-1">
                             <div className="flex items-center gap-2.5 flex-wrap">
-                              <span className="text-base sm:text-lg font-heading font-bold uppercase tracking-wide text-brand-white">
+                              <span className={cn(
+                                "text-base sm:text-lg font-heading font-bold uppercase tracking-wide",
+                                isPast ? "text-zinc-400" : "text-brand-white"
+                              )}>
                                 {session.discipline}
-                              </span>
-                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-brand-blue/15 text-brand-blue border-brand-blue/30">
-                                {session.level}
                               </span>
                               <span className={cn(
                                 "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
-                                isFull
-                                  ? "bg-red-500/20 text-red-400 border-red-500/30"
-                                  : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
+                                isPast
+                                  ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/60"
+                                  : "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
                               )}>
-                                {session.bookedCount} / {session.maxCapacity} places
+                                {session.level}
                               </span>
+                              {!isPast && (
+                                <span className={cn(
+                                  "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
+                                  isFull
+                                    ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                    : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
+                                )}>
+                                  {session.bookedCount} / {session.maxCapacity} places
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-3 text-xs text-brand-white/60">
-                              <span className="flex items-center gap-1 font-bold text-[#00d8ff]">
+                              <span className={cn(
+                                "flex items-center gap-1 font-bold",
+                                isPast ? "text-zinc-400" : "text-[#00d8ff]"
+                              )}>
                                 <Clock size={13} />
                                 {session.startTime} → {session.endTime}
                               </span>
@@ -1184,7 +1275,18 @@ export default function MemberPlanningView() {
                           </div>
 
                           <div className="flex items-center justify-end">
-                            {isMine ? (
+                            {isPast ? (
+                              isMine ? (
+                                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-800/80 border border-zinc-700 text-zinc-300 rounded-xl text-xs font-bold uppercase select-none">
+                                  <Check size={14} className="text-[#00d8ff]" />
+                                  Séance passée
+                                </div>
+                              ) : (
+                                <div className="px-4 py-2 bg-zinc-900/80 border border-zinc-800 text-zinc-500 rounded-xl text-xs font-semibold uppercase select-none">
+                                  Terminé
+                                </div>
+                              )
+                            ) : isMine ? (
                               <div className="flex items-center gap-2">
                                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-blue/20 border border-brand-blue text-[#00d8ff] rounded-lg text-xs font-black uppercase">
                                   <Check size={14} />

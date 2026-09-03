@@ -272,6 +272,30 @@ export async function bookSmallGroupSession(
 ): Promise<{ success: boolean; error?: string; bookingId?: string }> {
   console.log("--> [bookSmallGroupSession] class_session_id envoyé :", classSessionId);
 
+  // 1. Contrôle temporel strict : vérifier que la séance n'est pas terminée (now < ends_at)
+  const { data: sessionData, error: sessionError } = await supabase
+    .from("class_sessions")
+    .select("id, ends_at, starts_at")
+    .eq("id", classSessionId)
+    .single();
+
+  if (sessionError || !sessionData) {
+    return {
+      success: false,
+      error: "Séance introuvable. Veuillez rafraîchir le planning.",
+    };
+  }
+
+  if (sessionData.ends_at) {
+    const sessionEndTime = new Date(sessionData.ends_at).getTime();
+    if (Date.now() >= sessionEndTime) {
+      return {
+        success: false,
+        error: "Cette séance est déjà terminée et ne peut plus être réservée.",
+      };
+    }
+  }
+
   const { data, error } = await supabase.rpc("create_small_group_booking", {
     p_class_session_id: classSessionId,
   });
@@ -325,6 +349,29 @@ export async function cancelSmallGroupSession(
   bookingId: string
 ): Promise<{ success: boolean; error?: string }> {
   console.log("--> [cancelSmallGroupSession] booking_id envoyé :", bookingId);
+
+  // 1. Contrôle temporel strict : vérifier que la séance associée n'est pas terminée (now < ends_at)
+  const { data: bookingData, error: bookingError } = await supabase
+    .from("bookings")
+    .select("id, class_session_id, class_session:class_sessions(id, ends_at, starts_at)")
+    .eq("id", bookingId)
+    .single();
+
+  if (!bookingError && bookingData) {
+    const session = Array.isArray(bookingData.class_session)
+      ? bookingData.class_session[0]
+      : bookingData.class_session;
+
+    if (session?.ends_at) {
+      const sessionEndTime = new Date(session.ends_at).getTime();
+      if (Date.now() >= sessionEndTime) {
+        return {
+          success: false,
+          error: "Cette séance est déjà terminée. Sa réservation ne peut plus être modifiée ou annulée.",
+        };
+      }
+    }
+  }
 
   const { data, error } = await supabase.rpc("cancel_small_group_booking", {
     p_booking_id: bookingId,
