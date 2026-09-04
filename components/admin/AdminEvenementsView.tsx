@@ -96,8 +96,9 @@ export default function AdminEvenementsView({ initialEvents }: AdminEvenementsVi
     startTransition(async () => {
       const res = await togglePublishEventServerAction(evt.id, nextStatus);
       if (res.success) {
+        const realId = res.data?.id || evt.id;
         setEvents((prev) =>
-          prev.map((e) => (e.id === evt.id ? { ...e, status: nextStatus } : e))
+          prev.map((e) => (e.id === evt.id ? { ...e, id: realId, status: nextStatus } : e))
         );
         showToast(res.message || "Statut mis à jour !");
       } else {
@@ -112,9 +113,10 @@ export default function AdminEvenementsView({ initialEvents }: AdminEvenementsVi
     startTransition(async () => {
       const res = await toggleFeaturedEventServerAction(evt.id, nextFeatured);
       if (res.success) {
+        const realId = res.data?.id || evt.id;
         setEvents((prev) =>
           prev.map((e) => {
-            if (e.id === evt.id) return { ...e, isFeatured: nextFeatured };
+            if (e.id === evt.id) return { ...e, id: realId, isFeatured: nextFeatured };
             if (nextFeatured) return { ...e, isFeatured: false }; // 1 seul featured à la fois
             return e;
           })
@@ -584,6 +586,8 @@ function EventEditorModal({ event, onClose, onSuccess }: EventEditorModalProps) 
       isFeatured,
       dateDisplay: dateDisplay.trim() || "Date à venir",
       timeDisplay: timeDisplay.trim() || "Horaires à venir",
+      startsAt: event?.startsAt || null,
+      endsAt: event?.endsAt || null,
       location: location.trim() || "Striking Camp Marseille",
       coach: coach.trim() || "Mahfoud Mohamed",
       price: price.trim() || "Sur réservation",
@@ -602,8 +606,11 @@ function EventEditorModal({ event, onClose, onSuccess }: EventEditorModalProps) 
           return;
         }
 
+        const realId = res.data?.id || event.id;
+
         const updated: ClubEvent = {
           ...event,
+          id: realId,
           title: payload.title,
           slug: payload.slug || event.slug,
           category: payload.category,

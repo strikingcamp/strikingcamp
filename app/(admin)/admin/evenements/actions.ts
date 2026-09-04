@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventCategory, EventStatus } from "@/data/events";
 
 export interface EventMutationPayload {
@@ -32,6 +33,12 @@ export interface ActionResult<T = unknown> {
   message?: string;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(str: string): boolean {
+  return UUID_REGEX.test(str);
+}
+
 /**
  * Génère un slug URL propre à partir d'une chaîne
  */
@@ -50,14 +57,14 @@ function slugify(text: string): string {
  * Vérification stricte de l'authentification et du rôle ADMIN
  */
 async function verifyAdminAuth() {
-  const supabase = await createClient();
+  const sessionSupabase = await createClient();
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser();
+  } = await sessionSupabase.auth.getUser();
 
   if (authError || !user) {
-    return { authorized: false, error: "Session invalide ou expirée." };
+    return { authorized: false, error: "Session invalide ou expirée. Veuillez vous reconnecter." };
   }
 
   const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
@@ -65,7 +72,23 @@ async function verifyAdminAuth() {
     return { authorized: false, error: "Accès refusé. Privilèges administrateur requis." };
   }
 
-  return { authorized: true, user };
+  return { authorized: true, user, sessionSupabase };
+}
+
+/**
+ * Retourne un client Supabase avec privilèges d'écriture pour les événements.
+ * Priorise createAdminClient() si SUPABASE_SERVICE_ROLE_KEY est disponible.
+ * Sinon, utilise le client de session de l'administrateur connecté, garanti par la policy RLS `public.is_admin() = true`.
+ */
+function getEventsDbClient(sessionSupabase: SupabaseClient): SupabaseClient {
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      return createAdminClient();
+    } catch (err) {
+      console.warn("[getEventsDbClient] Fallback sur sessionSupabase admin :", err);
+    }
+  }
+  return sessionSupabase;
 }
 
 /**
@@ -78,6 +101,51 @@ function invalidateEventsCaches() {
 }
 
 /**
+ * Résout l'identifiant réel UUID d'un événement en base.
+ * Si l'identifiant fourni est déjà un UUID, le retourne directement.
+ * S'il s'agit d'un ID statique de fallback (ex: 'evt-1'), recherche par slug ou titre en base.
+ */
+async function resolveRealEventId(
+  db: SupabaseClient,
+  idOrFallback: string,
+  slugHint?: string,
+  titleHint?: string
+): Promise<{ id: string; starts_at?: string | null; ends_at?: string | null } | null> {
+  if (isUuid(idOrFallback)) {
+    const { data } = await db
+      .from("events")
+      .select("id, starts_at, ends_at")
+      .eq("id", idOrFallback)
+      .maybeSingle();
+    return data || { id: idOrFallback };
+  }
+
+  // Si l'ID est un fallback statique, résoudre par slug
+  if (slugHint) {
+    const { data: bySlug } = await db
+      .from("events")
+      .select("id, starts_at, ends_at")
+      .eq("slug", slugHint)
+      .maybeSingle();
+
+    if (bySlug) return bySlug;
+  }
+
+  // Tenter par titre
+  if (titleHint) {
+    const { data: byTitle } = await db
+      .from("events")
+      .select("id, starts_at, ends_at")
+      .ilike("title", titleHint.trim())
+      .maybeSingle();
+
+    if (byTitle) return byTitle;
+  }
+
+  return null;
+}
+
+/**
  * Action Serveur : Créer un nouvel événement
  */
 export async function createEventServerAction(
@@ -85,7 +153,7 @@ export async function createEventServerAction(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     const auth = await verifyAdminAuth();
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.sessionSupabase) {
       return { success: false, error: auth.error };
     }
 
@@ -93,7 +161,7 @@ export async function createEventServerAction(
       return { success: false, error: "Le titre de l'événement est obligatoire." };
     }
 
-    const adminSupabase = createAdminClient();
+    const db = getEventsDbClient(auth.sessionSupabase);
     const baseSlug = payload.slug?.trim() ? slugify(payload.slug) : slugify(payload.title);
     const slug = baseSlug || `event-${Date.now()}`;
 
@@ -106,7 +174,7 @@ export async function createEventServerAction(
 
     // Si l'événement est marqué comme mis en avant (featured), désactiver les autres
     if (payload.isFeatured) {
-      await adminSupabase
+      await db
         .from("events")
         .update({ is_featured: false })
         .neq("id", "00000000-0000-0000-0000-000000000000");
@@ -133,7 +201,7 @@ export async function createEventServerAction(
       image_url: payload.imageUrl?.trim() || null,
     };
 
-    const { data, error } = await adminSupabase
+    const { data, error } = await db
       .from("events")
       .insert(insertData)
       .select("id")
@@ -158,10 +226,10 @@ export async function createEventServerAction(
 export async function updateEventServerAction(
   id: string,
   payload: EventMutationPayload
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string }>> {
   try {
     const auth = await verifyAdminAuth();
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.sessionSupabase) {
       return { success: false, error: auth.error };
     }
 
@@ -173,8 +241,19 @@ export async function updateEventServerAction(
       return { success: false, error: "Le titre de l'événement est obligatoire." };
     }
 
-    const adminSupabase = createAdminClient();
+    const db = getEventsDbClient(auth.sessionSupabase);
     const baseSlug = payload.slug?.trim() ? slugify(payload.slug) : slugify(payload.title);
+
+    // Résoudre l'UUID réel si l'ID provient d'un repli statique (ex: 'evt-1')
+    const resolved = await resolveRealEventId(db, id, baseSlug, payload.title);
+    if (!resolved || !resolved.id) {
+      return {
+        success: false,
+        error: "Cet événement n'a pas été trouvé dans la base de données. Veuillez actualiser la page.",
+      };
+    }
+
+    const realId = resolved.id;
 
     let dbStatus = "draft";
     if (payload.status === "published") dbStatus = "published";
@@ -184,11 +263,17 @@ export async function updateEventServerAction(
 
     // Si on met en avant, retirer le flag sur les autres événements
     if (payload.isFeatured) {
-      await adminSupabase
+      await db
         .from("events")
         .update({ is_featured: false })
-        .neq("id", id);
+        .neq("id", realId);
     }
+
+    // Préserver starts_at et ends_at existants si non redéfinis explicitement
+    const startsAt =
+      payload.startsAt !== undefined ? payload.startsAt : (resolved.starts_at || null);
+    const endsAt =
+      payload.endsAt !== undefined ? payload.endsAt : (resolved.ends_at || null);
 
     const updateData = {
       title: payload.title.trim(),
@@ -199,8 +284,8 @@ export async function updateEventServerAction(
       is_featured: Boolean(payload.isFeatured),
       date_display: payload.dateDisplay.trim(),
       time_display: payload.timeDisplay.trim(),
-      starts_at: payload.startsAt || null,
-      ends_at: payload.endsAt || null,
+      starts_at: startsAt,
+      ends_at: endsAt,
       location: payload.location.trim() || "Striking Camp Marseille",
       coach: payload.coach.trim() || "Mahfoud Mohamed",
       price: payload.price.trim() || "Sur réservation",
@@ -212,10 +297,10 @@ export async function updateEventServerAction(
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await adminSupabase
+    const { error } = await db
       .from("events")
       .update(updateData)
-      .eq("id", id);
+      .eq("id", realId);
 
     if (error) {
       console.error("[updateEventServerAction] Erreur Supabase :", error);
@@ -223,7 +308,7 @@ export async function updateEventServerAction(
     }
 
     invalidateEventsCaches();
-    return { success: true, message: "Événement mis à jour avec succès." };
+    return { success: true, data: { id: realId }, message: "Événement mis à jour avec succès." };
   } catch (err) {
     console.error("[updateEventServerAction] Exception :", err);
     return { success: false, error: (err as Error)?.message || "Erreur interne du serveur." };
@@ -236,23 +321,33 @@ export async function updateEventServerAction(
 export async function togglePublishEventServerAction(
   id: string,
   newStatus: "published" | "draft" | "archived"
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string }>> {
   try {
     const auth = await verifyAdminAuth();
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.sessionSupabase) {
       return { success: false, error: auth.error };
     }
 
-    const adminSupabase = createAdminClient();
+    const db = getEventsDbClient(auth.sessionSupabase);
+    const resolved = await resolveRealEventId(db, id);
+    const realId = resolved?.id || id;
+
+    if (!isUuid(realId)) {
+      return {
+        success: false,
+        error: "Impossible d'identifier l'événement dans la base. Veuillez actualiser la page.",
+      };
+    }
+
     let dbStatus = "draft";
     if (newStatus === "published") dbStatus = "published";
     else if (newStatus === "archived") dbStatus = "completed";
     else dbStatus = "draft";
 
-    const { error } = await adminSupabase
+    const { error } = await db
       .from("events")
       .update({ status: dbStatus, updated_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", realId);
 
     if (error) {
       return { success: false, error: error.message };
@@ -261,6 +356,7 @@ export async function togglePublishEventServerAction(
     invalidateEventsCaches();
     return {
       success: true,
+      data: { id: realId },
       message: newStatus === "published" ? "Événement publié en ligne." : "Événement mis en brouillon.",
     };
   } catch (err) {
@@ -274,24 +370,33 @@ export async function togglePublishEventServerAction(
 export async function toggleFeaturedEventServerAction(
   id: string,
   makeFeatured: boolean
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string }>> {
   try {
     const auth = await verifyAdminAuth();
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.sessionSupabase) {
       return { success: false, error: auth.error };
     }
 
-    const adminSupabase = createAdminClient();
+    const db = getEventsDbClient(auth.sessionSupabase);
+    const resolved = await resolveRealEventId(db, id);
+    const realId = resolved?.id || id;
+
+    if (!isUuid(realId)) {
+      return {
+        success: false,
+        error: "Impossible d'identifier l'événement dans la base. Veuillez actualiser la page.",
+      };
+    }
 
     if (makeFeatured) {
       // Retirer le featured de tous les autres événements
-      await adminSupabase.from("events").update({ is_featured: false }).neq("id", id);
+      await db.from("events").update({ is_featured: false }).neq("id", realId);
     }
 
-    const { error } = await adminSupabase
+    const { error } = await db
       .from("events")
       .update({ is_featured: makeFeatured, updated_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", realId);
 
     if (error) {
       return { success: false, error: error.message };
@@ -300,6 +405,7 @@ export async function toggleFeaturedEventServerAction(
     invalidateEventsCaches();
     return {
       success: true,
+      data: { id: realId },
       message: makeFeatured ? "Événement défini comme mis en avant." : "Mise en avant retirée.",
     };
   } catch (err) {
@@ -313,12 +419,22 @@ export async function toggleFeaturedEventServerAction(
 export async function deleteEventServerAction(id: string): Promise<ActionResult> {
   try {
     const auth = await verifyAdminAuth();
-    if (!auth.authorized) {
+    if (!auth.authorized || !auth.sessionSupabase) {
       return { success: false, error: auth.error };
     }
 
-    const adminSupabase = createAdminClient();
-    const { error } = await adminSupabase.from("events").delete().eq("id", id);
+    const db = getEventsDbClient(auth.sessionSupabase);
+    const resolved = await resolveRealEventId(db, id);
+    const realId = resolved?.id || id;
+
+    if (!isUuid(realId)) {
+      return {
+        success: false,
+        error: "Impossible d'identifier l'événement dans la base. Veuillez actualiser la page.",
+      };
+    }
+
+    const { error } = await db.from("events").delete().eq("id", realId);
 
     if (error) {
       return { success: false, error: error.message };
