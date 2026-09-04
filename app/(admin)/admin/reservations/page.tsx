@@ -37,7 +37,12 @@ export default async function AdminReservationsPage({ searchParams }: PageProps)
   const mondayStr = formatToParisDate(currentMonday);
   const saturdayStr = formatToParisDate(currentSaturday);
 
-  const tabParam = params.tab === "private" ? "private" : "small_group";
+  const tabParam =
+    params.tab === "private"
+      ? "private"
+      : params.tab === "small_group"
+      ? "small_group"
+      : "trial";
   const modeParam = params.mode === "week" ? "week" : "day";
   const dayParam = typeof params.day === "string" ? params.day : undefined;
 

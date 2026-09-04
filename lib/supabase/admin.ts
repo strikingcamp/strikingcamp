@@ -31,12 +31,14 @@ export interface AdminBookingParticipant {
   phone: string;
   email?: string;
   planName: string;
-  status: string; // 'confirmed' | 'cancelled'
+  status: string; // 'confirmed' | 'cancelled' | 'attended' | 'no_show'
   attendanceStatus: "pending" | "present" | "absent";
   attendedAt?: string | null;
   createdAt: string;
   cancellationReason?: string | null;
   isLateCancellation?: boolean;
+  isTrial?: boolean;
+  trialBookingId?: string;
   sessionId?: string;
   sessionDiscipline?: string;
   sessionType?: string;
@@ -830,6 +832,26 @@ export async function getAdminWeeklyReservationsData(
       }
     }
 
+    // 3. bis Récupération des réservations de cours d'essai associées
+    let allTrialBookings: any[] = [];
+    if (sessionIds.length > 0) {
+      try {
+        const { data: tbData, error: tbErr } = await supabase
+          .from("trial_bookings")
+          .select("id, class_session_id, first_name, last_name, email, phone, status, attendance_status, attended_at, created_at")
+          .in("class_session_id", sessionIds)
+          .order("created_at", { ascending: true });
+
+        if (tbErr) {
+          console.warn("[getAdminWeeklyReservationsData] Information trial_bookings :", tbErr.message);
+        } else {
+          allTrialBookings = tbData || [];
+        }
+      } catch (tbEx) {
+        console.warn("[getAdminWeeklyReservationsData] Exception trial_bookings :", tbEx);
+      }
+    }
+
     // 4. Récupération des profils et abonnements des membres
     const userIds = Array.from(new Set(allBookings.map((b) => b.user_id)));
     const profilesMap = new Map<string, { first_name?: string | null; last_name?: string | null; phone?: string | null }>();
@@ -1023,6 +1045,81 @@ export async function getAdminWeeklyReservationsData(
       }
     }
 
+    // 5. bis Ajout des participants aux Cours d'Essai
+    for (const tb of allTrialBookings) {
+      const sess = weekSessions.find((s) => s.id === tb.class_session_id);
+      const fName = (tb.first_name || "").trim();
+      const lName = (tb.last_name || "").trim();
+      const memberName = `${fName} ${lName ? lName.toUpperCase() : ""}`.trim() || "Prospect Essai";
+
+      let formattedDate = "—";
+      if (tb.created_at) {
+        const d = new Date(tb.created_at);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const hours = String(d.getHours()).padStart(2, "0");
+        const mins = String(d.getMinutes()).padStart(2, "0");
+        formattedDate = `${day}/${month}/${d.getFullYear()} à ${hours}:${mins}`;
+      }
+
+      let formattedAttendedAt: string | null = null;
+      if (tb.attended_at) {
+        const ad = new Date(tb.attended_at);
+        const ah = String(ad.getHours()).padStart(2, "0");
+        const am = String(ad.getMinutes()).padStart(2, "0");
+        formattedAttendedAt = `${ah}:${am}`;
+      }
+
+      let sessionDateFormatted: string | undefined;
+      let sessionTimeFormatted: string | undefined;
+      if (sess?.starts_at) {
+        const sDate = new Date(sess.starts_at);
+        sessionDateFormatted = new Intl.DateTimeFormat("fr-FR", {
+          timeZone: "Europe/Paris",
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(sDate);
+        sessionTimeFormatted = formatToParisTime(sess.starts_at);
+      }
+
+      const trialParticipant: AdminBookingParticipant = {
+        bookingId: tb.id,
+        userId: `trial_${tb.id}`,
+        memberName,
+        phone: tb.phone || "—",
+        email: tb.email,
+        planName: "COURS D'ESSAI",
+        status: tb.status || "confirmed",
+        attendanceStatus: (tb.attendance_status as "pending" | "present" | "absent") || "pending",
+        attendedAt: formattedAttendedAt,
+        createdAt: formattedDate,
+        isTrial: true,
+        trialBookingId: tb.id,
+        sessionId: sess?.id,
+        sessionDiscipline: sess?.discipline,
+        sessionType: sess?.type || "small_group",
+        sessionLevel: sess?.level || undefined,
+        sessionStartsAt: sess?.starts_at,
+        sessionEndsAt: sess?.ends_at || undefined,
+        sessionDateFormatted,
+        sessionTimeFormatted,
+      };
+
+      if (!bookingsBySessionId[tb.class_session_id]) {
+        bookingsBySessionId[tb.class_session_id] = [];
+      }
+      bookingsBySessionId[tb.class_session_id].push(trialParticipant);
+
+      if (tb.status === "confirmed") {
+        confirmedCountsMap.set(
+          tb.class_session_id,
+          (confirmedCountsMap.get(tb.class_session_id) || 0) + 1
+        );
+      }
+    }
+
     // 6. Extraction des Cours Privés (max_capacity = 1)
     const privateSessions: AdminClassSessionSummary[] = [];
     for (const s of weekSessions) {
@@ -1179,6 +1276,75 @@ export async function markAttendanceAdmin(
       attendanceStatus: data.attendance_status as string,
       attendedAt: data.attended_at as string | null,
     };
+  }
+
+  return { success: false, error: "Réponse inattendue du serveur." };
+}
+
+/**
+ * Pointe la présence d'un prospect de cours d'essai via la RPC admin_mark_trial_attendance (Admin uniquement)
+ */
+export async function markTrialAttendanceAdmin(
+  supabase: SupabaseClient,
+  trialBookingId: string,
+  status: "pending" | "present" | "absent" | "cancelled"
+): Promise<{ success: boolean; error?: string; attendanceStatus?: string; attendedAt?: string | null }> {
+  const { data, error } = await supabase.rpc("admin_mark_trial_attendance", {
+    p_trial_booking_id: trialBookingId,
+    p_status: status,
+  });
+
+  if (error) {
+    console.error("Erreur RPC admin_mark_trial_attendance :", error);
+    return { success: false, error: error.message };
+  }
+
+  if (data && typeof data === "object") {
+    const res = data as Record<string, unknown>;
+    if (!res.success) {
+      return {
+        success: false,
+        error: (res.error as string) || "Impossible d'enregistrer l'émargement du cours d'essai.",
+      };
+    }
+
+    return {
+      success: true,
+      attendanceStatus: res.attendance_status as string,
+      attendedAt: res.attended_at as string | null,
+    };
+  }
+
+  return { success: false, error: "Réponse inattendue du serveur." };
+}
+
+/**
+ * Annule un cours d'essai côté Admin via la RPC admin_cancel_trial_booking
+ */
+export async function cancelTrialBookingAdmin(
+  supabase: SupabaseClient,
+  trialBookingId: string,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  const { data, error } = await supabase.rpc("admin_cancel_trial_booking", {
+    p_trial_booking_id: trialBookingId,
+    p_reason: reason || null,
+  });
+
+  if (error) {
+    console.error("Erreur RPC admin_cancel_trial_booking :", error);
+    return { success: false, error: error.message };
+  }
+
+  if (data && typeof data === "object") {
+    const res = data as Record<string, unknown>;
+    if (!res.success) {
+      return {
+        success: false,
+        error: (res.error as string) || "Impossible d'annuler ce cours d'essai.",
+      };
+    }
+    return { success: true };
   }
 
   return { success: false, error: "Réponse inattendue du serveur." };

@@ -32,6 +32,8 @@ import {
   type AdminBookingParticipant,
   type AdminWeeklyReservationsData,
   markAttendanceAdmin,
+  markTrialAttendanceAdmin,
+  cancelTrialBookingAdmin,
   formatToParisDate,
   formatToParisTime,
 } from "@/lib/supabase/admin";
@@ -79,7 +81,7 @@ const OFFICIAL_PRIVATE_HOURS = [
   { start: "16:00", end: "16:50" },
 ];
 
-type ReservationTab = "private" | "small_group";
+type ReservationTab = "trial" | "small_group" | "private";
 type ViewMode = "day" | "week";
 
 interface AdminReservationsViewProps {
@@ -97,7 +99,7 @@ interface AdminReservationsViewProps {
 export default function AdminReservationsView({
   weeklyData,
   initialWeekOffset = 0,
-  initialTab = "small_group",
+  initialTab = "trial",
   initialViewMode = "day",
   initialSelectedDateStr,
 }: AdminReservationsViewProps) {
@@ -240,6 +242,43 @@ export default function AdminReservationsView({
     );
   }, [weeklyData.privateSessions, selectedDateStr]);
 
+  // 6. Extraction consolidée de tous les Cours d'Essai (trial_bookings)
+  const allTrialBookings = useMemo(() => {
+    const trials: AdminBookingParticipant[] = [];
+    for (const sessionBookings of Object.values(bookingsBySession)) {
+      for (const b of sessionBookings) {
+        if (b.isTrial) {
+          trials.push(b);
+        }
+      }
+    }
+    trials.sort((a, b) => {
+      const tA = a.sessionStartsAt ? new Date(a.sessionStartsAt).getTime() : 0;
+      const tB = b.sessionStartsAt ? new Date(b.sessionStartsAt).getTime() : 0;
+      return tA - tB;
+    });
+    return trials;
+  }, [bookingsBySession]);
+
+  // Cours d'essai du jour sélectionné
+  const trialBookingsForDay = useMemo(() => {
+    return allTrialBookings.filter((tb) => {
+      const dStr = tb.sessionStartsAt ? getLocalDateStr(tb.sessionStartsAt) : "";
+      return dStr === selectedDateStr;
+    });
+  }, [allTrialBookings, selectedDateStr]);
+
+  // Compteur dynamique d'essais à venir nécessitant un suivi (statut confirmed et attendance pending ou séance à venir)
+  const upcomingTrialCount = useMemo(() => {
+    const now = Date.now();
+    return allTrialBookings.filter((tb) => {
+      const isFuture = tb.sessionStartsAt
+        ? new Date(tb.sessionStartsAt).getTime() >= now
+        : true;
+      return tb.status === "confirmed" && (tb.attendanceStatus === "pending" || isFuture);
+    }).length;
+  }, [allTrialBookings]);
+
   // Navigation de semaine en semaine
   const handleNavigateWeek = (offsetChange: number) => {
     const newOffset = weekOffset + offsetChange;
@@ -258,15 +297,19 @@ export default function AdminReservationsView({
     }));
   };
 
-  // Émargement interactif sécurisé
+  // Émargement interactif sécurisé (Membres & Cours d'Essai)
   const handleMarkAttendance = async (
     bookingId: string,
     sessionId: string,
-    targetStatus: "pending" | "present" | "absent"
+    targetStatus: "pending" | "present" | "absent",
+    isTrial?: boolean
   ) => {
     setLoadingBookingId(bookingId);
 
-    const res = await markAttendanceAdmin(supabase, bookingId, targetStatus);
+    const res = isTrial
+      ? await markTrialAttendanceAdmin(supabase, bookingId, targetStatus)
+      : await markAttendanceAdmin(supabase, bookingId, targetStatus);
+
     if (!res.success) {
       alert("Erreur lors de l'émargement : " + (res.error || ""));
       setLoadingBookingId(null);
@@ -294,24 +337,75 @@ export default function AdminReservationsView({
     setLoadingBookingId(null);
   };
 
+  // Annulation administrative d'un cours d'essai
+  const handleCancelTrial = async (trialBookingId: string, sessionId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir annuler ce cours d'essai ?")) return;
+    setLoadingBookingId(trialBookingId);
+
+    const res = await cancelTrialBookingAdmin(supabase, trialBookingId, "Annulé par l'administrateur");
+    if (!res.success) {
+      alert("Erreur lors de l'annulation : " + (res.error || ""));
+      setLoadingBookingId(null);
+      return;
+    }
+
+    setBookingsBySession((prev) => {
+      const sessionBookings = prev[sessionId] || [];
+      const updated = sessionBookings.map((b) => {
+        if (b.bookingId === trialBookingId) {
+          return {
+            ...b,
+            status: "cancelled",
+            attendanceStatus: "absent" as const,
+          };
+        }
+        return b;
+      });
+      return { ...prev, [sessionId]: updated };
+    });
+
+    setLoadingBookingId(null);
+  };
+
   // Calcul du nombre de séances et de réservations par jour pour les capsules calendrier
   const dayCounters = useMemo(() => {
     const map: Record<
       string,
-      { sgCount: number; sgBooked: number; privBooked: number; privCancelled: number }
+      {
+        sgCount: number;
+        sgBooked: number;
+        privBooked: number;
+        privCancelled: number;
+        trialBooked: number;
+        trialCancelled: number;
+      }
     > = {};
 
     for (const d of weekDays) {
-      map[d.dateStr] = { sgCount: 0, sgBooked: 0, privBooked: 0, privCancelled: 0 };
+      map[d.dateStr] = {
+        sgCount: 0,
+        sgBooked: 0,
+        privBooked: 0,
+        privCancelled: 0,
+        trialBooked: 0,
+        trialCancelled: 0,
+      };
     }
 
-    // Small Group
+    // Small Group & Trials
     for (const s of weeklyData.smallGroupSessions || []) {
       const dStr = getLocalDateStr(s.starts_at);
       if (map[dStr]) {
         map[dStr].sgCount += 1;
         const bks = bookingsBySession[s.id] || [];
-        map[dStr].sgBooked += bks.filter((b) => b.status === "confirmed").length;
+        for (const b of bks) {
+          if (b.isTrial) {
+            if (b.status === "confirmed") map[dStr].trialBooked += 1;
+            else if (b.status === "cancelled") map[dStr].trialCancelled += 1;
+          } else {
+            if (b.status === "confirmed") map[dStr].sgBooked += 1;
+          }
+        }
       }
     }
 
@@ -347,9 +441,24 @@ export default function AdminReservationsView({
 
     let totalSgSessions = (weeklyData.smallGroupSessions || []).length;
     let totalSgInscrits = 0;
+    let totalTrialConfirmed = 0;
+    let totalTrialAttended = 0;
+    let totalTrialCancelled = 0;
+
     for (const s of weeklyData.smallGroupSessions || []) {
       const bks = bookingsBySession[s.id] || [];
-      totalSgInscrits += bks.filter((b) => b.status === "confirmed").length;
+      for (const b of bks) {
+        if (b.isTrial) {
+          if (b.status === "confirmed") {
+            totalTrialConfirmed++;
+            if (b.attendanceStatus === "present") totalTrialAttended++;
+          } else if (b.status === "cancelled") {
+            totalTrialCancelled++;
+          }
+        } else {
+          if (b.status === "confirmed") totalSgInscrits++;
+        }
+      }
     }
 
     return {
@@ -357,8 +466,251 @@ export default function AdminReservationsView({
       privCancelled: totalPrivCancelled,
       sgSessions: totalSgSessions,
       sgInscrits: totalSgInscrits,
+      trialConfirmed: totalTrialConfirmed,
+      trialAttended: totalTrialAttended,
+      trialCancelled: totalTrialCancelled,
     };
   }, [weeklyData, bookingsBySession]);
+
+  // Helper de rendu d'une carte de cours d'essai (utilisé en vue Semaine et Jour)
+  const renderTrialBookingCard = (
+    booking: AdminBookingParticipant,
+    options?: { showDayLink?: boolean; dayDateStr?: string }
+  ) => {
+    const sStartTime =
+      booking.sessionTimeFormatted ||
+      (booking.sessionStartsAt ? formatToParisTime(booking.sessionStartsAt) : "");
+    const sEndTime = booking.sessionEndsAt ? formatToParisTime(booking.sessionEndsAt) : "";
+    const isCancelled = booking.status === "cancelled";
+    const sessionId = booking.sessionId || "";
+
+    return (
+      <div
+        key={booking.bookingId}
+        className={cn(
+          "bg-[#0f172a] border rounded-2xl p-5 shadow-xl space-y-4 transition-all relative overflow-hidden",
+          isCancelled
+            ? "border-red-500/30 bg-[#0f172a]/70 opacity-75"
+            : "border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.06)]"
+        )}
+      >
+        {/* En-tête : Badge COURS D'ESSAI + Séance & Horaire + Statut */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-heading font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles size={13} />
+                COURS D&apos;ESSAI
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Clock size={13} />
+                {sStartTime} {sEndTime ? `→ ${sEndTime}` : ""}
+              </span>
+              <span className="text-xs font-bold uppercase text-brand-white">
+                {booking.sessionDiscipline || "Small Group"}
+              </span>
+              {booking.sessionLevel && (
+                <span className="text-[10px] text-brand-white/50">
+                  ({booking.sessionLevel})
+                </span>
+              )}
+            </div>
+            {booking.sessionDateFormatted && (
+              <span className="text-xs text-brand-white/60 font-semibold block capitalize">
+                📅 {booking.sessionDateFormatted}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {isCancelled ? (
+              <span className="px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
+                <XCircle size={11} />
+                Annulé
+              </span>
+            ) : booking.attendanceStatus === "present" ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
+                <CheckCircle2 size={11} />
+                Présent
+              </span>
+            ) : booking.attendanceStatus === "absent" ? (
+              <span className="px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
+                <XCircle size={11} />
+                Absent (No-Show)
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
+                <Clock size={11} />
+                Confirmé • En attente
+              </span>
+            )}
+
+            {options?.showDayLink && options.dayDateStr && (
+              <button
+                onClick={() => {
+                  setSelectedDateStr(options.dayDateStr!);
+                  setViewMode("day");
+                }}
+                className="text-[10px] font-bold text-brand-blue hover:underline flex items-center gap-1 cursor-pointer ml-1"
+                title="Consulter ce jour en mode Jour"
+              >
+                <ExternalLink size={10} />
+                Mode Jour
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Fiche Prospect (Nom, Prénom, Téléphone, Email, Date réservation) */}
+        <div className="bg-[#070d18] border border-brand-white/5 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <span className="text-xs text-brand-white/40 uppercase tracking-widest block font-heading text-[10px]">
+                Prospect
+              </span>
+              <span className="text-base font-heading font-bold text-brand-white uppercase tracking-wide">
+                {booking.memberName}
+              </span>
+            </div>
+            <span className="text-[10px] text-brand-white/40">
+              Inscrit le {booking.createdAt}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-brand-white/5 text-xs">
+            {/* Téléphone cliquable tel: */}
+            <div className="flex items-center gap-2">
+              <span className="text-brand-white/40 text-[11px]">Tél :</span>
+              {booking.phone && booking.phone !== "—" ? (
+                <a
+                  href={`tel:${booking.phone}`}
+                  className="inline-flex items-center gap-1.5 text-brand-blue hover:underline font-bold text-xs"
+                >
+                  <Phone size={13} />
+                  {booking.phone}
+                </a>
+              ) : (
+                <span className="text-brand-white/40">Non renseigné</span>
+              )}
+            </div>
+
+            {/* Email cliquable mailto: */}
+            <div className="flex items-center gap-2">
+              <span className="text-brand-white/40 text-[11px]">Email :</span>
+              {booking.email ? (
+                <a
+                  href={`mailto:${booking.email}`}
+                  className="inline-flex items-center gap-1.5 text-brand-white/80 hover:text-brand-blue hover:underline text-xs"
+                >
+                  <Mail size={13} />
+                  {booking.email}
+                </a>
+              ) : (
+                <span className="text-brand-white/40">Non renseigné</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Émargement interactif & Annulation pour l'Admin */}
+        {!isCancelled && (
+          <div className="pt-2 border-t border-brand-white/5 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold uppercase text-brand-white/50">
+                Émargement :
+              </span>
+              {booking.attendanceStatus === "present" ? (
+                <span className="text-[10px] font-bold text-[#22c55e] flex items-center gap-1">
+                  <CheckCircle size={12} />
+                  Présent {booking.attendedAt ? `(${booking.attendedAt})` : ""}
+                </span>
+              ) : booking.attendanceStatus === "absent" ? (
+                <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
+                  <XCircle size={12} />
+                  Absent
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-amber-300">
+                  En attente
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() =>
+                  handleMarkAttendance(
+                    booking.bookingId,
+                    sessionId,
+                    "present",
+                    true
+                  )
+                }
+                disabled={loadingBookingId === booking.bookingId}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer flex items-center gap-1",
+                  booking.attendanceStatus === "present"
+                    ? "bg-[#22c55e] text-black font-black shadow-md shadow-[#22c55e]/20"
+                    : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
+                )}
+              >
+                <Check size={12} />
+                Présent
+              </button>
+
+              <button
+                onClick={() =>
+                  handleMarkAttendance(
+                    booking.bookingId,
+                    sessionId,
+                    "absent",
+                    true
+                  )
+                }
+                disabled={loadingBookingId === booking.bookingId}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer flex items-center gap-1",
+                  booking.attendanceStatus === "absent"
+                    ? "bg-red-500 text-white font-black shadow-md shadow-red-500/20"
+                    : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
+                )}
+              >
+                <X size={12} />
+                Absent
+              </button>
+
+              <button
+                onClick={() =>
+                  handleCancelTrial(booking.bookingId, sessionId)
+                }
+                disabled={loadingBookingId === booking.bookingId}
+                className="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-bold uppercase transition-colors cursor-pointer border border-red-500/20"
+                title="Annuler ce cours d'essai"
+              >
+                Annuler
+              </button>
+
+              <button
+                onClick={() =>
+                  handleMarkAttendance(
+                    booking.bookingId,
+                    sessionId,
+                    "pending",
+                    true
+                  )
+                }
+                disabled={loadingBookingId === booking.bookingId}
+                className="p-1 rounded text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
+                title="Réinitialiser en attente"
+              >
+                <RotateCcw size={13} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Helper de rendu d'une carte de réservation privée (utilisé en vue Semaine et Jour)
   const renderPrivateBookingCard = (
@@ -726,11 +1078,28 @@ export default function AdminReservationsView({
                             key={p.bookingId}
                             className={cn(
                               "hover:bg-brand-white/[0.02] transition-colors",
-                              isCancelled && "opacity-50"
+                              isCancelled && "opacity-50",
+                              p.isTrial && "bg-amber-500/[0.03]"
                             )}
                           >
                             <td className="py-2.5 px-3 font-semibold text-brand-white">
-                              {p.memberName}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{p.memberName}</span>
+                                {p.isTrial && (
+                                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-heading font-black uppercase tracking-wider">
+                                    Essai
+                                  </span>
+                                )}
+                              </div>
+                              {p.isTrial && p.email && (
+                                <a
+                                  href={`mailto:${p.email}`}
+                                  className="text-[11px] text-brand-white/50 hover:text-brand-blue flex items-center gap-1 mt-0.5 font-normal"
+                                >
+                                  <Mail size={10} />
+                                  {p.email}
+                                </a>
+                              )}
                             </td>
                             <td className="py-2.5 px-3 text-brand-blue">
                               {p.phone && p.phone !== "—" ? (
@@ -746,9 +1115,15 @@ export default function AdminReservationsView({
                               )}
                             </td>
                             <td className="py-2.5 px-3">
-                              <span className="px-2 py-0.5 rounded bg-brand-white/5 text-[10px] uppercase font-bold text-brand-white/80 border border-brand-white/10">
-                                {p.planName}
-                              </span>
+                              {p.isTrial ? (
+                                <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] uppercase font-heading font-black tracking-wider">
+                                  COURS D&apos;ESSAI
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded bg-brand-white/5 text-[10px] uppercase font-bold text-brand-white/80 border border-brand-white/10">
+                                  {p.planName}
+                                </span>
+                              )}
                             </td>
                             <td className="py-2.5 px-3 text-brand-white/40 text-[11px]">
                               {p.createdAt}
@@ -758,6 +1133,49 @@ export default function AdminReservationsView({
                                 <span className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase">
                                   Annulé
                                 </span>
+                              ) : p.isTrial ? (
+                                <div className="inline-flex items-center gap-1 justify-end">
+                                  <button
+                                    onClick={() =>
+                                      handleMarkAttendance(
+                                        p.bookingId,
+                                        session.id,
+                                        "present",
+                                        true
+                                      )
+                                    }
+                                    disabled={loadingBookingId === p.bookingId}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
+                                      p.attendanceStatus === "present"
+                                        ? "bg-[#22c55e] text-black font-black"
+                                        : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
+                                    )}
+                                    title="Marquer présent"
+                                  >
+                                    Présent
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleMarkAttendance(
+                                        p.bookingId,
+                                        session.id,
+                                        "absent",
+                                        true
+                                      )
+                                    }
+                                    disabled={loadingBookingId === p.bookingId}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
+                                      p.attendanceStatus === "absent"
+                                        ? "bg-red-500 text-white font-black"
+                                        : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
+                                    )}
+                                    title="Marquer absent"
+                                  >
+                                    Absent
+                                  </button>
+                                </div>
                               ) : (
                                 <span className="px-2 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase">
                                   Inscrit
@@ -813,28 +1231,42 @@ export default function AdminReservationsView({
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          2. SÉLECTEURS PRINCIPAUX : [ COURS PRIVÉS | SMALL GROUP ] + [ JOUR | SEMAINE ]
+          2. SÉLECTEURS PRINCIPAUX : [ COURS D'ESSAI | SMALL GROUP | COURS PRIVÉS ] + [ JOUR | SEMAINE ]
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 print:hidden">
-        {/* Onglets Métier : Cours Privés / Small Group */}
+        {/* Onglets Métier : [ COURS D'ESSAI ] [ SMALL GROUP ] [ COURS PRIVÉS ] */}
         <div className="flex-1 flex items-center gap-2 p-1.5 bg-[#0b1322] border border-brand-white/10 rounded-2xl">
+          {/* 1. COURS D'ESSAI (avec badge dynamique) */}
           <button
-            onClick={() => setActiveTab("private")}
+            onClick={() => setActiveTab("trial")}
             className={cn(
-              "flex-1 py-3 px-4 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer",
-              activeTab === "private"
-                ? "bg-gradient-to-r from-brand-blue to-[#00d8ff] text-black shadow-lg shadow-brand-blue/20 scale-[1.01]"
+              "flex-1 py-3 px-3 sm:px-4 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer relative",
+              activeTab === "trial"
+                ? "bg-gradient-to-r from-amber-500 to-amber-400 text-black shadow-lg shadow-amber-500/20 scale-[1.01]"
                 : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
             )}
           >
             <Sparkles size={16} />
-            <span>Cours Privés</span>
+            <span>Cours d&apos;Essai</span>
+            {upcomingTrialCount > 0 && (
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded-full text-[11px] font-black font-heading transition-colors ml-1",
+                  activeTab === "trial"
+                    ? "bg-black text-amber-400"
+                    : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                )}
+              >
+                {upcomingTrialCount}
+              </span>
+            )}
           </button>
 
+          {/* 2. SMALL GROUP */}
           <button
             onClick={() => setActiveTab("small_group")}
             className={cn(
-              "flex-1 py-3 px-4 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer",
+              "flex-1 py-3 px-3 sm:px-4 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer",
               activeTab === "small_group"
                 ? "bg-gradient-to-r from-brand-blue to-[#00d8ff] text-black shadow-lg shadow-brand-blue/20 scale-[1.01]"
                 : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
@@ -842,6 +1274,20 @@ export default function AdminReservationsView({
           >
             <Users size={16} />
             <span>Small Group</span>
+          </button>
+
+          {/* 3. COURS PRIVÉS */}
+          <button
+            onClick={() => setActiveTab("private")}
+            className={cn(
+              "flex-1 py-3 px-3 sm:px-4 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer",
+              activeTab === "private"
+                ? "bg-gradient-to-r from-brand-blue to-[#00d8ff] text-black shadow-lg shadow-brand-blue/20 scale-[1.01]"
+                : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
+            )}
+          >
+            <Dumbbell size={16} />
+            <span>Cours Privés</span>
           </button>
         </div>
 
@@ -934,10 +1380,20 @@ export default function AdminReservationsView({
               sgBooked: 0,
               privBooked: 0,
               privCancelled: 0,
+              trialBooked: 0,
+              trialCancelled: 0,
             };
 
             let countLabel = "";
-            if (activeTab === "private") {
+            if (activeTab === "trial") {
+              if (counters.trialBooked > 0) {
+                countLabel = `${counters.trialBooked} essai${counters.trialBooked > 1 ? "s" : ""}`;
+              } else if (counters.trialCancelled > 0) {
+                countLabel = `${counters.trialCancelled} annulé`;
+              } else {
+                countLabel = "0 essai";
+              }
+            } else if (activeTab === "private") {
               if (counters.privBooked > 0 && counters.privCancelled > 0) {
                 countLabel = `${counters.privBooked} rés. · ${counters.privCancelled} ann.`;
               } else if (counters.privBooked > 0) {
@@ -951,6 +1407,8 @@ export default function AdminReservationsView({
               countLabel = `${counters.sgCount} cours · ${counters.sgBooked} insc.`;
             }
 
+            const hasTrialActivity =
+              activeTab === "trial" && (counters.trialBooked > 0 || counters.trialCancelled > 0);
             const hasPrivateActivity =
               activeTab === "private" && (counters.privBooked > 0 || counters.privCancelled > 0);
 
@@ -960,14 +1418,15 @@ export default function AdminReservationsView({
                 onClick={() => {
                   setSelectedDateStr(day.dateStr);
                   if (viewMode === "week") {
-                    // Optionnel : si on clique sur une capsule en mode Semaine, on peut basculer en mode Jour pour ce jour
                     setViewMode("day");
                   }
                 }}
                 className={cn(
                   "p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative group",
                   isSelected
-                    ? "bg-[#13233c] border-brand-blue shadow-[0_0_15px_rgba(47,174,224,0.3)] scale-[1.02]"
+                    ? activeTab === "trial"
+                      ? "bg-[#1f1b10] border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)] scale-[1.02]"
+                      : "bg-[#13233c] border-brand-blue shadow-[0_0_15px_rgba(47,174,224,0.3)] scale-[1.02]"
                     : "bg-[#0f172a] border-brand-white/10 hover:border-brand-blue/40 hover:bg-[#111c2e]"
                 )}
               >
@@ -976,7 +1435,11 @@ export default function AdminReservationsView({
                     <span
                       className={cn(
                         "text-[10px] font-heading font-black uppercase tracking-wider block",
-                        isSelected ? "text-brand-blue" : "text-brand-white/50"
+                        isSelected
+                          ? activeTab === "trial"
+                            ? "text-amber-400"
+                            : "text-brand-blue"
+                          : "text-brand-white/50"
                       )}
                     >
                       {day.dayName}
@@ -985,6 +1448,13 @@ export default function AdminReservationsView({
                       {day.dateNum}
                     </span>
                   </div>
+
+                  {hasTrialActivity && !isSelected && (
+                    <span
+                      className="w-2 h-2 rounded-full mt-1 bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.8)]"
+                      title={`${counters.trialBooked} cours d'essai`}
+                    />
+                  )}
 
                   {hasPrivateActivity && !isSelected && (
                     <span
@@ -1008,7 +1478,11 @@ export default function AdminReservationsView({
                     className={cn(
                       "text-[10px] font-bold tracking-tight",
                       isSelected
-                        ? "text-[#00d8ff]"
+                        ? activeTab === "trial"
+                          ? "text-amber-400"
+                          : "text-[#00d8ff]"
+                        : hasTrialActivity
+                        ? "text-amber-400 font-semibold"
                         : hasPrivateActivity
                         ? counters.privBooked > 0
                           ? "text-emerald-400 font-semibold"
@@ -1031,8 +1505,19 @@ export default function AdminReservationsView({
       <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded bg-brand-blue/15 text-brand-blue text-[10px] font-heading font-black uppercase tracking-wider border border-brand-blue/30">
-              {activeTab === "private" ? "Cours Privés Individuels" : "Séances Small Group"}
+            <span
+              className={cn(
+                "px-2.5 py-0.5 rounded text-[10px] font-heading font-black uppercase tracking-wider border",
+                activeTab === "trial"
+                  ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                  : "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
+              )}
+            >
+              {activeTab === "trial"
+                ? "Cours d'Essai Prospects"
+                : activeTab === "private"
+                ? "Cours Privés Individuels"
+                : "Séances Small Group"}
             </span>
             <span className="text-xs text-brand-white/50">•</span>
             <span className="text-xs font-semibold text-brand-white/70">
@@ -1049,7 +1534,57 @@ export default function AdminReservationsView({
 
         {/* Mini résumé KPI */}
         <div className="flex items-center gap-3">
-          {activeTab === "private" ? (
+          {activeTab === "trial" ? (
+            viewMode === "day" ? (
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                  <span className="text-[10px] font-bold text-amber-300 block uppercase">
+                    Essais Jour
+                  </span>
+                  <span className="text-base font-black text-brand-white">
+                    {trialBookingsForDay.length}
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                  <span className="text-[10px] font-bold text-emerald-400 block uppercase">
+                    Présents
+                  </span>
+                  <span className="text-base font-black text-brand-white">
+                    {trialBookingsForDay.filter((t) => t.attendanceStatus === "present").length}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                  <span className="text-[10px] font-bold text-amber-300 block uppercase">
+                    Essais Semaine
+                  </span>
+                  <span className="text-base font-black text-brand-white">
+                    {weeklyTotals.trialConfirmed}
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                  <span className="text-[10px] font-bold text-emerald-400 block uppercase">
+                    Présents
+                  </span>
+                  <span className="text-base font-black text-brand-white">
+                    {weeklyTotals.trialAttended}
+                  </span>
+                </div>
+                {weeklyTotals.trialCancelled > 0 && (
+                  <div className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+                    <span className="text-[10px] font-bold text-red-400 block uppercase">
+                      Annulés
+                    </span>
+                    <span className="text-base font-black text-brand-white">
+                      {weeklyTotals.trialCancelled}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          ) : activeTab === "private" ? (
             viewMode === "day" ? (
               <div className="flex items-center gap-2">
                 <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
@@ -1091,46 +1626,44 @@ export default function AdminReservationsView({
                 )}
               </div>
             )
+          ) : viewMode === "day" ? (
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/20 text-center">
+                <span className="text-[10px] font-bold text-brand-blue block uppercase">
+                  Séances
+                </span>
+                <span className="text-base font-black text-brand-white">
+                  {smallGroupSessionsForDay.length}
+                </span>
+              </div>
+              <div className="px-3 py-1.5 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20 text-center">
+                <span className="text-[10px] font-bold text-[#22c55e] block uppercase">
+                  Total inscrits
+                </span>
+                <span className="text-base font-black text-brand-white">
+                  {dayCounters[selectedDateStr]?.sgBooked || 0}
+                </span>
+              </div>
+            </div>
           ) : (
-            viewMode === "day" ? (
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/20 text-center">
-                  <span className="text-[10px] font-bold text-brand-blue block uppercase">
-                    Séances
-                  </span>
-                  <span className="text-base font-black text-brand-white">
-                    {smallGroupSessionsForDay.length}
-                  </span>
-                </div>
-                <div className="px-3 py-1.5 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20 text-center">
-                  <span className="text-[10px] font-bold text-[#22c55e] block uppercase">
-                    Total inscrits
-                  </span>
-                  <span className="text-base font-black text-brand-white">
-                    {dayCounters[selectedDateStr]?.sgBooked || 0}
-                  </span>
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/20 text-center">
+                <span className="text-[10px] font-bold text-brand-blue block uppercase">
+                  Séances Semaine
+                </span>
+                <span className="text-base font-black text-brand-white">
+                  {weeklyTotals.sgSessions}
+                </span>
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/20 text-center">
-                  <span className="text-[10px] font-bold text-brand-blue block uppercase">
-                    Séances Semaine
-                  </span>
-                  <span className="text-base font-black text-brand-white">
-                    {weeklyTotals.sgSessions}
-                  </span>
-                </div>
-                <div className="px-3 py-1.5 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20 text-center">
-                  <span className="text-[10px] font-bold text-[#22c55e] block uppercase">
-                    Inscrits Semaine
-                  </span>
-                  <span className="text-base font-black text-brand-white">
-                    {weeklyTotals.sgInscrits}
-                  </span>
-                </div>
+              <div className="px-3 py-1.5 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20 text-center">
+                <span className="text-[10px] font-bold text-[#22c55e] block uppercase">
+                  Inscrits Semaine
+                </span>
+                <span className="text-base font-black text-brand-white">
+                  {weeklyTotals.sgInscrits}
+                </span>
               </div>
-            )
+            </div>
           )}
         </div>
       </div>
@@ -1140,11 +1673,240 @@ export default function AdminReservationsView({
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
 
       {/* ─────────────────────────────────────────────────────────────────
-          A. ONGLET COURS PRIVÉS
+          1. ONGLET COURS D'ESSAI
+          ───────────────────────────────────────────────────────────────── */}
+      {activeTab === "trial" && (
+        viewMode === "day" ? (
+          /* 1.A COURS D'ESSAI — MODE JOUR */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
+              <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-400" />
+                Réservations Cours d&apos;Essai — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName} ({trialBookingsForDay.length})
+              </h3>
+              <span className="text-[11px] text-brand-white/50">
+                Prospects ayant réservé un essai sur les créneaux du jour
+              </span>
+            </div>
+
+            {trialBookingsForDay.length === 0 ? (
+              <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
+                <Sparkles size={32} className="mx-auto text-amber-400/40" />
+                <p className="text-sm font-heading font-bold uppercase text-brand-white/70">
+                  Aucun cours d&apos;essai réservé pour le {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}.
+                </p>
+                <p className="text-xs text-brand-white/40 max-w-sm mx-auto">
+                  Les réservations de cours d&apos;essai effectuées par les visiteurs apparaîtront automatiquement ici avec leurs coordonnées complètes.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {trialBookingsForDay.map((booking) =>
+                  renderTrialBookingCard(booking)
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* 1.B COURS D'ESSAI — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
+          <div className="space-y-6">
+            {weekDays.map((day) => {
+              const dayTrials = allTrialBookings.filter((tb) => {
+                const dStr = tb.sessionStartsAt ? getLocalDateStr(tb.sessionStartsAt) : "";
+                return dStr === day.dateStr;
+              });
+
+              const confirmedCount = dayTrials.filter(
+                (b) => b.status === "confirmed"
+              ).length;
+              const attendedCount = dayTrials.filter(
+                (b) => b.attendanceStatus === "present"
+              ).length;
+              const cancelledCount = dayTrials.filter(
+                (b) => b.status === "cancelled"
+              ).length;
+
+              return (
+                <div
+                  key={day.dateStr}
+                  className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-5 shadow-xl space-y-4"
+                >
+                  {/* En-tête du jour */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-heading font-black text-sm uppercase flex items-center gap-1.5">
+                        <Sparkles size={14} />
+                        {day.dayName} {day.dateNum} {day.monthName}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {confirmedCount > 0 && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-heading font-black uppercase">
+                            {confirmedCount} essai{confirmedCount > 1 ? "s" : ""}
+                          </span>
+                        )}
+                        {attendedCount > 0 && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-heading font-black uppercase">
+                            {attendedCount} présent{attendedCount > 1 ? "s" : ""}
+                          </span>
+                        )}
+                        {cancelledCount > 0 && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-xs font-heading font-black uppercase">
+                            {cancelledCount} annulé{cancelledCount > 1 ? "s" : ""}
+                          </span>
+                        )}
+                        {dayTrials.length === 0 && (
+                          <span className="text-xs text-brand-white/40">
+                            0 cours d&apos;essai réservé
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedDateStr(day.dateStr);
+                        setViewMode("day");
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                      title="Consulter ce jour en vue détaillée"
+                    >
+                      <ExternalLink size={12} />
+                      Consulter en mode Jour
+                    </button>
+                  </div>
+
+                  {/* Liste des cours d'essai du jour ou état vide */}
+                  {dayTrials.length === 0 ? (
+                    <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0f172a]/30 rounded-xl border border-brand-white/5">
+                      Aucun cours d&apos;essai réservé pour le {day.dayName} {day.dateNum} {day.monthName}.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {dayTrials.map((booking) =>
+                        renderTrialBookingCard(booking, {
+                          showDayLink: true,
+                          dayDateStr: day.dateStr,
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────
+          2. ONGLET SMALL GROUP
+          ───────────────────────────────────────────────────────────────── */}
+      {activeTab === "small_group" && (
+        viewMode === "day" ? (
+          /* 2.A SMALL GROUP — MODE JOUR (Séances du jour sélectionné) */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
+              <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
+                <Users size={16} className="text-brand-blue" />
+                Séances Small Group programmées ({smallGroupSessionsForDay.length})
+              </h3>
+              <span className="text-[11px] text-brand-white/50">
+                Capacité maximale : 20 personnes par séance
+              </span>
+            </div>
+
+            {smallGroupSessionsForDay.length === 0 ? (
+              <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
+                <Calendar size={32} className="mx-auto text-brand-white/30" />
+                <p className="text-sm font-heading font-bold uppercase text-brand-white/70">
+                  Aucune séance Small Group programmée pour le {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}.
+                </p>
+                <p className="text-xs text-brand-white/40 max-w-sm mx-auto">
+                  Consultez le planning officiel pour ajouter des séances récurrentes ou exceptionnelles.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {smallGroupSessionsForDay.map((session) =>
+                  renderSmallGroupSessionCard(session)
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* 2.B SMALL GROUP — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
+          <div className="space-y-6">
+            {weekDays.map((day) => {
+              const daySgSessions = (weeklyData.smallGroupSessions || [])
+                .filter((s) => getLocalDateStr(s.starts_at) === day.dateStr)
+                .sort(
+                  (a, b) =>
+                    new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
+                );
+
+              const totalInscrits = daySgSessions.reduce((acc, s) => {
+                const bks = bookingsBySession[s.id] || [];
+                return acc + bks.filter((b) => b.status === "confirmed").length;
+              }, 0);
+
+              return (
+                <div
+                  key={day.dateStr}
+                  className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-5 shadow-xl space-y-4"
+                >
+                  {/* En-tête du jour */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="px-3 py-1.5 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-sm uppercase">
+                        {day.dayName} {day.dateNum} {day.monthName}
+                      </div>
+
+                      <span className="text-xs text-brand-white/60">
+                        {daySgSessions.length} séance{daySgSessions.length > 1 ? "s" : ""} • {totalInscrits} inscrit{totalInscrits > 1 ? "s" : ""}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedDateStr(day.dateStr);
+                        setViewMode("day");
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                      title="Consulter ce jour en vue détaillée"
+                    >
+                      <ExternalLink size={12} />
+                      Consulter en mode Jour
+                    </button>
+                  </div>
+
+                  {/* Liste des séances du jour ou état vide */}
+                  {daySgSessions.length === 0 ? (
+                    <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0f172a]/30 rounded-xl border border-brand-white/5">
+                      Aucune séance Small Group programmée pour le {day.dayName} {day.dateNum} {day.monthName}.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {daySgSessions.map((session) =>
+                        renderSmallGroupSessionCard(session, {
+                          showDayLink: true,
+                          dayDateStr: day.dateStr,
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────
+          3. ONGLET COURS PRIVÉS
           ───────────────────────────────────────────────────────────────── */}
       {activeTab === "private" && (
         viewMode === "day" ? (
-          /* A1. COURS PRIVÉS — MODE JOUR (Grille des 6 créneaux officiels de la journée) */
+          /* 3.A COURS PRIVÉS — MODE JOUR (Grille des 6 créneaux officiels de la journée) */
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
               <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
@@ -1421,7 +2183,7 @@ export default function AdminReservationsView({
             </div>
           </div>
         ) : (
-          /* A2. COURS PRIVÉS — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
+          /* 3.B COURS PRIVÉS — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
           <div className="space-y-6">
             {weekDays.map((day) => {
               const dayPrivateSessions = (weeklyData.privateSessions || []).filter(
@@ -1508,109 +2270,6 @@ export default function AdminReservationsView({
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {dayBookings.map(({ booking, session }) =>
                         renderPrivateBookingCard(booking, session, {
-                          showDayLink: true,
-                          dayDateStr: day.dateStr,
-                        })
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────────
-          B. ONGLET SMALL GROUP
-          ───────────────────────────────────────────────────────────────── */}
-      {activeTab === "small_group" && (
-        viewMode === "day" ? (
-          /* B1. SMALL GROUP — MODE JOUR (Séances du jour sélectionné) */
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
-              <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
-                <Dumbbell size={16} className="text-brand-blue" />
-                Séances Small Group programmées ({smallGroupSessionsForDay.length})
-              </h3>
-              <span className="text-[11px] text-brand-white/50">
-                Capacité maximale : 20 personnes par séance
-              </span>
-            </div>
-
-            {smallGroupSessionsForDay.length === 0 ? (
-              <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
-                <Calendar size={32} className="mx-auto text-brand-white/30" />
-                <p className="text-sm font-heading font-bold uppercase text-brand-white/70">
-                  Aucune séance Small Group programmée pour le {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}.
-                </p>
-                <p className="text-xs text-brand-white/40 max-w-sm mx-auto">
-                  Consultez le planning officiel pour ajouter des séances récurrentes ou exceptionnelles.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {smallGroupSessionsForDay.map((session) =>
-                  renderSmallGroupSessionCard(session)
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* B2. SMALL GROUP — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
-          <div className="space-y-6">
-            {weekDays.map((day) => {
-              const daySgSessions = (weeklyData.smallGroupSessions || [])
-                .filter((s) => getLocalDateStr(s.starts_at) === day.dateStr)
-                .sort(
-                  (a, b) =>
-                    new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
-                );
-
-              const totalInscrits = daySgSessions.reduce((acc, s) => {
-                const bks = bookingsBySession[s.id] || [];
-                return acc + bks.filter((b) => b.status === "confirmed").length;
-              }, 0);
-
-              return (
-                <div
-                  key={day.dateStr}
-                  className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-5 shadow-xl space-y-4"
-                >
-                  {/* En-tête du jour */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="px-3 py-1.5 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-sm uppercase">
-                        {day.dayName} {day.dateNum} {day.monthName}
-                      </div>
-
-                      <span className="text-xs text-brand-white/60">
-                        {daySgSessions.length} séance{daySgSessions.length > 1 ? "s" : ""} • {totalInscrits} inscrit{totalInscrits > 1 ? "s" : ""}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedDateStr(day.dateStr);
-                        setViewMode("day");
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-                      title="Consulter ce jour en vue détaillée"
-                    >
-                      <ExternalLink size={12} />
-                      Consulter en mode Jour
-                    </button>
-                  </div>
-
-                  {/* Liste des séances du jour ou état vide */}
-                  {daySgSessions.length === 0 ? (
-                    <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0f172a]/30 rounded-xl border border-brand-white/5">
-                      Aucune séance Small Group programmée pour le {day.dayName} {day.dateNum} {day.monthName}.
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {daySgSessions.map((session) =>
-                        renderSmallGroupSessionCard(session, {
                           showDayLink: true,
                           dayDateStr: day.dateStr,
                         })

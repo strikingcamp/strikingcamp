@@ -373,3 +373,202 @@ export async function sendAdminBookingNotification(
     return { success: false, error: msg };
   }
 }
+
+export interface TrialBookingEmailData {
+  prospectEmail: string;
+  prospectName: string;
+  discipline: string;
+  date: string;
+  time: string;
+  location?: string;
+}
+
+export interface AdminTrialNotificationData {
+  prospectName: string;
+  prospectEmail: string;
+  prospectPhone: string;
+  discipline: string;
+  date: string;
+  time: string;
+}
+
+const OFFICIAL_VENUE = "Marseille Fight Club — 268 avenue de la Capelette, 13010 Marseille";
+
+/**
+ * 5. Confirmation de cours d'essai envoyée au prospect
+ */
+export async function sendTrialBookingConfirmationEmail(
+  data: TrialBookingEmailData
+): Promise<{ success: boolean; error?: string }> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.info("[Trial Email - Mode Simulation] Confirmation prospect :", data);
+    return { success: true };
+  }
+
+  const location = data.location || OFFICIAL_VENUE;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: [data.prospectEmail],
+      subject: `Confirmation de ton cours d'essai — ${data.discipline} (${data.date})`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #070c16; color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #1e293b;">
+          <div style="border-bottom: 2px solid #00d8ff; padding-bottom: 16px; margin-bottom: 24px;">
+            <h2 style="color: #00d8ff; text-transform: uppercase; margin: 0; font-size: 20px; letter-spacing: 1px;">Striking Camp Marseille</h2>
+            <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 0 0;">Ton cours d'essai est réservé !</p>
+          </div>
+
+          <p style="font-size: 15px; color: #ffffff; margin-bottom: 16px;">
+            Bonjour <strong>${data.prospectName}</strong>,
+          </p>
+          <p style="font-size: 14px; color: #cbd5e1; line-height: 1.5; margin-bottom: 24px;">
+            Nous avons bien enregistré ta réservation pour ton cours d'essai au Striking Camp. Voici le récapitulatif de ta séance :
+          </p>
+
+          <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 20px; margin-bottom: 24px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; width: 120px;">Discipline</td>
+                <td style="padding: 8px 0; color: #00d8ff; font-size: 14px; font-weight: bold;">${data.discipline}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Formule</td>
+                <td style="padding: 8px 0; color: #ffffff; font-size: 14px;">Cours d'essai gratuit</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Date</td>
+                <td style="padding: 8px 0; color: #ffffff; font-size: 14px; font-weight: bold;">${data.date}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Horaire</td>
+                <td style="padding: 8px 0; color: #ffffff; font-size: 14px; font-weight: bold;">${data.time}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Lieu</td>
+                <td style="padding: 8px 0; color: #cbd5e1; font-size: 13px;">${location}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Statut</td>
+                <td style="padding: 8px 0; color: #10b981; font-size: 13px; font-weight: bold;">Confirmé</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background: rgba(0, 216, 255, 0.05); border: 1px solid rgba(0, 216, 255, 0.2); border-radius: 6px; padding: 16px; margin-bottom: 24px;">
+            <p style="color: #00d8ff; font-size: 13px; font-weight: bold; margin: 0 0 8px 0;">
+              🥊 Conseils pratiques pour ta séance :
+            </p>
+            <ul style="color: #94a3b8; font-size: 12px; margin: 0; padding-left: 18px; line-height: 1.6;">
+              <li>Arriver <strong>10 minutes en avance</strong> pour l'accueil par le coach.</li>
+              <li>Prévoir une tenue de sport adaptée (t-shirt / short de sport).</li>
+              <li>Penser à prendre une bouteille d'eau et une serviette.</li>
+              <li>Des gants de boxe peuvent t'être prêtés pour cette première séance.</li>
+            </ul>
+          </div>
+
+          <div style="border-top: 1px solid #1e293b; padding-top: 16px; margin-top: 32px; font-size: 11px; color: #64748b; text-align: center;">
+            Striking Camp Marseille — 268 avenue de la Capelette, 13010 Marseille<br />
+            Email envoyé automatiquement depuis <strong>strikingcamp.com</strong>
+          </div>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error("[Resend] Erreur sendTrialBookingConfirmationEmail :", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Erreur inattendue.";
+    console.error("[Resend] Exception sendTrialBookingConfirmationEmail :", err);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 6. Notification d'un nouveau cours d'essai envoyée à l'administrateur / coach
+ */
+export async function sendAdminTrialBookingNotification(
+  data: AdminTrialNotificationData
+): Promise<{ success: boolean; error?: string }> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.info("[Trial Email - Mode Simulation] Alerte admin nouveau prospect :", data);
+    return { success: true };
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: [DEFAULT_ADMIN_RECIPIENT],
+      subject: `[Nouveau Cours d'Essai] ${data.prospectName} — ${data.discipline} (${data.date})`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #070c16; color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #1e293b;">
+          <div style="border-bottom: 2px solid #00d8ff; padding-bottom: 16px; margin-bottom: 24px;">
+            <h2 style="color: #00d8ff; text-transform: uppercase; margin: 0; font-size: 18px; letter-spacing: 1px;">Admin Striking Camp</h2>
+            <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 0 0;">Nouvelle réservation de cours d'essai</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; width: 120px; font-size: 12px; font-weight: bold; text-transform: uppercase;">Prospect</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 14px; font-weight: bold;">
+                ${data.prospectName}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Téléphone</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #00d8ff; font-size: 14px; font-weight: bold;">
+                <a href="tel:${data.prospectPhone}" style="color: #00d8ff; text-decoration: none;">${data.prospectPhone}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Email</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 14px;">
+                <a href="mailto:${data.prospectEmail}" style="color: #ffffff; text-decoration: none;">${data.prospectEmail}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Discipline</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #00d8ff; font-size: 14px; font-weight: bold;">${data.discipline}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Date & Heure</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 14px; font-weight: bold;">${data.date} à ${data.time}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Type</td>
+              <td style="padding: 8px 0; color: #f59e0b; font-size: 13px; font-weight: bold;">COURS D'ESSAI</td>
+            </tr>
+          </table>
+
+          <div style="text-align: center; margin-top: 24px;">
+            <a href="https://strikingcamp.com/admin/reservations" style="display: inline-block; background: #1e293b; color: #ffffff; border: 1px solid #334155; font-weight: bold; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-size: 12px; text-transform: uppercase;">
+              Voir dans le planning Admin
+            </a>
+          </div>
+
+          <div style="border-top: 1px solid #1e293b; padding-top: 16px; margin-top: 32px; font-size: 11px; color: #64748b; text-align: center;">
+            Notification automatique Striking Camp
+          </div>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error("[Resend] Erreur sendAdminTrialBookingNotification :", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Erreur inattendue.";
+    console.error("[Resend] Exception sendAdminTrialBookingNotification :", err);
+    return { success: false, error: msg };
+  }
+}
+

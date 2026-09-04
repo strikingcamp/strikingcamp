@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Clock, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import TrialBookingModal from "@/components/modals/TrialBookingModal";
 
 import {
   type DayName as Day,
@@ -39,6 +40,8 @@ export default function PlanningSection({ initialScheduleData }: PlanningSection
   const scheduleData = initialScheduleData || defaultScheduleData;
   const [activeCategory, setActiveCategory] = useState<Category>("Collectifs");
   const [activeDay, setActiveDay] = useState<DayFilter>("Tous");
+  const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
+  const [selectedDisciplineForModal, setSelectedDisciplineForModal] = useState<string | undefined>(undefined);
 
   // Jours ayant au moins un créneau dans la catégorie active
   const activeDays = days.filter(
@@ -215,24 +218,35 @@ export default function PlanningSection({ initialScheduleData }: PlanningSection
           Envie de rejoindre une séance ?
         </h3>
         <p className="text-xs sm:text-sm text-brand-white/60 leading-relaxed max-w-lg mx-auto">
-          Les réservations de séances se font directement depuis l&apos;espace membre en ligne afin de garantir un encadrement personnalisé en effectif réduit.
+          Venez tester un premier entraînement encadré par le coach. Choisissez votre discipline et votre créneau pour réserver votre cours d&apos;essai gratuit.
         </p>
         <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
-          <Link
-            href="/connexion"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg shadow-brand-blue/20"
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedDisciplineForModal(undefined);
+              setIsTrialModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-6 py-3.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg shadow-brand-blue/20 cursor-pointer"
           >
-            RÉSERVER UN CRÉNEAU
+            RÉSERVER MON COURS D’ESSAI
             <ArrowRight size={14} />
-          </Link>
+          </button>
           <Link
             href="/tarifs"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 font-heading font-bold text-xs uppercase tracking-wider rounded-sm border border-brand-white/10 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 font-heading font-bold text-xs uppercase tracking-wider rounded-sm border border-brand-white/10 transition-colors"
           >
             VOIR LES FORMULES
           </Link>
         </div>
       </div>
+
+      {/* Modale de Réservation de Cours d'Essai */}
+      <TrialBookingModal
+        isOpen={isTrialModalOpen}
+        onClose={() => setIsTrialModalOpen(false)}
+        preselectedDiscipline={selectedDisciplineForModal}
+      />
 
     </section>
   );
