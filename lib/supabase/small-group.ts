@@ -164,7 +164,7 @@ export async function getMemberUpcomingBookings(
   if (sessionIds.length > 0) {
     const { data: sessions, error: sessionsError } = await supabase
       .from("class_sessions")
-      .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
+      .select("id, template_id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
       .in("id", sessionIds);
 
     if (sessionsError) {
@@ -179,7 +179,7 @@ export async function getMemberUpcomingBookings(
     }
   }
 
-  // 3. Formatage pour affichage
+  // 3. Formatage pour affichage en fuseau horaire Europe/Paris
   const result: SmallGroupBooking[] = [];
 
   for (const b of bookings) {
@@ -191,18 +191,37 @@ export async function getMemberUpcomingBookings(
 
     if (session?.starts_at) {
       const start = new Date(session.starts_at);
-      const end = session.ends_at ? new Date(session.ends_at) : null;
-      dayFormatted = DAY_NAMES_FR[start.getDay()];
-      dateFormatted = `${start.getDate()} ${MONTH_NAMES_FR[start.getMonth()]}`;
+      
+      const dayRaw = new Intl.DateTimeFormat("fr-FR", {
+        timeZone: "Europe/Paris",
+        weekday: "long",
+      }).format(start);
+      dayFormatted = dayRaw.charAt(0).toUpperCase() + dayRaw.slice(1);
 
-      const sHours = String(start.getHours()).padStart(2, "0");
-      const sMins = String(start.getMinutes()).padStart(2, "0");
-      if (end) {
-        const eHours = String(end.getHours()).padStart(2, "0");
-        const eMins = String(end.getMinutes()).padStart(2, "0");
-        timeFormatted = `${sHours}:${sMins} – ${eHours}:${eMins}`;
+      dateFormatted = new Intl.DateTimeFormat("fr-FR", {
+        timeZone: "Europe/Paris",
+        day: "numeric",
+        month: "long",
+      }).format(start);
+
+      const sHours = new Intl.DateTimeFormat("fr-FR", {
+        timeZone: "Europe/Paris",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(start);
+
+      if (session.ends_at) {
+        const end = new Date(session.ends_at);
+        const eHours = new Intl.DateTimeFormat("fr-FR", {
+          timeZone: "Europe/Paris",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).format(end);
+        timeFormatted = `${sHours} – ${eHours}`;
       } else {
-        timeFormatted = `${sHours}:${sMins}`;
+        timeFormatted = sHours;
       }
     }
 

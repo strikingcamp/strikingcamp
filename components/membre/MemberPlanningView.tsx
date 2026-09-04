@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useMember, type BookingSlot } from "./MemberContext";
 import type { ClassSession } from "@/lib/supabase/small-group";
+import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
 import { cn } from "@/lib/utils";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -95,17 +96,21 @@ const OFFICIAL_PRIVATE_HOURS = [
 ];
 
 function getCurrentWeekMonday(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  // Dimanche = 0 (décalage de -6 jours), sinon (1 - day) jours pour atteindre Lundi
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0);
-  return monday;
+  const parisTodayStr = formatToParisDate(new Date());
+  const [year, month, day] = parisTodayStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day, 12, 0, 0);
+  const dayOfWeek = d.getDay(); // 0 = Dimanche, 1 = Lundi, ...
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  d.setDate(d.getDate() + diffToMonday);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 function getCurrentDayName(): DayName {
-  const now = new Date();
-  const dayIndex = now.getDay(); // 0 = Dimanche, 1 = Lundi, 2 = Mardi, 3 = Mercredi, 4 = Jeudi, 5 = Vendredi, 6 = Samedi
+  const parisTodayStr = formatToParisDate(new Date());
+  const [year, month, day] = parisTodayStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day, 12, 0, 0);
+  const dayIndex = d.getDay();
   const map: Record<number, DayName> = {
     1: "Lundi",
     2: "Mardi",
@@ -113,7 +118,7 @@ function getCurrentDayName(): DayName {
     4: "Jeudi",
     5: "Vendredi",
     6: "Samedi",
-    0: "Lundi", // Le dimanche, sélectionne le Lundi
+    0: "Lundi",
   };
   return map[dayIndex] || "Lundi";
 }
@@ -138,29 +143,28 @@ function generateSlotsFromData(
     mondayDateStr: dayDateMap["Lundi"]?.dateStr,
   });
 
-  const defaultMondayStr = dayDateMap["Lundi"]?.dateStr || mondayDate.toISOString().slice(0, 10);
+  const defaultMondayStr = dayDateMap["Lundi"]?.dateStr || formatToParisDate(mondayDate);
   const slots: DemoSlot[] = [];
 
   if (availableSessions && availableSessions.length > 0) {
     const mondayStr = dayDateMap["Lundi"]?.dateStr || defaultMondayStr;
     const saturdayStr = dayDateMap["Samedi"]?.dateStr || "";
 
-    // Filtrer les sessions actives de la semaine demandée
+    // Filtrer les sessions actives de la semaine demandée avec le fuseau horaire de Paris
     const weekSessions = availableSessions.filter((s) => {
       if (s.is_active === false) return false;
-      const sDateStr = s.starts_at.slice(0, 10);
+      const sDateStr = formatToParisDate(s.starts_at);
       return sDateStr >= mondayStr && (!saturdayStr || sDateStr <= saturdayStr);
     });
 
     console.log(`[MemberPlanningView] ${weekSessions.length} séances trouvées pour la semaine ${mondayStr} -> ${saturdayStr}`);
 
     if (weekSessions.length > 0) {
-      // Regrouper par template_id + date pour détecter d'éventuelles séances déplacées
-      // conservées pour protéger les réservations historiques
+      // Regrouper par template_id + date Paris pour détecter d'éventuels doublons
       const templateDateMap = new Map<string, ClassSession[]>();
       for (const s of weekSessions) {
         if (s.template_id) {
-          const key = `${s.template_id}_${s.starts_at.slice(0, 10)}`;
+          const key = `${s.template_id}_${formatToParisDate(s.starts_at)}`;
           const list = templateDateMap.get(key) || [];
           list.push(s);
           templateDateMap.set(key, list);
@@ -168,7 +172,6 @@ function generateSlotsFromData(
       }
 
       // Pour les templates multi-séances sur le même jour, trier par created_at décroissant
-      // La plus récemment créée est la séance canonique officielle
       templateDateMap.forEach((list) => {
         if (list.length > 1) {
           list.sort((a, b) => {
@@ -180,31 +183,23 @@ function generateSlotsFromData(
       });
 
       for (const s of weekSessions) {
-        const sDateStr = s.starts_at.slice(0, 10);
+        const sDateStr = formatToParisDate(s.starts_at);
 
-        // Trouver le jour de la semaine correspondant à la date
+        // Trouver le jour de la semaine correspondant à la date Paris
         const matchedDay = DAYS_ORDER.find((d) => dayDateMap[d]?.dateStr === sDateStr);
         if (!matchedDay) continue;
 
         const dateInfo = dayDateMap[matchedDay];
         const dStr = dateInfo?.dateStr || sDateStr;
 
-        const sDate = new Date(s.starts_at);
-        const startHours = String(sDate.getHours()).padStart(2, "0");
-        const startMins = String(sDate.getMinutes()).padStart(2, "0");
-        const startTime = `${startHours}:${startMins}`;
-
+        const startTime = formatToParisTime(s.starts_at);
         let endTime = "";
         if (s.ends_at) {
-          const eDate = new Date(s.ends_at);
-          const endHours = String(eDate.getHours()).padStart(2, "0");
-          const endMins = String(eDate.getMinutes()).padStart(2, "0");
-          endTime = `${endHours}:${endMins}`;
+          endTime = formatToParisTime(s.ends_at);
         } else {
+          const sDate = new Date(s.starts_at);
           const eDate = new Date(sDate.getTime() + 50 * 60 * 1000);
-          const endHours = String(eDate.getHours()).padStart(2, "0");
-          const endMins = String(eDate.getMinutes()).padStart(2, "0");
-          endTime = `${endHours}:${endMins}`;
+          endTime = formatToParisTime(eDate);
         }
 
         const rawType = (s.type || "").toLowerCase().trim();
@@ -235,24 +230,12 @@ function generateSlotsFromData(
             ))
         );
 
-        // Règle d'affichage des séances legacy (template_id === null / undefined) :
-        // - Si template_id !== null -> afficher normalement.
-        // - Si template_id === null ET que le membre connecté possède une réservation sur cette séance -> conserver la séance visible afin de préserver son accès à sa réservation.
-        // - Si template_id === null ET qu'il n'y a aucune réservation du membre connecté -> ne pas afficher la séance.
-        if (!isPriv && !s.template_id) {
-          if (!isBookedByMe) {
-            continue;
-          }
-        }
-
-        // Détection de séance déplacée / doublon pour le même template sur le même jour :
+        // Détection de séance doublon pour le même template sur le même jour :
         if (s.template_id) {
           const key = `${s.template_id}_${sDateStr}`;
           const siblings = templateDateMap.get(key);
           if (siblings && siblings.length > 1) {
             const isCanonical = siblings[0].id === s.id;
-            // Si ce n'est pas la séance officielle (canonique) et que le membre connecté n'y est pas inscrit,
-            // on ne l'affiche pas afin d'éviter tout doublon incohérent dans le planning.
             if (!isCanonical && !isBookedByMe) {
               continue;
             }
@@ -439,14 +422,12 @@ export default function MemberPlanningView() {
       d.setDate(d.getDate() + idx);
       const dateNum = d.getDate();
       const monthName = MONTH_NAMES_FR[d.getMonth()];
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(dateNum).padStart(2, "0");
+      const dateStr = formatToParisDate(d);
 
       map[day] = {
         dateNum,
         fullDateLabel: `${day} ${dateNum} ${monthName}`,
-        dateStr: `${yyyy}-${mm}-${dd}`,
+        dateStr,
       };
     });
 

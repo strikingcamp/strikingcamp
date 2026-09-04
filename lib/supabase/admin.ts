@@ -29,6 +29,7 @@ export interface AdminBookingParticipant {
   userId: string;
   memberName: string;
   phone: string;
+  email?: string;
   planName: string;
   status: string; // 'confirmed' | 'cancelled'
   attendanceStatus: "pending" | "present" | "absent";
@@ -36,6 +37,14 @@ export interface AdminBookingParticipant {
   createdAt: string;
   cancellationReason?: string | null;
   isLateCancellation?: boolean;
+  sessionId?: string;
+  sessionDiscipline?: string;
+  sessionType?: string;
+  sessionLevel?: string;
+  sessionStartsAt?: string;
+  sessionEndsAt?: string;
+  sessionDateFormatted?: string;
+  sessionTimeFormatted?: string;
 }
 
 export interface AdminSessionReservationsData {
@@ -823,8 +832,13 @@ export async function getAdminWeeklyReservationsData(
 
     // 4. Récupération des profils et abonnements des membres
     const userIds = Array.from(new Set(allBookings.map((b) => b.user_id)));
-    const profilesMap = new Map<string, { first_name?: string; last_name?: string; phone?: string }>();
+    const profilesMap = new Map<string, { first_name?: string | null; last_name?: string | null; phone?: string | null }>();
+    const authUsersMap = new Map<string, { email?: string; first_name?: string; last_name?: string; phone?: string }>();
     const subsMap = new Map<string, string>();
+    const userSubsListMap = new Map<
+      string,
+      Array<{ status: string; planName: string; allowsPrivate: boolean }>
+    >();
 
     if (userIds.length > 0) {
       const { data: profilesData } = await supabase
@@ -838,17 +852,47 @@ export async function getAdminWeeklyReservationsData(
         }
       }
 
+      // Récupération des données auth (email, métadonnées) via l'Admin API si disponible
+      try {
+        const authAdmin = (supabase as any).auth?.admin;
+        if (authAdmin && typeof authAdmin.listUsers === "function") {
+          const { data: authList } = await authAdmin.listUsers();
+          if (authList?.users) {
+            for (const u of authList.users) {
+              if (userIds.includes(u.id)) {
+                authUsersMap.set(u.id, {
+                  email: u.email,
+                  first_name: u.user_metadata?.first_name,
+                  last_name: u.user_metadata?.last_name,
+                  phone: u.user_metadata?.phone || u.phone,
+                });
+              }
+            }
+          }
+        }
+      } catch (authErr) {
+        // Fallback silencieux en cas d'impossibilité d'accès à auth.admin
+      }
+
+      // Abonnements sans filtre destructeur status = 'active'
       const { data: subsData } = await supabase
         .from("subscriptions")
-        .select("id, user_id, status, plan:plans(name, type)")
+        .select("id, user_id, status, started_at, plan:plans(name, type, allows_private)")
         .in("user_id", userIds)
-        .eq("status", "active");
+        .order("started_at", { ascending: false });
 
       if (subsData) {
         for (const sub of subsData) {
           const rawPlan = Array.isArray(sub.plan) ? sub.plan[0] : sub.plan;
           if (rawPlan?.name) {
-            subsMap.set(sub.user_id, rawPlan.name);
+            if (!userSubsListMap.has(sub.user_id)) {
+              userSubsListMap.set(sub.user_id, []);
+            }
+            userSubsListMap.get(sub.user_id)!.push({
+              status: sub.status,
+              planName: rawPlan.name,
+              allowsPrivate: Boolean(rawPlan.allows_private),
+            });
           }
         }
       }
@@ -860,12 +904,56 @@ export async function getAdminWeeklyReservationsData(
 
     for (const b of allBookings) {
       const prof = profilesMap.get(b.user_id);
-      const memberName = prof
-        ? `${prof.first_name || ""} ${rawProf(prof.first_name, prof.last_name)}`.trim() || "Membre"
-        : "Membre";
+      const authUser = authUsersMap.get(b.user_id);
 
-      const phone = prof?.phone || "—";
-      const planName = subsMap.get(b.user_id) || "Formule Active";
+      const fName = (prof?.first_name || authUser?.first_name || "").trim();
+      const lName = (prof?.last_name || authUser?.last_name || "").trim();
+
+      let memberName = "";
+      if (fName || lName) {
+        memberName = `${fName} ${lName ? lName.toUpperCase() : ""}`.trim();
+      } else if (authUser?.email) {
+        memberName = authUser.email;
+      } else {
+        memberName = "Membre";
+      }
+
+      const phone = prof?.phone || authUser?.phone || "—";
+      const email = authUser?.email;
+
+      const sess = weekSessions.find((s) => s.id === b.class_session_id);
+      const isPrivateSession =
+        (sess?.type || "").toLowerCase() === "private" ||
+        (sess?.discipline || "").toLowerCase().includes("privé");
+
+      const userSubs = userSubsListMap?.get(b.user_id) || [];
+      let planName = "";
+
+      if (isPrivateSession) {
+        // Chercher en priorité un abonnement privé actif
+        const activePrivSub = userSubs.find((s) => s.allowsPrivate && s.status === "active");
+        if (activePrivSub) {
+          planName = activePrivSub.planName;
+        } else {
+          // Sinon un abonnement privé quel que soit le statut (ex: paused)
+          const anyPrivSub = userSubs.find((s) => s.allowsPrivate);
+          if (anyPrivSub) {
+            planName = `${anyPrivSub.planName}${anyPrivSub.status !== "active" ? ` (${anyPrivSub.status})` : ""}`;
+          }
+        }
+      }
+
+      if (!planName) {
+        const activeSub = userSubs.find((s) => s.status === "active");
+        if (activeSub) {
+          planName = activeSub.planName;
+        } else if (userSubs.length > 0) {
+          const firstSub = userSubs[0];
+          planName = `${firstSub.planName}${firstSub.status !== "active" ? ` (${firstSub.status})` : ""}`;
+        } else {
+          planName = "Formule Active";
+        }
+      }
 
       let formattedDate = "—";
       if (b.created_at) {
@@ -885,11 +973,26 @@ export async function getAdminWeeklyReservationsData(
         formattedAttendedAt = `${ah}:${am}`;
       }
 
+      let sessionDateFormatted: string | undefined;
+      let sessionTimeFormatted: string | undefined;
+      if (sess?.starts_at) {
+        const sDate = new Date(sess.starts_at);
+        sessionDateFormatted = new Intl.DateTimeFormat("fr-FR", {
+          timeZone: "Europe/Paris",
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(sDate);
+        sessionTimeFormatted = formatToParisTime(sess.starts_at);
+      }
+
       const participant: AdminBookingParticipant = {
         bookingId: b.id,
         userId: b.user_id,
         memberName,
         phone,
+        email,
         planName,
         status: b.status || "confirmed",
         attendanceStatus: (b.attendance_status as "pending" | "present" | "absent") || "pending",
@@ -897,6 +1000,14 @@ export async function getAdminWeeklyReservationsData(
         createdAt: formattedDate,
         cancellationReason: b.cancellation_reason || null,
         isLateCancellation: Boolean(b.is_late_cancellation),
+        sessionId: sess?.id,
+        sessionDiscipline: sess?.discipline,
+        sessionType: sess?.type || "private",
+        sessionLevel: sess?.level || undefined,
+        sessionStartsAt: sess?.starts_at,
+        sessionEndsAt: sess?.ends_at || undefined,
+        sessionDateFormatted,
+        sessionTimeFormatted,
       };
 
       if (!bookingsBySessionId[b.class_session_id]) {
@@ -938,7 +1049,7 @@ export async function getAdminWeeklyReservationsData(
     }
 
     // 7. Construction du planning officiel SMALL GROUP
-    // On exclut les cours collectifs (type = 'collective') et les cours privés
+    // SOURCE DE VÉRITÉ : Toutes les séances physiques réelles de class_sessions sont incluses
     const physicalSmallGroupSessions = weekSessions.filter((s) => {
       const rawType = (s.type || "").toLowerCase().trim();
       const isPriv =
@@ -951,9 +1062,28 @@ export async function getAdminWeeklyReservationsData(
     });
 
     const smallGroupSessions: AdminClassSessionSummary[] = [];
-    const matchedPhysicalSessionIds = new Set<string>();
+    const coveredSlotsByDateAndHour = new Set<string>();
 
-    // Étape A : Pour chaque jour (Lundi = 0 ... Samedi = 5), projeter les templates officiels
+    // Étape A : Inclusion SYSTÉMATIQUE de toutes les séances physiques Small Group de class_sessions
+    for (const ps of physicalSmallGroupSessions) {
+      const pDate = formatToParisDate(ps.starts_at);
+      const pTime = formatToParisTime(ps.starts_at);
+      coveredSlotsByDateAndHour.add(`${pDate}_${pTime}`);
+
+      smallGroupSessions.push({
+        id: ps.id,
+        discipline: ps.discipline,
+        type: "small_group",
+        level: ps.level || "Tous niveaux",
+        starts_at: ps.starts_at,
+        ends_at: ps.ends_at,
+        max_capacity: ps.max_capacity || 20,
+        bookedCount: confirmedCountsMap.get(ps.id) || 0,
+        is_active: ps.is_active ?? true,
+      });
+    }
+
+    // Étape B : Compléter uniquement les créneaux manquants prévus par les templates récurrents
     for (let dayIdx = 0; dayIdx < 6; dayIdx++) {
       const dayDateStr = dayDateStrings[dayIdx];
       const dayTemplates = (rawTemplates || []).filter((t) => t.day_of_week === dayIdx);
@@ -961,40 +1091,20 @@ export async function getAdminWeeklyReservationsData(
       for (const t of dayTemplates) {
         const tmplStartHm = t.start_time.slice(0, 5);
         const tmplEndHm = t.end_time.slice(0, 5);
+        const slotKey = `${dayDateStr}_${tmplStartHm}`;
 
-        // Recherche d'une session physique correspondante sur cette date
-        const match = physicalSmallGroupSessions.find((ps) => {
-          if (matchedPhysicalSessionIds.has(ps.id)) return false;
+        // Vérifier si une séance physique existe déjà pour ce jour et cet horaire (ou rattachée par template_id)
+        const alreadyCoveredByPhysical = physicalSmallGroupSessions.some((ps) => {
           const pDate = formatToParisDate(ps.starts_at);
-          if (pDate !== dayDateStr) return false;
-
-          // Correspondance par template_id prioritaire
-          if (ps.template_id && ps.template_id === t.id) return true;
-
-          // Ou correspondance par heure locale Paris + discipline
           const pTime = formatToParisTime(ps.starts_at);
-          if (pTime === tmplStartHm && (ps.discipline.toLowerCase() === t.discipline.toLowerCase() || ps.template_id === t.id)) {
-            return true;
-          }
-          return false;
+          return (
+            (pDate === dayDateStr && pTime === tmplStartHm) ||
+            Boolean(ps.template_id && ps.template_id === t.id && pDate === dayDateStr)
+          );
         });
 
-        if (match) {
-          matchedPhysicalSessionIds.add(match.id);
-          smallGroupSessions.push({
-            id: match.id,
-            discipline: t.discipline,
-            type: "small_group",
-            level: t.level || match.level || "Tous niveaux",
-            starts_at: match.starts_at,
-            ends_at: match.ends_at,
-            max_capacity: t.max_capacity || match.max_capacity || 20,
-            bookedCount: confirmedCountsMap.get(match.id) || 0,
-            is_active: match.is_active ?? true,
-          });
-        } else {
-          // Créneau officiel non encore matérialisé dans class_sessions :
-          // Affichage officiel obligatoire avec 0 / 20 inscrits
+        if (!alreadyCoveredByPhysical && !coveredSlotsByDateAndHour.has(slotKey)) {
+          coveredSlotsByDateAndHour.add(slotKey);
           const virtualId = `tmpl_${t.id}_${dayDateStr}`;
           const virtualStartIso = `${dayDateStr}T${tmplStartHm}:00+02:00`;
           const virtualEndIso = `${dayDateStr}T${tmplEndHm}:00+02:00`;
@@ -1009,28 +1119,6 @@ export async function getAdminWeeklyReservationsData(
             max_capacity: t.max_capacity || 20,
             bookedCount: 0,
             is_active: true,
-          });
-        }
-      }
-    }
-
-    // Étape B : Protection absolue des séances ayant des réservations existantes !
-    // Si une session physique possède au moins une réservation confirmée mais n'a pas été
-    // rattachée à un template officiel (séance ponctuelle ou historique), elle est préservée.
-    for (const ps of physicalSmallGroupSessions) {
-      if (!matchedPhysicalSessionIds.has(ps.id)) {
-        const count = confirmedCountsMap.get(ps.id) || 0;
-        if (count > 0) {
-          smallGroupSessions.push({
-            id: ps.id,
-            discipline: ps.discipline,
-            type: "small_group",
-            level: ps.level || "Session exceptionnelle",
-            starts_at: ps.starts_at,
-            ends_at: ps.ends_at,
-            max_capacity: ps.max_capacity || 20,
-            bookedCount: count,
-            is_active: ps.is_active ?? true,
           });
         }
       }

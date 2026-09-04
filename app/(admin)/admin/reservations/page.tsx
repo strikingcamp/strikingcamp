@@ -1,6 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import AdminReservationsView from "@/components/admin/AdminReservationsView";
-import { getAdminWeeklyReservationsData } from "@/lib/supabase/admin";
+import { getAdminWeeklyReservationsData, formatToParisDate } from "@/lib/supabase/admin";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Réservations & Émargement | Administration Striking Camp",
@@ -11,18 +13,14 @@ interface PageProps {
 }
 
 function getMondayOfCurrentWeek(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff, 0, 0, 0, 0);
-  return monday;
-}
-
-function formatDateToIso(d: Date): string {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  const parisTodayStr = formatToParisDate(new Date());
+  const [year, month, day] = parisTodayStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day, 12, 0, 0);
+  const dayOfWeek = d.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 export default async function AdminReservationsPage({ searchParams }: PageProps) {
@@ -36,13 +34,20 @@ export default async function AdminReservationsPage({ searchParams }: PageProps)
   const currentSaturday = new Date(currentMonday);
   currentSaturday.setDate(currentSaturday.getDate() + 5);
 
-  const mondayStr = formatDateToIso(currentMonday);
-  const saturdayStr = formatDateToIso(currentSaturday);
+  const mondayStr = formatToParisDate(currentMonday);
+  const saturdayStr = formatToParisDate(currentSaturday);
 
   const tabParam = params.tab === "private" ? "private" : "small_group";
+  const modeParam = params.mode === "week" ? "week" : "day";
   const dayParam = typeof params.day === "string" ? params.day : undefined;
 
-  const supabase = await createClient();
+  let supabase;
+  try {
+    supabase = createAdminClient();
+  } catch {
+    supabase = await createClient();
+  }
+
   const weeklyData = await getAdminWeeklyReservationsData(
     supabase,
     mondayStr,
@@ -54,6 +59,7 @@ export default async function AdminReservationsPage({ searchParams }: PageProps)
       weeklyData={weeklyData}
       initialWeekOffset={weekOffset}
       initialTab={tabParam}
+      initialViewMode={modeParam}
       initialSelectedDateStr={dayParam}
     />
   );
