@@ -152,8 +152,8 @@ export async function POST(req: NextRequest) {
 
       const fullName = `${cleanFirstName} ${cleanLastName}`;
 
-      // 5. Déclenchement asynchrone sécurisé des notifications emails (non bloquant)
-      Promise.allSettled([
+      // 5. Déclenchement attendu des notifications emails avec observabilité des logs
+      const emailResults = await Promise.allSettled([
         sendTrialBookingConfirmationEmail({
           prospectEmail: cleanEmail,
           prospectName: cleanFirstName,
@@ -170,8 +170,20 @@ export async function POST(req: NextRequest) {
           date: formattedDate,
           time: formattedTime,
         }),
-      ]).catch((emailErr) => {
-        console.error("[/api/trial-bookings] Erreur envoi emails transactionnels :", emailErr);
+      ]);
+
+      emailResults.forEach((result, index) => {
+        if (result.status === "rejected") {
+          console.error(
+            `[/api/trial-bookings] Email ${index} rejeté :`,
+            result.reason
+          );
+        } else if (!result.value.success) {
+          console.warn(
+            `[/api/trial-bookings] Échec envoi email ${index} :`,
+            result.value.error
+          );
+        }
       });
 
       return NextResponse.json({
