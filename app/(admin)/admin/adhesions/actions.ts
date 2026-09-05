@@ -1,5 +1,6 @@
 "use server";
 
+import { type SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
@@ -29,20 +30,31 @@ export interface UpdateMembershipResult {
 }
 
 /**
+ * Retourne le client Supabase privilégié si la clé service_role est configurée,
+ * sinon utilise le client de session de l'administrateur connecté garanti par public.is_admin().
+ */
+function getAdhesionsDbClient(sessionSupabase: SupabaseClient): SupabaseClient {
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      return createAdminClient();
+    } catch (err) {
+      console.warn("[getAdhesionsDbClient] Fallback sur sessionSupabase admin :", err);
+    }
+  }
+  return sessionSupabase;
+}
+
+/**
  * Server Action : Valide une demande d'adhésion côté administrateur.
  *
  * Exécutée exclusivement côté serveur avec vérification d'authentification
  * et du rôle ADMIN sur la session active via getUser().
  *
- * Processus métier atomique :
+ * Processus métier :
  * 1. Vérification de la session et du rôle ADMIN.
- * 2. Vérification que la demande existe et est en statut "pending".
- * 3. Récupération de la formule choisie (plans) et calcul des dates :
- *    - Annuel (annual) : validité 12 mois
- *    - Mensuel (monthly) : validité 1 mois initial
- * 4. Application du quota de séances privées (selon la formule, défaut 8).
- * 5. Création de l'abonnement actif dans public.subscriptions (status: 'active').
- * 6. Mise à jour de la demande dans public.membership_requests (status: 'approved', reviewed_by, reviewed_at, admin_notes).
+ * 2. Appel prioritaire de la RPC Postgres SECURITY DEFINER `admin_approve_membership_request`
+ *    qui s'exécute de manière atomique et transactionnelle en base de données.
+ * 3. Fallback sur le client admin direct si la RPC n'est pas disponible.
  */
 export async function approveMembershipRequestServerAction(
   requestId: string,
@@ -75,19 +87,37 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // 2. Vérification de la clé secrète service_role
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return {
-        success: false,
-        error: "Configuration serveur incomplète : SUPABASE_SERVICE_ROLE_KEY non disponible.",
-      };
+    const cleanNotes = adminNotes?.trim() || null;
+
+    // 2. PRIORITÉ : RPC PostgreSQL native SECURITY DEFINER
+    const { data: rpcData, error: rpcError } = await supabase.rpc("admin_approve_membership_request", {
+      p_request_id: requestId,
+      p_admin_notes: cleanNotes,
+    });
+
+    if (!rpcError && rpcData) {
+      const res = rpcData as { success?: boolean; subscription_id?: string; error?: string; message?: string };
+      if (res.success) {
+        revalidatePath("/admin/adhesions");
+        revalidatePath("/admin/abonnements");
+        revalidatePath("/admin");
+        return {
+          success: true,
+          subscriptionId: res.subscription_id,
+          message: res.message || "Demande validée avec succès. L'abonnement actif du membre a été créé.",
+        };
+      } else {
+        return {
+          success: false,
+          error: res.message || res.error || "Erreur lors de la validation de la demande.",
+        };
+      }
     }
 
-    const cleanNotes = adminNotes?.trim() || null;
-    const adminSupabase = createAdminClient();
+    // 3. FALLBACK : Exécution directe via le client de base de données
+    const dbClient = getAdhesionsDbClient(supabase);
 
-    // 3. Récupération et vérification de la demande
-    const { data: req, error: reqFetchError } = await adminSupabase
+    const { data: req, error: reqFetchError } = await dbClient
       .from("membership_requests")
       .select("id, user_id, plan_id, status, commitment_type")
       .eq("id", requestId)
@@ -107,8 +137,7 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // 4. Récupération de la formule
-    const { data: plan, error: planFetchError } = await adminSupabase
+    const { data: plan, error: planFetchError } = await dbClient
       .from("plans")
       .select("id, name, type, private_sessions_per_period")
       .eq("id", req.plan_id)
@@ -121,7 +150,6 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // 5. Calcul des dates selon l'engagement
     const startedAt = new Date();
     const endsAt = new Date(startedAt);
     if (req.commitment_type === "annual") {
@@ -132,8 +160,7 @@ export async function approveMembershipRequestServerAction(
 
     const quota = typeof plan.private_sessions_per_period === "number" ? plan.private_sessions_per_period : 8;
 
-    // 6. Création de l'abonnement actif
-    const { data: sub, error: subError } = await adminSupabase
+    const { data: sub, error: subError } = await dbClient
       .from("subscriptions")
       .insert({
         user_id: req.user_id,
@@ -156,8 +183,7 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // 7. Mise à jour de la demande en approved avec traçabilité de l'administrateur
-    const { error: updateReqError } = await adminSupabase
+    const { error: updateReqError } = await dbClient
       .from("membership_requests")
       .update({
         status: "approved",
@@ -232,18 +258,34 @@ export async function rejectMembershipRequestServerAction(
       };
     }
 
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return {
-        success: false,
-        error: "Configuration serveur incomplète : SUPABASE_SERVICE_ROLE_KEY non disponible.",
-      };
+    const cleanNotes = adminNotes?.trim() || null;
+
+    // 2. PRIORITÉ : RPC PostgreSQL native SECURITY DEFINER
+    const { data: rpcData, error: rpcError } = await supabase.rpc("admin_reject_membership_request", {
+      p_request_id: requestId,
+      p_admin_notes: cleanNotes,
+    });
+
+    if (!rpcError && rpcData) {
+      const res = rpcData as { success?: boolean; error?: string; message?: string };
+      if (res.success) {
+        revalidatePath("/admin/adhesions");
+        return {
+          success: true,
+          message: res.message || "La demande d'adhésion a été refusée.",
+        };
+      } else {
+        return {
+          success: false,
+          error: res.message || res.error || "Erreur lors du refus de la demande.",
+        };
+      }
     }
 
-    const cleanNotes = adminNotes?.trim() || null;
-    const adminSupabase = createAdminClient();
+    // 3. FALLBACK : Exécution directe via le client de base de données
+    const dbClient = getAdhesionsDbClient(supabase);
 
-    // 2. Vérification que la demande existe et est en attente
-    const { data: req, error: reqFetchError } = await adminSupabase
+    const { data: req, error: reqFetchError } = await dbClient
       .from("membership_requests")
       .select("id, status")
       .eq("id", requestId)
@@ -263,8 +305,7 @@ export async function rejectMembershipRequestServerAction(
       };
     }
 
-    // 3. Mise à jour de la demande en rejected
-    const { error: updateError } = await adminSupabase
+    const { error: updateError } = await dbClient
       .from("membership_requests")
       .update({
         status: "rejected",
@@ -306,7 +347,7 @@ export async function rejectMembershipRequestServerAction(
  * et du rôle ADMIN sur la session active via getUser().
  *
  * Règles métier :
- * 1. Validation stricte du rôle ADMIN et de la clé service_role.
+ * 1. Validation stricte du rôle ADMIN.
  * 2. Contrôle de cohérence du plan et de l'engagement (mensuel/annuel).
  * 3. Ne modifie JAMAIS user_id ni les données d'authentification du membre.
  * 4. Ne supprime JAMAIS de réservations existantes.
@@ -363,18 +404,10 @@ export async function updateMembershipRequestServerAction(
       };
     }
 
-    // 3. Vérification de la clé secrète service_role
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return {
-        success: false,
-        error: "Configuration serveur incomplète : SUPABASE_SERVICE_ROLE_KEY non disponible.",
-      };
-    }
+    const dbClient = getAdhesionsDbClient(supabase);
 
-    const adminSupabase = createAdminClient();
-
-    // 4. Récupération et vérification de la demande existante
-    const { data: req, error: reqFetchError } = await adminSupabase
+    // 3. Récupération et vérification de la demande existante
+    const { data: req, error: reqFetchError } = await dbClient
       .from("membership_requests")
       .select("id, user_id, plan_id, status, commitment_type, admin_notes")
       .eq("id", requestId)
@@ -387,8 +420,8 @@ export async function updateMembershipRequestServerAction(
       };
     }
 
-    // 5. Récupération et validation de la formule sélectionnée
-    const { data: targetPlan, error: planFetchError } = await adminSupabase
+    // 4. Récupération et validation de la formule sélectionnée
+    const { data: targetPlan, error: planFetchError } = await dbClient
       .from("plans")
       .select("id, name, type, private_sessions_per_period, is_active")
       .eq("id", planId)
@@ -407,7 +440,7 @@ export async function updateMembershipRequestServerAction(
     // CAS 1 : Demande en attente ("pending")
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (req.status === "pending") {
-      const { error: updateReqError } = await adminSupabase
+      const { error: updateReqError } = await dbClient
         .from("membership_requests")
         .update({
           plan_id: planId,
@@ -438,7 +471,7 @@ export async function updateMembershipRequestServerAction(
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (req.status === "approved") {
       // 1. Mise à jour de la demande d'adhésion
-      const { error: updateReqError } = await adminSupabase
+      const { error: updateReqError } = await dbClient
         .from("membership_requests")
         .update({
           plan_id: planId,
@@ -457,7 +490,7 @@ export async function updateMembershipRequestServerAction(
       }
 
       // 2. Récupération de l'abonnement actif associé au membre
-      const { data: sub, error: subFetchError } = await adminSupabase
+      const { data: sub, error: subFetchError } = await dbClient
         .from("subscriptions")
         .select("id, started_at, ends_at, private_sessions_quota")
         .eq("user_id", req.user_id)
@@ -482,7 +515,7 @@ export async function updateMembershipRequestServerAction(
             : 8;
 
         // Mise à jour de l'abonnement actif existant sans doublon ni suppression de réservations
-        const { error: updateSubError } = await adminSupabase
+        const { error: updateSubError } = await dbClient
           .from("subscriptions")
           .update({
             plan_id: planId,
@@ -514,7 +547,7 @@ export async function updateMembershipRequestServerAction(
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // CAS 3 : Autres statuts (ex: rejected, cancelled)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const { error: updateOtherError } = await adminSupabase
+    const { error: updateOtherError } = await dbClient
       .from("membership_requests")
       .update({
         plan_id: planId,

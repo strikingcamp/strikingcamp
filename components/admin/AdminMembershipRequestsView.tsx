@@ -488,41 +488,53 @@ export default function AdminMembershipRequestsView() {
                   </div>
                 </div>
 
-                {/* Colonne 2 : Actions Administrateur */}
-                <div className="flex items-center gap-2.5 self-end lg:self-center shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-brand-white/5 w-full lg:w-auto justify-end">
-                  {/* Bouton Modifier disponible pour toutes les demandes */}
-                  <button
-                    onClick={() => handleOpenEdit(req)}
-                    className="px-3.5 py-2.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white border border-brand-white/10 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
-                    title="Modifier la formule ou l'engagement"
-                  >
-                    <Pencil size={14} className="text-[#00d8ff]" />
-                    <span>Modifier</span>
-                  </button>
-
-                  {isPending && (
+                {/* Colonne 2 : Actions Administrateur (Responsive : 2 lignes sur mobile, 1 ligne sur desktop) */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 self-stretch lg:self-center shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-brand-white/5 w-full lg:w-auto">
+                  {isPending ? (
                     <>
-                      <button
-                        onClick={() => {
-                          setRejectingReq(req);
-                          setAdminNotes("");
-                        }}
-                        className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                      >
-                        Refuser
-                      </button>
+                      {/* Ligne 1 sur mobile : Modifier & Refuser */}
+                      <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full sm:w-auto">
+                        <button
+                          onClick={() => handleOpenEdit(req)}
+                          className="px-3.5 py-2.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white border border-brand-white/10 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          title="Modifier la formule ou l'engagement"
+                        >
+                          <Pencil size={14} className="text-[#00d8ff]" />
+                          <span>Modifier</span>
+                        </button>
 
+                        <button
+                          onClick={() => {
+                            setRejectingReq(req);
+                            setAdminNotes("");
+                          }}
+                          className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer text-center"
+                        >
+                          Refuser
+                        </button>
+                      </div>
+
+                      {/* Ligne 2 sur mobile : Valider l'adhésion (pleine largeur sur mobile, compact sur desktop) */}
                       <button
                         onClick={() => {
                           setApprovingReq(req);
                           setAdminNotes("");
                         }}
-                        className="px-5 py-2.5 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#00d8ff]/20 flex items-center gap-1.5 cursor-pointer"
+                        className="w-full sm:w-auto px-5 py-2.5 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Check size={16} strokeWidth={3} />
                         <span>Valider l&apos;adhésion</span>
                       </button>
                     </>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenEdit(req)}
+                      className="w-full sm:w-auto px-3.5 py-2.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white border border-brand-white/10 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Modifier la formule ou l'engagement"
+                    >
+                      <Pencil size={14} className="text-[#00d8ff]" />
+                      <span>Modifier</span>
+                    </button>
                   )}
                 </div>
               </motion.div>
