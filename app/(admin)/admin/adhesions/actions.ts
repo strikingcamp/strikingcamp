@@ -1,8 +1,7 @@
 "use server";
 
-import { type SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export interface ApproveMembershipResult {
   success: boolean;
@@ -30,209 +29,19 @@ export interface UpdateMembershipResult {
 }
 
 /**
- * Retourne le client Supabase privilégié si la clé service_role est configurée,
- * sinon utilise le client de session de l'administrateur connecté garanti par public.is_admin().
- */
-function getAdhesionsDbClient(sessionSupabase: SupabaseClient): SupabaseClient {
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      return createAdminClient();
-    } catch (err) {
-      console.warn("[getAdhesionsDbClient] Fallback sur sessionSupabase admin :", err);
-    }
-  }
-  return sessionSupabase;
-}
-
-/**
  * Server Action : Valide une demande d'adhésion côté administrateur.
  *
  * Exécutée exclusivement côté serveur avec vérification d'authentification
  * et du rôle ADMIN sur la session active via getUser().
  *
- * Processus métier :
- * 1. Vérification de la session et du rôle ADMIN.
- * 2. Appel prioritaire de la RPC Postgres SECURITY DEFINER `admin_approve_membership_request`
- *    qui s'exécute de manière atomique et transactionnelle en base de données.
- * 3. Fallback sur le client admin direct si la RPC n'est pas disponible.
+ * Utilise la RPC native PostgreSQL SECURITY DEFINER `admin_approve_membership_request`.
  */
 export async function approveMembershipRequestServerAction(
   requestId: string,
   adminNotes?: string
 ): Promise<ApproveMembershipResult> {
   try {
-    if (!requestId || typeof requestId !== "string") {
-      return { success: false, error: "Identifiant de demande d'adhésion invalide." };
-    }
-
-    // 1. Validation stricte de la session et du rôle ADMIN côté serveur via les cookies de session
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return {
-        success: false,
-        error: "Session invalide ou expirée. Veuillez vous reconnecter.",
-      };
-    }
-
-    const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
-    if (role !== "ADMIN") {
-      return {
-        success: false,
-        error: "Accès refusé. Privilèges administrateur requis.",
-      };
-    }
-
-    const cleanNotes = adminNotes?.trim() || null;
-
-    // 2. PRIORITÉ : RPC PostgreSQL native SECURITY DEFINER
-    const { data: rpcData, error: rpcError } = await supabase.rpc("admin_approve_membership_request", {
-      p_request_id: requestId,
-      p_admin_notes: cleanNotes,
-    });
-
-    if (!rpcError && rpcData) {
-      const res = rpcData as { success?: boolean; subscription_id?: string; error?: string; message?: string };
-      if (res.success) {
-        revalidatePath("/admin/adhesions");
-        revalidatePath("/admin/abonnements");
-        revalidatePath("/admin");
-        return {
-          success: true,
-          subscriptionId: res.subscription_id,
-          message: res.message || "Demande validée avec succès. L'abonnement actif du membre a été créé.",
-        };
-      } else {
-        return {
-          success: false,
-          error: res.message || res.error || "Erreur lors de la validation de la demande.",
-        };
-      }
-    }
-
-    // 3. FALLBACK : Exécution directe via le client de base de données
-    const dbClient = getAdhesionsDbClient(supabase);
-
-    const { data: req, error: reqFetchError } = await dbClient
-      .from("membership_requests")
-      .select("id, user_id, plan_id, status, commitment_type")
-      .eq("id", requestId)
-      .maybeSingle();
-
-    if (reqFetchError || !req) {
-      return {
-        success: false,
-        error: "Demande d'adhésion introuvable.",
-      };
-    }
-
-    if (req.status !== "pending") {
-      return {
-        success: false,
-        error: `Cette demande n'est plus en attente (statut actuel: ${req.status}).`,
-      };
-    }
-
-    const { data: plan, error: planFetchError } = await dbClient
-      .from("plans")
-      .select("id, name, type, private_sessions_per_period")
-      .eq("id", req.plan_id)
-      .maybeSingle();
-
-    if (planFetchError || !plan) {
-      return {
-        success: false,
-        error: "Formule introuvable pour cette demande.",
-      };
-    }
-
-    const startedAt = new Date();
-    const endsAt = new Date(startedAt);
-    if (req.commitment_type === "annual") {
-      endsAt.setFullYear(endsAt.getFullYear() + 1);
-    } else {
-      endsAt.setMonth(endsAt.getMonth() + 1);
-    }
-
-    const quota = typeof plan.private_sessions_per_period === "number" ? plan.private_sessions_per_period : 8;
-
-    const { data: sub, error: subError } = await dbClient
-      .from("subscriptions")
-      .insert({
-        user_id: req.user_id,
-        plan_id: req.plan_id,
-        status: "active",
-        started_at: startedAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        private_sessions_quota: quota,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-
-    if (subError || !sub) {
-      console.error("[approveMembershipRequestServerAction] Erreur création subscription :", subError);
-      return {
-        success: false,
-        error: "Erreur lors de la création de l'abonnement du membre.",
-      };
-    }
-
-    const { error: updateReqError } = await dbClient
-      .from("membership_requests")
-      .update({
-        status: "approved",
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-        admin_notes: cleanNotes,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", requestId);
-
-    if (updateReqError) {
-      console.error("[approveMembershipRequestServerAction] Erreur mise à jour demande :", updateReqError);
-      return {
-        success: false,
-        error: "L'abonnement a été créé mais la mise à jour du statut a échoué.",
-      };
-    }
-
-    revalidatePath("/admin/adhesions");
-    revalidatePath("/admin/abonnements");
-    revalidatePath("/admin");
-
-    return {
-      success: true,
-      subscriptionId: sub.id,
-      message: "Demande validée avec succès. L'abonnement actif du membre a été créé.",
-    };
-  } catch (err) {
-    const error = err as Error;
-    console.error("[approveMembershipRequestServerAction] Exception :", error);
-    return {
-      success: false,
-      error: error.message || "Une erreur inattendue est survenue lors de la validation.",
-    };
-  }
-}
-
-/**
- * Server Action : Refuse une demande d'adhésion côté administrateur.
- *
- * Exécutée exclusivement côté serveur avec vérification d'authentification
- * et du rôle ADMIN sur la session active via getUser().
- */
-export async function rejectMembershipRequestServerAction(
-  requestId: string,
-  adminNotes?: string
-): Promise<RejectMembershipResult> {
-  try {
-    if (!requestId || typeof requestId !== "string") {
+    if (!requestId || typeof requestId !== "string" || requestId.trim() === "") {
       return { success: false, error: "Identifiant de demande d'adhésion invalide." };
     }
 
@@ -260,67 +69,107 @@ export async function rejectMembershipRequestServerAction(
 
     const cleanNotes = adminNotes?.trim() || null;
 
-    // 2. PRIORITÉ : RPC PostgreSQL native SECURITY DEFINER
+    // 2. Appel de la RPC PostgreSQL SECURITY DEFINER
+    const { data: rpcData, error: rpcError } = await supabase.rpc("admin_approve_membership_request", {
+      p_request_id: requestId,
+      p_admin_notes: cleanNotes,
+    });
+
+    if (rpcError) {
+      console.error("[approveMembershipRequestServerAction] Erreur RPC :", rpcError);
+      return {
+        success: false,
+        error: rpcError.message || "Erreur lors de la validation de la demande d'adhésion.",
+      };
+    }
+
+    const res = rpcData as { success?: boolean; subscription_id?: string; error?: string; message?: string };
+    if (!res || res.success === false) {
+      return {
+        success: false,
+        error: res?.message || res?.error || "La validation a échoué.",
+      };
+    }
+
+    revalidatePath("/admin/adhesions");
+    revalidatePath("/admin/abonnements");
+    revalidatePath("/admin");
+
+    return {
+      success: true,
+      subscriptionId: res.subscription_id,
+      message: res.message || "Demande validée avec succès. L'abonnement actif du membre a été créé.",
+    };
+  } catch (err) {
+    const error = err as Error;
+    console.error("[approveMembershipRequestServerAction] Exception :", error);
+    return {
+      success: false,
+      error: error.message || "Une erreur inattendue est survenue lors de la validation.",
+    };
+  }
+}
+
+/**
+ * Server Action : Refuse une demande d'adhésion côté administrateur.
+ *
+ * Exécutée exclusivement côté serveur avec vérification d'authentification
+ * et du rôle ADMIN sur la session active via getUser().
+ *
+ * Utilise la RPC native PostgreSQL SECURITY DEFINER `admin_reject_membership_request`.
+ */
+export async function rejectMembershipRequestServerAction(
+  requestId: string,
+  adminNotes?: string
+): Promise<RejectMembershipResult> {
+  try {
+    if (!requestId || typeof requestId !== "string" || requestId.trim() === "") {
+      return { success: false, error: "Identifiant de demande d'adhésion invalide." };
+    }
+
+    // 1. Validation stricte de la session et du rôle ADMIN côté serveur
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: "Session invalide ou expirée. Veuillez vous reconnecter.",
+      };
+    }
+
+    const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
+    if (role !== "ADMIN") {
+      return {
+        success: false,
+        error: "Accès refusé. Privilèges administrateur requis.",
+      };
+    }
+
+    const cleanNotes = adminNotes?.trim() || null;
+
+    // 2. Appel de la RPC PostgreSQL SECURITY DEFINER
     const { data: rpcData, error: rpcError } = await supabase.rpc("admin_reject_membership_request", {
       p_request_id: requestId,
       p_admin_notes: cleanNotes,
     });
 
-    if (!rpcError && rpcData) {
-      const res = rpcData as { success?: boolean; error?: string; message?: string };
-      if (res.success) {
-        revalidatePath("/admin/adhesions");
-        return {
-          success: true,
-          message: res.message || "La demande d'adhésion a été refusée.",
-        };
-      } else {
-        return {
-          success: false,
-          error: res.message || res.error || "Erreur lors du refus de la demande.",
-        };
-      }
-    }
-
-    // 3. FALLBACK : Exécution directe via le client de base de données
-    const dbClient = getAdhesionsDbClient(supabase);
-
-    const { data: req, error: reqFetchError } = await dbClient
-      .from("membership_requests")
-      .select("id, status")
-      .eq("id", requestId)
-      .maybeSingle();
-
-    if (reqFetchError || !req) {
+    if (rpcError) {
+      console.error("[rejectMembershipRequestServerAction] Erreur RPC :", rpcError);
       return {
         success: false,
-        error: "Demande d'adhésion introuvable.",
+        error: rpcError.message || "Erreur lors du refus de la demande.",
       };
     }
 
-    if (req.status !== "pending") {
+    const res = rpcData as { success?: boolean; error?: string; message?: string };
+    if (!res || res.success === false) {
       return {
         success: false,
-        error: `Cette demande n'est plus en attente (statut actuel: ${req.status}).`,
-      };
-    }
-
-    const { error: updateError } = await dbClient
-      .from("membership_requests")
-      .update({
-        status: "rejected",
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-        admin_notes: cleanNotes,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", requestId);
-
-    if (updateError) {
-      console.error("[rejectMembershipRequestServerAction] Erreur mise à jour demande :", updateError);
-      return {
-        success: false,
-        error: "Erreur lors du refus de la demande.",
+        error: res?.message || res?.error || "Le refus de la demande a échoué.",
       };
     }
 
@@ -328,7 +177,7 @@ export async function rejectMembershipRequestServerAction(
 
     return {
       success: true,
-      message: "La demande d'adhésion a été refusée.",
+      message: res.message || "La demande d'adhésion a été refusée.",
     };
   } catch (err) {
     const error = err as Error;
@@ -346,14 +195,8 @@ export async function rejectMembershipRequestServerAction(
  * Exécutée exclusivement côté serveur avec vérification d'authentification
  * et du rôle ADMIN sur la session active via getUser().
  *
- * Règles métier :
- * 1. Validation stricte du rôle ADMIN.
- * 2. Contrôle de cohérence du plan et de l'engagement (mensuel/annuel).
- * 3. Ne modifie JAMAIS user_id ni les données d'authentification du membre.
- * 4. Ne supprime JAMAIS de réservations existantes.
- * 5. Cas "pending" : met à jour la demande en conservant le statut "pending".
- * 6. Cas "approved" : met à jour la demande ET synchronise l'abonnement actif
- *    correspondant dans public.subscriptions (plan_id, private_sessions_quota, ends_at).
+ * Utilise la RPC native PostgreSQL SECURITY DEFINER `admin_update_membership_request`.
+ * Ne tente AUCUN update direct risqué sur la table sans passer par la RPC.
  */
 export async function updateMembershipRequestServerAction(
   requestId: string,
@@ -382,7 +225,7 @@ export async function updateMembershipRequestServerAction(
       };
     }
 
-    // 2. Validation stricte de la session et du rôle ADMIN côté serveur via les cookies
+    // 2. Validation stricte de la session et du rôle ADMIN côté serveur
     const supabase = await createClient();
     const {
       data: { user },
@@ -406,7 +249,7 @@ export async function updateMembershipRequestServerAction(
 
     const cleanNotes = typeof adminNotes === "string" ? adminNotes.trim() : null;
 
-    // 3. PRIORITÉ : RPC PostgreSQL native SECURITY DEFINER
+    // 3. Exécution exclusive via la RPC PostgreSQL native SECURITY DEFINER
     const { data: rpcData, error: rpcError } = await supabase.rpc("admin_update_membership_request", {
       p_request_id: requestId,
       p_plan_id: planId,
@@ -414,179 +257,44 @@ export async function updateMembershipRequestServerAction(
       p_admin_notes: cleanNotes,
     });
 
-    if (!rpcError && rpcData) {
-      const res = rpcData as { success?: boolean; error?: string; message?: string };
-      if (res.success) {
-        revalidatePath("/admin/adhesions");
-        revalidatePath("/admin/abonnements");
-        revalidatePath("/admin");
-        return {
-          success: true,
-          message: res.message || "La demande d'adhésion a été modifiée avec succès.",
-        };
-      } else {
-        return {
-          success: false,
-          error: res.message || res.error || "Erreur lors de la modification de la demande.",
-        };
-      }
-    }
+    if (rpcError) {
+      console.error("[updateMembershipRequestServerAction] Erreur RPC :", rpcError);
+      
+      // Message d'erreur explicite et pédagogique si la fonction n'est pas encore créée en base Supabase
+      const isMissingFunction =
+        rpcError.message?.includes("function") ||
+        rpcError.message?.includes("schema cache") ||
+        rpcError.code === "42883" ||
+        rpcError.code === "PGRST202";
 
-    // 4. FALLBACK : Exécution directe via le client de base de données
-    const dbClient = getAdhesionsDbClient(supabase);
-
-    const { data: req, error: reqFetchError } = await dbClient
-      .from("membership_requests")
-      .select("id, user_id, plan_id, status, commitment_type, admin_notes")
-      .eq("id", requestId)
-      .maybeSingle();
-
-    if (reqFetchError || !req) {
-      return {
-        success: false,
-        error: reqFetchError?.message || "Demande d'adhésion introuvable.",
-      };
-    }
-
-    const { data: targetPlan, error: planFetchError } = await dbClient
-      .from("plans")
-      .select("id, name, type, private_sessions_per_period, is_active")
-      .eq("id", planId)
-      .maybeSingle();
-
-    if (planFetchError || !targetPlan) {
-      return {
-        success: false,
-        error: planFetchError?.message || "La formule sélectionnée est introuvable.",
-      };
-    }
-
-    const finalNotes = cleanNotes !== null ? cleanNotes : req.admin_notes;
-
-    // CAS 1 : Demande en attente ("pending")
-    if (req.status === "pending") {
-      const { error: updateReqError } = await dbClient
-        .from("membership_requests")
-        .update({
-          plan_id: planId,
-          commitment_type: commitmentType,
-          admin_notes: finalNotes || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", requestId);
-
-      if (updateReqError) {
-        console.error("[updateMembershipRequestServerAction] Erreur mise à jour demande pending :", updateReqError);
+      if (isMissingFunction) {
         return {
           success: false,
-          error: updateReqError.message || "Erreur lors de la mise à jour de la demande d'adhésion.",
+          error: "La fonction SQL admin_update_membership_request n'est pas disponible dans Supabase. La migration supabase/migrations/20260905_admin_update_membership_request.sql doit être exécutée dans le SQL Editor de Supabase.",
         };
       }
 
-      revalidatePath("/admin/adhesions");
-
-      return {
-        success: true,
-        message: "La demande d'adhésion a été modifiée avec succès.",
-      };
-    }
-
-    // CAS 2 : Demande déjà validée ("approved")
-    if (req.status === "approved") {
-      const { error: updateReqError } = await dbClient
-        .from("membership_requests")
-        .update({
-          plan_id: planId,
-          commitment_type: commitmentType,
-          admin_notes: finalNotes || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", requestId);
-
-      if (updateReqError) {
-        console.error("[updateMembershipRequestServerAction] Erreur mise à jour demande approved :", updateReqError);
-        return {
-          success: false,
-          error: updateReqError.message || "Erreur lors de la mise à jour de la demande d'adhésion.",
-        };
-      }
-
-      const { data: sub, error: subFetchError } = await dbClient
-        .from("subscriptions")
-        .select("id, started_at, ends_at, private_sessions_quota")
-        .eq("user_id", req.user_id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!subFetchError && sub) {
-        const startedAt = new Date(sub.started_at || new Date());
-        const endsAt = new Date(startedAt);
-        if (commitmentType === "annual") {
-          endsAt.setFullYear(endsAt.getFullYear() + 1);
-        } else {
-          endsAt.setMonth(endsAt.getMonth() + 1);
-        }
-
-        const quota =
-          typeof targetPlan.private_sessions_per_period === "number"
-            ? targetPlan.private_sessions_per_period
-            : 8;
-
-        const { error: updateSubError } = await dbClient
-          .from("subscriptions")
-          .update({
-            plan_id: planId,
-            ends_at: endsAt.toISOString(),
-            private_sessions_quota: quota,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", sub.id);
-
-        if (updateSubError) {
-          console.error("[updateMembershipRequestServerAction] Erreur synchronisation subscription :", updateSubError);
-          return {
-            success: false,
-            error: updateSubError.message || "La demande a été mise à jour mais la synchronisation de l'abonnement actif a échoué.",
-          };
-        }
-      }
-
-      revalidatePath("/admin/adhesions");
-      revalidatePath("/admin/abonnements");
-      revalidatePath("/admin");
-
-      return {
-        success: true,
-        message: "La formule d'adhésion et l'abonnement actif ont été synchronisés avec succès.",
-      };
-    }
-
-    // CAS 3 : Autres statuts (ex: rejected, cancelled)
-    const { error: updateOtherError } = await dbClient
-      .from("membership_requests")
-      .update({
-        plan_id: planId,
-        commitment_type: commitmentType,
-        admin_notes: finalNotes || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", requestId);
-
-    if (updateOtherError) {
-      console.error("[updateMembershipRequestServerAction] Erreur mise à jour :", updateOtherError);
       return {
         success: false,
-        error: updateOtherError.message || "Erreur lors de la mise à jour de la demande.",
+        error: rpcError.message || "Erreur lors de la modification de l'adhésion.",
+      };
+    }
+
+    const res = rpcData as { success?: boolean; error?: string; message?: string };
+    if (!res || res.success === false) {
+      return {
+        success: false,
+        error: res?.message || res?.error || "La modification de la demande d'adhésion a échoué.",
       };
     }
 
     revalidatePath("/admin/adhesions");
+    revalidatePath("/admin/abonnements");
+    revalidatePath("/admin");
 
     return {
       success: true,
-      message: "La demande d'adhésion a été modifiée avec succès.",
+      message: res.message || "La demande d'adhésion a été modifiée avec succès.",
     };
   } catch (err) {
     const error = err as Error;
@@ -597,4 +305,3 @@ export async function updateMembershipRequestServerAction(
     };
   }
 }
-
