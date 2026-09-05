@@ -404,9 +404,37 @@ export async function updateMembershipRequestServerAction(
       };
     }
 
+    const cleanNotes = typeof adminNotes === "string" ? adminNotes.trim() : null;
+
+    // 3. PRIORITÉ : RPC PostgreSQL native SECURITY DEFINER
+    const { data: rpcData, error: rpcError } = await supabase.rpc("admin_update_membership_request", {
+      p_request_id: requestId,
+      p_plan_id: planId,
+      p_commitment_type: commitmentType,
+      p_admin_notes: cleanNotes,
+    });
+
+    if (!rpcError && rpcData) {
+      const res = rpcData as { success?: boolean; error?: string; message?: string };
+      if (res.success) {
+        revalidatePath("/admin/adhesions");
+        revalidatePath("/admin/abonnements");
+        revalidatePath("/admin");
+        return {
+          success: true,
+          message: res.message || "La demande d'adhésion a été modifiée avec succès.",
+        };
+      } else {
+        return {
+          success: false,
+          error: res.message || res.error || "Erreur lors de la modification de la demande.",
+        };
+      }
+    }
+
+    // 4. FALLBACK : Exécution directe via le client de base de données
     const dbClient = getAdhesionsDbClient(supabase);
 
-    // 3. Récupération et vérification de la demande existante
     const { data: req, error: reqFetchError } = await dbClient
       .from("membership_requests")
       .select("id, user_id, plan_id, status, commitment_type, admin_notes")
@@ -416,11 +444,10 @@ export async function updateMembershipRequestServerAction(
     if (reqFetchError || !req) {
       return {
         success: false,
-        error: "Demande d'adhésion introuvable.",
+        error: reqFetchError?.message || "Demande d'adhésion introuvable.",
       };
     }
 
-    // 4. Récupération et validation de la formule sélectionnée
     const { data: targetPlan, error: planFetchError } = await dbClient
       .from("plans")
       .select("id, name, type, private_sessions_per_period, is_active")
@@ -430,22 +457,20 @@ export async function updateMembershipRequestServerAction(
     if (planFetchError || !targetPlan) {
       return {
         success: false,
-        error: "La formule sélectionnée est introuvable.",
+        error: planFetchError?.message || "La formule sélectionnée est introuvable.",
       };
     }
 
-    const cleanNotes = typeof adminNotes === "string" ? adminNotes.trim() : req.admin_notes;
+    const finalNotes = cleanNotes !== null ? cleanNotes : req.admin_notes;
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // CAS 1 : Demande en attente ("pending")
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (req.status === "pending") {
       const { error: updateReqError } = await dbClient
         .from("membership_requests")
         .update({
           plan_id: planId,
           commitment_type: commitmentType,
-          admin_notes: cleanNotes || null,
+          admin_notes: finalNotes || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", requestId);
@@ -454,7 +479,7 @@ export async function updateMembershipRequestServerAction(
         console.error("[updateMembershipRequestServerAction] Erreur mise à jour demande pending :", updateReqError);
         return {
           success: false,
-          error: "Erreur lors de la mise à jour de la demande d'adhésion.",
+          error: updateReqError.message || "Erreur lors de la mise à jour de la demande d'adhésion.",
         };
       }
 
@@ -466,17 +491,14 @@ export async function updateMembershipRequestServerAction(
       };
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // CAS 2 : Demande déjà validée ("approved")
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (req.status === "approved") {
-      // 1. Mise à jour de la demande d'adhésion
       const { error: updateReqError } = await dbClient
         .from("membership_requests")
         .update({
           plan_id: planId,
           commitment_type: commitmentType,
-          admin_notes: cleanNotes || null,
+          admin_notes: finalNotes || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", requestId);
@@ -485,11 +507,10 @@ export async function updateMembershipRequestServerAction(
         console.error("[updateMembershipRequestServerAction] Erreur mise à jour demande approved :", updateReqError);
         return {
           success: false,
-          error: "Erreur lors de la mise à jour de la demande d'adhésion.",
+          error: updateReqError.message || "Erreur lors de la mise à jour de la demande d'adhésion.",
         };
       }
 
-      // 2. Récupération de l'abonnement actif associé au membre
       const { data: sub, error: subFetchError } = await dbClient
         .from("subscriptions")
         .select("id, started_at, ends_at, private_sessions_quota")
@@ -500,7 +521,6 @@ export async function updateMembershipRequestServerAction(
         .maybeSingle();
 
       if (!subFetchError && sub) {
-        // Recalcul déterministe de la date d'échéance basée sur la date de début de l'abonnement
         const startedAt = new Date(sub.started_at || new Date());
         const endsAt = new Date(startedAt);
         if (commitmentType === "annual") {
@@ -514,7 +534,6 @@ export async function updateMembershipRequestServerAction(
             ? targetPlan.private_sessions_per_period
             : 8;
 
-        // Mise à jour de l'abonnement actif existant sans doublon ni suppression de réservations
         const { error: updateSubError } = await dbClient
           .from("subscriptions")
           .update({
@@ -529,7 +548,7 @@ export async function updateMembershipRequestServerAction(
           console.error("[updateMembershipRequestServerAction] Erreur synchronisation subscription :", updateSubError);
           return {
             success: false,
-            error: "La demande a été mise à jour mais la synchronisation de l'abonnement actif a échoué.",
+            error: updateSubError.message || "La demande a été mise à jour mais la synchronisation de l'abonnement actif a échoué.",
           };
         }
       }
@@ -544,15 +563,13 @@ export async function updateMembershipRequestServerAction(
       };
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // CAS 3 : Autres statuts (ex: rejected, cancelled)
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const { error: updateOtherError } = await dbClient
       .from("membership_requests")
       .update({
         plan_id: planId,
         commitment_type: commitmentType,
-        admin_notes: cleanNotes || null,
+        admin_notes: finalNotes || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", requestId);
@@ -561,7 +578,7 @@ export async function updateMembershipRequestServerAction(
       console.error("[updateMembershipRequestServerAction] Erreur mise à jour :", updateOtherError);
       return {
         success: false,
-        error: "Erreur lors de la mise à jour de la demande.",
+        error: updateOtherError.message || "Erreur lors de la mise à jour de la demande.",
       };
     }
 
