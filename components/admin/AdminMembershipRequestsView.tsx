@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Check,
   X,
+  Pencil,
   Sparkles,
   Flame,
   Award,
@@ -26,17 +27,21 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import {
   type MembershipRequestItem,
+  type MembershipPlanOption,
   getAdminMembershipRequestsList,
+  getAvailablePlansForMembership,
 } from "@/lib/supabase/membership-requests";
 import {
   approveMembershipRequestServerAction,
   rejectMembershipRequestServerAction,
+  updateMembershipRequestServerAction,
 } from "@/app/(admin)/admin/adhesions/actions";
 import { cn } from "@/lib/utils";
 
 export default function AdminMembershipRequestsView() {
   const [supabase] = useState(() => createClient());
   const [requests, setRequests] = useState<MembershipRequestItem[]>([]);
+  const [availablePlans, setAvailablePlans] = useState<MembershipPlanOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,6 +49,10 @@ export default function AdminMembershipRequestsView() {
   // Modales d'action
   const [approvingReq, setApprovingReq] = useState<MembershipRequestItem | null>(null);
   const [rejectingReq, setRejectingReq] = useState<MembershipRequestItem | null>(null);
+  const [editingReq, setEditingReq] = useState<MembershipRequestItem | null>(null);
+  const [editPlanId, setEditPlanId] = useState("");
+  const [editCommitmentType, setEditCommitmentType] = useState<"monthly" | "annual">("monthly");
+  const [editAdminNotes, setEditAdminNotes] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -51,8 +60,12 @@ export default function AdminMembershipRequestsView() {
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
     try {
-      const list = await getAdminMembershipRequestsList(supabase);
+      const [list, plans] = await Promise.all([
+        getAdminMembershipRequestsList(supabase),
+        getAvailablePlansForMembership(supabase),
+      ]);
       setRequests(list);
+      setAvailablePlans(plans);
     } catch (err) {
       console.error("[AdminMembershipRequestsView] Erreur chargement :", err);
     } finally {
@@ -125,6 +138,51 @@ export default function AdminMembershipRequestsView() {
       setToastMessage({
         type: "error",
         text: (err as Error)?.message || "Une erreur inattendue est survenue lors du refus.",
+      });
+    } finally {
+      setActionLoading(false);
+      setTimeout(() => {
+        setToastMessage((c) => (c?.type === "success" ? null : c));
+      }, 4000);
+    }
+  };
+
+  const handleOpenEdit = (req: MembershipRequestItem) => {
+    setEditingReq(req);
+    setEditPlanId(req.plan_id);
+    setEditCommitmentType(req.commitment_type || "monthly");
+    setEditAdminNotes(req.admin_notes || "");
+  };
+
+  const handleUpdate = async () => {
+    if (!editingReq || !editPlanId) return;
+    setActionLoading(true);
+
+    try {
+      const res = await updateMembershipRequestServerAction(editingReq.id, {
+        planId: editPlanId,
+        commitmentType: editCommitmentType,
+        adminNotes: editAdminNotes,
+      });
+
+      if (res.success) {
+        setToastMessage({
+          type: "success",
+          text: res.message || `Demande de ${editingReq.profile?.first_name || "Membre"} modifiée avec succès.`,
+        });
+        setEditingReq(null);
+        await fetchRequests();
+      } else {
+        setToastMessage({
+          type: "error",
+          text: res.error || "Impossible de modifier la demande d'adhésion.",
+        });
+      }
+    } catch (err) {
+      console.error("[handleUpdate] Erreur modification adhésion :", err);
+      setToastMessage({
+        type: "error",
+        text: (err as Error)?.message || "Une erreur inattendue est survenue lors de la modification.",
       });
     } finally {
       setActionLoading(false);
@@ -431,30 +489,42 @@ export default function AdminMembershipRequestsView() {
                 </div>
 
                 {/* Colonne 2 : Actions Administrateur */}
-                {isPending && (
-                  <div className="flex items-center gap-2.5 self-end lg:self-center shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-brand-white/5 w-full lg:w-auto justify-end">
-                    <button
-                      onClick={() => {
-                        setRejectingReq(req);
-                        setAdminNotes("");
-                      }}
-                      className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                    >
-                      Refuser
-                    </button>
+                <div className="flex items-center gap-2.5 self-end lg:self-center shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-brand-white/5 w-full lg:w-auto justify-end">
+                  {/* Bouton Modifier disponible pour toutes les demandes */}
+                  <button
+                    onClick={() => handleOpenEdit(req)}
+                    className="px-3.5 py-2.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white border border-brand-white/10 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Modifier la formule ou l'engagement"
+                  >
+                    <Pencil size={14} className="text-[#00d8ff]" />
+                    <span>Modifier</span>
+                  </button>
 
-                    <button
-                      onClick={() => {
-                        setApprovingReq(req);
-                        setAdminNotes("");
-                      }}
-                      className="px-5 py-2.5 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#00d8ff]/20 flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Check size={16} strokeWidth={3} />
-                      <span>Valider l&apos;adhésion</span>
-                    </button>
-                  </div>
-                )}
+                  {isPending && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setRejectingReq(req);
+                          setAdminNotes("");
+                        }}
+                        className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        Refuser
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setApprovingReq(req);
+                          setAdminNotes("");
+                        }}
+                        className="px-5 py-2.5 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#00d8ff]/20 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Check size={16} strokeWidth={3} />
+                        <span>Valider l&apos;adhésion</span>
+                      </button>
+                    </>
+                  )}
+                </div>
               </motion.div>
             );
           })}
@@ -640,6 +710,210 @@ export default function AdminMembershipRequestsView() {
         )}
       </AnimatePresence>
 
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MODAL DE MODIFICATION D'ADHÉSION
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <AnimatePresence>
+        {editingReq && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingReq(null)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-xl bg-[#0f172a] border border-[#00d8ff]/30 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-5 max-h-[90vh] overflow-y-auto"
+            >
+              {/* En-tête */}
+              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#00d8ff]/15 flex items-center justify-center border border-[#00d8ff]/30 text-[#00d8ff]">
+                    <Pencil size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+                      Modifier l&apos;adhésion
+                    </h3>
+                    <p className="text-[11px] text-brand-white/50">
+                      Membre : <strong className="text-brand-white">{editingReq.profile?.first_name} {editingReq.profile?.last_name}</strong>
+                      {editingReq.status === "approved" && (
+                        <span className="ml-2 text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30 text-[10px]">
+                          Dossier Validé
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditingReq(null)}
+                  className="p-1 rounded-lg text-brand-white/50 hover:text-brand-white cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Sélection de la formule */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-heading font-bold uppercase tracking-wider text-brand-white/70 block">
+                  1. Formule d&apos;entraînement
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                  {availablePlans.length > 0 ? (
+                    availablePlans.map((p) => {
+                      const isSelected = editPlanId === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setEditPlanId(p.id)}
+                          className={cn(
+                            "p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5",
+                            isSelected
+                              ? "bg-[#00d8ff]/10 border-[#00d8ff] shadow-md shadow-[#00d8ff]/10"
+                              : "bg-[#0a1120] border-brand-white/10 hover:border-brand-white/20 text-brand-white/70"
+                          )}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className={cn("text-xs font-heading font-black uppercase", isSelected ? "text-[#00d8ff]" : "text-brand-white")}>
+                              {p.name}
+                            </span>
+                            {isSelected && <Check size={14} className="text-[#00d8ff]" />}
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-brand-white/50">
+                            <span className="font-heading font-bold text-brand-white/90">
+                              {(p.price_cents / 100).toFixed(0)}€<span className="text-[9px] font-normal text-brand-white/50">/mois</span>
+                            </span>
+                            {typeof p.private_sessions_per_period === "number" && p.private_sessions_per_period > 0 && (
+                              <span className="text-[10px] text-amber-300">
+                                {p.private_sessions_per_period} cours privés/m
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-2 text-xs text-brand-white/40 italic p-3 bg-[#0a1120] rounded-xl">
+                      Chargement des formules disponibles...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sélection de l'engagement */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-heading font-bold uppercase tracking-wider text-brand-white/70 block">
+                  2. Type d&apos;engagement
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditCommitmentType("monthly")}
+                    className={cn(
+                      "p-3 rounded-xl border text-center font-heading font-bold text-xs uppercase tracking-wider transition-all cursor-pointer",
+                      editCommitmentType === "monthly"
+                        ? "bg-[#00d8ff]/15 border-[#00d8ff] text-[#00d8ff] shadow-md shadow-[#00d8ff]/10"
+                        : "bg-[#0a1120] border-brand-white/10 text-brand-white/60 hover:text-brand-white hover:border-brand-white/20"
+                    )}
+                  >
+                    Mensuel (Sans engagement)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditCommitmentType("annual")}
+                    className={cn(
+                      "p-3 rounded-xl border text-center font-heading font-bold text-xs uppercase tracking-wider transition-all cursor-pointer",
+                      editCommitmentType === "annual"
+                        ? "bg-[#00d8ff]/15 border-[#00d8ff] text-[#00d8ff] shadow-md shadow-[#00d8ff]/10"
+                        : "bg-[#0a1120] border-brand-white/10 text-brand-white/60 hover:text-brand-white hover:border-brand-white/20"
+                    )}
+                  >
+                    Annuel (Engagement 12 mois)
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes administratives */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-heading font-bold uppercase tracking-wider text-brand-white/60 block">
+                  3. Note interne administrateur (optionnelle)
+                </label>
+                <textarea
+                  rows={2}
+                  value={editAdminNotes}
+                  onChange={(e) => setEditAdminNotes(e.target.value)}
+                  placeholder="Ex: Correction de formule suite à demande téléphonique..."
+                  className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-xs text-brand-white placeholder:text-brand-white/30 focus:border-[#00d8ff] outline-none"
+                />
+              </div>
+
+              {/* Récapitulatif avant enregistrement */}
+              <div className="bg-[#0a1120] border border-brand-white/10 rounded-2xl p-3.5 space-y-2 text-xs">
+                <div className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-white/40 pb-1 border-b border-brand-white/5">
+                  Récapitulatif des modifications
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-brand-white/50">Formule :</span>
+                  <div className="text-right">
+                    <span className="line-through text-brand-white/40 mr-1.5 text-[11px]">
+                      {editingReq.plan?.name}
+                    </span>
+                    <strong className="text-[#00d8ff]">
+                      {availablePlans.find((p) => p.id === editPlanId)?.name || "Formule sélectionnée"}
+                    </strong>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-brand-white/50">Engagement :</span>
+                  <div className="text-right">
+                    <span className="line-through text-brand-white/40 mr-1.5 text-[11px]">
+                      {editingReq.commitment_type === "annual" ? "12 mois" : "Mensuel"}
+                    </span>
+                    <strong className="text-brand-white">
+                      {editCommitmentType === "annual" ? "12 mois" : "Mensuel"}
+                    </strong>
+                  </div>
+                </div>
+
+                {editingReq.status === "approved" && (
+                  <div className="mt-2 p-2.5 bg-amber-950/30 border border-amber-500/20 rounded-xl text-amber-300 text-[10px] leading-relaxed">
+                    ℹ️ Cette adhésion étant déjà validée, l&apos;enregistrement mettra à jour automatiquement l&apos;abonnement actif du membre (formule, date d&apos;échéance et quotas) sans impacter ses réservations existantes.
+                  </div>
+                )}
+              </div>
+
+              {/* Boutons d'action */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setEditingReq(null)}
+                  className="flex-1 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdate}
+                  disabled={actionLoading || !editPlanId}
+                  className="flex-1 py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
+                  <span>Enregistrer les modifications</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
+
