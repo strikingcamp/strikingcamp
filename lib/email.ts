@@ -9,7 +9,7 @@ import { Resend } from "resend";
  * - CONTACT_RECIPIENT_EMAIL : Adresse de réception des messages (défaut : "strikingcamp13@gmail.com")
  */
 
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Striking Camp <onboarding@resend.dev>";
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Striking Camp <contact@strikingcamp.com>";
 const DEFAULT_ADMIN_RECIPIENT = process.env.CONTACT_RECIPIENT_EMAIL || "strikingcamp13@gmail.com";
 const CLUB_LOCATION = "Striking Camp Marseille — 13008 Marseille";
 
