@@ -488,17 +488,17 @@ export default function AdminReservationsView({
       <div
         key={booking.bookingId}
         className={cn(
-          "bg-[#0f172a] border rounded-2xl p-5 shadow-xl space-y-4 transition-all relative overflow-hidden",
+          "bg-[#0c1626] border rounded-2xl p-5 shadow-xl space-y-4 transition-all relative overflow-hidden",
           isCancelled
-            ? "border-red-500/30 bg-[#0f172a]/70 opacity-75"
-            : "border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.06)]"
+            ? "border-red-500/30 bg-[#0c1626]/70 opacity-75"
+            : "border-brand-blue/30 shadow-[0_0_20px_rgba(47,174,224,0.08)]"
         )}
       >
         {/* En-tête : Badge COURS D'ESSAI + Séance & Horaire + Statut */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-heading font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span className="px-2.5 py-1 rounded-lg bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={13} />
                 COURS D&apos;ESSAI
               </span>
@@ -539,7 +539,7 @@ export default function AdminReservationsView({
                 Absent (No-Show)
               </span>
             ) : (
-              <span className="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded-full bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
                 <Clock size={11} />
                 Confirmé • En attente
               </span>
@@ -1242,7 +1242,7 @@ export default function AdminReservationsView({
             className={cn(
               "flex-1 py-3 px-3 sm:px-4 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer relative",
               activeTab === "trial"
-                ? "bg-gradient-to-r from-amber-500 to-amber-400 text-black shadow-lg shadow-amber-500/20 scale-[1.01]"
+                ? "bg-gradient-to-r from-brand-blue to-[#00d8ff] text-black shadow-lg shadow-brand-blue/20 scale-[1.01]"
                 : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
             )}
           >
@@ -1253,8 +1253,8 @@ export default function AdminReservationsView({
                 className={cn(
                   "px-2 py-0.5 rounded-full text-[11px] font-black font-heading transition-colors ml-1",
                   activeTab === "trial"
-                    ? "bg-black text-amber-400"
-                    : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                    ? "bg-black text-brand-blue"
+                    : "bg-brand-blue/20 text-brand-blue border border-brand-blue/40"
                 )}
               >
                 {upcomingTrialCount}
@@ -1424,10 +1424,8 @@ export default function AdminReservationsView({
                 className={cn(
                   "p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative group",
                   isSelected
-                    ? activeTab === "trial"
-                      ? "bg-[#1f1b10] border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)] scale-[1.02]"
-                      : "bg-[#13233c] border-brand-blue shadow-[0_0_15px_rgba(47,174,224,0.3)] scale-[1.02]"
-                    : "bg-[#0f172a] border-brand-white/10 hover:border-brand-blue/40 hover:bg-[#111c2e]"
+                    ? "bg-[#13233c] border-brand-blue shadow-[0_0_15px_rgba(47,174,224,0.3)] scale-[1.02]"
+                    : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/40 hover:bg-[#111c2e]"
                 )}
               >
                 <div className="flex items-start justify-between">
@@ -1436,9 +1434,7 @@ export default function AdminReservationsView({
                       className={cn(
                         "text-[10px] font-heading font-black uppercase tracking-wider block",
                         isSelected
-                          ? activeTab === "trial"
-                            ? "text-amber-400"
-                            : "text-brand-blue"
+                          ? "text-brand-blue"
                           : "text-brand-white/50"
                       )}
                     >
@@ -1451,7 +1447,7 @@ export default function AdminReservationsView({
 
                   {hasTrialActivity && !isSelected && (
                     <span
-                      className="w-2 h-2 rounded-full mt-1 bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.8)]"
+                      className="w-2 h-2 rounded-full mt-1 bg-brand-blue shadow-[0_0_6px_rgba(47,174,224,0.8)]"
                       title={`${counters.trialBooked} cours d'essai`}
                     />
                   )}
@@ -1478,11 +1474,9 @@ export default function AdminReservationsView({
                     className={cn(
                       "text-[10px] font-bold tracking-tight",
                       isSelected
-                        ? activeTab === "trial"
-                          ? "text-amber-400"
-                          : "text-[#00d8ff]"
+                        ? "text-[#00d8ff]"
                         : hasTrialActivity
-                        ? "text-amber-400 font-semibold"
+                        ? "text-[#00d8ff] font-semibold"
                         : hasPrivateActivity
                         ? counters.privBooked > 0
                           ? "text-emerald-400 font-semibold"
@@ -1502,17 +1496,10 @@ export default function AdminReservationsView({
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           4. BANDEAU DE CONTEXTE (JOUR OU SEMAINE)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[#0c1626] border border-brand-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "px-2.5 py-0.5 rounded text-[10px] font-heading font-black uppercase tracking-wider border",
-                activeTab === "trial"
-                  ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                  : "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
-              )}
-            >
+            <span className="px-2.5 py-0.5 rounded text-[10px] font-heading font-black uppercase tracking-wider border bg-brand-blue/15 text-brand-blue border-brand-blue/30">
               {activeTab === "trial"
                 ? "Cours d'Essai Prospects"
                 : activeTab === "private"
@@ -1537,8 +1524,8 @@ export default function AdminReservationsView({
           {activeTab === "trial" ? (
             viewMode === "day" ? (
               <div className="flex items-center gap-2">
-                <div className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-                  <span className="text-[10px] font-bold text-amber-300 block uppercase">
+                <div className="px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/20 text-center">
+                  <span className="text-[10px] font-bold text-brand-blue block uppercase">
                     Essais Jour
                   </span>
                   <span className="text-base font-black text-brand-white">
@@ -1556,8 +1543,8 @@ export default function AdminReservationsView({
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <div className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-                  <span className="text-[10px] font-bold text-amber-300 block uppercase">
+                <div className="px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/20 text-center">
+                  <span className="text-[10px] font-bold text-brand-blue block uppercase">
                     Essais Semaine
                   </span>
                   <span className="text-base font-black text-brand-white">
@@ -1681,7 +1668,7 @@ export default function AdminReservationsView({
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
               <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
-                <Sparkles size={16} className="text-amber-400" />
+                <Sparkles size={16} className="text-brand-blue" />
                 Réservations Cours d&apos;Essai — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName} ({trialBookingsForDay.length})
               </h3>
               <span className="text-[11px] text-brand-white/50">
@@ -1690,8 +1677,8 @@ export default function AdminReservationsView({
             </div>
 
             {trialBookingsForDay.length === 0 ? (
-              <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
-                <Sparkles size={32} className="mx-auto text-amber-400/40" />
+              <div className="bg-[#0c1626]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
+                <Sparkles size={32} className="mx-auto text-brand-blue/40" />
                 <p className="text-sm font-heading font-bold uppercase text-brand-white/70">
                   Aucun cours d&apos;essai réservé pour le {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}.
                 </p>
@@ -1734,14 +1721,14 @@ export default function AdminReservationsView({
                   {/* En-tête du jour */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-heading font-black text-sm uppercase flex items-center gap-1.5">
+                      <div className="px-3 py-1.5 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-sm uppercase flex items-center gap-1.5">
                         <Sparkles size={14} />
                         {day.dayName} {day.dateNum} {day.monthName}
                       </div>
 
                       <div className="flex items-center gap-2">
                         {confirmedCount > 0 && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-heading font-black uppercase">
+                          <span className="px-2.5 py-0.5 rounded-full bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-xs font-heading font-black uppercase">
                             {confirmedCount} essai{confirmedCount > 1 ? "s" : ""}
                           </span>
                         )}

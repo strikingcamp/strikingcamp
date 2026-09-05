@@ -213,12 +213,16 @@ export default function PlanningSection({ initialScheduleData }: PlanningSection
       </div>
 
       {/* Bottom Notice / Reservation Banner */}
-      <div className="mt-14 sm:mt-16 text-center p-8 bg-[#0c1322] border border-brand-white/10 rounded-2xl max-w-2xl mx-auto space-y-4">
-        <h3 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white">
-          Envie de rejoindre une séance ?
+      <div className="mt-14 sm:mt-16 text-center p-8 bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border border-brand-blue/30 rounded-3xl max-w-2xl mx-auto space-y-4 shadow-2xl shadow-brand-blue/10 relative overflow-hidden">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
+          <Sparkles size={12} />
+          Cours d&apos;Essai 100% Gratuit
+        </div>
+        <h3 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
+          Envie de tester une première séance ?
         </h3>
-        <p className="text-xs sm:text-sm text-brand-white/60 leading-relaxed max-w-lg mx-auto">
-          Venez tester un premier entraînement encadré par le coach. Choisissez votre discipline et votre créneau pour réserver votre cours d&apos;essai gratuit.
+        <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed max-w-lg mx-auto">
+          Venez tester un premier entraînement encadré par le coach au club de Marseille. Choisissez votre format, votre discipline et votre créneau en 1 minute.
         </p>
         <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
           <button
@@ -227,14 +231,14 @@ export default function PlanningSection({ initialScheduleData }: PlanningSection
               setSelectedDisciplineForModal(undefined);
               setIsTrialModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-6 py-3.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg shadow-brand-blue/20 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-3.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-brand-blue/25 hover:shadow-brand-blue/40 cursor-pointer"
           >
             RÉSERVER MON COURS D’ESSAI
             <ArrowRight size={14} />
           </button>
           <Link
             href="/tarifs"
-            className="inline-flex items-center gap-2 px-5 py-3.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 font-heading font-bold text-xs uppercase tracking-wider rounded-sm border border-brand-white/10 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white font-heading font-bold text-xs uppercase tracking-wider rounded-xl border border-brand-white/10 transition-colors"
           >
             VOIR LES FORMULES
           </Link>

@@ -149,11 +149,12 @@ export async function getAvailableTrialSessions(
         continue;
       }
 
-      const maxCap = s.max_capacity ?? (rawType === "collective" ? 35 : 20);
+      const isCollective = rawType === "collective";
+      const maxCap = s.max_capacity ?? 20;
       const bookedM = memberCounts.get(s.id) || 0;
       const bookedT = trialCounts.get(s.id) || 0;
       const placesOccupied = bookedM + bookedT;
-      const placesRemaining = Math.max(0, maxCap - placesOccupied);
+      const placesRemaining = isCollective ? 999999 : Math.max(0, maxCap - placesOccupied);
 
       // Calcul des dates et heures en fuseau Europe/Paris
       const dateStr = formatToParisDate(s.starts_at);
@@ -190,7 +191,7 @@ export async function getAvailableTrialSessions(
       result.push({
         id: s.id,
         discipline: disc,
-        type: rawType === "collective" ? "collective" : "small_group",
+        type: isCollective ? "collective" : "small_group",
         level: s.level,
         starts_at: s.starts_at,
         ends_at: s.ends_at,
@@ -199,8 +200,8 @@ export async function getAvailableTrialSessions(
         dateFormatted,
         timeFormatted,
         placesAvailable: placesRemaining,
-        maxCapacity: maxCap,
-        isAvailable: placesRemaining > 0,
+        maxCapacity: isCollective ? 0 : maxCap,
+        isAvailable: isCollective ? true : placesRemaining > 0,
       });
     }
 

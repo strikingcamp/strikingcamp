@@ -198,27 +198,29 @@ BEGIN
     );
   END IF;
 
-  -- 7. Contrôle de capacité cumulée (Membres + Essais)
-  v_max_cap := COALESCE(v_session.max_capacity, CASE WHEN v_session.type = 'collective' THEN 35 ELSE 20 END);
+  -- 7. Contrôle de capacité cumulée (Membres + Essais) uniquement pour Small Group
+  IF v_session.type = 'small_group' THEN
+    v_max_cap := COALESCE(v_session.max_capacity, 20);
 
-  SELECT COUNT(id) INTO v_member_bookings_count
-  FROM public.bookings
-  WHERE class_session_id = p_class_session_id
-    AND status = 'confirmed';
+    SELECT COUNT(id) INTO v_member_bookings_count
+    FROM public.bookings
+    WHERE class_session_id = p_class_session_id
+      AND status = 'confirmed';
 
-  SELECT COUNT(id) INTO v_trial_bookings_count
-  FROM public.trial_bookings
-  WHERE class_session_id = p_class_session_id
-    AND status = 'confirmed';
+    SELECT COUNT(id) INTO v_trial_bookings_count
+    FROM public.trial_bookings
+    WHERE class_session_id = p_class_session_id
+      AND status = 'confirmed';
 
-  v_total_occupied := v_member_bookings_count + v_trial_bookings_count;
+    v_total_occupied := v_member_bookings_count + v_trial_bookings_count;
 
-  IF v_total_occupied >= v_max_cap THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'error', 'SESSION_FULL',
-      'message', 'Cette séance est complète (capacité maximale atteinte).'
-    );
+    IF v_total_occupied >= v_max_cap THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error', 'SESSION_FULL',
+        'message', 'Cette séance Small Group est complète (capacité maximale atteinte).'
+      );
+    END IF;
   END IF;
 
   -- 8. Insertion sécurisée de la réservation de cours d'essai
