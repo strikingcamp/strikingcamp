@@ -213,10 +213,11 @@ function generateSlotsFromData(
 
         const maxCapacity = s.max_capacity ?? (isPriv ? 1 : isCol ? 35 : 20);
 
-        // Nombre de réservations réelles confirmées
-        const bookedCount = allConfirmedBookings.filter(
+        // Réservations confirmées associées à cette séance (class_session.id)
+        const bookingsForSession = allConfirmedBookings.filter(
           (b) => b.class_session_id === s.id
-        ).length;
+        );
+        const bookedCount = bookingsForSession.length;
 
         // Est-ce que l'utilisateur connecté est inscrit ?
         const userBookingMatch = userBookingsList.find(
@@ -225,8 +226,8 @@ function generateSlotsFromData(
         const isBookedByMe = Boolean(
           userBookingMatch ||
           (currentUserId &&
-            allConfirmedBookings.some(
-              (b) => b.class_session_id === s.id && b.user_id === currentUserId
+            bookingsForSession.some(
+              (b) => b.user_id === currentUserId
             ))
         );
 
@@ -243,8 +244,8 @@ function generateSlotsFromData(
         }
 
         const isOccupiedByOther = isPriv
-          ? bookedCount >= 1 && !isBookedByMe
-          : bookedCount >= maxCapacity && !isBookedByMe;
+          ? (bookingsForSession.some((b) => b.user_id !== currentUserId) || (bookedCount >= 1 && !isBookedByMe))
+          : (bookedCount >= maxCapacity && !isBookedByMe);
 
         const endsAtIso = s.ends_at || null;
         // Règle temporelle exacte :
@@ -280,10 +281,10 @@ function generateSlotsFromData(
         for (const day of DAYS_ORDER) {
           const dStr = dayDateMap[day]?.dateStr || defaultMondayStr;
           OFFICIAL_PRIVATE_HOURS.forEach((h, idx) => {
-            const isOcc = (day === "Mardi" && idx === 1) || (day === "Jeudi" && idx === 3) || (day === "Samedi" && idx === 4);
             const isMine = userBookingsList.some(
               (b) => b.sessionType === "Cours Privé" && b.day === day && b.time.startsWith(h.start)
             );
+            const isOcc = false;
 
             slots.push({
               id: `priv_${day}_${idx}`,
@@ -314,10 +315,10 @@ function generateSlotsFromData(
   for (const day of DAYS_ORDER) {
     const dStr = dayDateMap[day]?.dateStr || defaultMondayStr;
     OFFICIAL_PRIVATE_HOURS.forEach((h, idx) => {
-      const isOcc = (day === "Mardi" && idx === 1) || (day === "Jeudi" && idx === 3) || (day === "Samedi" && idx === 4);
       const isMine = userBookingsList.some(
         (b) => b.sessionType === "Cours Privé" && b.day === day && b.time.startsWith(h.start)
       );
+      const isOcc = false;
 
       slots.push({
         id: `priv_${day}_${idx}`,
@@ -510,9 +511,14 @@ export default function MemberPlanningView() {
   const handleConfirmBooking = async () => {
     if (!selectedSlotForBooking) return;
 
-    // Verrouillage absolu : impossible de réserver une séance terminée
+    // Verrouillage absolu : impossible de réserver une séance terminée ou déjà occupée
     if (selectedSlotForBooking.isPast) {
       setBookingError("Cette séance est terminée et ne peut plus être réservée.");
+      return;
+    }
+
+    if (selectedSlotForBooking.isOccupiedByOther) {
+      setBookingError("Ce créneau est déjà réservé par un autre membre.");
       return;
     }
 
@@ -1029,7 +1035,7 @@ export default function MemberPlanningView() {
                             {slot.startTime} → {slot.endTime}
                           </span>
                           <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-                            Complet (1/1)
+                            Réservé
                           </span>
                         </div>
                         <div className="text-xs text-zinc-600">

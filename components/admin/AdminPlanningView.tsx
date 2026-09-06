@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
@@ -45,7 +46,7 @@ import {
 
 type AdminTab = "Cours privés" | "Small Group" | "Collectifs";
 type DayName = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
-type LevelCategory = "Fondamentaux" | "Performance" | "Élite" | "Cardio" | "Cours féminin";
+type LevelCategory = "Fondamentaux" | "Drills" | "Cardio" | "100% féminin" | "Sparring";
 
 interface PrivateSlotConfig {
   id: string;
@@ -125,27 +126,27 @@ const PRIVATE_LEVELS = [
 const FALLBACK_SMALL_GROUP: SmallGroupSessionItem[] = [
   { id: "sg_1", day: "Lundi", startTime: "07:00", endTime: "07:50", discipline: "Boxing Bag", level: "Fondamentaux", maxCapacity: 20, isActive: true },
   { id: "sg_2", day: "Lundi", startTime: "11:00", endTime: "11:50", discipline: "Boxing", level: "Fondamentaux", maxCapacity: 20, isActive: true },
-  { id: "sg_3", day: "Lundi", startTime: "12:15", endTime: "13:05", discipline: "Boxing Shred", level: "Performance", maxCapacity: 20, isActive: true },
-  { id: "sg_4", day: "Mardi", startTime: "11:00", endTime: "11:50", discipline: "Boxing Shred", level: "Cardio", maxCapacity: 20, isActive: true },
+  { id: "sg_3", day: "Lundi", startTime: "12:15", endTime: "13:05", discipline: "KB Shred", level: "Drills", maxCapacity: 20, isActive: true },
+  { id: "sg_4", day: "Mardi", startTime: "11:00", endTime: "11:50", discipline: "KB Shred", level: "Cardio", maxCapacity: 20, isActive: true },
   { id: "sg_5", day: "Mardi", startTime: "12:15", endTime: "13:05", discipline: "Boxing Bag", level: "Cardio", maxCapacity: 20, isActive: true },
-  { id: "sg_6", day: "Mardi", startTime: "17:00", endTime: "17:50", discipline: "Lady Striking", level: "Cours féminin", maxCapacity: 20, isActive: true },
+  { id: "sg_6", day: "Mardi", startTime: "17:00", endTime: "17:50", discipline: "Lady Striking", level: "100% féminin", maxCapacity: 20, isActive: true },
   { id: "sg_7", day: "Mardi", startTime: "18:00", endTime: "18:50", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 20, isActive: true },
-  { id: "sg_8", day: "Mercredi", startTime: "07:00", endTime: "07:50", discipline: "Boxing Bag", level: "Performance", maxCapacity: 20, isActive: true },
+  { id: "sg_8", day: "Mercredi", startTime: "07:00", endTime: "07:50", discipline: "Boxing Bag", level: "Drills", maxCapacity: 20, isActive: true },
   { id: "sg_9", day: "Mercredi", startTime: "11:00", endTime: "11:50", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 20, isActive: true },
-  { id: "sg_10", day: "Mercredi", startTime: "12:15", endTime: "13:05", discipline: "Boxing Shred", level: "Performance", maxCapacity: 20, isActive: true },
-  { id: "sg_11", day: "Mercredi", startTime: "17:30", endTime: "18:20", discipline: "Striking", level: "Performance", maxCapacity: 20, isActive: true },
+  { id: "sg_10", day: "Mercredi", startTime: "12:15", endTime: "13:05", discipline: "KB Shred", level: "Drills", maxCapacity: 20, isActive: true },
+  { id: "sg_11", day: "Mercredi", startTime: "17:30", endTime: "18:20", discipline: "Striking", level: "Drills", maxCapacity: 20, isActive: true },
   { id: "sg_12", day: "Mercredi", startTime: "19:30", endTime: "20:20", discipline: "Boxe Thaï", level: "Fondamentaux", maxCapacity: 20, isActive: true },
-  { id: "sg_13", day: "Mercredi", startTime: "20:30", endTime: "21:20", discipline: "Kick Boxing", level: "Performance", maxCapacity: 20, isActive: true },
-  { id: "sg_14", day: "Jeudi", startTime: "11:00", endTime: "11:50", discipline: "Boxing Shred", level: "Performance", maxCapacity: 20, isActive: true },
-  { id: "sg_15", day: "Jeudi", startTime: "12:15", endTime: "13:05", discipline: "Striking", level: "Performance", maxCapacity: 20, isActive: true },
-  { id: "sg_16", day: "Jeudi", startTime: "17:30", endTime: "18:20", discipline: "Lady Striking", level: "Cours féminin", maxCapacity: 20, isActive: true },
+  { id: "sg_13", day: "Mercredi", startTime: "20:30", endTime: "21:20", discipline: "Kick Boxing", level: "Drills", maxCapacity: 20, isActive: true },
+  { id: "sg_14", day: "Jeudi", startTime: "11:00", endTime: "11:50", discipline: "KB Shred", level: "Drills", maxCapacity: 20, isActive: true },
+  { id: "sg_15", day: "Jeudi", startTime: "12:15", endTime: "13:05", discipline: "Striking", level: "Drills", maxCapacity: 20, isActive: true },
+  { id: "sg_16", day: "Jeudi", startTime: "17:30", endTime: "18:20", discipline: "Lady Striking", level: "100% féminin", maxCapacity: 20, isActive: true },
   { id: "sg_17", day: "Jeudi", startTime: "19:30", endTime: "20:20", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 20, isActive: true },
-  { id: "sg_18", day: "Jeudi", startTime: "20:30", endTime: "21:20", discipline: "Boxe Thaï", level: "Élite", maxCapacity: 20, isActive: true },
+  { id: "sg_18", day: "Jeudi", startTime: "20:30", endTime: "21:20", discipline: "Boxe Thaï", level: "Sparring", maxCapacity: 20, isActive: true },
   { id: "sg_19", day: "Vendredi", startTime: "07:00", endTime: "07:50", discipline: "Boxing Bag", level: "Fondamentaux", maxCapacity: 20, isActive: true },
   { id: "sg_20", day: "Vendredi", startTime: "17:00", endTime: "17:50", discipline: "Boxe Thaï", level: "Fondamentaux", maxCapacity: 20, isActive: true },
-  { id: "sg_21", day: "Vendredi", startTime: "19:30", endTime: "20:20", discipline: "Striking", level: "Performance", maxCapacity: 20, isActive: true },
-  { id: "sg_22", day: "Samedi", startTime: "11:00", endTime: "11:50", discipline: "Kick Boxing", level: "Élite", maxCapacity: 20, isActive: true },
-  { id: "sg_23", day: "Samedi", startTime: "12:00", endTime: "12:50", discipline: "Lady Striking", level: "Élite", maxCapacity: 20, isActive: true },
+  { id: "sg_21", day: "Vendredi", startTime: "19:30", endTime: "20:20", discipline: "Striking", level: "Drills", maxCapacity: 20, isActive: true },
+  { id: "sg_22", day: "Samedi", startTime: "11:00", endTime: "11:50", discipline: "Kick Boxing", level: "Sparring", maxCapacity: 20, isActive: true },
+  { id: "sg_23", day: "Samedi", startTime: "12:00", endTime: "12:50", discipline: "Lady Striking", level: "Sparring", maxCapacity: 20, isActive: true },
 ];
 
 // Fallback initial officiel Collectifs (3 séances)
@@ -156,20 +157,23 @@ const FALLBACK_COLLECTIVE: CollectiveSessionItem[] = [
 ];
 
 function getLevelBadgeClasses(level: string): string {
-  switch (level) {
-    case "Fondamentaux":
-      return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
-    case "Performance":
-      return "bg-blue-500/15 text-blue-400 border-blue-500/30";
-    case "Élite":
-      return "bg-red-500/15 text-red-400 border-red-500/30";
-    case "Cardio":
-      return "bg-orange-500/15 text-orange-400 border-orange-500/30";
-    case "Cours féminin":
-      return "bg-pink-500/15 text-pink-400 border-pink-500/30";
-    default:
-      return "bg-brand-white/10 text-brand-white/70 border-brand-white/20";
+  const lvl = (level || "").toLowerCase();
+  if (lvl.includes("fondament") || lvl.includes("tous niveaux") || lvl.includes("débutant") || lvl.includes("debutant")) {
+    return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
   }
+  if (lvl.includes("drill") || lvl.includes("performance") || lvl.includes("intermédiaire") || lvl.includes("intermediaire")) {
+    return "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30";
+  }
+  if (lvl.includes("cardio")) {
+    return "bg-purple-500/15 text-purple-400 border-purple-500/30";
+  }
+  if (lvl.includes("100% féminin") || lvl.includes("100% feminin") || lvl.includes("féminin") || lvl.includes("feminin") || lvl.includes("femme") || lvl.includes("lady")) {
+    return "bg-pink-500/15 text-pink-400 border-pink-500/30";
+  }
+  if (lvl.includes("sparring") || lvl.includes("élite") || lvl.includes("elite") || lvl.includes("confirmé") || lvl.includes("confirme")) {
+    return "bg-red-500/15 text-red-400 border-red-500/30";
+  }
+  return "bg-brand-white/10 text-brand-white/70 border-brand-white/20";
 }
 
 interface AdminPlanningViewProps {
@@ -181,6 +185,7 @@ export default function AdminPlanningView({
   initialTemplates = [],
   initialSessions = [],
 }: AdminPlanningViewProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AdminTab>("Cours privés");
 
   // Initialisation à partir des données Supabase réelles
@@ -228,6 +233,14 @@ export default function AdminPlanningView({
   // 2. État Small Group & Collectifs (alimentés par Supabase)
   const [smallGroupSessions, setSmallGroupSessions] = useState<SmallGroupSessionItem[]>(initialSgFromDb);
   const [collectiveSessions, setCollectiveSessions] = useState<CollectiveSessionItem[]>(initialColFromDb);
+
+  useEffect(() => {
+    setSmallGroupSessions(initialSgFromDb);
+  }, [initialSgFromDb]);
+
+  useEffect(() => {
+    setCollectiveSessions(initialColFromDb);
+  }, [initialColFromDb]);
 
   // État de chargement global des actions
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -288,6 +301,7 @@ export default function AdminPlanningView({
       const res = await triggerScheduleGenerationServerAction();
       if (res.success) {
         showNotification(res.message || "Planning 12 semaines synchronisé avec succès.");
+        router.refresh();
       } else {
         showNotification(res.error || "Erreur lors de la synchronisation de l'horizon.", "error");
       }
@@ -312,6 +326,7 @@ export default function AdminPlanningView({
       const res = await toggleRecurringTemplateStatusServerAction(id, newStatus);
       if (res.success) {
         showNotification(`Séance ${current.discipline} (${current.day}) ${newStatus ? "activée" : "désactivée"}.`);
+        router.refresh();
       } else {
         // Rollback
         setSmallGroupSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s)));
@@ -354,6 +369,7 @@ export default function AdminPlanningView({
         setSmallGroupSessions((prev) => [...prev, newSlot]);
         setIsAddSgModalOpen(false);
         showNotification(`Séance Small Group ${sgFormDiscipline} (${sgFormDay}) ajoutée au planning.`);
+        router.refresh();
       } else {
         showNotification(res.error || "Erreur lors de la création de la séance.", "error");
       }
@@ -403,6 +419,7 @@ export default function AdminPlanningView({
           );
           setEditingSgSession(null);
           showNotification("Créneau récurrent mis à jour et synchronisé avec succès.");
+          router.refresh();
         } else {
           showNotification(res.error || "Impossible de modifier le créneau.", "error");
         }
@@ -421,6 +438,7 @@ export default function AdminPlanningView({
           if (res.success) {
             setEditingSgSession(null);
             showNotification("Séance ponctuelle mise à jour avec succès.");
+            router.refresh();
           } else {
             showNotification(res.error || "Erreur lors de la modification ponctuelle.", "error");
           }
@@ -445,6 +463,7 @@ export default function AdminPlanningView({
         setSmallGroupSessions((prev) => prev.filter((s) => s.id !== id));
         setEditingSgSession(null);
         showNotification(res.message || "Créneau supprimé.");
+        router.refresh();
       } else {
         showNotification(res.error || "Impossible de supprimer ce créneau.", "error");
       }
@@ -468,6 +487,7 @@ export default function AdminPlanningView({
       const res = await toggleRecurringTemplateStatusServerAction(id, newStatus);
       if (res.success) {
         showNotification(`Cours collectif ${current.discipline} (${current.day}) ${newStatus ? "activé" : "désactivé"}.`);
+        router.refresh();
       } else {
         setCollectiveSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s)));
         showNotification(res.error || "Erreur lors de la modification.", "error");
@@ -509,6 +529,7 @@ export default function AdminPlanningView({
         setCollectiveSessions((prev) => [...prev, newCol]);
         setIsAddColModalOpen(false);
         showNotification(`Cours collectif ${colFormDiscipline} (${colFormDay}) ajouté avec succès.`);
+        router.refresh();
       } else {
         showNotification(res.error || "Erreur lors de la création du cours collectif.", "error");
       }
@@ -545,6 +566,7 @@ export default function AdminPlanningView({
         );
         setEditingCollectiveSession(null);
         showNotification("Cours collectif modifié avec succès.");
+        router.refresh();
       } else {
         showNotification(res.error || "Erreur lors de la modification.", "error");
       }
@@ -565,6 +587,7 @@ export default function AdminPlanningView({
         setCollectiveSessions((prev) => prev.filter((s) => s.id !== id));
         setEditingCollectiveSession(null);
         showNotification(res.message || "Cours collectif supprimé.");
+        router.refresh();
       } else {
         showNotification(res.error || "Erreur lors de la suppression.", "error");
       }
@@ -1135,7 +1158,7 @@ export default function AdminPlanningView({
                   >
                     <option value="Boxing Bag">Boxing Bag</option>
                     <option value="Boxing">Boxing</option>
-                    <option value="Boxing Shred">Boxing Shred</option>
+                    <option value="KB Shred">KB Shred</option>
                     <option value="Kick Boxing">Kick Boxing</option>
                     <option value="Lady Striking">Lady Striking</option>
                     <option value="Striking">Striking</option>
@@ -1151,10 +1174,10 @@ export default function AdminPlanningView({
                     className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
                   >
                     <option value="Fondamentaux">Fondamentaux (Vert)</option>
-                    <option value="Performance">Performance (Bleu)</option>
-                    <option value="Élite">Élite (Rouge)</option>
-                    <option value="Cardio">Cardio (Orange)</option>
-                    <option value="Cours féminin">Cours féminin (Rose)</option>
+                    <option value="Drills">Drills (Bleu cyan)</option>
+                    <option value="Cardio">Cardio (Violet)</option>
+                    <option value="100% féminin">100% féminin (Rose)</option>
+                    <option value="Sparring">Sparring (Rouge)</option>
                   </select>
                 </div>
 
@@ -1425,7 +1448,7 @@ export default function AdminPlanningView({
                   >
                     <option value="Boxing Bag">Boxing Bag</option>
                     <option value="Boxing">Boxing</option>
-                    <option value="Boxing Shred">Boxing Shred</option>
+                    <option value="KB Shred">KB Shred</option>
                     <option value="Kick Boxing">Kick Boxing</option>
                     <option value="Lady Striking">Lady Striking</option>
                     <option value="Striking">Striking</option>
@@ -1441,10 +1464,10 @@ export default function AdminPlanningView({
                     className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
                   >
                     <option value="Fondamentaux">Fondamentaux (Vert)</option>
-                    <option value="Performance">Performance (Bleu)</option>
-                    <option value="Élite">Élite (Rouge)</option>
-                    <option value="Cardio">Cardio (Orange)</option>
-                    <option value="Cours féminin">Cours féminin (Rose)</option>
+                    <option value="Drills">Drills (Bleu cyan)</option>
+                    <option value="Cardio">Cardio (Violet)</option>
+                    <option value="100% féminin">100% féminin (Rose)</option>
+                    <option value="Sparring">Sparring (Rouge)</option>
                   </select>
                 </div>
 

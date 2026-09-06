@@ -22,13 +22,21 @@ const categories: Category[] = ["Collectifs", "Small Group"];
 function getBadgeColor(level?: string) {
   if (!level) return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
   const lvl = level.toLowerCase();
-  if (lvl.includes("fondament")) return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
-  if (lvl.includes("performance")) return "bg-brand-blue/15 text-brand-blue border-brand-blue/30";
-  if (lvl.includes("sparring")) return "bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/30";
-  if (lvl.includes("femme") || lvl.includes("féminin") || lvl.includes("feminin")) return "bg-pink-500/15 text-pink-400 border-pink-500/30";
-  if (lvl.includes("tous niveaux")) return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
-  if (lvl.includes("élite") || lvl.includes("elite")) return "bg-purple-500/15 text-purple-400 border-purple-500/30";
-  if (lvl.includes("cardio")) return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+  if (lvl.includes("fondament") || lvl.includes("tous niveaux") || lvl.includes("débutant") || lvl.includes("debutant")) {
+    return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
+  }
+  if (lvl.includes("drill") || lvl.includes("performance") || lvl.includes("intermédiaire") || lvl.includes("intermediaire")) {
+    return "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30";
+  }
+  if (lvl.includes("cardio")) {
+    return "bg-purple-500/15 text-purple-400 border-purple-500/30";
+  }
+  if (lvl.includes("100% féminin") || lvl.includes("100% feminin") || lvl.includes("féminin") || lvl.includes("feminin") || lvl.includes("femme") || lvl.includes("lady")) {
+    return "bg-pink-500/15 text-pink-400 border-pink-500/30";
+  }
+  if (lvl.includes("sparring") || lvl.includes("élite") || lvl.includes("elite") || lvl.includes("confirmé") || lvl.includes("confirme")) {
+    return "bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/30";
+  }
   return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
 }
 

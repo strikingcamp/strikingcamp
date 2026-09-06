@@ -38,6 +38,7 @@ export interface SmallGroupBooking {
   level?: string;
   status: string;
   date?: string;
+  startsAt?: string;
   created_at?: string;
   class_session?: ClassSession | null;
 }
@@ -180,49 +181,59 @@ export async function getMemberUpcomingBookings(
   }
 
   // 3. Formatage pour affichage en fuseau horaire Europe/Paris
+  // RÈGLE STRICTE : Uniquement les réservations futures (class_session.starts_at > maintenant)
+  const nowTime = Date.now();
   const result: SmallGroupBooking[] = [];
 
   for (const b of bookings) {
     const session = b.class_session_id ? sessionsMap.get(b.class_session_id) : undefined;
 
+    // Si la session n'existe pas ou est déjà commencée/passée, on l'exclut de « Mes prochaines réservations »
+    if (!session?.starts_at) {
+      continue;
+    }
+
+    const sessionStartTime = new Date(session.starts_at).getTime();
+    if (sessionStartTime <= nowTime) {
+      continue;
+    }
+
     let dayFormatted = "Séance réservée";
     let timeFormatted = "";
     let dateFormatted = "";
 
-    if (session?.starts_at) {
-      const start = new Date(session.starts_at);
-      
-      const dayRaw = new Intl.DateTimeFormat("fr-FR", {
-        timeZone: "Europe/Paris",
-        weekday: "long",
-      }).format(start);
-      dayFormatted = dayRaw.charAt(0).toUpperCase() + dayRaw.slice(1);
+    const start = new Date(session.starts_at);
+    
+    const dayRaw = new Intl.DateTimeFormat("fr-FR", {
+      timeZone: "Europe/Paris",
+      weekday: "long",
+    }).format(start);
+    dayFormatted = dayRaw.charAt(0).toUpperCase() + dayRaw.slice(1);
 
-      dateFormatted = new Intl.DateTimeFormat("fr-FR", {
-        timeZone: "Europe/Paris",
-        day: "numeric",
-        month: "long",
-      }).format(start);
+    dateFormatted = new Intl.DateTimeFormat("fr-FR", {
+      timeZone: "Europe/Paris",
+      day: "numeric",
+      month: "long",
+    }).format(start);
 
-      const sHours = new Intl.DateTimeFormat("fr-FR", {
+    const sHours = new Intl.DateTimeFormat("fr-FR", {
+      timeZone: "Europe/Paris",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(start);
+
+    if (session.ends_at) {
+      const end = new Date(session.ends_at);
+      const eHours = new Intl.DateTimeFormat("fr-FR", {
         timeZone: "Europe/Paris",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
-      }).format(start);
-
-      if (session.ends_at) {
-        const end = new Date(session.ends_at);
-        const eHours = new Intl.DateTimeFormat("fr-FR", {
-          timeZone: "Europe/Paris",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }).format(end);
-        timeFormatted = `${sHours} – ${eHours}`;
-      } else {
-        timeFormatted = sHours;
-      }
+      }).format(end);
+      timeFormatted = `${sHours} – ${eHours}`;
+    } else {
+      timeFormatted = sHours;
     }
 
     const rawType = (session?.type || "").toLowerCase().trim();
@@ -248,12 +259,20 @@ export async function getMemberUpcomingBookings(
       day: dayFormatted,
       time: timeFormatted,
       date: dateFormatted,
+      startsAt: session.starts_at,
       level: session?.level || "Tous niveaux",
       status: "Réservation confirmée",
       created_at: b.created_at,
       class_session: session || null,
     });
   }
+
+  // Tri chronologique croissant : la prochaine séance à venir apparaît en premier
+  result.sort((a, b) => {
+    const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
+    const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
+    return timeA - timeB;
+  });
 
   return result;
 }

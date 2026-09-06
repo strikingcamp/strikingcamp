@@ -14,7 +14,7 @@ export const metadata = {
     "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Small Group et cours privés du lundi au samedi.",
 };
 
-export const revalidate = 3600; // Revalidation ISR toutes les heures + à la demande via revalidatePath
+export const dynamic = "force-dynamic";
 
 export default async function PlanningPage() {
   let scheduleData: Record<PlanningCategory, Record<DayName, ScheduleCourse[]>> = publicScheduleData;
@@ -61,6 +61,7 @@ export default async function PlanningPage() {
           name: t.discipline,
           level: t.level,
           time: t.start_time.slice(0, 5),
+          places: t.type === "small_group" ? String(t.max_capacity || 20) : undefined,
         });
       }
 

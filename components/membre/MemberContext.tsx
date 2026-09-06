@@ -26,6 +26,7 @@ import {
   getServiceSettingsMap,
   DEFAULT_SERVICE_SETTINGS,
 } from "@/lib/supabase/services";
+import { getConfirmedBookingsSummaryAction } from "@/app/(membre)/actions";
 
 export type BookingSlot = {
   id?: string;
@@ -40,6 +41,7 @@ export type BookingSlot = {
   classSessionId?: string | null;
   class_session_id?: string | null;
   user_id?: string;
+  class_session?: ClassSession | null;
 };
 
 export interface ConfirmedBookingInfo {
@@ -290,24 +292,25 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
       console.log("[MemberContext] class_sessions récupérées :", sessions.length, "créneaux");
       setAvailableSessions(sessions);
 
-      const { data: confirmedBookingsData, error: confirmedErr } = await supabase
-        .from("bookings")
-        .select("class_session_id, user_id")
-        .eq("status", "confirmed")
-        .not("class_session_id", "is", null);
+      try {
+        const confirmedBookingsData = await getConfirmedBookingsSummaryAction();
+        console.log("[MemberContext] Total réservations confirmées en base (Server Action) :", confirmedBookingsData.length);
+        setAllConfirmedBookings(confirmedBookingsData);
+      } catch (confirmedErr) {
+        console.warn("[MemberContext] Erreur lecture réservations confirmées via Server Action :", confirmedErr);
+        const { data: fallbackData } = await supabase
+          .from("bookings")
+          .select("class_session_id, user_id")
+          .eq("status", "confirmed")
+          .not("class_session_id", "is", null);
 
-      if (confirmedErr) {
-        console.warn("[MemberContext] Erreur lecture réservations confirmées :", confirmedErr);
-      } else {
-        console.log("[MemberContext] Total réservations confirmées en base :", confirmedBookingsData?.length || 0);
+        setAllConfirmedBookings(
+          (fallbackData || []).map((b) => ({
+            class_session_id: b.class_session_id as string,
+            user_id: b.user_id as string,
+          }))
+        );
       }
-
-      setAllConfirmedBookings(
-        (confirmedBookingsData || []).map((b) => ({
-          class_session_id: b.class_session_id as string,
-          user_id: b.user_id as string,
-        }))
-      );
 
       // 2. Vérification de la session utilisateur connectée
       const {

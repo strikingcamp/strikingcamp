@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -58,6 +58,18 @@ export default function MemberHomeView({
 
   const [challenges, setChallenges] = useState<MemberChallengeCardData[]>([]);
   const [isLoadingChallenges, setIsLoadingChallenges] = useState(true);
+
+  // RÈGLE STRICTE : Uniquement les réservations futures (class_session.starts_at > maintenant)
+  const upcomingBookings = useMemo(() => {
+    const nowTime = Date.now();
+    return userBookings.filter((slot) => {
+      const startsAtStr = slot.class_session?.starts_at || slot.startsAt;
+      if (startsAtStr) {
+        return new Date(startsAtStr).getTime() > nowTime;
+      }
+      return true;
+    });
+  }, [userBookings]);
 
   const fetchChallenges = useCallback(async () => {
     setIsLoadingChallenges(true);
@@ -379,15 +391,15 @@ export default function MemberHomeView({
               Mes prochaines réservations
             </h2>
           </div>
-          {userBookings.length > 0 && (
+          {upcomingBookings.length > 0 && (
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30">
-              {userBookings.length} {userBookings.length === 1 ? "séance" : "séances"}
+              {upcomingBookings.length} {upcomingBookings.length === 1 ? "séance" : "séances"}
             </span>
           )}
         </div>
 
         {/* Liste des réservations synchronisées */}
-        {userBookings.length === 0 ? (
+        {upcomingBookings.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -414,7 +426,7 @@ export default function MemberHomeView({
           </motion.div>
         ) : (
           <div className="space-y-3">
-            {userBookings.map((slot, index) => (
+            {upcomingBookings.map((slot, index) => (
               <motion.div
                 key={slot.id || `booking-${index}`}
                 initial={{ opacity: 0, y: 10 }}

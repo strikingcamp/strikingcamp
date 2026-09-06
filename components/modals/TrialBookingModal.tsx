@@ -47,6 +47,7 @@ const DISCIPLINE_ICONS: Record<string, typeof Flame> = {
   Boxing: Flame,
   "Boxe Thaï": Award,
   Striking: Dumbbell,
+  "KB Shred": Sparkles,
   "Boxing Shred": Sparkles,
   "Lady Striking": Heart,
   "Boxing Bag": Dumbbell,
@@ -58,7 +59,8 @@ const DISCIPLINE_DESCRIPTIONS: Record<string, string> = {
   Boxing: "Fondamentaux de frappe, rythme et explosivité",
   "Boxe Thaï": "Muay Thaï complet, corps-à-corps et percussions",
   Striking: "Percussions martiales hybrides et puissance",
-  "Boxing Shred": "Conditioning martiale haute intensité & renforcement",
+  "KB Shred": "Conditioning martial haute intensité & renforcement",
+  "Boxing Shred": "Conditioning martial haute intensité & renforcement",
   "Lady Striking": "Cours 100% féminin, technique et cardio-boxing",
   "Boxing Bag": "Travail intensif aux sacs de frappe et endurance",
 };
@@ -183,7 +185,7 @@ export default function TrialBookingModal({
           : [
               "Boxing Bag",
               "Boxing",
-              "Boxing Shred",
+              "KB Shred",
               "Lady Striking",
               "Kick Boxing",
               "Boxe Anglaise",

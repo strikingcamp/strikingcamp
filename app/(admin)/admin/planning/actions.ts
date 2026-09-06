@@ -162,6 +162,14 @@ export async function getAdminPlanningDataServerAction(): Promise<AdminPlanningD
   }
 }
 
+function normalizeTime(timeStr: string): string {
+  const trimmed = timeStr.trim();
+  if (trimmed.length === 5) {
+    return `${trimmed}:00`;
+  }
+  return trimmed;
+}
+
 /**
  * Crée un nouveau modèle récurrent dans recurring_schedule_templates
  * et instancie automatiquement les séances physiques correspondantes sur les 12 semaines futures.
@@ -179,13 +187,16 @@ export async function createRecurringTemplateServerAction(payload: {
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
 
+    const startTimeFormatted = normalizeTime(payload.start_time);
+    const endTimeFormatted = normalizeTime(payload.end_time);
+
     // 1. Insertion dans recurring_schedule_templates
     const { data: newTmpl, error: insertError } = await adminSupabase
       .from("recurring_schedule_templates")
       .insert({
         day_of_week: payload.day_of_week,
-        start_time: payload.start_time,
-        end_time: payload.end_time,
+        start_time: startTimeFormatted,
+        end_time: endTimeFormatted,
         type: payload.type,
         discipline: payload.discipline,
         level: payload.level,
@@ -250,6 +261,12 @@ export async function updateRecurringTemplateServerAction(
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
 
+    const normalizedPayload = {
+      ...payload,
+      start_time: payload.start_time ? normalizeTime(payload.start_time) : undefined,
+      end_time: payload.end_time ? normalizeTime(payload.end_time) : undefined,
+    };
+
     // 1. Récupération du template actuel pour détecter les changements d'horaire, de jour ou de discipline
     const { data: oldTmpl } = await adminSupabase
       .from("recurring_schedule_templates")
@@ -259,14 +276,14 @@ export async function updateRecurringTemplateServerAction(
 
     const isScheduleOrDisciplineChanged = Boolean(
       oldTmpl && (
-        (payload.day_of_week !== undefined && payload.day_of_week !== oldTmpl.day_of_week) ||
-        (payload.start_time && payload.start_time.slice(0, 5) !== oldTmpl.start_time.slice(0, 5)) ||
-        (payload.end_time && payload.end_time.slice(0, 5) !== oldTmpl.end_time.slice(0, 5)) ||
-        (payload.discipline && payload.discipline !== oldTmpl.discipline)
+        (normalizedPayload.day_of_week !== undefined && normalizedPayload.day_of_week !== oldTmpl.day_of_week) ||
+        (normalizedPayload.start_time && normalizedPayload.start_time.slice(0, 5) !== oldTmpl.start_time.slice(0, 5)) ||
+        (normalizedPayload.end_time && normalizedPayload.end_time.slice(0, 5) !== oldTmpl.end_time.slice(0, 5)) ||
+        (normalizedPayload.discipline && normalizedPayload.discipline !== oldTmpl.discipline)
       )
     );
 
-    // 2. Vérification des réservations sur les séances de la semaine courante et futures liées à ce template
+    // 2. Vérification des réservations (membres ET cours d'essai) sur les séances de la semaine courante et futures
     const currentWeekMondayIso = `${getCurrentWeekMondayIso()}T00:00:00.000Z`;
     const { data: futureSessions } = await adminSupabase
       .from("class_sessions")
@@ -278,13 +295,19 @@ export async function updateRecurringTemplateServerAction(
     let totalBookings = 0;
 
     if (futureSessionIds.length > 0) {
-      const { count } = await adminSupabase
+      const { count: memberBookingsCount } = await adminSupabase
         .from("bookings")
         .select("id", { count: "exact", head: true })
         .in("class_session_id", futureSessionIds)
         .eq("status", "confirmed");
 
-      totalBookings = count || 0;
+      const { count: trialBookingsCount } = await adminSupabase
+        .from("trial_bookings")
+        .select("id", { count: "exact", head: true })
+        .in("class_session_id", futureSessionIds)
+        .eq("status", "confirmed");
+
+      totalBookings = (memberBookingsCount || 0) + (trialBookingsCount || 0);
     }
 
     // Si des réservations existent et que l'administrateur n'a pas encore explicitement forcé l'action
@@ -293,20 +316,29 @@ export async function updateRecurringTemplateServerAction(
         success: false,
         hasBookings: true,
         bookingsCount: totalBookings,
-        message: `Attention : ${totalBookings} réservation(s) confirmée(s) existent déjà sur les séances futures de ce créneau. Confirmez-vous la modification récurrente ?`,
+        message: `Attention : ${totalBookings} réservation(s) confirmée(s) (membres ou cours d'essai) existent déjà sur les séances futures de ce créneau. Les séances déjà réservées seront préservées. Confirmez-vous la modification récurrente ?`,
       };
     }
 
     // Identifier les séances qui ONT des réservations (strictement préservées) et celles NON réservées
     let unbookedSessionIds: string[] = [];
     if (futureSessionIds.length > 0) {
-      const { data: bookedSessionRows } = await adminSupabase
+      const { data: bookedMemberRows } = await adminSupabase
         .from("bookings")
         .select("class_session_id")
         .in("class_session_id", futureSessionIds)
         .eq("status", "confirmed");
 
-      const bookedIdsSet = new Set((bookedSessionRows || []).map((b) => b.class_session_id));
+      const { data: bookedTrialRows } = await adminSupabase
+        .from("trial_bookings")
+        .select("class_session_id")
+        .in("class_session_id", futureSessionIds)
+        .eq("status", "confirmed");
+
+      const bookedIdsSet = new Set([
+        ...(bookedMemberRows || []).map((b) => b.class_session_id),
+        ...(bookedTrialRows || []).map((b) => b.class_session_id),
+      ]);
       unbookedSessionIds = futureSessionIds.filter((id) => !bookedIdsSet.has(id));
     }
 
@@ -314,7 +346,7 @@ export async function updateRecurringTemplateServerAction(
     const { data: updatedTmpl, error: tmplErr } = await adminSupabase
       .from("recurring_schedule_templates")
       .update({
-        ...payload,
+        ...normalizedPayload,
         updated_at: new Date().toISOString(),
       })
       .eq("id", templateId)
@@ -350,9 +382,9 @@ export async function updateRecurringTemplateServerAction(
       // -> Mise à jour in situ des futures séances non réservées
       if (unbookedSessionIds.length > 0) {
         const sessionPatch: any = {};
-        if (payload.level) sessionPatch.level = payload.level;
-        if (payload.max_capacity) sessionPatch.max_capacity = payload.max_capacity;
-        if (typeof payload.is_active === "boolean") sessionPatch.is_active = payload.is_active;
+        if (normalizedPayload.level) sessionPatch.level = normalizedPayload.level;
+        if (normalizedPayload.max_capacity) sessionPatch.max_capacity = normalizedPayload.max_capacity;
+        if (typeof normalizedPayload.is_active === "boolean") sessionPatch.is_active = normalizedPayload.is_active;
 
         if (Object.keys(sessionPatch).length > 0) {
           await adminSupabase
@@ -397,7 +429,7 @@ export async function deleteRecurringTemplateServerAction(templateId: string): P
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
 
-    // Vérifier si des réservations existent sur les séances associées
+    // Vérifier si des réservations existent sur les séances associées (membres ET essais)
     const { data: sessions } = await adminSupabase
       .from("class_sessions")
       .select("id")
@@ -406,11 +438,17 @@ export async function deleteRecurringTemplateServerAction(templateId: string): P
     const sIds = (sessions || []).map((s) => s.id);
     let bookingsCount = 0;
     if (sIds.length > 0) {
-      const { count } = await adminSupabase
+      const { count: mCount } = await adminSupabase
         .from("bookings")
         .select("id", { count: "exact", head: true })
         .in("class_session_id", sIds);
-      bookingsCount = count || 0;
+
+      const { count: tCount } = await adminSupabase
+        .from("trial_bookings")
+        .select("id", { count: "exact", head: true })
+        .in("class_session_id", sIds);
+
+      bookingsCount = (mCount || 0) + (tCount || 0);
     }
 
     if (bookingsCount > 0) {
