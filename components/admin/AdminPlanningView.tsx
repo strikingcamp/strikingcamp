@@ -699,7 +699,7 @@ export default function AdminPlanningView({
       {/* Confirmation Réservations Existantes Modal */}
       <AnimatePresence>
         {pendingWarningModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -707,33 +707,40 @@ export default function AdminPlanningView({
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-[#0f172a] border border-amber-500/40 rounded-2xl p-6 shadow-2xl z-10 space-y-4"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-md max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-amber-500/40 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
             >
-              <div className="flex items-center gap-3 text-amber-400">
+              <div className="flex items-center gap-3 text-amber-400 p-5 sm:p-6 pb-3 border-b border-brand-white/10 shrink-0">
                 <AlertTriangle size={24} />
                 <h3 className="text-base font-heading font-black uppercase tracking-wider text-brand-white">
                   Réservations en cours détectées
                 </h3>
               </div>
-              <p className="text-xs text-brand-white/80 leading-relaxed">
-                {pendingWarningModal.message}
-              </p>
-              <p className="text-[11px] text-brand-white/50">
-                Les séances futures sans réservation seront synchronisées. Les séances ayant déjà des inscrits conserveront leur historique.
-              </p>
-              <div className="flex gap-3 pt-2">
+              
+              <div
+                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-3 text-xs"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <p className="text-xs text-brand-white/80 leading-relaxed">
+                  {pendingWarningModal.message}
+                </p>
+                <p className="text-[11px] text-brand-white/50 leading-relaxed">
+                  Les séances futures sans réservation seront synchronisées. Les séances ayant déjà des inscrits conserveront leur historique.
+                </p>
+              </div>
+
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
                 <button
                   onClick={() => setPendingWarningModal(null)}
-                  className="flex-1 py-2.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl"
+                  className="flex-1 py-2.5 sm:py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={pendingWarningModal.onConfirm}
-                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl shadow-lg"
+                  className="flex-1 py-2.5 sm:py-3 bg-amber-500 hover:bg-amber-400 text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer"
                 >
                   Confirmer la modification
                 </button>
@@ -1106,11 +1113,203 @@ export default function AdminPlanningView({
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MODAL : AJOUT CRÉNEAU PRIVÉ EXCEPTIONNEL
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <AnimatePresence>
+        {isAddSlotModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddSlotModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
+            >
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
+                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+                  Ajouter un créneau privé exceptionnel
+                </h3>
+                <button
+                  onClick={() => setIsAddSlotModalOpen(false)}
+                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* BODY */}
+              <div
+                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de début
+                    </label>
+                    <input
+                      type="time"
+                      value={newSlotStart}
+                      onChange={(e) => setNewSlotStart(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de fin
+                    </label>
+                    <input
+                      type="time"
+                      value={newSlotEnd}
+                      onChange={(e) => setNewSlotEnd(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* FOOTER */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+                <button
+                  onClick={() => setIsAddSlotModalOpen(false)}
+                  className="flex-1 py-2.5 sm:py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleAddExceptionalSlot}
+                  className="flex-1 py-2.5 sm:py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
+                >
+                  <Plus size={16} />
+                  <span>Ajouter le créneau</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MODAL : MODIFIER CRÉNEAU PRIVÉ
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <AnimatePresence>
+        {editingPrivateSlot && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingPrivateSlot(null)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
+            >
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
+                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+                  Modifier le créneau privé
+                </h3>
+                <button
+                  onClick={() => setEditingPrivateSlot(null)}
+                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* BODY */}
+              <div
+                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de début
+                    </label>
+                    <input
+                      type="time"
+                      value={editingPrivateSlot.start}
+                      onChange={(e) => setEditingPrivateSlot({ ...editingPrivateSlot, start: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de fin
+                    </label>
+                    <input
+                      type="time"
+                      value={editingPrivateSlot.end}
+                      onChange={(e) => setEditingPrivateSlot({ ...editingPrivateSlot, end: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Durée (minutes)
+                    </label>
+                    <input
+                      type="number"
+                      value={editingPrivateSlot.durationMin}
+                      onChange={(e) => setEditingPrivateSlot({ ...editingPrivateSlot, durationMin: Number(e.target.value) })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 flex items-center justify-between pt-2 border-t border-brand-white/10">
+                    <span className="text-brand-white font-bold uppercase text-xs sm:text-sm">Statut actif</span>
+                    <input
+                      type="checkbox"
+                      checked={editingPrivateSlot.isActive}
+                      onChange={(e) => setEditingPrivateSlot({ ...editingPrivateSlot, isActive: e.target.checked })}
+                      className="w-5 h-5 accent-[#00d8ff] rounded cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* FOOTER */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+                <button
+                  onClick={() => setEditingPrivateSlot(null)}
+                  className="flex-1 py-2.5 sm:py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSaveEditPrivateSlot}
+                  className="flex-1 py-2.5 sm:py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
+                >
+                  <Check size={16} />
+                  <span>Enregistrer</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODAL : AJOUT SÉANCE SMALL GROUP
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <AnimatePresence>
         {isAddSgModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1119,111 +1318,134 @@ export default function AdminPlanningView({
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
-                <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
+                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                   Ajouter une séance Small Group
                 </h3>
-                <button onClick={() => setIsAddSgModalOpen(false)} className="text-brand-white/50 hover:text-brand-white">
+                <button
+                  onClick={() => setIsAddSgModalOpen(false)}
+                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
+                >
                   <X size={18} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Jour</label>
-                  <select
-                    value={sgFormDay}
-                    onChange={(e) => setSgFormDay(e.target.value as DayName)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    {DAYS_ORDER.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* BODY SCROLLABLE */}
+              <div
+                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Jour
+                    </label>
+                    <select
+                      value={sgFormDay}
+                      onChange={(e) => setSgFormDay(e.target.value as DayName)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      {DAYS_ORDER.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Discipline</label>
-                  <select
-                    value={sgFormDiscipline}
-                    onChange={(e) => setSgFormDiscipline(e.target.value)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    <option value="Boxing Bag">Boxing Bag</option>
-                    <option value="Boxing">Boxing</option>
-                    <option value="KB Shred">KB Shred</option>
-                    <option value="Kick Boxing">Kick Boxing</option>
-                    <option value="Lady Striking">Lady Striking</option>
-                    <option value="Striking">Striking</option>
-                    <option value="Boxe Thaï">Boxe Thaï</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Discipline
+                    </label>
+                    <select
+                      value={sgFormDiscipline}
+                      onChange={(e) => setSgFormDiscipline(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      <option value="Boxing Bag">Boxing Bag</option>
+                      <option value="Boxing">Boxing</option>
+                      <option value="KB Shred">KB Shred</option>
+                      <option value="Kick Boxing">Kick Boxing</option>
+                      <option value="Lady Striking">Lady Striking</option>
+                      <option value="Striking">Striking</option>
+                      <option value="Boxe Thaï">Boxe Thaï</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Niveau / Type</label>
-                  <select
-                    value={sgFormLevel}
-                    onChange={(e) => setSgFormLevel(e.target.value as LevelCategory)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    <option value="Fondamentaux">Fondamentaux (Vert)</option>
-                    <option value="Drills">Drills (Bleu cyan)</option>
-                    <option value="Cardio">Cardio (Violet)</option>
-                    <option value="100% féminin">100% féminin (Rose)</option>
-                    <option value="Sparring">Sparring (Rouge)</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Niveau / Type
+                    </label>
+                    <select
+                      value={sgFormLevel}
+                      onChange={(e) => setSgFormLevel(e.target.value as LevelCategory)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      <option value="Fondamentaux">Fondamentaux (Vert)</option>
+                      <option value="Drills">Drills (Bleu cyan)</option>
+                      <option value="Cardio">Cardio (Violet)</option>
+                      <option value="100% féminin">100% féminin (Rose)</option>
+                      <option value="Sparring">Sparring (Rouge)</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Capacité max</label>
-                  <input
-                    type="number"
-                    value={sgFormCapacity}
-                    onChange={(e) => setSgFormCapacity(Number(e.target.value))}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  />
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Capacité max
+                    </label>
+                    <input
+                      type="number"
+                      value={sgFormCapacity}
+                      onChange={(e) => setSgFormCapacity(Number(e.target.value))}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure de début</label>
-                  <input
-                    type="time"
-                    value={sgFormStart}
-                    onChange={(e) => setSgFormStart(e.target.value)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
-                  />
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de début
+                    </label>
+                    <input
+                      type="time"
+                      value={sgFormStart}
+                      onChange={(e) => setSgFormStart(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure de fin</label>
-                  <input
-                    type="time"
-                    value={sgFormEnd}
-                    onChange={(e) => setSgFormEnd(e.target.value)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
-                  />
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de fin
+                    </label>
+                    <input
+                      type="time"
+                      value={sgFormEnd}
+                      onChange={(e) => setSgFormEnd(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              {/* FOOTER */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
                 <button
                   onClick={() => setIsAddSgModalOpen(false)}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                  className="flex-1 py-2.5 sm:py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddSgSession}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 sm:py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                   <span>Ajouter au planning</span>
@@ -1236,10 +1458,10 @@ export default function AdminPlanningView({
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODAL : AJOUT COURS COLLECTIF
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <AnimatePresence>
         {isAddColModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1248,99 +1470,122 @@ export default function AdminPlanningView({
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
-                <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
+                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                   Ajouter un cours collectif
                 </h3>
-                <button onClick={() => setIsAddColModalOpen(false)} className="text-brand-white/50 hover:text-brand-white">
+                <button
+                  onClick={() => setIsAddColModalOpen(false)}
+                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
+                >
                   <X size={18} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Jour</label>
-                  <select
-                    value={colFormDay}
-                    onChange={(e) => setColFormDay(e.target.value as DayName)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    {DAYS_ORDER.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* BODY SCROLLABLE */}
+              <div
+                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Jour
+                    </label>
+                    <select
+                      value={colFormDay}
+                      onChange={(e) => setColFormDay(e.target.value as DayName)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      {DAYS_ORDER.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Discipline</label>
-                  <input
-                    type="text"
-                    value={colFormDiscipline}
-                    onChange={(e) => setColFormDiscipline(e.target.value)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  />
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Discipline
+                    </label>
+                    <input
+                      type="text"
+                      value={colFormDiscipline}
+                      onChange={(e) => setColFormDiscipline(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Niveau</label>
-                  <input
-                    type="text"
-                    value={colFormLevel}
-                    onChange={(e) => setColFormLevel(e.target.value)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  />
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Niveau
+                    </label>
+                    <input
+                      type="text"
+                      value={colFormLevel}
+                      onChange={(e) => setColFormLevel(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Capacité</label>
-                  <input
-                    type="number"
-                    value={colFormCapacity}
-                    onChange={(e) => setColFormCapacity(Number(e.target.value))}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  />
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Capacité
+                    </label>
+                    <input
+                      type="number"
+                      value={colFormCapacity}
+                      onChange={(e) => setColFormCapacity(Number(e.target.value))}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure début</label>
-                  <input
-                    type="time"
-                    value={colFormStart}
-                    onChange={(e) => setColFormStart(e.target.value)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
-                  />
-                </div>
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure début
+                    </label>
+                    <input
+                      type="time"
+                      value={colFormStart}
+                      onChange={(e) => setColFormStart(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure fin</label>
-                  <input
-                    type="time"
-                    value={colFormEnd}
-                    onChange={(e) => setColFormEnd(e.target.value)}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
-                  />
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure fin
+                    </label>
+                    <input
+                      type="time"
+                      value={colFormEnd}
+                      onChange={(e) => setColFormEnd(e.target.value)}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              {/* FOOTER */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
                 <button
                   onClick={() => setIsAddColModalOpen(false)}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                  className="flex-1 py-2.5 sm:py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddCollectiveSession}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 sm:py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                   <span>Ajouter au planning</span>
@@ -1353,10 +1598,10 @@ export default function AdminPlanningView({
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODAL : MODIFIER UNE SÉANCE SMALL GROUP
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <AnimatePresence>
         {editingSgSession && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1365,159 +1610,182 @@ export default function AdminPlanningView({
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
-                <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
+                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                   Modifier la séance Small Group
                 </h3>
-                <button onClick={() => setEditingSgSession(null)} className="text-brand-white/50 hover:text-brand-white">
+                <button
+                  onClick={() => setEditingSgSession(null)}
+                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
+                >
                   <X size={18} />
                 </button>
               </div>
 
-              {/* Choix de la portée de modification : Récurrent vs Ponctuel */}
-              <div className="bg-[#0b1b33]/60 border border-[#00d8ff]/20 rounded-xl p-3 space-y-2">
-                <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-[#00d8ff] block">
-                  Portée de la modification :
-                </span>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <label
-                    className={cn(
-                      "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all",
-                      editScope === "recurring"
-                        ? "bg-[#00d8ff]/15 border-[#00d8ff] text-brand-white font-bold"
-                        : "bg-black/30 border-brand-white/10 text-brand-white/60 hover:border-brand-white/20"
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="sgEditScope"
-                      checked={editScope === "recurring"}
-                      onChange={() => setEditScope("recurring")}
-                      className="accent-[#00d8ff]"
-                    />
-                    <span>Semaine type (Récurrent)</span>
-                  </label>
+              {/* BODY SCROLLABLE */}
+              <div
+                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                {/* Choix de la portée de modification : Récurrent vs Ponctuel */}
+                <div className="bg-[#0b1b33]/60 border border-[#00d8ff]/20 rounded-xl p-2.5 sm:p-3 space-y-2">
+                  <span className="text-[10px] sm:text-[11px] font-heading font-bold uppercase tracking-wider text-[#00d8ff] block">
+                    Portée de la modification :
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 p-2 sm:p-2.5 rounded-lg border cursor-pointer transition-all",
+                        editScope === "recurring"
+                          ? "bg-[#00d8ff]/15 border-[#00d8ff] text-brand-white font-bold"
+                          : "bg-black/30 border-brand-white/10 text-brand-white/60 hover:border-brand-white/20"
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="sgEditScope"
+                        checked={editScope === "recurring"}
+                        onChange={() => setEditScope("recurring")}
+                        className="accent-[#00d8ff]"
+                      />
+                      <span className="text-xs">Semaine type (Récurrent)</span>
+                    </label>
 
-                  <label
-                    className={cn(
-                      "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all",
-                      editScope === "single"
-                        ? "bg-[#00d8ff]/15 border-[#00d8ff] text-brand-white font-bold"
-                        : "bg-black/30 border-brand-white/10 text-brand-white/60 hover:border-brand-white/20"
-                    )}
-                  >
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 p-2 sm:p-2.5 rounded-lg border cursor-pointer transition-all",
+                        editScope === "single"
+                          ? "bg-[#00d8ff]/15 border-[#00d8ff] text-brand-white font-bold"
+                          : "bg-black/30 border-brand-white/10 text-brand-white/60 hover:border-brand-white/20"
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="sgEditScope"
+                        checked={editScope === "single"}
+                        onChange={() => setEditScope("single")}
+                        className="accent-[#00d8ff]"
+                      />
+                      <span className="text-xs">Cette séance uniquement</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Jour
+                    </label>
+                    <select
+                      value={editingSgSession.day}
+                      onChange={(e) => setEditingSgSession({ ...editingSgSession, day: e.target.value as DayName })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      {DAYS_ORDER.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Discipline
+                    </label>
+                    <select
+                      value={editingSgSession.discipline}
+                      onChange={(e) => setEditingSgSession({ ...editingSgSession, discipline: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      <option value="Boxing Bag">Boxing Bag</option>
+                      <option value="Boxing">Boxing</option>
+                      <option value="KB Shred">KB Shred</option>
+                      <option value="Kick Boxing">Kick Boxing</option>
+                      <option value="Lady Striking">Lady Striking</option>
+                      <option value="Striking">Striking</option>
+                      <option value="Boxe Thaï">Boxe Thaï</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Niveau / Type
+                    </label>
+                    <select
+                      value={editingSgSession.level}
+                      onChange={(e) => setEditingSgSession({ ...editingSgSession, level: e.target.value as LevelCategory })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      <option value="Fondamentaux">Fondamentaux (Vert)</option>
+                      <option value="Drills">Drills (Bleu cyan)</option>
+                      <option value="Cardio">Cardio (Violet)</option>
+                      <option value="100% féminin">100% féminin (Rose)</option>
+                      <option value="Sparring">Sparring (Rouge)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Capacité max
+                    </label>
                     <input
-                      type="radio"
-                      name="sgEditScope"
-                      checked={editScope === "single"}
-                      onChange={() => setEditScope("single")}
-                      className="accent-[#00d8ff]"
+                      type="number"
+                      value={editingSgSession.maxCapacity}
+                      onChange={(e) => setEditingSgSession({ ...editingSgSession, maxCapacity: Number(e.target.value) })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
                     />
-                    <span>Cette séance uniquement</span>
-                  </label>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de début
+                    </label>
+                    <input
+                      type="time"
+                      value={editingSgSession.startTime}
+                      onChange={(e) => setEditingSgSession({ ...editingSgSession, startTime: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure de fin
+                    </label>
+                    <input
+                      type="time"
+                      value={editingSgSession.endTime}
+                      onChange={(e) => setEditingSgSession({ ...editingSgSession, endTime: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 flex items-center justify-between pt-2 border-t border-brand-white/10">
+                    <span className="text-brand-white font-bold uppercase text-xs sm:text-sm">Statut actif</span>
+                    <input
+                      type="checkbox"
+                      checked={editingSgSession.isActive}
+                      onChange={(e) => setEditingSgSession({ ...editingSgSession, isActive: e.target.checked })}
+                      className="w-5 h-5 accent-[#00d8ff] rounded cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Jour</label>
-                  <select
-                    value={editingSgSession.day}
-                    onChange={(e) => setEditingSgSession({ ...editingSgSession, day: e.target.value as DayName })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    {DAYS_ORDER.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Discipline</label>
-                  <select
-                    value={editingSgSession.discipline}
-                    onChange={(e) => setEditingSgSession({ ...editingSgSession, discipline: e.target.value })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    <option value="Boxing Bag">Boxing Bag</option>
-                    <option value="Boxing">Boxing</option>
-                    <option value="KB Shred">KB Shred</option>
-                    <option value="Kick Boxing">Kick Boxing</option>
-                    <option value="Lady Striking">Lady Striking</option>
-                    <option value="Striking">Striking</option>
-                    <option value="Boxe Thaï">Boxe Thaï</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Niveau / Type</label>
-                  <select
-                    value={editingSgSession.level}
-                    onChange={(e) => setEditingSgSession({ ...editingSgSession, level: e.target.value as LevelCategory })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    <option value="Fondamentaux">Fondamentaux (Vert)</option>
-                    <option value="Drills">Drills (Bleu cyan)</option>
-                    <option value="Cardio">Cardio (Violet)</option>
-                    <option value="100% féminin">100% féminin (Rose)</option>
-                    <option value="Sparring">Sparring (Rouge)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Capacité max</label>
-                  <input
-                    type="number"
-                    value={editingSgSession.maxCapacity}
-                    onChange={(e) => setEditingSgSession({ ...editingSgSession, maxCapacity: Number(e.target.value) })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure de début</label>
-                  <input
-                    type="time"
-                    value={editingSgSession.startTime}
-                    onChange={(e) => setEditingSgSession({ ...editingSgSession, startTime: e.target.value })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure de fin</label>
-                  <input
-                    type="time"
-                    value={editingSgSession.endTime}
-                    onChange={(e) => setEditingSgSession({ ...editingSgSession, endTime: e.target.value })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
-                  />
-                </div>
-
-                <div className="sm:col-span-2 flex items-center justify-between pt-2 border-t border-brand-white/10">
-                  <span className="text-brand-white font-bold uppercase">Statut actif</span>
-                  <input
-                    type="checkbox"
-                    checked={editingSgSession.isActive}
-                    onChange={(e) => setEditingSgSession({ ...editingSgSession, isActive: e.target.checked })}
-                    className="w-5 h-5 accent-[#00d8ff] rounded cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 pt-2">
+              {/* FOOTER */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
                 <button
                   type="button"
                   onClick={() => handleDeleteSgSession(editingSgSession.id)}
                   disabled={isSubmitting}
-                  className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl transition-all cursor-pointer"
+                  className="p-2.5 sm:p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl transition-all cursor-pointer shrink-0"
                   title="Supprimer ce créneau"
                 >
                   <Trash2 size={16} />
@@ -1527,14 +1795,14 @@ export default function AdminPlanningView({
                   <button
                     onClick={() => setEditingSgSession(null)}
                     disabled={isSubmitting}
-                    className="py-3 px-5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                    className="py-2.5 px-3.5 sm:py-3 sm:px-5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
                   >
                     Annuler
                   </button>
                   <button
                     onClick={() => handleSaveEditSgSession(false)}
                     disabled={isSubmitting}
-                    className="py-3 px-6 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center gap-2"
+                    className="py-2.5 px-4 sm:py-3 sm:px-6 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
                   >
                     {isSubmitting && <Loader2 size={15} className="animate-spin" />}
                     <span>Enregistrer</span>
@@ -1548,10 +1816,10 @@ export default function AdminPlanningView({
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODAL : MODIFIER UN COURS COLLECTIF
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <AnimatePresence>
         {editingCollectiveSession && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1560,94 +1828,126 @@ export default function AdminPlanningView({
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
-                <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
+                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                   Modifier le cours collectif
                 </h3>
-                <button onClick={() => setEditingCollectiveSession(null)} className="text-brand-white/50 hover:text-brand-white">
+                <button
+                  onClick={() => setEditingCollectiveSession(null)}
+                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
+                >
                   <X size={18} />
                 </button>
               </div>
 
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Jour</label>
-                  <select
-                    value={editingCollectiveSession.day}
-                    onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, day: e.target.value as DayName })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  >
-                    {DAYS_ORDER.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Discipline</label>
-                  <input
-                    type="text"
-                    value={editingCollectiveSession.discipline}
-                    onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, discipline: e.target.value })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Niveau</label>
-                  <input
-                    type="text"
-                    value={editingCollectiveSession.level}
-                    onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, level: e.target.value })}
-                    className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+              {/* BODY SCROLLABLE */}
+              <div
+                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                   <div>
-                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure début</label>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Jour
+                    </label>
+                    <select
+                      value={editingCollectiveSession.day}
+                      onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, day: e.target.value as DayName })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    >
+                      {DAYS_ORDER.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Discipline
+                    </label>
+                    <input
+                      type="text"
+                      value={editingCollectiveSession.discipline}
+                      onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, discipline: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Niveau
+                    </label>
+                    <input
+                      type="text"
+                      value={editingCollectiveSession.level}
+                      onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, level: e.target.value })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Capacité
+                    </label>
+                    <input
+                      type="number"
+                      value={editingCollectiveSession.maxCapacity || 35}
+                      onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, maxCapacity: Number(e.target.value) })}
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure début
+                    </label>
                     <input
                       type="time"
                       value={editingCollectiveSession.startTime}
                       onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, startTime: e.target.value })}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
                     />
                   </div>
+
                   <div>
-                    <label className="text-brand-white/60 uppercase font-bold block mb-1.5">Heure fin</label>
+                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
+                      Heure fin
+                    </label>
                     <input
                       type="time"
                       value={editingCollectiveSession.endTime}
                       onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, endTime: e.target.value })}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-brand-white font-mono"
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 flex items-center justify-between pt-2 border-t border-brand-white/10">
+                    <span className="text-brand-white font-bold uppercase text-xs sm:text-sm">Statut actif</span>
+                    <input
+                      type="checkbox"
+                      checked={editingCollectiveSession.isActive}
+                      onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, isActive: e.target.checked })}
+                      className="w-5 h-5 accent-[#00d8ff] rounded cursor-pointer"
                     />
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-brand-white/10">
-                  <span className="text-brand-white font-bold uppercase">Statut actif</span>
-                  <input
-                    type="checkbox"
-                    checked={editingCollectiveSession.isActive}
-                    onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, isActive: e.target.checked })}
-                    className="w-5 h-5 accent-[#00d8ff] rounded cursor-pointer"
-                  />
-                </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3 pt-2">
+              {/* FOOTER */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
                 <button
                   type="button"
                   onClick={() => handleDeleteCollectiveSession(editingCollectiveSession.id)}
                   disabled={isSubmitting}
-                  className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl transition-all cursor-pointer"
+                  className="p-2.5 sm:p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl transition-all cursor-pointer shrink-0"
                   title="Supprimer ce cours collectif"
                 >
                   <Trash2 size={16} />
@@ -1657,14 +1957,14 @@ export default function AdminPlanningView({
                   <button
                     onClick={() => setEditingCollectiveSession(null)}
                     disabled={isSubmitting}
-                    className="py-3 px-5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                    className="py-2.5 px-3.5 sm:py-3 sm:px-5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
                   >
                     Annuler
                   </button>
                   <button
                     onClick={handleSaveEditCollectiveSession}
                     disabled={isSubmitting}
-                    className="py-3 px-6 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center gap-2"
+                    className="py-2.5 px-4 sm:py-3 sm:px-6 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
                   >
                     {isSubmitting && <Loader2 size={15} className="animate-spin" />}
                     <span>Enregistrer</span>
