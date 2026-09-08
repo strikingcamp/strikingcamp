@@ -17,8 +17,6 @@ import {
 
 type DayFilter = "Tous" | Day;
 
-const categories: Category[] = ["Collectifs", "Small Group"];
-
 function getBadgeColor(level?: string) {
   if (!level) return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
   const lvl = level.toLowerCase();
@@ -31,7 +29,7 @@ function getBadgeColor(level?: string) {
   if (lvl.includes("cardio")) {
     return "bg-purple-500/15 text-purple-400 border-purple-500/30";
   }
-  if (lvl.includes("100% féminin") || lvl.includes("100% feminin") || lvl.includes("féminin") || lvl.includes("feminin") || lvl.includes("femme") || lvl.includes("lady")) {
+  if (lvl.includes("100% féminin") || lvl.includes("100% feminin") || lvl.includes("féminin") || lvl.includes("femin") || lvl.includes("femme") || lvl.includes("lady")) {
     return "bg-pink-500/15 text-pink-400 border-pink-500/30";
   }
   if (lvl.includes("sparring") || lvl.includes("élite") || lvl.includes("elite") || lvl.includes("confirmé") || lvl.includes("confirme")) {
@@ -42,18 +40,31 @@ function getBadgeColor(level?: string) {
 
 interface PlanningSectionProps {
   initialScheduleData?: Record<Category, Record<Day, ScheduleCourse[]>>;
+  isSmallGroupActive?: boolean;
 }
 
-export default function PlanningSection({ initialScheduleData }: PlanningSectionProps = {}) {
+export default function PlanningSection({
+  initialScheduleData,
+  isSmallGroupActive = false,
+}: PlanningSectionProps = {}) {
   const scheduleData = initialScheduleData || defaultScheduleData;
+  const categories: Category[] = isSmallGroupActive
+    ? ["Collectifs", "Small Group"]
+    : ["Collectifs"];
+
   const [activeCategory, setActiveCategory] = useState<Category>("Collectifs");
   const [activeDay, setActiveDay] = useState<DayFilter>("Tous");
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [selectedDisciplineForModal, setSelectedDisciplineForModal] = useState<string | undefined>(undefined);
 
+  // Sécurisation : si la catégorie active est Small Group mais qu'il est inactif, forcer Collectifs
+  const currentCategory: Category = (activeCategory === "Small Group" && !isSmallGroupActive)
+    ? "Collectifs"
+    : activeCategory;
+
   // Jours ayant au moins un créneau dans la catégorie active
   const activeDays = days.filter(
-    (day) => scheduleData[activeCategory]?.[day]?.length > 0
+    (day) => scheduleData[currentCategory]?.[day]?.length > 0
   );
 
   const daysToRender = activeDay === "Tous" ? activeDays : [activeDay as Day];
@@ -75,31 +86,33 @@ export default function PlanningSection({ initialScheduleData }: PlanningSection
         </p>
       </div>
 
-      {/* Category Switcher Tabs */}
-      <div className="flex justify-center mb-6 sm:mb-8">
-        <div className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-xl max-w-md w-full">
-          {categories.map((category) => {
-            const isActive = activeCategory === category;
-            return (
-              <button
-                key={category}
-                onClick={() => {
-                  setActiveCategory(category);
-                  setActiveDay("Tous");
-                }}
-                className={cn(
-                  "flex-1 py-3 px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer text-center",
-                  isActive
-                    ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/25 font-black"
-                    : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-                )}
-              >
-                {category}
-              </button>
-            );
-          })}
+      {/* Category Switcher Tabs (Affiché uniquement si plus d'une catégorie est disponible) */}
+      {categories.length > 1 && (
+        <div className="flex justify-center mb-6 sm:mb-8">
+          <div className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-xl max-w-md w-full">
+            {categories.map((category) => {
+              const isActive = currentCategory === category;
+              return (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setActiveCategory(category);
+                    setActiveDay("Tous");
+                  }}
+                  className={cn(
+                    "flex-1 py-3 px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer text-center",
+                    isActive
+                      ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/25 font-black"
+                      : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+                  )}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Days Filter (Pills) */}
       <div className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-12">

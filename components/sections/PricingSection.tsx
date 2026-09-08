@@ -114,17 +114,34 @@ const defaultPricing: Record<
   },
 };
 
-const categories: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
+interface PricingSectionProps {
+  isSmallGroupActive?: boolean;
+}
+
+const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
   { id: "Small Group", label: "Small Group", icon: Users, badge: "Recommandé" },
   { id: "Collectifs", label: "Collectifs", icon: Layers, badge: "Accès libre" },
   { id: "Cours Privés", label: "Cours Privés", icon: ShieldCheck, badge: "Sur-mesure" },
 ];
 
-export default function PricingSection() {
+export default function PricingSection({ isSmallGroupActive = false }: PricingSectionProps = {}) {
   const supabase = createClient();
-  const [activeCategory, setActiveCategory] = useState<PlanCategory>("Small Group");
+
+  const categories = isSmallGroupActive
+    ? ALL_CATEGORIES
+    : ALL_CATEGORIES.filter((cat) => cat.id !== "Small Group");
+
+  const [activeCategory, setActiveCategory] = useState<PlanCategory>(
+    isSmallGroupActive ? "Small Group" : "Collectifs"
+  );
   const [activeCycle, setActiveCycle] = useState<BillingCycle>("Annuel");
   const [livePricing, setLivePricing] = useState(defaultPricing);
+
+  // Sécurisation : si la catégorie active est Small Group alors qu'il est inactif, forcer Collectifs
+  const currentCategory: PlanCategory =
+    !isSmallGroupActive && activeCategory === "Small Group"
+      ? "Collectifs"
+      : activeCategory;
 
   // Synchronisation dynamique avec public.plans (Supabase)
   useEffect(() => {
@@ -175,7 +192,9 @@ export default function PricingSection() {
     syncPlans();
   }, [supabase]);
 
-  const currentPlan = livePricing[activeCategory][activeCycle];
+  const currentPlan =
+    livePricing[currentCategory]?.[activeCycle] ||
+    defaultPricing["Collectifs"][activeCycle];
 
   return (
     <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">
@@ -199,7 +218,7 @@ export default function PricingSection() {
         <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl w-full">
           {categories.map((cat) => {
             const Icon = cat.icon;
-            const isActive = activeCategory === cat.id;
+            const isActive = currentCategory === cat.id;
 
             return (
               <button
@@ -247,7 +266,7 @@ export default function PricingSection() {
       <div className="max-w-3xl mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${activeCategory}-${activeCycle}`}
+            key={`${currentCategory}-${activeCycle}`}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
@@ -263,7 +282,7 @@ export default function PricingSection() {
               <div className="md:col-span-2 space-y-5">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="px-3 py-1 rounded-full bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider">
-                    FORMULE {activeCategory.toUpperCase()}
+                    FORMULE {currentCategory.toUpperCase()}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase border bg-brand-blue/20 text-brand-blue border-brand-blue/30">
                     {activeCycle === "Annuel" ? "12 Mois" : "Mensuel"}
@@ -275,7 +294,7 @@ export default function PricingSection() {
 
                 <div>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                    {activeCategory}
+                    {currentCategory}
                   </h2>
                   <p className="text-xs sm:text-sm text-brand-white/70 mt-1">
                     {currentPlan.subtitle} • Accompagnement pédagogique complet

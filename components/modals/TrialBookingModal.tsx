@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import {
   getAvailableTrialSessions,
+  isSmallGroupServiceActive,
   type TrialSessionOption,
 } from "@/lib/supabase/trial-bookings";
 
@@ -80,6 +81,7 @@ export default function TrialBookingModal({
   const [step, setStep] = useState<Step>(1);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessions, setSessions] = useState<TrialSessionOption[]>([]);
+  const [isSmallGroupActive, setIsSmallGroupActive] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // 2. Données sélectionnées par le prospect
@@ -107,20 +109,29 @@ export default function TrialBookingModal({
     time: string;
   } | null>(null);
 
-  // Chargement des créneaux réels dès l'ouverture de la modale
+  // Chargement des créneaux réels et vérification du statut des services dès l'ouverture de la modale
   useEffect(() => {
     if (isOpen) {
       setStep(1);
-      setSelectedType(null);
+      setSelectedType(preselectedType || null);
       setSelectedDiscipline("");
       setSelectedSessionId("");
       setSubmitError(null);
       setLoadingSessions(true);
       setLoadError(null);
 
-      getAvailableTrialSessions(supabase)
-        .then((data) => {
+      Promise.all([
+        getAvailableTrialSessions(supabase),
+        isSmallGroupServiceActive(supabase),
+      ])
+        .then(([data, smallGroupActive]) => {
           setSessions(data);
+          setIsSmallGroupActive(smallGroupActive);
+
+          // Si Small Group est désactivé, réinitialiser tout pré-choix Small Group
+          if (!smallGroupActive && preselectedType === "small_group") {
+            setSelectedType(null);
+          }
         })
         .catch((err) => {
           console.error("Erreur chargement créneaux d'essai :", err);
@@ -130,7 +141,7 @@ export default function TrialBookingModal({
           setLoadingSessions(false);
         });
     }
-  }, [isOpen, supabase]);
+  }, [isOpen, supabase, preselectedType]);
 
   // Fermeture sur touche Échap
   useEffect(() => {
@@ -228,6 +239,9 @@ export default function TrialBookingModal({
 
   // Étape 1 ➔ Étape 2 : Choix du format
   const handleSelectType = (type: "small_group" | "collective") => {
+    if (type === "small_group" && !isSmallGroupActive) {
+      return;
+    }
     setSelectedType(type);
     setSelectedDiscipline("");
     setSelectedSessionId("");
@@ -283,6 +297,11 @@ export default function TrialBookingModal({
   const handleConfirmBooking = async () => {
     if (!selectedSessionId || isSubmitting) return;
 
+    if (selectedSession?.type === "small_group" && !isSmallGroupActive) {
+      setSubmitError("Le service Small Group est actuellement indisponible.");
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -317,6 +336,7 @@ export default function TrialBookingModal({
           SESSION_ALREADY_STARTED: "Cette séance a déjà débuté.",
           PRIVATE_SESSION_NOT_ALLOWED: "Les cours privés ne sont pas éligibles aux cours d'essai.",
           INVALID_SESSION_TYPE: "Ce type de séance n'est pas éligible aux cours d'essai.",
+          SERVICE_UNAVAILABLE: "Le service Small Group est actuellement désactivé et indisponible à la réservation.",
           ALREADY_BOOKED_THIS_SESSION: "Tu as déjà réservé un cours d'essai pour ce créneau !",
           ACTIVE_TRIAL_ALREADY_EXISTS:
             "Tu as déjà un cours d'essai actif à venir. Contacte le club pour modifier ton créneau.",
@@ -486,47 +506,54 @@ export default function TrialBookingModal({
                 ───────────────────────────────────────────────────────────────── */}
             {!loadingSessions && !loadError && step === 1 && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Format A : SMALL GROUP */}
-                  <button
-                    type="button"
-                    onClick={() => handleSelectType("small_group")}
-                    className={cn(
-                      "group p-6 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
-                      selectedType === "small_group"
-                        ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
-                        : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
-                    )}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Users size={24} />
+                <div
+                  className={cn(
+                    "grid gap-4",
+                    isSmallGroupActive ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 max-w-xl mx-auto"
+                  )}
+                >
+                  {/* Format A : SMALL GROUP (Affiché UNIQUEMENT si le service est actif) */}
+                  {isSmallGroupActive && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectType("small_group")}
+                      className={cn(
+                        "group p-6 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
+                        selectedType === "small_group"
+                          ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
+                          : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
+                      )}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <Users size={24} />
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[10px] font-heading font-bold uppercase text-brand-white/70">
+                            {availableCountsByType.small_group} créneau{availableCountsByType.small_group > 1 ? "x" : ""}
+                          </span>
                         </div>
-                        <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[10px] font-heading font-bold uppercase text-brand-white/70">
-                          {availableCountsByType.small_group} créneau{availableCountsByType.small_group > 1 ? "x" : ""}
-                        </span>
-                      </div>
 
-                      <div>
-                        <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                          Small Group
-                        </h3>
-                        <p className="text-xs text-brand-white/50 font-medium mt-0.5">
-                          Séance en petit groupe • 20 pers. max
+                        <div>
+                          <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
+                            Small Group
+                          </h3>
+                          <p className="text-xs text-brand-white/50 font-medium mt-0.5">
+                            Séance en petit groupe • 20 pers. max
+                          </p>
+                        </div>
+
+                        <p className="text-xs text-brand-white/70 leading-relaxed">
+                          Encadrement rapproché par le coach, perfectionnement technique, suivi individualisé et haute intensité.
                         </p>
                       </div>
 
-                      <p className="text-xs text-brand-white/70 leading-relaxed">
-                        Encadrement rapproché par le coach, perfectionnement technique, suivi individualisé et haute intensité.
-                      </p>
-                    </div>
-
-                    <div className="pt-4 mt-4 border-t border-brand-white/5 flex items-center justify-between text-xs font-heading font-bold uppercase text-brand-blue">
-                      <span>Choisir ce format</span>
-                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </button>
+                      <div className="pt-4 mt-4 border-t border-brand-white/5 flex items-center justify-between text-xs font-heading font-bold uppercase text-brand-blue">
+                        <span>Choisir ce format</span>
+                        <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </button>
+                  )}
 
                   {/* Format B : COURS COLLECTIF */}
                   <button
@@ -574,7 +601,8 @@ export default function TrialBookingModal({
                 <div className="p-3.5 rounded-xl bg-brand-white/5 border border-brand-white/10 flex items-center gap-2.5 text-[11px] text-brand-white/50">
                   <Shield size={14} className="shrink-0 text-brand-blue" />
                   <span>
-                    Les cours d&apos;essai gratuits sont proposés exclusivement sur nos formats collectifs et Small Group.
+                    Les cours d&apos;essai gratuits sont proposés exclusivement sur nos formats{" "}
+                    {isSmallGroupActive ? "collectifs et Small Group." : "collectifs."}
                   </span>
                 </div>
               </div>

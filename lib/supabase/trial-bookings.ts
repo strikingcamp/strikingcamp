@@ -73,8 +73,33 @@ const MONTH_NAMES_FR = [
 ];
 
 /**
+ * Vérifie si le service Small Group est actif dans public.service_settings.
+ * Source unique de vérité pour la disponibilité du Small Group.
+ */
+export async function isSmallGroupServiceActive(
+  supabase: SupabaseClient
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from("service_settings")
+      .select("is_active")
+      .eq("service_key", "small_group")
+      .maybeSingle();
+
+    if (error || !data) {
+      return false;
+    }
+
+    return Boolean(data.is_active);
+  } catch (err) {
+    console.error("[isSmallGroupServiceActive] Erreur lecture service_settings :", err);
+    return false;
+  }
+}
+
+/**
  * Récupère l'ensemble des créneaux réels futurs éligibles aux cours d'essai.
- * - Filtre strict : futures (starts_at > NOW()), actives (is_active = true), collectives ou small group (pas de cours privés).
+ * - Filtre strict : futures (starts_at > NOW()), actives (is_active = true), collectives ou small group (si service actif).
  * - Calcule les places restantes réelles (capacité - bookings confirmés - trial_bookings confirmés).
  * - Utilise strictement le fuseau Europe/Paris pour le formatage.
  */
@@ -84,11 +109,17 @@ export async function getAvailableTrialSessions(
   try {
     const nowIso = new Date().toISOString();
 
-    // 1. Récupération des séances futures collectives et small group
+    // 0. Vérification du statut du service Small Group
+    const smallGroupActive = await isSmallGroupServiceActive(supabase);
+    const allowedTypes = smallGroupActive
+      ? ["collective", "small_group"]
+      : ["collective"];
+
+    // 1. Récupération des séances futures selon les types autorisés
     const { data: sessions, error: sessionsErr } = await supabase
       .from("class_sessions")
       .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
-      .in("type", ["collective", "small_group"])
+      .in("type", allowedTypes)
       .eq("is_active", true)
       .gt("starts_at", nowIso)
       .order("starts_at", { ascending: true })
