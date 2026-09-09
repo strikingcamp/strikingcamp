@@ -86,15 +86,6 @@ const PRIVATE_LEVELS = [
   { name: "Confirmé", desc: "Intensité combat, sparring guidé, précision et stratégie" },
 ];
 
-const OFFICIAL_PRIVATE_HOURS = [
-  { start: "08:00", end: "08:50" },
-  { start: "09:00", end: "09:50" },
-  { start: "10:00", end: "10:50" },
-  { start: "14:00", end: "14:50" },
-  { start: "15:00", end: "15:50" },
-  { start: "16:00", end: "16:50" },
-];
-
 function getCurrentWeekMonday(): Date {
   const parisTodayStr = formatToParisDate(new Date());
   const [year, month, day] = parisTodayStr.split("-").map(Number);
@@ -211,7 +202,7 @@ function generateSlotsFromData(
         const isCol = rawType === "collective" || rawType === "collectif";
         const category: Category = isPriv ? "Cours privés" : isCol ? "Collectifs" : "Small Group";
 
-        const maxCapacity = s.max_capacity ?? (isPriv ? 1 : isCol ? 35 : 20);
+        const maxCapacity = s.max_capacity ?? (isPriv ? 1 : 20);
 
         // Réservations confirmées associées à cette séance (class_session.id)
         const bookingsForSession = allConfirmedBookings.filter(
@@ -245,6 +236,8 @@ function generateSlotsFromData(
 
         const isOccupiedByOther = isPriv
           ? (bookingsForSession.some((b) => b.user_id !== currentUserId) || (bookedCount >= 1 && !isBookedByMe))
+          : isCol
+          ? false
           : (bookedCount >= maxCapacity && !isBookedByMe);
 
         const endsAtIso = s.ends_at || null;
@@ -275,67 +268,9 @@ function generateSlotsFromData(
         });
       }
 
-      // Compléter les créneaux de cours privés si non encore créés en DB
-      const hasPrivate = slots.some((sl) => sl.category === "Cours privés");
-      if (!hasPrivate) {
-        for (const day of DAYS_ORDER) {
-          const dStr = dayDateMap[day]?.dateStr || defaultMondayStr;
-          OFFICIAL_PRIVATE_HOURS.forEach((h, idx) => {
-            const isMine = userBookingsList.some(
-              (b) => b.sessionType === "Cours Privé" && b.day === day && b.time.startsWith(h.start)
-            );
-            const isOcc = false;
-
-            slots.push({
-              id: `priv_${day}_${idx}`,
-              category: "Cours privés",
-              day,
-              dateStr: dStr,
-              startTime: h.start,
-              endTime: h.end,
-              discipline: "Cours Privé",
-              level: "Individuel (50 min)",
-              maxCapacity: 1,
-              bookedCount: isOcc || isMine ? 1 : 0,
-              isOccupiedByOther: isOcc,
-              isBookedByMe: isMine,
-              startsAtIso: `${dStr}T${h.start}:00`,
-            });
-          });
-        }
-      }
-
       console.log("[MemberPlanningView] Total slots générés depuis les class_sessions réelles :", slots.length);
       return slots;
     }
-  }
-
-  // Fallback initial en attendant le chargement
-  console.warn("[MemberPlanningView] Fallback initial actif (attente des données Supabase)");
-  for (const day of DAYS_ORDER) {
-    const dStr = dayDateMap[day]?.dateStr || defaultMondayStr;
-    OFFICIAL_PRIVATE_HOURS.forEach((h, idx) => {
-      const isMine = userBookingsList.some(
-        (b) => b.sessionType === "Cours Privé" && b.day === day && b.time.startsWith(h.start)
-      );
-      const isOcc = false;
-
-      slots.push({
-        id: `priv_${day}_${idx}`,
-        category: "Cours privés",
-        day,
-        dateStr: dStr,
-        startTime: h.start,
-        endTime: h.end,
-        discipline: "Cours Privé",
-        level: "Individuel (50 min)",
-        maxCapacity: 1,
-        bookedCount: isOcc || isMine ? 1 : 0,
-        isOccupiedByOther: isOcc,
-        isBookedByMe: isMine,
-        startsAtIso: `${dStr}T${h.start}:00`,
-      });
-    });
   }
 
   return slots;

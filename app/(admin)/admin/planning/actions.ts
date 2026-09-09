@@ -176,6 +176,69 @@ export async function getAdminPlanningDataServerAction(): Promise<AdminPlanningD
   }
 }
 
+import { parisLocalToUtcIso } from "@/lib/supabase/admin";
+
+/**
+ * Synchronise précisément les séances class_sessions pour un template donné sur les 12 prochaines semaines.
+ * Gère avec exactitude le fuseau Europe/Paris (UTC+2 été / UTC+1 hiver).
+ */
+async function syncClassSessionsForTemplate(
+  adminSupabase: any,
+  template: RecurringTemplateItem
+) {
+  const currentMondayStr = getCurrentWeekMondayIso();
+  const [mYear, mMonth, mDay] = currentMondayStr.split("-").map(Number);
+
+  for (let w = 0; w < 12; w++) {
+    const d = new Date(Date.UTC(mYear, mMonth - 1, mDay + (w * 7) + template.day_of_week, 12, 0, 0));
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    const startTime = template.start_time.slice(0, 5);
+    const endTime = template.end_time ? template.end_time.slice(0, 5) : `${startTime}:50`;
+
+    const starts_at = parisLocalToUtcIso(dateStr, startTime);
+    const ends_at = parisLocalToUtcIso(dateStr, endTime);
+
+    // Vérifier si une séance existe déjà
+    let query = adminSupabase.from("class_sessions").select("id, is_active, template_id").eq("starts_at", starts_at);
+    if (template.type === "private") {
+      query = query.eq("type", "private");
+    } else {
+      query = query.eq("template_id", template.id);
+    }
+    const { data: existing } = await query.maybeSingle();
+
+    if (existing) {
+      await adminSupabase
+        .from("class_sessions")
+        .update({
+          template_id: template.id,
+          discipline: template.discipline,
+          level: template.level,
+          max_capacity: template.max_capacity,
+          is_active: template.is_active,
+        })
+        .eq("id", existing.id);
+    } else if (template.is_active) {
+      await adminSupabase
+        .from("class_sessions")
+        .insert({
+          template_id: template.id,
+          discipline: template.discipline,
+          type: template.type,
+          level: template.level,
+          starts_at,
+          ends_at,
+          max_capacity: template.max_capacity,
+          is_active: true,
+        });
+    }
+  }
+}
+
 function normalizeTime(timeStr: string): string {
   const trimmed = timeStr.trim();
   if (trimmed.length === 5) {
@@ -229,7 +292,14 @@ export async function createRecurringTemplateServerAction(payload: {
       };
     }
 
-    // 2. Déclenchement de la génération immédiate sur l'horizon pour instancier les séances
+    // 2. Synchronisation directe des 12 semaines
+    try {
+      await syncClassSessionsForTemplate(adminSupabase, newTmpl as RecurringTemplateItem);
+    } catch (syncErr) {
+      console.warn("[createRecurringTemplateServerAction] Note synchronisation directe :", syncErr);
+    }
+
+    // 3. Déclenchement de la génération immédiate sur l'horizon pour instancier les séances
     try {
       await adminSupabase.rpc("generate_recurring_schedule", {
         p_start_date: getCurrentWeekMondayIso(),
@@ -252,6 +322,7 @@ export async function createRecurringTemplateServerAction(payload: {
     return { success: false, error: err?.message || "Erreur serveur inattendue." };
   }
 }
+
 
 /**
  * Met à jour un modèle récurrent dans recurring_schedule_templates.
@@ -382,7 +453,14 @@ export async function updateRecurringTemplateServerAction(
           .in("id", unbookedSessionIds);
       }
 
-      // -> Régénérer immédiatement les nouvelles occurrences au nouvel horaire pour les 12 prochaines semaines
+      // -> Synchroniser directement les nouvelles occurrences au nouvel horaire pour les 12 prochaines semaines
+      try {
+        await syncClassSessionsForTemplate(adminSupabase, updatedTmpl as RecurringTemplateItem);
+      } catch (syncErr) {
+        console.warn("[updateRecurringTemplateServerAction] Note synchronisation directe :", syncErr);
+      }
+
+      // -> Déclencher la génération d'horizon
       try {
         await adminSupabase.rpc("generate_recurring_schedule", {
           p_start_date: getCurrentWeekMondayIso(),
@@ -406,6 +484,12 @@ export async function updateRecurringTemplateServerAction(
             .update(sessionPatch)
             .in("id", unbookedSessionIds);
         }
+      }
+
+      try {
+        await syncClassSessionsForTemplate(adminSupabase, updatedTmpl as RecurringTemplateItem);
+      } catch (syncErr) {
+        console.warn("[updateRecurringTemplateServerAction] Note sync in situ :", syncErr);
       }
     }
 
@@ -434,6 +518,46 @@ export async function toggleRecurringTemplateStatusServerAction(
 ): Promise<MutationResult> {
   return updateRecurringTemplateServerAction(templateId, { is_active: isActive }, true);
 }
+
+/**
+ * Active ou désactive tous les créneaux d'un type donné pour une journée entière (ex: fermer/ouvrir les cours privés le Samedi)
+ */
+export async function toggleDayTemplatesStatusServerAction(
+  dayOfWeek: number,
+  type: SessionType,
+  isActive: boolean
+): Promise<MutationResult> {
+  try {
+    await verifyAdminAuth();
+    const adminSupabase = createAdminClient();
+
+    const { data: tmpls, error } = await adminSupabase
+      .from("recurring_schedule_templates")
+      .select("*")
+      .eq("day_of_week", dayOfWeek)
+      .eq("type", type);
+
+    if (error || !tmpls) {
+      return { success: false, error: error?.message || "Erreur lors de la récupération des créneaux du jour." };
+    }
+
+    for (const t of tmpls) {
+      await updateRecurringTemplateServerAction(t.id, { is_active: isActive }, true);
+    }
+
+    revalidatePath("/planning");
+    revalidatePath("/admin/planning");
+    revalidatePath("/membre/planning");
+
+    return {
+      success: true,
+      message: `Disponibilité du jour mise à jour (${isActive ? "Ouvert" : "Fermé"}).`,
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Erreur lors du changement de statut journalier." };
+  }
+}
+
 
 /**
  * Supprime un modèle récurrent (ou le désactive si des séances avec historique existent)

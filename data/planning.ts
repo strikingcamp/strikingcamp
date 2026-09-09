@@ -44,7 +44,6 @@ export const OFFICIAL_COLLECTIVE_SESSIONS: CollectiveScheduleItem[] = [
     endTime: "19:00",
     discipline: "Kick Boxing",
     level: "Tous niveaux (Accès libre)",
-    maxCapacity: 35,
     isActive: true,
   },
   {
@@ -54,7 +53,6 @@ export const OFFICIAL_COLLECTIVE_SESSIONS: CollectiveScheduleItem[] = [
     endTime: "19:00",
     discipline: "Kick Boxing",
     level: "Tous niveaux (Accès libre)",
-    maxCapacity: 35,
     isActive: true,
   },
   {
@@ -64,7 +62,6 @@ export const OFFICIAL_COLLECTIVE_SESSIONS: CollectiveScheduleItem[] = [
     endTime: "11:00",
     discipline: "Kick Boxing",
     level: "Tous niveaux (Accès libre)",
-    maxCapacity: 35,
     isActive: true,
   },
 ];

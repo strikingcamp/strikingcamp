@@ -32,6 +32,7 @@ import {
   createRecurringTemplateServerAction,
   updateRecurringTemplateServerAction,
   toggleRecurringTemplateStatusServerAction,
+  toggleDayTemplatesStatusServerAction,
   deleteRecurringTemplateServerAction,
   updateSingleDatedSessionServerAction,
   toggleSingleSessionStatusServerAction,
@@ -50,10 +51,12 @@ type LevelCategory = "Fondamentaux" | "Drills" | "Cardio" | "100% féminin" | "S
 
 interface PrivateSlotConfig {
   id: string;
+  templateIds: string[];
   start: string;
   end: string;
   durationMin: number;
   isActive: boolean;
+  dayIndices: number[];
 }
 
 interface SmallGroupSessionItem {
@@ -100,12 +103,12 @@ const INITIAL_PRIVATE_DAYS: Record<DayName, boolean> = {
 };
 
 const INITIAL_PRIVATE_SLOTS: PrivateSlotConfig[] = [
-  { id: "priv_slot_1", start: "08:00", end: "08:50", durationMin: 50, isActive: true },
-  { id: "priv_slot_2", start: "09:00", end: "09:50", durationMin: 50, isActive: true },
-  { id: "priv_slot_3", start: "10:00", end: "10:50", durationMin: 50, isActive: true },
-  { id: "priv_slot_4", start: "14:00", end: "14:50", durationMin: 50, isActive: true },
-  { id: "priv_slot_5", start: "15:00", end: "15:50", durationMin: 50, isActive: true },
-  { id: "priv_slot_6", start: "16:00", end: "16:50", durationMin: 50, isActive: true },
+  { id: "priv_slot_1", templateIds: [], start: "08:00", end: "08:50", durationMin: 50, isActive: true, dayIndices: [0, 1, 2, 3, 4, 5] },
+  { id: "priv_slot_2", templateIds: [], start: "09:00", end: "09:50", durationMin: 50, isActive: true, dayIndices: [0, 1, 2, 3, 4, 5] },
+  { id: "priv_slot_3", templateIds: [], start: "10:00", end: "10:50", durationMin: 50, isActive: true, dayIndices: [0, 1, 2, 3, 4, 5] },
+  { id: "priv_slot_4", templateIds: [], start: "14:00", end: "14:50", durationMin: 50, isActive: true, dayIndices: [0, 1, 2, 3, 4, 5] },
+  { id: "priv_slot_5", templateIds: [], start: "15:00", end: "15:50", durationMin: 50, isActive: true, dayIndices: [0, 1, 2, 3, 4, 5] },
+  { id: "priv_slot_6", templateIds: [], start: "16:00", end: "16:50", durationMin: 50, isActive: true, dayIndices: [0, 1, 2, 3, 4, 5] },
 ];
 
 const PRIVATE_DISCIPLINES = [
@@ -151,9 +154,9 @@ const FALLBACK_SMALL_GROUP: SmallGroupSessionItem[] = [
 
 // Fallback initial officiel Collectifs (3 séances)
 const FALLBACK_COLLECTIVE: CollectiveSessionItem[] = [
-  { id: "col_1", day: "Mardi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", maxCapacity: 35, isActive: true },
-  { id: "col_2", day: "Vendredi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", maxCapacity: 35, isActive: true },
-  { id: "col_3", day: "Samedi", startTime: "10:00", endTime: "11:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", maxCapacity: 35, isActive: true },
+  { id: "col_1", day: "Mardi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", isActive: true },
+  { id: "col_2", day: "Vendredi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", isActive: true },
+  { id: "col_3", day: "Samedi", startTime: "10:00", endTime: "11:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", isActive: true },
 ];
 
 function getLevelBadgeClasses(level: string): string {
@@ -225,10 +228,93 @@ export default function AdminPlanningView({
     return FALLBACK_COLLECTIVE;
   }, [initialTemplates]);
 
+  // 1. Initialisation dynamique des Cours Privés depuis Supabase
+  const initialPrivDaysFromDb: Record<DayName, boolean> = useMemo(() => {
+    const privTmpl = initialTemplates.filter((t) => t.type === "private");
+    if (privTmpl.length > 0) {
+      const daysMap: Record<DayName, boolean> = {
+        Lundi: false,
+        Mardi: false,
+        Mercredi: false,
+        Jeudi: false,
+        Vendredi: false,
+        Samedi: false,
+      };
+      for (const t of privTmpl) {
+        const dName = indexToDayName(t.day_of_week);
+        if (t.is_active) {
+          daysMap[dName] = true;
+        }
+      }
+      return daysMap;
+    }
+    return INITIAL_PRIVATE_DAYS;
+  }, [initialTemplates]);
+
+  const initialPrivSlotsFromDb: PrivateSlotConfig[] = useMemo(() => {
+    const privTmpl = initialTemplates.filter((t) => t.type === "private");
+    if (privTmpl.length > 0) {
+      const map = new Map<string, {
+        templateIds: string[];
+        start: string;
+        end: string;
+        durationMin: number;
+        isActive: boolean;
+        dayIndices: number[];
+      }>();
+
+      for (const t of privTmpl) {
+        const start = t.start_time.slice(0, 5);
+        const end = t.end_time.slice(0, 5);
+        const [sH, sM] = start.split(":").map(Number);
+        const [eH, eM] = end.split(":").map(Number);
+        const durationMin = (eH * 60 + eM) - (sH * 60 + sM);
+
+        const existing = map.get(start);
+        if (existing) {
+          existing.templateIds.push(t.id);
+          existing.dayIndices.push(t.day_of_week);
+          if (t.is_active) existing.isActive = true;
+        } else {
+          map.set(start, {
+            templateIds: [t.id],
+            start,
+            end,
+            durationMin: durationMin > 0 ? durationMin : 50,
+            isActive: t.is_active,
+            dayIndices: [t.day_of_week],
+          });
+        }
+      }
+
+      const list = Array.from(map.values()).map((item, idx) => ({
+        id: item.templateIds[0] || `priv_slot_${idx + 1}`,
+        templateIds: item.templateIds,
+        start: item.start,
+        end: item.end,
+        durationMin: item.durationMin,
+        isActive: item.isActive,
+        dayIndices: item.dayIndices,
+      }));
+      list.sort((a, b) => a.start.localeCompare(b.start));
+      return list;
+    }
+
+    return INITIAL_PRIVATE_SLOTS;
+  }, [initialTemplates]);
+
   // 1. État Cours Privés
-  const [privateDays, setPrivateDays] = useState<Record<DayName, boolean>>(INITIAL_PRIVATE_DAYS);
-  const [privateSlots, setPrivateSlots] = useState<PrivateSlotConfig[]>(INITIAL_PRIVATE_SLOTS);
+  const [privateDays, setPrivateDays] = useState<Record<DayName, boolean>>(initialPrivDaysFromDb);
+  const [privateSlots, setPrivateSlots] = useState<PrivateSlotConfig[]>(initialPrivSlotsFromDb);
   const [privateDisciplines] = useState(PRIVATE_DISCIPLINES);
+
+  useEffect(() => {
+    setPrivateDays(initialPrivDaysFromDb);
+  }, [initialPrivDaysFromDb]);
+
+  useEffect(() => {
+    setPrivateSlots(initialPrivSlotsFromDb);
+  }, [initialPrivSlotsFromDb]);
 
   // 2. État Small Group & Collectifs (alimentés par Supabase)
   const [smallGroupSessions, setSmallGroupSessions] = useState<SmallGroupSessionItem[]>(initialSgFromDb);
@@ -285,7 +371,7 @@ export default function AdminPlanningView({
   const [colFormEnd, setColFormEnd] = useState("19:00");
   const [colFormDiscipline, setColFormDiscipline] = useState("Kick Boxing");
   const [colFormLevel, setColFormLevel] = useState("Tous niveaux (Accès libre)");
-  const [colFormCapacity, setColFormCapacity] = useState(35);
+  const [colFormCapacity, setColFormCapacity] = useState(20);
 
   // Modal Édition Collectifs
   const [editingCollectiveSession, setEditingCollectiveSession] = useState<CollectiveSessionItem | null>(null);
@@ -312,28 +398,212 @@ export default function AdminPlanningView({
     }
   };
 
+  // Actions Cours Privés persistées dans Supabase
+  const togglePrivateDay = async (day: DayName) => {
+    const dayIndex = dayNameToIndex(day);
+    const currentStatus = privateDays[day];
+    const newStatus = !currentStatus;
+
+    setPrivateDays((prev) => ({ ...prev, [day]: newStatus }));
+    setIsSubmitting(true);
+    try {
+      const res = await toggleDayTemplatesStatusServerAction(dayIndex, "private", newStatus);
+      if (res.success) {
+        showNotification(`Disponibilité ${day} mise à jour.`);
+        router.refresh();
+      } else {
+        setPrivateDays((prev) => ({ ...prev, [day]: currentStatus }));
+        showNotification(res.error || "Erreur lors de la mise à jour.", "error");
+      }
+    } catch (err: any) {
+      setPrivateDays((prev) => ({ ...prev, [day]: currentStatus }));
+      showNotification(err?.message || "Erreur inattendue.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const togglePrivateSlot = async (slotId: string) => {
+    const slot = privateSlots.find((s) => s.id === slotId);
+    if (!slot) return;
+    const newStatus = !slot.isActive;
+
+    setPrivateSlots((prev) => prev.map((s) => (s.id === slotId ? { ...s, isActive: newStatus } : s)));
+    setIsSubmitting(true);
+    try {
+      if (slot.templateIds && slot.templateIds.length > 0) {
+        let hasError = false;
+        for (const tmplId of slot.templateIds) {
+          const res = await toggleRecurringTemplateStatusServerAction(tmplId, newStatus);
+          if (!res.success) hasError = true;
+        }
+        if (!hasError) {
+          showNotification(`Créneau ${slot.start} → ${slot.end} ${newStatus ? "activé" : "désactivé"}.`);
+          router.refresh();
+        } else {
+          showNotification("Certains créneaux n'ont pas pu être modifiés.", "error");
+        }
+      } else {
+        showNotification("Créneau privé mis à jour.");
+      }
+    } catch (err: any) {
+      showNotification(err?.message || "Erreur serveur.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddExceptionalSlot = async () => {
+    setIsSubmitting(true);
+    try {
+      let createdCount = 0;
+      for (let dayIndex = 0; dayIndex < 6; dayIndex++) {
+        const dayName = indexToDayName(dayIndex);
+        if (privateDays[dayName]) {
+          const res = await createRecurringTemplateServerAction({
+            day_of_week: dayIndex,
+            start_time: newSlotStart,
+            end_time: newSlotEnd,
+            type: "private",
+            discipline: "Cours Privé",
+            level: "Individuel (50 min)",
+            max_capacity: 1,
+          });
+          if (res.success) createdCount++;
+        }
+      }
+      setIsAddSlotModalOpen(false);
+      showNotification(`Créneau privé (${newSlotStart} → ${newSlotEnd}) ajouté pour ${createdCount} jour(s).`);
+      router.refresh();
+    } catch (err: any) {
+      showNotification(err?.message || "Erreur lors de l'ajout.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveEditPrivateSlot = async (forceCascade = false) => {
+    if (!editingPrivateSlot) return;
+    setIsSubmitting(true);
+    try {
+      if (editingPrivateSlot.templateIds && editingPrivateSlot.templateIds.length > 0) {
+        let hadWarning = false;
+        let warningMessage = "";
+        let hasError = false;
+
+        for (const tmplId of editingPrivateSlot.templateIds) {
+          const tmpl = initialTemplates.find((t) => t.id === tmplId);
+          const dayOfWeek = tmpl ? tmpl.day_of_week : 0;
+
+          const res = await updateRecurringTemplateServerAction(
+            tmplId,
+            {
+              day_of_week: dayOfWeek,
+              start_time: editingPrivateSlot.start,
+              end_time: editingPrivateSlot.end,
+              discipline: "Cours Privé",
+              level: "Individuel (50 min)",
+              max_capacity: 1,
+              is_active: editingPrivateSlot.isActive,
+            },
+            forceCascade
+          );
+
+          if (res.hasBookings && !forceCascade) {
+            hadWarning = true;
+            warningMessage = res.message || "Des réservations futures existent sur ce créneau.";
+          } else if (!res.success) {
+            hasError = true;
+          }
+        }
+
+        if (hadWarning && !forceCascade) {
+          setPendingWarningModal({
+            message: warningMessage,
+            onConfirm: async () => {
+              setPendingWarningModal(null);
+              await handleSaveEditPrivateSlot(true);
+            },
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (!hasError) {
+          setEditingPrivateSlot(null);
+          showNotification("Créneau privé modifié et synchronisé avec succès.");
+          router.refresh();
+        } else {
+          showNotification("Erreur lors de l'enregistrement.", "error");
+        }
+      } else {
+        setPrivateSlots((prev) =>
+          prev.map((s) => (s.id === editingPrivateSlot.id ? editingPrivateSlot : s))
+        );
+        setEditingPrivateSlot(null);
+        showNotification("Créneau privé modifié.");
+      }
+    } catch (err: any) {
+      showNotification(err?.message || "Erreur serveur.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeletePrivateSlot = async (slotId: string) => {
+    const slot = privateSlots.find((s) => s.id === slotId) || editingPrivateSlot;
+    if (!slot) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce créneau de cours privés ?")) return;
+
+    setIsSubmitting(true);
+    try {
+      if (slot.templateIds && slot.templateIds.length > 0) {
+        for (const tmplId of slot.templateIds) {
+          await deleteRecurringTemplateServerAction(tmplId);
+        }
+        setEditingPrivateSlot(null);
+        showNotification("Créneau privé supprimé.");
+        router.refresh();
+      } else {
+        setPrivateSlots((prev) => prev.filter((s) => s.id !== slot.id));
+        setEditingPrivateSlot(null);
+        showNotification("Créneau supprimé.");
+      }
+    } catch (err: any) {
+      showNotification(err?.message || "Erreur lors de la suppression.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Toggle Actif / Désactivé pour Small Group
   const toggleSgSession = async (id: string) => {
     const current = smallGroupSessions.find((s) => s.id === id);
     if (!current) return;
     const newStatus = !current.isActive;
 
-    // Optimistic UI
-    setSmallGroupSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: newStatus } : s)));
+    setSmallGroupSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, isActive: newStatus } : s))
+    );
     setIsSubmitting(true);
 
     try {
       const res = await toggleRecurringTemplateStatusServerAction(id, newStatus);
       if (res.success) {
-        showNotification(`Séance ${current.discipline} (${current.day}) ${newStatus ? "activée" : "désactivée"}.`);
+        showNotification(
+          `Séance Small Group ${current.discipline} (${current.day}) ${newStatus ? "activée" : "désactivée"}.`
+        );
         router.refresh();
       } else {
-        // Rollback
-        setSmallGroupSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s)));
-        showNotification(res.error || "Impossible de modifier le statut.", "error");
+        setSmallGroupSessions((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s))
+        );
+        showNotification(res.error || "Erreur lors de la modification.", "error");
       }
     } catch (err: any) {
-      setSmallGroupSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s)));
+      setSmallGroupSessions((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s))
+      );
       showNotification(err?.message || "Erreur serveur.", "error");
     } finally {
       setIsSubmitting(false);
@@ -554,7 +824,7 @@ export default function AdminPlanningView({
           end_time: editingCollectiveSession.endTime,
           discipline: editingCollectiveSession.discipline,
           level: editingCollectiveSession.level,
-          max_capacity: editingCollectiveSession.maxCapacity || 35,
+          max_capacity: editingCollectiveSession.maxCapacity || 20,
           is_active: editingCollectiveSession.isActive,
         },
         true
@@ -596,34 +866,6 @@ export default function AdminPlanningView({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Actions Cours Privés
-  const togglePrivateDay = (day: DayName) => {
-    setPrivateDays((prev) => ({ ...prev, [day]: !prev[day] }));
-    showNotification(`Disponibilité ${day} mise à jour.`);
-  };
-
-  const togglePrivateSlot = (id: string) => {
-    setPrivateSlots((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: !s.isActive } : s)));
-    showNotification("Créneau privé mis à jour.");
-  };
-
-  const handleAddExceptionalSlot = () => {
-    const newId = `priv_exp_${Date.now()}`;
-    setPrivateSlots((prev) => [
-      ...prev,
-      { id: newId, start: newSlotStart, end: newSlotEnd, durationMin: 50, isActive: true },
-    ]);
-    setIsAddSlotModalOpen(false);
-    showNotification(`Créneau exceptionnel (${newSlotStart} → ${newSlotEnd}) ajouté.`);
-  };
-
-  const handleSaveEditPrivateSlot = () => {
-    if (!editingPrivateSlot) return;
-    setPrivateSlots((prev) => prev.map((s) => (s.id === editingPrivateSlot.id ? editingPrivateSlot : s)));
-    setEditingPrivateSlot(null);
-    showNotification("Créneau privé modifié avec succès.");
   };
 
   // Groupement Small Group par jour
@@ -1081,7 +1323,7 @@ export default function AdminPlanningView({
                         <Clock size={13} />
                         {session.startTime} → {session.endTime}
                       </span>
-                      <span className="text-brand-white/40">• 60 min · Collectif ({session.maxCapacity || 35} places)</span>
+                      <span className="text-brand-white/40">• 60 min · Collectif · Capacité illimitée · Accès libre</span>
                     </div>
                   </div>
 
@@ -1284,20 +1526,34 @@ export default function AdminPlanningView({
               </div>
 
               {/* FOOTER */}
-              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
                 <button
-                  onClick={() => setEditingPrivateSlot(null)}
-                  className="flex-1 py-2.5 sm:py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                  type="button"
+                  onClick={() => handleDeletePrivateSlot(editingPrivateSlot.id)}
+                  disabled={isSubmitting}
+                  className="p-2.5 sm:p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl transition-all cursor-pointer shrink-0"
+                  title="Supprimer ce créneau"
                 >
-                  Annuler
+                  <Trash2 size={16} />
                 </button>
-                <button
-                  onClick={handleSaveEditPrivateSlot}
-                  className="flex-1 py-2.5 sm:py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
-                >
-                  <Check size={16} />
-                  <span>Enregistrer</span>
-                </button>
+
+                <div className="flex gap-2 flex-1 justify-end">
+                  <button
+                    onClick={() => setEditingPrivateSlot(null)}
+                    disabled={isSubmitting}
+                    className="py-2.5 px-3.5 sm:py-3 sm:px-5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => handleSaveEditPrivateSlot(false)}
+                    disabled={isSubmitting}
+                    className="py-2.5 px-4 sm:py-3 sm:px-6 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting && <Loader2 size={15} className="animate-spin" />}
+                    <span>Enregistrer</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -1539,12 +1795,12 @@ export default function AdminPlanningView({
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Capacité
                     </label>
-                    <input
-                      type="number"
-                      value={colFormCapacity}
-                      onChange={(e) => setColFormCapacity(Number(e.target.value))}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
+                    <div className="w-full bg-[#0a1120]/60 border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white/70 text-xs sm:text-sm font-semibold flex items-center justify-between">
+                      <span>Illimitée (Accès libre)</span>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#00d8ff]/10 text-[#00d8ff] border border-[#00d8ff]/20">
+                        Sans réservation
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -1897,12 +2153,12 @@ export default function AdminPlanningView({
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Capacité
                     </label>
-                    <input
-                      type="number"
-                      value={editingCollectiveSession.maxCapacity || 35}
-                      onChange={(e) => setEditingCollectiveSession({ ...editingCollectiveSession, maxCapacity: Number(e.target.value) })}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
+                    <div className="w-full bg-[#0a1120]/60 border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white/70 text-xs sm:text-sm font-semibold flex items-center justify-between">
+                      <span>Illimitée (Accès libre)</span>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#00d8ff]/10 text-[#00d8ff] border border-[#00d8ff]/20">
+                        Sans réservation
+                      </span>
+                    </div>
                   </div>
 
                   <div>

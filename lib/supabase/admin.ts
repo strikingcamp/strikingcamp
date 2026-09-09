@@ -792,6 +792,44 @@ export function formatToParisTime(isoOrDate: string | Date): string {
 }
 
 /**
+ * Convertit une date 'YYYY-MM-DD' et heure 'HH:mm' ou 'HH:mm:ss' (fuseau Europe/Paris)
+ * en chaîne ISO 8601 UTC absolue (ex: '2026-09-10T07:30:00.000Z').
+ * Gère automatiquement et fidèlement les transitions heure d'été (UTC+2) et d'hiver (UTC+1).
+ */
+export function parisLocalToUtcIso(dateStr: string, timeStr: string): string {
+  const formattedTime = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hour, minute, second] = formattedTime.split(":").map(Number);
+
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false,
+  });
+
+  const parts = dtf.formatToParts(guess);
+  const pYear = Number(parts.find((p) => p.type === "year")?.value || year);
+  const pMonth = Number(parts.find((p) => p.type === "month")?.value || month);
+  const pDay = Number(parts.find((p) => p.type === "day")?.value || day);
+  let pHour = Number(parts.find((p) => p.type === "hour")?.value || hour);
+  if (pHour === 24) pHour = 0;
+  const pMin = Number(parts.find((p) => p.type === "minute")?.value || minute);
+
+  const parisTimeAtGuess = Date.UTC(pYear, pMonth - 1, pDay, pHour, pMin, second);
+  const targetWallTime = Date.UTC(year, month - 1, day, hour, minute, second);
+  const diffMs = parisTimeAtGuess - guess.getTime();
+
+  return new Date(targetWallTime - diffMs).toISOString();
+}
+
+
+/**
  * Récupère toutes les séances (Small Group & Privées) et toutes les réservations d'une semaine.
  * SOURCE DE VÉRITÉ : Le planning officiel est défini par `recurring_schedule_templates`.
  * Les réservations réelles proviennent de `class_sessions` -> `bookings`.
