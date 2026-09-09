@@ -361,7 +361,6 @@ export default function MemberPlanningView() {
 
   // Onglets & Navigation
   const [activeCategory, setActiveCategory] = useState<Category>("Cours privés");
-  const [activeDayFilter, setActiveDayFilter] = useState<DayFilter>("Tous");
   const [weekOffset, setWeekOffset] = useState<number>(0);
 
   // Synchronisation automatique de la catégorie active selon les services activés
@@ -480,10 +479,36 @@ export default function MemberPlanningView() {
     return grouped;
   }, [slots, activeCategory]);
 
-  const activeDaysWithSessions = DAYS_ORDER.filter(day => weekSessionsByDay[day].length > 0);
-  const daysToRender = activeDayFilter === "Tous" ? activeDaysWithSessions : [activeDayFilter as DayName];
+  const activeDaysWithSessions = DAYS_ORDER.filter(day => (weekSessionsByDay[day]?.length || 0) > 0);
 
-  // Gestion du clic d'annulation (Règle stricte des 24 heures)
+  // Navigation jour par jour
+  const handlePrevDay = () => {
+    const currentIndex = DAYS_ORDER.indexOf(selectedDayName);
+    if (currentIndex > 0) {
+      setSelectedDayName(DAYS_ORDER[currentIndex - 1]);
+    } else {
+      setWeekOffset((prev) => prev - 1);
+      setSelectedDayName("Samedi");
+    }
+  };
+
+  const handleNextDay = () => {
+    const currentIndex = DAYS_ORDER.indexOf(selectedDayName);
+    if (currentIndex < DAYS_ORDER.length - 1) {
+      setSelectedDayName(DAYS_ORDER[currentIndex + 1]);
+    } else {
+      setWeekOffset((prev) => prev + 1);
+      setSelectedDayName("Lundi");
+    }
+  };
+
+  const handleResetToToday = () => {
+    setWeekOffset(0);
+    setSelectedDayName(getCurrentDayName());
+  };
+
+  const isTodaySelected = weekOffset === 0 && selectedDayName === getCurrentDayName();
+  const smallGroupSessionsForSelectedDay = weekSessionsByDay[selectedDayName] || [];
   const handleCancelClick = (session: DemoSlot) => {
     setBookingError(null);
     // Verrouillage absolu : les séances terminées ne peuvent pas être annulées
@@ -1118,7 +1143,7 @@ export default function MemberPlanningView() {
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          SECTION 2 : SMALL GROUP (23 COURS AVEC RÉSERVATION)
+          SECTION 2 : SMALL GROUP (AFFICHAGE PAR JOUR DU CALENDRIER RÉEL)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {activeCategory === "Small Group" && (
         <div className="space-y-6">
@@ -1134,178 +1159,223 @@ export default function MemberPlanningView() {
             </span>
           </div>
 
-          {/* Filtres par jour */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setActiveDayFilter("Tous")}
-              className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all cursor-pointer",
-                activeDayFilter === "Tous"
-                  ? "bg-[#00d8ff] text-black font-black"
-                  : "bg-brand-white/5 text-brand-white/60 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
-              )}
-            >
-              Tous les jours
-            </button>
+          {/* 1. SÉLECTEUR CALENDRIER DES 6 JOURS DE LA SEMAINE */}
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+            {DAYS_ORDER.map((day) => {
+              const isSel = selectedDayName === day;
+              const dayInfo = dayDateMap[day];
+              const daySessionsCount = weekSessionsByDay[day]?.length || 0;
+              const isToday = weekOffset === 0 && day === getCurrentDayName();
 
-            {DAYS_ORDER.map(day => {
-              const count = weekSessionsByDay[day].length;
               return (
                 <button
                   key={day}
-                  onClick={() => setActiveDayFilter(day)}
+                  onClick={() => setSelectedDayName(day)}
                   className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all cursor-pointer",
-                    activeDayFilter === day
-                      ? "bg-[#00d8ff] text-black font-black"
-                      : count > 0
-                      ? "bg-brand-white/5 text-brand-white/60 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
-                      : "bg-brand-white/5 text-brand-white/20 border border-brand-white/5 cursor-not-allowed"
+                    "p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 relative",
+                    isSel
+                      ? "bg-[#00d8ff] text-black font-black border-[#00d8ff] shadow-lg shadow-[#00d8ff]/20"
+                      : "bg-brand-white/5 border-brand-white/10 text-brand-white/70 hover:text-brand-white hover:bg-brand-white/10"
                   )}
                 >
-                  {day} ({count})
+                  {isToday && !isSel && (
+                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#00d8ff]" />
+                  )}
+                  <span
+                    className={cn(
+                      "text-[10px] uppercase font-bold tracking-wider",
+                      isSel ? "text-black/80" : "text-brand-white/50"
+                    )}
+                  >
+                    {day}
+                  </span>
+                  <span className="text-xl font-heading font-black leading-none">
+                    {dayInfo.dateNum}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[9px] uppercase font-semibold",
+                      isSel ? "text-black/70" : "text-[#00d8ff]"
+                    )}
+                  >
+                    {daySessionsCount} cours
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Liste des séances */}
-          <div className="space-y-6">
-            {activeDaysWithSessions.length === 0 && (
+          {/* 2. BARRE DE NAVIGATION JOUR PAR JOUR */}
+          <div className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+            <button
+              onClick={handlePrevDay}
+              className="p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-heading font-bold uppercase self-start sm:self-auto"
+            >
+              <ChevronLeft size={16} />
+              <span>Jour précédent</span>
+            </button>
+
+            <div className="text-center space-y-0.5">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-[#00d8ff]">
+                  {dayDateMap[selectedDayName].fullDateLabel} {mondayDate.getFullYear()}
+                </span>
+                {isTodaySelected && (
+                  <span className="px-2 py-0.5 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/40 text-[9px] font-heading font-black uppercase">
+                    Aujourd&apos;hui
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] text-brand-white/50 block">
+                {smallGroupSessionsForSelectedDay.length} séance{smallGroupSessionsForSelectedDay.length > 1 ? "s" : ""} programmée{smallGroupSessionsForSelectedDay.length > 1 ? "s" : ""}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {!isTodaySelected && (
+                <button
+                  onClick={handleResetToToday}
+                  className="px-3 py-2 rounded-xl bg-[#00d8ff]/15 hover:bg-[#00d8ff]/30 text-[#00d8ff] border border-[#00d8ff]/30 text-xs font-heading font-bold uppercase transition-colors cursor-pointer"
+                >
+                  Aujourd&apos;hui
+                </button>
+              )}
+
+              <button
+                onClick={handleNextDay}
+                className="p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-heading font-bold uppercase"
+              >
+                <span>Jour suivant</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* 3. LISTE DES COURS SMALL GROUP DU JOUR SÉLECTIONNÉ */}
+          <div className="space-y-4">
+            {smallGroupSessionsForSelectedDay.length === 0 ? (
               <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
                 <p className="text-sm font-heading font-bold uppercase text-brand-white">
-                  Aucune séance Small Group disponible cette semaine
+                  Aucun cours Small Group programmé pour le {dayDateMap[selectedDayName].fullDateLabel}
                 </p>
                 <p className="text-xs text-brand-white/50">
-                  Les créneaux de cours sont actualisés en direct par le club.
+                  Sélectionnez un autre jour dans le calendrier ou naviguez avec les flèches pour voir les séances disponibles.
                 </p>
               </div>
-            )}
-            {daysToRender.map(day => {
-              const daySessions = weekSessionsByDay[day];
-              if (!daySessions || daySessions.length === 0) return null;
+            ) : (
+              <div className="space-y-2.5">
+                {smallGroupSessionsForSelectedDay.map((session) => {
+                  const isMine = session.isBookedByMe;
+                  const isFull = session.bookedCount >= session.maxCapacity;
+                  const isPast = Boolean(session.isPast);
 
-              return (
-                <div key={day} className="space-y-3">
-                  <div className="flex items-center gap-2 border-b border-brand-white/10 pb-2">
-                    <span className="w-1.5 h-4 rounded-full bg-[#00d8ff]" />
-                    <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                      {day}
-                    </h3>
-                    <span className="text-xs text-brand-white/40 ml-auto font-semibold">
-                      {daySessions.length} cours
-                    </span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {daySessions.map(session => {
-                      const isMine = session.isBookedByMe;
-                      const isFull = session.bookedCount >= session.maxCapacity;
-                      const isPast = Boolean(session.isPast);
-
-                      return (
-                        <div
-                          key={session.id}
-                          className={cn(
-                            "border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200",
-                            isPast
-                              ? isMine
-                                ? "bg-[#0b1320]/80 border-zinc-800/80 opacity-70"
-                                : "bg-zinc-950/60 border-zinc-800/60 opacity-50 select-none"
-                              : isMine
-                              ? "bg-gradient-to-r from-brand-blue/15 to-[#0f172a] border-brand-blue"
-                              : isFull
-                              ? "bg-zinc-900/50 border-zinc-800 opacity-60"
-                              : "bg-[#0f172a] hover:bg-[#162032] border-brand-white/10"
-                          )}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2.5 flex-wrap">
-                              <span className={cn(
-                                "text-base sm:text-lg font-heading font-bold uppercase tracking-wide",
-                                isPast ? "text-zinc-400" : "text-brand-white"
-                              )}>
-                                {session.discipline}
-                              </span>
-                              <span className={cn(
-                                "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
-                                isPast
-                                  ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/60"
-                                  : "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
-                              )}>
-                                {session.level}
-                              </span>
-                              {!isPast && (
-                                <span className={cn(
-                                  "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
-                                  isFull
-                                    ? "bg-red-500/20 text-red-400 border-red-500/30"
-                                    : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
-                                )}>
-                                  {session.bookedCount} / {session.maxCapacity} places
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-3 text-xs text-brand-white/60">
-                              <span className={cn(
-                                "flex items-center gap-1 font-bold",
-                                isPast ? "text-zinc-400" : "text-[#00d8ff]"
-                              )}>
-                                <Clock size={13} />
-                                {session.startTime} → {session.endTime}
-                              </span>
-                              <span className="text-brand-white/40">
-                                • 50 min
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-end">
-                            {isPast ? (
-                              isMine ? (
-                                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-800/80 border border-zinc-700 text-zinc-300 rounded-xl text-xs font-bold uppercase select-none">
-                                  <Check size={14} className="text-[#00d8ff]" />
-                                  Séance passée
-                                </div>
-                              ) : (
-                                <div className="px-4 py-2 bg-zinc-900/80 border border-zinc-800 text-zinc-500 rounded-xl text-xs font-semibold uppercase select-none">
-                                  Terminé
-                                </div>
-                              )
-                            ) : isMine ? (
-                              <div className="flex items-center gap-2">
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-blue/20 border border-brand-blue text-[#00d8ff] rounded-lg text-xs font-black uppercase">
-                                  <Check size={14} />
-                                  Inscrit
-                                </div>
-                                <button
-                                  onClick={() => handleCancelClick(session)}
-                                  className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer border border-red-500/20"
-                                >
-                                  Annuler
-                                </button>
-                              </div>
-                            ) : isFull ? (
-                              <div className="px-4 py-2 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-xl text-xs font-semibold uppercase">
-                                Complet
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setSelectedSlotForBooking(session)}
-                                className="px-5 py-2.5 rounded-xl font-heading font-black text-xs uppercase tracking-wider bg-[#00d8ff] hover:bg-brand-white text-black transition-all cursor-pointer shadow-md shadow-[#00d8ff]/20"
-                              >
-                                RÉSERVER
-                              </button>
+                  return (
+                    <div
+                      key={session.id}
+                      className={cn(
+                        "border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200",
+                        isPast
+                          ? isMine
+                            ? "bg-[#0b1320]/80 border-zinc-800/80 opacity-70"
+                            : "bg-zinc-950/60 border-zinc-800/60 opacity-50 select-none"
+                          : isMine
+                          ? "bg-gradient-to-r from-brand-blue/15 to-[#0f172a] border-brand-blue"
+                          : isFull
+                          ? "bg-zinc-900/50 border-zinc-800 opacity-60"
+                          : "bg-[#0f172a] hover:bg-[#162032] border-brand-white/10"
+                      )}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span
+                            className={cn(
+                              "text-base sm:text-lg font-heading font-bold uppercase tracking-wide",
+                              isPast ? "text-zinc-400" : "text-brand-white"
                             )}
-                          </div>
+                          >
+                            {session.discipline}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
+                              isPast
+                                ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/60"
+                                : "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
+                            )}
+                          >
+                            {session.level}
+                          </span>
+                          {!isPast && (
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
+                                isFull
+                                  ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                  : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
+                              )}
+                            >
+                              {session.bookedCount} / {session.maxCapacity} places
+                            </span>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+
+                        <div className="flex items-center gap-3 text-xs text-brand-white/60">
+                          <span
+                            className={cn(
+                              "flex items-center gap-1 font-bold",
+                              isPast ? "text-zinc-400" : "text-[#00d8ff]"
+                            )}
+                          >
+                            <Clock size={13} />
+                            {session.startTime} → {session.endTime}
+                          </span>
+                          <span className="text-brand-white/40">• 50 min</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end">
+                        {isPast ? (
+                          isMine ? (
+                            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-800/80 border border-zinc-700 text-zinc-300 rounded-xl text-xs font-bold uppercase select-none">
+                              <Check size={14} className="text-[#00d8ff]" />
+                              Séance passée
+                            </div>
+                          ) : (
+                            <div className="px-4 py-2 bg-zinc-900/80 border border-zinc-800 text-zinc-500 rounded-xl text-xs font-semibold uppercase select-none">
+                              Terminé
+                            </div>
+                          )
+                        ) : isMine ? (
+                          <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-blue/20 border border-brand-blue text-[#00d8ff] rounded-lg text-xs font-black uppercase">
+                              <Check size={14} />
+                              Inscrit
+                            </div>
+                            <button
+                              onClick={() => handleCancelClick(session)}
+                              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer border border-red-500/20"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        ) : isFull ? (
+                          <div className="px-4 py-2 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-xl text-xs font-semibold uppercase">
+                            Complet
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setSelectedSlotForBooking(session)}
+                            className="px-5 py-2.5 rounded-xl font-heading font-black text-xs uppercase tracking-wider bg-[#00d8ff] hover:bg-brand-white text-black transition-all cursor-pointer shadow-md shadow-[#00d8ff]/20"
+                          >
+                            RÉSERVER
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
