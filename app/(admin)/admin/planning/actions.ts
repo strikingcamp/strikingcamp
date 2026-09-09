@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Lundi, 5=Samedi
@@ -51,15 +50,14 @@ export interface MutationResult {
 }
 
 /**
- * Vérifie l'authentification et le rôle ADMIN côté serveur via les cookies de session,
- * puis retourne le client de base de données adapté (service_role si configuré, sinon client de session admin garanti par RLS).
+ * Vérifie l'authentification et le rôle ADMIN côté serveur via les cookies de session.
  */
-async function getPlanningDbClient(): Promise<{ supabase: SupabaseClient; user: any }> {
-  const sessionSupabase = await createClient();
+async function verifyAdminAuth() {
+  const supabase = await createClient();
   const {
     data: { user },
     error: authError,
-  } = await sessionSupabase.auth.getUser();
+  } = await supabase.auth.getUser();
 
   if (authError || !user) {
     throw new Error("Session invalide ou expirée. Veuillez vous reconnecter.");
@@ -70,16 +68,7 @@ async function getPlanningDbClient(): Promise<{ supabase: SupabaseClient; user: 
     throw new Error("Accès refusé. Privilèges administrateur requis.");
   }
 
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      const adminClient = createAdminClient();
-      return { supabase: adminClient, user };
-    } catch (err) {
-      console.warn("[getPlanningDbClient] Utilisation du client de session admin :", err);
-    }
-  }
-
-  return { supabase: sessionSupabase, user };
+  return user;
 }
 
 /**
@@ -89,7 +78,8 @@ async function getPlanningDbClient(): Promise<{ supabase: SupabaseClient; user: 
  */
 export async function getAdminPlanningDataServerAction(): Promise<AdminPlanningDataResult> {
   try {
-    const { supabase: adminSupabase } = await getPlanningDbClient();
+    await verifyAdminAuth();
+    const adminSupabase = createAdminClient();
 
     // 1. Récupération des templates récurrents
     let templates: RecurringTemplateItem[] = [];
@@ -194,7 +184,8 @@ export async function createRecurringTemplateServerAction(payload: {
   max_capacity: number;
 }): Promise<MutationResult> {
   try {
-    const { supabase: adminSupabase } = await getPlanningDbClient();
+    await verifyAdminAuth();
+    const adminSupabase = createAdminClient();
 
     const startTimeFormatted = normalizeTime(payload.start_time);
     const endTimeFormatted = normalizeTime(payload.end_time);
@@ -267,7 +258,8 @@ export async function updateRecurringTemplateServerAction(
   forceCascade = false
 ): Promise<MutationResult> {
   try {
-    const { supabase: adminSupabase } = await getPlanningDbClient();
+    await verifyAdminAuth();
+    const adminSupabase = createAdminClient();
 
     const normalizedPayload = {
       ...payload,
@@ -434,7 +426,8 @@ export async function toggleRecurringTemplateStatusServerAction(
  */
 export async function deleteRecurringTemplateServerAction(templateId: string): Promise<MutationResult> {
   try {
-    const { supabase: adminSupabase } = await getPlanningDbClient();
+    await verifyAdminAuth();
+    const adminSupabase = createAdminClient();
 
     // Vérifier si des réservations existent sur les séances associées (membres ET essais)
     const { data: sessions } = await adminSupabase
@@ -515,7 +508,8 @@ export async function updateSingleDatedSessionServerAction(
   }
 ): Promise<MutationResult> {
   try {
-    const { supabase: adminSupabase } = await getPlanningDbClient();
+    await verifyAdminAuth();
+    const adminSupabase = createAdminClient();
 
     const { data: updatedSession, error: updateError } = await adminSupabase
       .from("class_sessions")
@@ -556,7 +550,8 @@ export async function toggleSingleSessionStatusServerAction(
  */
 export async function triggerScheduleGenerationServerAction(): Promise<MutationResult> {
   try {
-    const { supabase: adminSupabase } = await getPlanningDbClient();
+    await verifyAdminAuth();
+    const adminSupabase = createAdminClient();
 
     const { data, error } = await adminSupabase.rpc("maintain_schedule_horizon", {
       p_target_weeks_ahead: 12,
