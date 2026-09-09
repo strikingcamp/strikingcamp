@@ -40,9 +40,9 @@ export default async function AdminReservationsPage({ searchParams }: PageProps)
   const tabParam =
     params.tab === "private"
       ? "private"
-      : params.tab === "small_group"
-      ? "small_group"
-      : "trial";
+      : params.tab === "trial"
+      ? "trial"
+      : "small_group";
   const modeParam = params.mode === "week" ? "week" : "day";
   const dayParam = typeof params.day === "string" ? params.day : undefined;
 

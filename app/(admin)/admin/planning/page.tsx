@@ -43,7 +43,7 @@ export default async function AdminPlanningPage() {
   const rawSessions = sessionsData || [];
   const sessionIds = rawSessions.map((s) => s.id);
 
-  // 3. Récupération des réservations confirmées associées
+  // 3. Récupération des réservations confirmées associées (membres + essais)
   const countsMap = new Map<string, number>();
   if (sessionIds.length > 0) {
     const { data: bookingsData } = await supabase
@@ -56,6 +56,20 @@ export default async function AdminPlanningPage() {
       for (const b of bookingsData) {
         if (b.class_session_id) {
           countsMap.set(b.class_session_id, (countsMap.get(b.class_session_id) || 0) + 1);
+        }
+      }
+    }
+
+    const { data: trialBookingsData } = await supabase
+      .from("trial_bookings")
+      .select("id, class_session_id")
+      .in("class_session_id", sessionIds)
+      .eq("status", "confirmed");
+
+    if (trialBookingsData) {
+      for (const tb of trialBookingsData) {
+        if (tb.class_session_id) {
+          countsMap.set(tb.class_session_id, (countsMap.get(tb.class_session_id) || 0) + 1);
         }
       }
     }

@@ -346,6 +346,12 @@ export async function getAdminDashboardData(
         .in("class_session_id", sessionIds)
         .eq("status", "confirmed");
 
+      const { data: sessionTrialBookings } = await supabase
+        .from("trial_bookings")
+        .select("id, class_session_id")
+        .in("class_session_id", sessionIds)
+        .eq("status", "confirmed");
+
       const bookingCountsBySession = new Map<string, number>();
       if (sessionBookings) {
         for (const b of sessionBookings) {
@@ -353,6 +359,16 @@ export async function getAdminDashboardData(
             bookingCountsBySession.set(
               b.class_session_id,
               (bookingCountsBySession.get(b.class_session_id) || 0) + 1
+            );
+          }
+        }
+      }
+      if (sessionTrialBookings) {
+        for (const tb of sessionTrialBookings) {
+          if (tb.class_session_id) {
+            bookingCountsBySession.set(
+              tb.class_session_id,
+              (bookingCountsBySession.get(tb.class_session_id) || 0) + 1
             );
           }
         }
@@ -379,17 +395,37 @@ export async function getAdminDashboardData(
     // 4. Dernières réservations enregistrées
     const { data: recentBookingsData } = await supabase
       .from("bookings")
-      .select("id, user_id, class_session_id, status, created_at, profile:profiles(first_name, last_name), session:class_sessions(discipline, starts_at, ends_at)")
+      .select("id, user_id, class_session_id, status, created_at")
       .eq("status", "confirmed")
       .order("created_at", { ascending: false })
       .limit(6);
 
     const recentBookings: AdminBookingSummary[] = [];
 
-    if (recentBookingsData) {
-      for (const b of recentBookingsData as Record<string, unknown>[]) {
-        const rawProf = Array.isArray(b.profile) ? b.profile[0] : (b.profile as Record<string, string> | null);
-        const rawSess = Array.isArray(b.session) ? b.session[0] : (b.session as Record<string, string> | null);
+    if (recentBookingsData && recentBookingsData.length > 0) {
+      const recentUserIds = Array.from(
+        new Set(recentBookingsData.map((b) => b.user_id).filter(Boolean))
+      );
+      const recentSessionIds = Array.from(
+        new Set(recentBookingsData.map((b) => b.class_session_id).filter(Boolean))
+      );
+
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name")
+        .in("id", recentUserIds);
+
+      const { data: sesss } = await supabase
+        .from("class_sessions")
+        .select("id, discipline, starts_at, ends_at")
+        .in("id", recentSessionIds);
+
+      const profMap = new Map((profs || []).map((p) => [p.id, p]));
+      const sessMap = new Map((sesss || []).map((s) => [s.id, s]));
+
+      for (const b of recentBookingsData) {
+        const rawProf = profMap.get(b.user_id);
+        const rawSess = sessMap.get(b.class_session_id);
 
         const memberName = rawProf
           ? `${rawProf.first_name || ""} ${rawProf.last_name || ""}`.trim() || "Membre"
