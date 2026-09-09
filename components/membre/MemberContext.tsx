@@ -295,21 +295,10 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
       try {
         const confirmedBookingsData = await getConfirmedBookingsSummaryAction();
         console.log("[MemberContext] Total réservations confirmées en base (Server Action) :", confirmedBookingsData.length);
-        setAllConfirmedBookings(confirmedBookingsData);
+        setAllConfirmedBookings(confirmedBookingsData || []);
       } catch (confirmedErr) {
         console.warn("[MemberContext] Erreur lecture réservations confirmées via Server Action :", confirmedErr);
-        const { data: fallbackData } = await supabase
-          .from("bookings")
-          .select("class_session_id, user_id")
-          .eq("status", "confirmed")
-          .not("class_session_id", "is", null);
-
-        setAllConfirmedBookings(
-          (fallbackData || []).map((b) => ({
-            class_session_id: b.class_session_id as string,
-            user_id: b.user_id as string,
-          }))
-        );
+        setAllConfirmedBookings([]);
       }
 
       // 2. Vérification de la session utilisateur connectée
