@@ -392,24 +392,33 @@ export default function AdminReservationsView({
       };
     }
 
-    // Small Group & Trials
+    // 1. Small Group
     for (const s of weeklyData.smallGroupSessions || []) {
       const dStr = getLocalDateStr(s.starts_at);
       if (map[dStr]) {
         map[dStr].sgCount += 1;
         const bks = bookingsBySession[s.id] || [];
         for (const b of bks) {
-          if (b.isTrial) {
-            if (b.status === "confirmed") map[dStr].trialBooked += 1;
-            else if (b.status === "cancelled") map[dStr].trialCancelled += 1;
-          } else {
-            if (b.status === "confirmed") map[dStr].sgBooked += 1;
+          if (!b.isTrial && b.status === "confirmed") {
+            map[dStr].sgBooked += 1;
           }
         }
       }
     }
 
-    // Privés
+    // 2. Cours d'Essai (directement depuis allTrialBookings)
+    for (const tb of allTrialBookings) {
+      const dStr = tb.sessionStartsAt ? getLocalDateStr(tb.sessionStartsAt) : "";
+      if (map[dStr]) {
+        if (tb.status === "confirmed") {
+          map[dStr].trialBooked += 1;
+        } else if (tb.status === "cancelled") {
+          map[dStr].trialCancelled += 1;
+        }
+      }
+    }
+
+    // 3. Privés
     for (const p of weeklyData.privateSessions || []) {
       const dStr = getLocalDateStr(p.starts_at);
       if (map[dStr]) {
@@ -425,7 +434,7 @@ export default function AdminReservationsView({
     }
 
     return map;
-  }, [weekDays, weeklyData, bookingsBySession]);
+  }, [weekDays, weeklyData, bookingsBySession, allTrialBookings]);
 
   // Total de la semaine pour KPIs
   const weeklyTotals = useMemo(() => {
@@ -441,23 +450,24 @@ export default function AdminReservationsView({
 
     let totalSgSessions = (weeklyData.smallGroupSessions || []).length;
     let totalSgInscrits = 0;
-    let totalTrialConfirmed = 0;
-    let totalTrialAttended = 0;
-    let totalTrialCancelled = 0;
-
     for (const s of weeklyData.smallGroupSessions || []) {
       const bks = bookingsBySession[s.id] || [];
       for (const b of bks) {
-        if (b.isTrial) {
-          if (b.status === "confirmed") {
-            totalTrialConfirmed++;
-            if (b.attendanceStatus === "present") totalTrialAttended++;
-          } else if (b.status === "cancelled") {
-            totalTrialCancelled++;
-          }
-        } else {
-          if (b.status === "confirmed") totalSgInscrits++;
+        if (!b.isTrial && b.status === "confirmed") {
+          totalSgInscrits++;
         }
+      }
+    }
+
+    let totalTrialConfirmed = 0;
+    let totalTrialAttended = 0;
+    let totalTrialCancelled = 0;
+    for (const tb of allTrialBookings) {
+      if (tb.status === "confirmed") {
+        totalTrialConfirmed++;
+        if (tb.attendanceStatus === "present") totalTrialAttended++;
+      } else if (tb.status === "cancelled") {
+        totalTrialCancelled++;
       }
     }
 
@@ -470,7 +480,7 @@ export default function AdminReservationsView({
       trialAttended: totalTrialAttended,
       trialCancelled: totalTrialCancelled,
     };
-  }, [weeklyData, bookingsBySession]);
+  }, [weeklyData, bookingsBySession, allTrialBookings]);
 
   // Helper de rendu d'une carte de cours d'essai (utilisé en vue Semaine et Jour)
   const renderTrialBookingCard = (

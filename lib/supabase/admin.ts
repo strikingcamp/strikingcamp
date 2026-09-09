@@ -1190,8 +1190,11 @@ export async function getAdminWeeklyReservationsData(
         rawType === "prive" ||
         (s.discipline || "").toLowerCase().includes("privé") ||
         (s.discipline || "").toLowerCase().includes("prive");
+      const hasConfirmedBookings = (confirmedCountsMap.get(s.id) || 0) > 0;
       const isCol = rawType === "collective";
-      return !isPriv && !isCol;
+      if (isPriv) return false;
+      if (hasConfirmedBookings) return true;
+      return !isCol;
     });
 
     const smallGroupSessions: AdminClassSessionSummary[] = [];
