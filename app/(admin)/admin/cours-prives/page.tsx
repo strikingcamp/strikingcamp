@@ -1,22 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
-import AdminPlanningView from "@/components/admin/AdminPlanningView";
-import type { RecurringTemplateItem, AdminDatedSessionItem } from "./actions";
+import AdminPrivateCoachingView from "@/components/admin/AdminPrivateCoachingView";
+import type { RecurringTemplateItem, AdminDatedSessionItem } from "@/app/(admin)/admin/planning/actions";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Planning & Cours | Administration Striking Camp",
+  title: "Cours Privés | Administration Striking Camp",
 };
 
-export default async function AdminPlanningPage() {
+export default async function AdminPrivateCoachingPage() {
   const supabase = await createClient();
 
-  // 1. Récupération des modèles récurrents (semaine type - Small Group & Collectifs)
+  // 1. Récupération des modèles récurrents (semaine type - Cours Privés)
   let initialTemplates: RecurringTemplateItem[] = [];
   const { data: templatesData, error: tmplError } = await supabase
     .from("recurring_schedule_templates")
     .select("*")
-    .in("type", ["small_group", "collective"])
+    .eq("type", "private")
     .order("day_of_week", { ascending: true })
     .order("start_time", { ascending: true });
 
@@ -24,7 +24,7 @@ export default async function AdminPlanningPage() {
     initialTemplates = templatesData as RecurringTemplateItem[];
   }
 
-  // 2. Récupération des séances physiques datées (horizon 4 semaines - Small Group & Collectifs)
+  // 2. Récupération des séances physiques datées (horizon 4 semaines - Cours Privés)
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);
   const endDate = new Date();
@@ -33,19 +33,19 @@ export default async function AdminPlanningPage() {
   const { data: sessionsData, error: sessionsError } = await supabase
     .from("class_sessions")
     .select("id, template_id, type, discipline, level, starts_at, ends_at, max_capacity, is_active")
-    .in("type", ["small_group", "collective"])
+    .eq("type", "private")
     .gte("starts_at", startDate.toISOString())
     .lte("starts_at", endDate.toISOString())
     .order("starts_at", { ascending: true });
 
   if (sessionsError) {
-    console.error("[AdminPlanningPage] Erreur chargement séances :", sessionsError.message);
+    console.error("[AdminPrivateCoachingPage] Erreur chargement séances privées :", sessionsError.message);
   }
 
   const rawSessions = sessionsData || [];
   const sessionIds = rawSessions.map((s) => s.id);
 
-  // 3. Récupération des réservations confirmées associées (membres + essais)
+  // 3. Récupération des réservations confirmées associées
   const countsMap = new Map<string, number>();
   if (sessionIds.length > 0) {
     const { data: bookingsData } = await supabase
@@ -61,37 +61,23 @@ export default async function AdminPlanningPage() {
         }
       }
     }
-
-    const { data: trialBookingsData } = await supabase
-      .from("trial_bookings")
-      .select("id, class_session_id")
-      .in("class_session_id", sessionIds)
-      .eq("status", "confirmed");
-
-    if (trialBookingsData) {
-      for (const tb of trialBookingsData) {
-        if (tb.class_session_id) {
-          countsMap.set(tb.class_session_id, (countsMap.get(tb.class_session_id) || 0) + 1);
-        }
-      }
-    }
   }
 
   const initialSessions: AdminDatedSessionItem[] = rawSessions.map((s) => ({
     id: s.id,
     template_id: s.template_id,
-    type: (s.type || "small_group") as any,
+    type: "private",
     discipline: s.discipline,
-    level: s.level || "Tous niveaux",
+    level: s.level || "Individuel (50 min)",
     starts_at: s.starts_at,
     ends_at: s.ends_at || s.starts_at,
-    max_capacity: s.max_capacity || 20,
+    max_capacity: s.max_capacity || 1,
     is_active: s.is_active ?? true,
     bookedCount: countsMap.get(s.id) || 0,
   }));
 
   return (
-    <AdminPlanningView
+    <AdminPrivateCoachingView
       initialTemplates={initialTemplates}
       initialSessions={initialSessions}
     />

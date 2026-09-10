@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { assertAdminUser } from "@/lib/supabase/auth-admin";
 
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Lundi, 5=Samedi
 export type SessionType = "small_group" | "collective" | "private";
@@ -50,25 +51,10 @@ export interface MutationResult {
 }
 
 /**
- * Vérifie l'authentification et le rôle ADMIN côté serveur via les cookies de session.
+ * Vérifie l'authentification et le rôle ADMIN côté serveur via assertAdminUser (app_metadata uniquement).
  */
 async function verifyAdminAuth() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("Session invalide ou expirée. Veuillez vous reconnecter.");
-  }
-
-  const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
-  if (role !== "ADMIN") {
-    throw new Error("Accès refusé. Privilèges administrateur requis.");
-  }
-
-  return user;
+  return await assertAdminUser();
 }
 
 /**
@@ -311,6 +297,7 @@ export async function createRecurringTemplateServerAction(payload: {
 
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
+    revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
     return {
@@ -495,6 +482,7 @@ export async function updateRecurringTemplateServerAction(
 
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
+    revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
     return {
@@ -547,6 +535,7 @@ export async function toggleDayTemplatesStatusServerAction(
 
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
+    revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
     return {
@@ -619,6 +608,7 @@ export async function deleteRecurringTemplateServerAction(templateId: string): P
 
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
+    revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
     return {
@@ -661,6 +651,7 @@ export async function updateSingleDatedSessionServerAction(
     }
 
     revalidatePath("/admin/planning");
+    revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
     return {
@@ -701,6 +692,7 @@ export async function triggerScheduleGenerationServerAction(): Promise<MutationR
 
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
+    revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
     return {

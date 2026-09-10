@@ -35,22 +35,23 @@ import {
   HeartPulse,
   Apple,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import {
-  getAdminChallenges,
-  getAdminChallengeWithSteps,
-  createAdminChallenge,
-  updateAdminChallenge,
-  deleteAdminChallenge,
-  createAdminChallengeStep,
-  updateAdminChallengeStep,
-  deleteAdminChallengeStep,
-  reorderAdminChallengeSteps,
-  type Challenge,
-  type ChallengeStep,
-  type ChallengeCategory,
-  type ChallengeLevel,
-  type ChallengeStatus,
+  getAdminChallengesServerAction,
+  getAdminChallengeWithStepsServerAction,
+  createAdminChallengeServerAction,
+  updateAdminChallengeServerAction,
+  deleteAdminChallengeServerAction,
+  createAdminChallengeStepServerAction,
+  updateAdminChallengeStepServerAction,
+  deleteAdminChallengeStepServerAction,
+  reorderAdminChallengeStepsServerAction,
+} from "@/app/(admin)/admin/defis/actions";
+import type {
+  Challenge,
+  ChallengeStep,
+  ChallengeCategory,
+  ChallengeLevel,
+  ChallengeStatus,
 } from "@/lib/supabase/challenges";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +59,6 @@ const CATEGORIES: ChallengeCategory[] = ["Technique", "Physique", "Cardio", "Nut
 const LEVELS: ChallengeLevel[] = ["Débutant", "Intermédiaire", "Confirmé", "Tous niveaux"];
 
 export default function AdminDefisView() {
-  const [supabase] = useState(() => createClient());
   const [challenges, setChallenges] = useState<(Challenge & { stepsCount: number; activeParticipantsCount: number })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<"Tous" | ChallengeStatus>("Tous");
@@ -109,15 +109,19 @@ export default function AdminDefisView() {
   const fetchChallenges = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getAdminChallenges(supabase);
-      setChallenges(data);
+      const res = await getAdminChallengesServerAction();
+      if (res.success && res.data) {
+        setChallenges(res.data);
+      } else {
+        showNotification(res.error || "Erreur lors du chargement des défis.", "error");
+      }
     } catch (err) {
       console.error("[AdminDefisView] Erreur chargement :", err);
       showNotification("Erreur lors du chargement des défis.", "error");
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     fetchChallenges();
@@ -192,7 +196,7 @@ export default function AdminDefisView() {
           }
         }
 
-        const res = await updateAdminChallenge(supabase, editingChallenge.id, payload);
+        const res = await updateAdminChallengeServerAction(editingChallenge.id, payload);
         if (res.success) {
           showNotification(`Défi « ${formTitle} » mis à jour avec succès.`);
           setIsChallengeModalOpen(false);
@@ -201,7 +205,7 @@ export default function AdminDefisView() {
           showNotification(res.error || "Erreur lors de la mise à jour.", "error");
         }
       } else {
-        const res = await createAdminChallenge(supabase, payload);
+        const res = await createAdminChallengeServerAction(payload);
         if (res.success) {
           showNotification(`Défi « ${formTitle} » créé avec succès en statut ${formStatus}.`);
           setIsChallengeModalOpen(false);
@@ -221,7 +225,7 @@ export default function AdminDefisView() {
   // Toggle activation directe
   const handleToggleActive = async (c: Challenge) => {
     const newStatus = !c.is_active;
-    const res = await updateAdminChallenge(supabase, c.id, { is_active: newStatus });
+    const res = await updateAdminChallengeServerAction(c.id, { is_active: newStatus });
     if (res.success) {
       showNotification(`Défi « ${c.title} » ${newStatus ? "activé" : "désactivé"}.`);
       await fetchChallenges();
@@ -243,7 +247,7 @@ export default function AdminDefisView() {
       }
     }
 
-    const res = await updateAdminChallenge(supabase, c.id, { status: newStatus });
+    const res = await updateAdminChallengeServerAction(c.id, { status: newStatus });
     if (res.success) {
       showNotification(`Statut du défi « ${c.title} » passé à ${newStatus}.`);
       await fetchChallenges();
@@ -257,7 +261,7 @@ export default function AdminDefisView() {
     if (!challengeToDelete) return;
     setIsDeletingChallenge(true);
     try {
-      const res = await deleteAdminChallenge(supabase, challengeToDelete.id);
+      const res = await deleteAdminChallengeServerAction(challengeToDelete.id);
       if (res.success) {
         showNotification(`Défi « ${challengeToDelete.title} » et ses étapes supprimés définitivement.`);
         setChallengeToDelete(null);
@@ -280,9 +284,9 @@ export default function AdminDefisView() {
     setEditingStep(null);
     setIsLoadingSteps(true);
     try {
-      const res = await getAdminChallengeWithSteps(supabase, c.id);
-      if (res) {
-        setChallengeSteps(res.steps);
+      const res = await getAdminChallengeWithStepsServerAction(c.id);
+      if (res.success && res.data) {
+        setChallengeSteps(res.data.steps);
       }
     } catch (err) {
       console.error("[handleOpenStepsModal] Erreur :", err);
@@ -319,7 +323,7 @@ export default function AdminDefisView() {
     setIsSubmittingStep(true);
     try {
       if (editingStep) {
-        const res = await updateAdminChallengeStep(supabase, editingStep.id, {
+        const res = await updateAdminChallengeStepServerAction(editingStep.id, {
           title: stepTitle.trim(),
           description: stepDescription.trim() || null,
           video_url: stepVideoUrl.trim() || null,
@@ -330,14 +334,14 @@ export default function AdminDefisView() {
           showNotification("Étape mise à jour avec succès.");
           setIsStepFormOpen(false);
           // Recharger
-          const refreshed = await getAdminChallengeWithSteps(supabase, stepsModalChallenge.id);
-          if (refreshed) setChallengeSteps(refreshed.steps);
+          const refreshed = await getAdminChallengeWithStepsServerAction(stepsModalChallenge.id);
+          if (refreshed.success && refreshed.data) setChallengeSteps(refreshed.data.steps);
           await fetchChallenges();
         } else {
           showNotification(res.error || "Erreur lors de la mise à jour de l'étape.", "error");
         }
       } else {
-        const res = await createAdminChallengeStep(supabase, stepsModalChallenge.id, {
+        const res = await createAdminChallengeStepServerAction(stepsModalChallenge.id, {
           title: stepTitle.trim(),
           description: stepDescription.trim() || null,
           video_url: stepVideoUrl.trim() || null,
@@ -348,8 +352,8 @@ export default function AdminDefisView() {
           showNotification("Nouvelle étape ajoutée au défi.");
           setIsStepFormOpen(false);
           // Recharger
-          const refreshed = await getAdminChallengeWithSteps(supabase, stepsModalChallenge.id);
-          if (refreshed) setChallengeSteps(refreshed.steps);
+          const refreshed = await getAdminChallengeWithStepsServerAction(stepsModalChallenge.id);
+          if (refreshed.success && refreshed.data) setChallengeSteps(refreshed.data.steps);
           await fetchChallenges();
         } else {
           showNotification(res.error || "Erreur lors de l'ajout de l'étape.", "error");
@@ -362,11 +366,11 @@ export default function AdminDefisView() {
 
   const handleDeleteStep = async (stepId: string) => {
     if (!stepsModalChallenge) return;
-    const res = await deleteAdminChallengeStep(supabase, stepId);
+    const res = await deleteAdminChallengeStepServerAction(stepId);
     if (res.success) {
       showNotification("Étape supprimée.");
-      const refreshed = await getAdminChallengeWithSteps(supabase, stepsModalChallenge.id);
-      if (refreshed) setChallengeSteps(refreshed.steps);
+      const refreshed = await getAdminChallengeWithStepsServerAction(stepsModalChallenge.id);
+      if (refreshed.success && refreshed.data) setChallengeSteps(refreshed.data.steps);
       await fetchChallenges();
     } else {
       showNotification(res.error || "Erreur suppression étape.", "error");
@@ -385,12 +389,12 @@ export default function AdminDefisView() {
     setChallengeSteps(newSteps);
 
     const stepIdsInOrder = newSteps.map((s) => s.id);
-    const res = await reorderAdminChallengeSteps(supabase, stepsModalChallenge.id, stepIdsInOrder);
+    const res = await reorderAdminChallengeStepsServerAction(stepsModalChallenge.id, stepIdsInOrder);
 
     if (res.success) {
       showNotification("Ordre des étapes réorganisé.");
-      const refreshed = await getAdminChallengeWithSteps(supabase, stepsModalChallenge.id);
-      if (refreshed) setChallengeSteps(refreshed.steps);
+      const refreshed = await getAdminChallengeWithStepsServerAction(stepsModalChallenge.id);
+      if (refreshed.success && refreshed.data) setChallengeSteps(refreshed.data.steps);
     } else {
       showNotification(res.error || "Erreur réorganisation des étapes.", "error");
     }

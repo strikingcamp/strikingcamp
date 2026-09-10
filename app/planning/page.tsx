@@ -42,6 +42,7 @@ export default async function PlanningPage() {
       .from("recurring_schedule_templates")
       .select("day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
       .eq("is_active", true)
+      .in("type", ["small_group", "collective"])
       .order("day_of_week", { ascending: true })
       .order("start_time", { ascending: true });
 

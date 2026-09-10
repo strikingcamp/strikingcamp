@@ -13,8 +13,8 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // Vérification de sécurité Bearer Token
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // Contrôle Fail-Closed strict : rejet immédiat si le secret est absent ou incorrect
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

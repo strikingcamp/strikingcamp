@@ -38,6 +38,11 @@ const navItems = [
     icon: Calendar,
   },
   {
+    label: "Cours Privés",
+    href: "/admin/cours-prives",
+    icon: Sparkles,
+  },
+  {
     label: "Validation Adhésions",
     href: "/admin/adhesions",
     icon: UserCheck,

@@ -59,7 +59,7 @@ export async function proxy(request: NextRequest) {
   };
 
   const { pathname } = request.nextUrl;
-  const userRole = (user?.app_metadata?.role || user?.user_metadata?.role || "").toUpperCase();
+  const userRole = (user?.app_metadata?.role || "").toUpperCase();
 
   // 1. Protection des routes /admin — accessible STRICTEMENT au rôle ADMIN
   if (pathname.startsWith("/admin")) {

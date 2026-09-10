@@ -67,7 +67,7 @@ async function verifyAdminAuth() {
     return { authorized: false, error: "Session invalide ou expirée. Veuillez vous reconnecter." };
   }
 
-  const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
+  const role = (user.app_metadata?.role || "").toUpperCase();
   if (role !== "ADMIN") {
     return { authorized: false, error: "Accès refusé. Privilèges administrateur requis." };
   }

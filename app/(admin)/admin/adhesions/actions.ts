@@ -59,7 +59,7 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
+    const role = (user.app_metadata?.role || "").toUpperCase();
     if (role !== "ADMIN") {
       return {
         success: false,
@@ -141,7 +141,7 @@ export async function rejectMembershipRequestServerAction(
       };
     }
 
-    const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
+    const role = (user.app_metadata?.role || "").toUpperCase();
     if (role !== "ADMIN") {
       return {
         success: false,
@@ -239,7 +239,7 @@ export async function updateMembershipRequestServerAction(
       };
     }
 
-    const role = (user.app_metadata?.role || user.user_metadata?.role || "").toUpperCase();
+    const role = (user.app_metadata?.role || "").toUpperCase();
     if (role !== "ADMIN") {
       return {
         success: false,

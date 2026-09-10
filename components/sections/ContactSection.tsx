@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 type FormStatus = "idle" | "loading" | "success" | "error";
 
 export default function ContactSection() {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", message: "", honeypot: "" });
   const [status, setStatus] = useState<FormStatus>("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -34,7 +34,7 @@ export default function ContactSection() {
 
       if (res.ok && data.success) {
         setStatus("success");
-        setFormData({ name: "", email: "", message: "" });
+        setFormData({ name: "", email: "", message: "", honeypot: "" });
       } else {
         setStatus("error");
         setErrorMsg(data.error || "Une erreur est survenue.");
@@ -105,6 +105,19 @@ export default function ContactSection() {
           )}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
+            {/* Honeypot anti-spam invisible pour les humains */}
+            <div className="hidden" aria-hidden="true" style={{ display: "none" }}>
+              <input
+                type="text"
+                id="honeypot"
+                name="website_url_hp"
+                tabIndex={-1}
+                autoComplete="off"
+                value={formData.honeypot}
+                onChange={handleChange}
+              />
+            </div>
+
             <div>
               <label htmlFor="name" className="block text-xs font-heading font-bold uppercase tracking-wider text-brand-white/80 mb-2">
                 Votre Nom & Prénom
