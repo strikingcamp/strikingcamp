@@ -1020,13 +1020,13 @@ export default function AdminParametresView({ initialData }: AdminParametresView
                 {
                   name: "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
                   status: (initialData.env.supabasePublishableKey ?? initialData.env.supabaseAnonKey) ? "ok" : "error",
-                  statusText: (initialData.env.supabasePublishableKey ?? initialData.env.supabaseAnonKey) ? "Configuré" : "Non configuré",
+                  statusText: (initialData.env.supabasePublishableKey ?? initialData.env.supabaseAnonKey) ? "Configurée" : "Non configurée",
                   desc: "Clé publique Supabase (publishable / anon key)",
                 },
                 {
                   name: "SUPABASE_SERVICE_ROLE_KEY",
                   status: initialData.env.supabaseServiceRoleKey ? "ok" : "error",
-                  statusText: initialData.env.supabaseServiceRoleKey ? "Configuré (serveur)" : "Non configuré",
+                  statusText: initialData.env.supabaseServiceRoleKey ? "Configurée (serveur)" : "Non configurée",
                   desc: "Clé administrateur (serveur uniquement)",
                 },
                 {
@@ -1043,10 +1043,10 @@ export default function AdminParametresView({ initialData }: AdminParametresView
                     ? "fallback"
                     : "error",
                   statusText: initialData.env.cronSecret
-                    ? "Configuré (dédié)"
+                    ? "Protégé (CRON_SECRET dédié)"
                     : initialData.env.supabaseServiceRoleKey
-                    ? "Repli actif (service_role)"
-                    : "Non configuré",
+                    ? "Protégé (repli Service Role)"
+                    : "Non protégé",
                   desc: "Protection des tâches planifiées",
                 },
               ].map((v) => (

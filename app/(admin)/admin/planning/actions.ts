@@ -247,13 +247,17 @@ export async function createRecurringTemplateServerAction(payload: {
   max_capacity: number;
 }): Promise<MutationResult> {
   try {
+    console.log(`[AdminPlanning:Create] Step 1: verifyAdminAuth | Type: ${payload.type} | Discipline: ${payload.discipline} | Day: ${payload.day_of_week} | Time: ${payload.start_time}`);
     await verifyAdminAuth();
+
+    console.log(`[AdminPlanning:Create] Step 2: createAdminClient`);
     const adminSupabase = createAdminClient();
 
     const startTimeFormatted = normalizeTime(payload.start_time);
     const endTimeFormatted = normalizeTime(payload.end_time);
 
     // 1. Insertion dans recurring_schedule_templates
+    console.log(`[AdminPlanning:Create] Step 3: insert recurring_schedule_templates`);
     const { data: newTmpl, error: insertError } = await adminSupabase
       .from("recurring_schedule_templates")
       .insert({
@@ -271,7 +275,7 @@ export async function createRecurringTemplateServerAction(payload: {
       .single();
 
     if (insertError || !newTmpl) {
-      console.error("[createRecurringTemplateServerAction] Erreur insert template :", insertError);
+      console.error(`[AdminPlanning:Create ERROR] Step: insert_template | Code: ${insertError?.code} | Message: ${insertError?.message}`);
       return {
         success: false,
         error: insertError?.message || "Impossible de créer ce créneau récurrent.",
@@ -279,20 +283,22 @@ export async function createRecurringTemplateServerAction(payload: {
     }
 
     // 2. Synchronisation directe des 12 semaines
+    console.log(`[AdminPlanning:Create] Step 4: syncClassSessionsForTemplate | NewId: ${newTmpl.id}`);
     try {
       await syncClassSessionsForTemplate(adminSupabase, newTmpl as RecurringTemplateItem);
     } catch (syncErr) {
-      console.warn("[createRecurringTemplateServerAction] Note synchronisation directe :", syncErr);
+      console.warn("[AdminPlanning:Create] Note synchronisation directe :", syncErr);
     }
 
     // 3. Déclenchement de la génération immédiate sur l'horizon pour instancier les séances
+    console.log(`[AdminPlanning:Create] Step 5: rpc generate_recurring_schedule`);
     try {
       await adminSupabase.rpc("generate_recurring_schedule", {
         p_start_date: getCurrentWeekMondayIso(),
         p_weeks_count: 12,
       });
     } catch (genErr) {
-      console.warn("[createRecurringTemplateServerAction] Note génération immédiate :", genErr);
+      console.warn("[AdminPlanning:Create] Note génération immédiate :", genErr);
     }
 
     revalidatePath("/planning");
@@ -300,12 +306,14 @@ export async function createRecurringTemplateServerAction(payload: {
     revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
+    console.log(`[AdminPlanning:Create] Success | NewId: ${newTmpl.id}`);
     return {
       success: true,
       data: newTmpl,
       message: `Créneau récurrent ${payload.discipline} (${payload.start_time}) créé et planifié.`,
     };
   } catch (err: any) {
+    console.error("[AdminPlanning:Create EXCEPTION] :", err?.message || err);
     return { success: false, error: err?.message || "Erreur serveur inattendue." };
   }
 }
@@ -330,7 +338,10 @@ export async function updateRecurringTemplateServerAction(
   forceCascade = false
 ): Promise<MutationResult> {
   try {
+    console.log(`[AdminPlanning:Update] Step 1: verifyAdminAuth | TemplateId: ${templateId} | ForceCascade: ${forceCascade}`);
     await verifyAdminAuth();
+
+    console.log(`[AdminPlanning:Update] Step 2: createAdminClient`);
     const adminSupabase = createAdminClient();
 
     const normalizedPayload = {
@@ -340,11 +351,17 @@ export async function updateRecurringTemplateServerAction(
     };
 
     // 1. Récupération du template actuel pour détecter les changements d'horaire, de jour ou de discipline
-    const { data: oldTmpl } = await adminSupabase
+    console.log(`[AdminPlanning:Update] Step 3: fetch old template | TemplateId: ${templateId}`);
+    const { data: oldTmpl, error: fetchOldErr } = await adminSupabase
       .from("recurring_schedule_templates")
       .select("*")
       .eq("id", templateId)
       .single();
+
+    if (fetchOldErr || !oldTmpl) {
+      console.error(`[AdminPlanning:Update ERROR] Step: fetch_old_template | TemplateId: ${templateId} | Code: ${fetchOldErr?.code} | Message: ${fetchOldErr?.message}`);
+      return { success: false, error: fetchOldErr?.message || "Créneau introuvable." };
+    }
 
     const isScheduleOrDisciplineChanged = Boolean(
       oldTmpl && (
@@ -357,6 +374,7 @@ export async function updateRecurringTemplateServerAction(
 
     // 2. Vérification des réservations (membres ET cours d'essai) sur les séances de la semaine courante et futures
     const currentWeekMondayIso = `${getCurrentWeekMondayIso()}T00:00:00.000Z`;
+    console.log(`[AdminPlanning:Update] Step 4: check bookings | Monday: ${currentWeekMondayIso}`);
     const { data: futureSessions } = await adminSupabase
       .from("class_sessions")
       .select("id")
@@ -384,6 +402,7 @@ export async function updateRecurringTemplateServerAction(
 
     // Si des réservations existent et que l'administrateur n'a pas encore explicitement forcé l'action
     if (totalBookings > 0 && !forceCascade) {
+      console.log(`[AdminPlanning:Update] Warning: ${totalBookings} existing bookings require confirmation`);
       return {
         success: false,
         hasBookings: true,
@@ -415,6 +434,7 @@ export async function updateRecurringTemplateServerAction(
     }
 
     // 3. Mise à jour du template
+    console.log(`[AdminPlanning:Update] Step 5: update template in DB | TemplateId: ${templateId}`);
     const { data: updatedTmpl, error: tmplErr } = await adminSupabase
       .from("recurring_schedule_templates")
       .update({
@@ -426,11 +446,13 @@ export async function updateRecurringTemplateServerAction(
       .single();
 
     if (tmplErr) {
+      console.error(`[AdminPlanning:Update ERROR] Step: update_template | Code: ${tmplErr.code} | Message: ${tmplErr.message}`);
       return { success: false, error: tmplErr.message };
     }
 
     // 4. Synchronisation des séances physiques
     if (isScheduleOrDisciplineChanged) {
+      console.log(`[AdminPlanning:Update] Step 6A: schedule/discipline changed -> purge unbooked (${unbookedSessionIds.length}) & resync`);
       // Cas A : L'horaire, le jour ou la discipline a changé.
       // -> Supprimer les futures occurrences NON réservées à l'ancien horaire (évite tout doublon)
       if (unbookedSessionIds.length > 0) {
@@ -444,7 +466,7 @@ export async function updateRecurringTemplateServerAction(
       try {
         await syncClassSessionsForTemplate(adminSupabase, updatedTmpl as RecurringTemplateItem);
       } catch (syncErr) {
-        console.warn("[updateRecurringTemplateServerAction] Note synchronisation directe :", syncErr);
+        console.warn("[AdminPlanning:Update] Note synchronisation directe :", syncErr);
       }
 
       // -> Déclencher la génération d'horizon
@@ -454,9 +476,10 @@ export async function updateRecurringTemplateServerAction(
           p_weeks_count: 12,
         });
       } catch (genErr) {
-        console.warn("[updateRecurringTemplateServerAction] Note régénération :", genErr);
+        console.warn("[AdminPlanning:Update] Note régénération :", genErr);
       }
     } else {
+      console.log(`[AdminPlanning:Update] Step 6B: simple update (level/capacity/is_active)`);
       // Cas B : Changement simple (niveau, capacité, is_active)
       // -> Mise à jour in situ des futures séances non réservées
       if (unbookedSessionIds.length > 0) {
@@ -476,7 +499,7 @@ export async function updateRecurringTemplateServerAction(
       try {
         await syncClassSessionsForTemplate(adminSupabase, updatedTmpl as RecurringTemplateItem);
       } catch (syncErr) {
-        console.warn("[updateRecurringTemplateServerAction] Note sync in situ :", syncErr);
+        console.warn("[AdminPlanning:Update] Note sync in situ :", syncErr);
       }
     }
 
@@ -485,6 +508,7 @@ export async function updateRecurringTemplateServerAction(
     revalidatePath("/admin/cours-prives");
     revalidatePath("/membre/planning");
 
+    console.log(`[AdminPlanning:Update] Success | TemplateId: ${templateId}`);
     return {
       success: true,
       data: updatedTmpl,
@@ -493,6 +517,7 @@ export async function updateRecurringTemplateServerAction(
         : "Modèle récurrent et séances futures synchronisés avec succès.",
     };
   } catch (err: any) {
+    console.error("[AdminPlanning:Update EXCEPTION] :", err?.message || err);
     return { success: false, error: err?.message || "Erreur lors de la modification." };
   }
 }

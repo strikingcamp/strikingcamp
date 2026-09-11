@@ -621,54 +621,54 @@ export async function runSystemDiagnosticServerAction(): Promise<ActionResponse<
 
     checks.push({
       id: "env-supabase-url",
-      label: "Variable NEXT_PUBLIC_SUPABASE_URL",
+      label: "Supabase URL (NEXT_PUBLIC_SUPABASE_URL)",
       category: "ENV",
       status: process.env.NEXT_PUBLIC_SUPABASE_URL ? "ok" : "error",
       details: process.env.NEXT_PUBLIC_SUPABASE_URL
-        ? "Configuré côté serveur (valeur sécurisée)"
+        ? "Configuré"
         : "Non configuré",
     });
 
     checks.push({
       id: "env-supabase-publishable-key",
-      label: "Variable NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      label: "Publishable Key (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)",
       category: "ENV",
       status: hasPublishable ? "ok" : "error",
       details: hasPublishable
-        ? "Configuré (clé publique Supabase active)"
-        : "Non configuré",
+        ? "Configurée"
+        : "Non configurée",
     });
 
     checks.push({
       id: "env-supabase-service-role-key",
-      label: "Variable SUPABASE_SERVICE_ROLE_KEY",
+      label: "Service Role Key (SUPABASE_SERVICE_ROLE_KEY)",
       category: "ENV",
       status: hasServiceRole ? "ok" : "error",
       details: hasServiceRole
-        ? "Configuré côté serveur uniquement (accès admin privilégié)"
-        : "Non configuré",
+        ? "Configurée (serveur uniquement)"
+        : "Non configurée",
     });
 
     checks.push({
       id: "env-resend-api-key",
-      label: "Variable RESEND_API_KEY",
+      label: "Resend (RESEND_API_KEY)",
       category: "ENV",
       status: process.env.RESEND_API_KEY ? "ok" : "warning",
       details: process.env.RESEND_API_KEY
-        ? "Configuré côté serveur (emails transactionnels)"
+        ? "Configuré"
         : "Non configuré",
     });
 
     checks.push({
       id: "env-cron-secret",
-      label: "Variable CRON_SECRET",
+      label: "Cron (CRON_SECRET)",
       category: "SECURITY",
       status: hasCronSecret ? "ok" : hasServiceRole ? "ok" : "error",
       details: hasCronSecret
-        ? "Configuré côté serveur (secret dédié au Cron)"
+        ? "Protégé (CRON_SECRET dédié)"
         : hasServiceRole
-        ? "Non défini individuellement (repli sécurisé actif sur SUPABASE_SERVICE_ROLE_KEY)"
-        : "Non configuré",
+        ? "Protégé (repli sécurisé sur Service Role Key)"
+        : "Non protégé",
     });
 
     const hasError = checks.some((c) => c.status === "error");

@@ -51,7 +51,7 @@ export function createAdminClient(): SupabaseClient {
 
   if (!serviceRoleKey) {
     throw new Error(
-      "La variable d'environnement SUPABASE_SERVICE_ROLE_KEY n'est pas configurée dans .env.local"
+      "La variable d'environnement SUPABASE_SERVICE_ROLE_KEY n'est pas configurée côté serveur (Vercel ou .env.local)."
     );
   }
 
