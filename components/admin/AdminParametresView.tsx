@@ -35,6 +35,7 @@ import {
   runSystemDiagnosticServerAction,
 } from "@/app/(admin)/admin/parametres/actions";
 import { type ServiceSetting } from "@/lib/supabase/services";
+import { siteData } from "@/data/content";
 import { cn } from "@/lib/utils";
 
 type TabKey = "general" | "services" | "reservations" | "securite" | "maintenance";
@@ -335,7 +336,7 @@ export default function AdminParametresView({ initialData }: AdminParametresView
                   Téléphone du club
                 </span>
                 <p className="text-sm font-semibold text-brand-white">
-                  07 82 46 22 41
+                  {siteData.contact.phone}
                 </p>
                 <p className="text-[11px] text-brand-white/40">Ligne directe accueil et réservations</p>
               </div>
