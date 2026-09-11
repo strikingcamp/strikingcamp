@@ -135,7 +135,7 @@ export default function BookingConfirmModal() {
                           : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
                       )}
                     >
-                      {selectedSlot?.sessionType || "Séance"} · {isPrivate ? "1 personne" : "Capacité 20"}
+                      {selectedSlot?.sessionType || "Séance"} · {isPrivate ? "1 personne" : "Capacité 12"}
                     </span>
                   </div>
 

@@ -103,7 +103,7 @@ export default function QuickActionModal() {
                       Séance Small Group
                     </h4>
                     <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e]">
-                      Max 20 pers.
+                      Max 12 pers.
                     </span>
                   </div>
                   <p className="text-xs text-brand-white/60 mt-1 leading-relaxed">

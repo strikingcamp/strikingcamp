@@ -936,7 +936,7 @@ export default function AdminReservationsView({
       (b) => b.status === "confirmed"
     );
     const confirmedCount = confirmedParticipants.length;
-    const capacity = session.max_capacity || 20;
+    const capacity = session.max_capacity || 12;
 
     const isPast = session.ends_at
       ? new Date(session.ends_at).getTime() <= Date.now()
@@ -1808,7 +1808,7 @@ export default function AdminReservationsView({
                 Séances Small Group programmées ({smallGroupSessionsForDay.length})
               </h3>
               <span className="text-[11px] text-brand-white/50">
-                Capacité maximale : 20 personnes par séance
+                Capacité maximale : 12 personnes par séance
               </span>
             </div>
 

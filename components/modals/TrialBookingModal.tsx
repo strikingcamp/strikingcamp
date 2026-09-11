@@ -539,7 +539,7 @@ export default function TrialBookingModal({
                             Small Group
                           </h3>
                           <p className="text-xs text-brand-white/50 font-medium mt-0.5">
-                            Séance en petit groupe • 20 pers. max
+                            Séance en petit groupe • 12 pers. max
                           </p>
                         </div>
 

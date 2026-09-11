@@ -181,7 +181,7 @@ export async function getAvailableTrialSessions(
       }
 
       const isCollective = rawType === "collective";
-      const maxCap = s.max_capacity ?? 20;
+      const maxCap = s.max_capacity ?? (isCollective ? 50 : 12);
       const bookedM = memberCounts.get(s.id) || 0;
       const bookedT = trialCounts.get(s.id) || 0;
       const placesOccupied = bookedM + bookedT;

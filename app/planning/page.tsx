@@ -75,7 +75,7 @@ export default async function PlanningPage() {
           name: t.discipline,
           level: t.level,
           time: t.start_time.slice(0, 5),
-          places: t.type === "small_group" ? String(t.max_capacity || 20) : undefined,
+          places: t.type === "small_group" ? String(t.max_capacity || 12) : undefined,
         });
       }
 

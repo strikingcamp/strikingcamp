@@ -26,7 +26,7 @@ export const INITIAL_SERVICES_METADATA: Omit<ServiceSetting, "id">[] = [
   {
     service_key: "small_group",
     service_name: "Small Group",
-    description: "Cours en petit groupe avec capacité limitée à 20 personnes.",
+    description: "Cours en petit groupe avec capacité limitée à 12 personnes.",
     is_active: false,
   },
   {

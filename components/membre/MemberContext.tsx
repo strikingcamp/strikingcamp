@@ -81,7 +81,7 @@ const DEFAULT_DEMO_BOOKINGS: BookingSlot[] = [
     time: "07:00 → 07:50",
     date: "31 Août 2026",
     level: "Fondamentaux",
-    status: "Inscrit (20 places)",
+    status: "Inscrit (12 places)",
   },
 ];
 

@@ -385,7 +385,7 @@ export async function getAdminDashboardData(
           level: s.level,
           starts_at: s.starts_at,
           ends_at: s.ends_at,
-          max_capacity: s.max_capacity || 20,
+          max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
           bookedCount: count,
           is_active: s.is_active ?? true,
         });
@@ -562,7 +562,7 @@ export async function getAdminWeeklyPlanning(
     level: s.level,
     starts_at: s.starts_at,
     ends_at: s.ends_at,
-    max_capacity: s.max_capacity || (s.type === "collective" ? 50 : 20),
+    max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
     bookedCount: bookingCountsMap.get(s.id) || 0,
     is_active: s.is_active ?? true,
   }));
@@ -615,7 +615,7 @@ export async function getAdminSessionReservations(
       level: s.level,
       starts_at: s.starts_at,
       ends_at: s.ends_at,
-      max_capacity: s.max_capacity || 20,
+      max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
       bookedCount: countsMap.get(s.id) || 0,
       is_active: s.is_active ?? true,
     }));
@@ -641,7 +641,7 @@ export async function getAdminSessionReservations(
       level: activeSessionRaw.level,
       starts_at: activeSessionRaw.starts_at,
       ends_at: activeSessionRaw.ends_at,
-      max_capacity: activeSessionRaw.max_capacity || 20,
+      max_capacity: activeSessionRaw.max_capacity || (activeSessionRaw.type === "collective" ? 50 : activeSessionRaw.type === "private" ? 1 : 12),
       bookedCount: countsMap.get(activeSessionRaw.id) || 0,
       is_active: activeSessionRaw.is_active ?? true,
     };
@@ -1251,7 +1251,7 @@ export async function getAdminWeeklyReservationsData(
         level: ps.level || "Tous niveaux",
         starts_at: ps.starts_at,
         ends_at: ps.ends_at,
-        max_capacity: ps.max_capacity || 20,
+        max_capacity: ps.max_capacity || 12,
         bookedCount: confirmedCountsMap.get(ps.id) || 0,
         is_active: ps.is_active ?? true,
       });
@@ -1290,7 +1290,7 @@ export async function getAdminWeeklyReservationsData(
             level: t.level || "Tous niveaux",
             starts_at: virtualStartIso,
             ends_at: virtualEndIso,
-            max_capacity: t.max_capacity || 20,
+            max_capacity: t.max_capacity || 12,
             bookedCount: 0,
             is_active: true,
           });
@@ -1443,7 +1443,7 @@ export async function createClassSessionAdmin(
         level: formData.level?.trim() || null,
         starts_at: formData.starts_at,
         ends_at: formData.ends_at,
-        max_capacity: formData.max_capacity || (formData.type === "collective" ? 50 : 20),
+        max_capacity: formData.max_capacity || (formData.type === "collective" ? 50 : 12),
         is_active: formData.is_active ?? true,
       },
     ])

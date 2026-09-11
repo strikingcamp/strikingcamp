@@ -202,7 +202,7 @@ function generateSlotsFromData(
         const isCol = rawType === "collective" || rawType === "collectif";
         const category: Category = isPriv ? "Cours privés" : isCol ? "Collectifs" : "Small Group";
 
-        const maxCapacity = s.max_capacity ?? (isPriv ? 1 : 20);
+        const maxCapacity = s.max_capacity ?? (isPriv ? 1 : isCol ? 50 : 12);
 
         // Réservations confirmées associées à cette séance (class_session.id)
         const bookingsForSession = allConfirmedBookings.filter(
@@ -1086,11 +1086,11 @@ export default function MemberPlanningView() {
             <div className="flex items-center gap-2.5">
               <ShieldCheck size={18} className="shrink-0" />
               <span>
-                <strong>Planning Small Group Officiel (23 séances / sem.) :</strong> Capacité limitée à 20 personnes par créneau.
+                <strong>Planning Small Group Officiel (23 séances / sem.) :</strong> Capacité limitée à 12 personnes par créneau.
               </span>
             </div>
             <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-brand-blue text-brand-black shrink-0">
-              20 places max
+              12 places max
             </span>
           </div>
 

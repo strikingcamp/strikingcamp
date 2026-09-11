@@ -85,7 +85,7 @@ export default async function AdminPlanningPage() {
     level: s.level || "Tous niveaux",
     starts_at: s.starts_at,
     ends_at: s.ends_at || s.starts_at,
-    max_capacity: s.max_capacity || 20,
+    max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
     is_active: s.is_active ?? true,
     bookedCount: countsMap.get(s.id) || 0,
   }));

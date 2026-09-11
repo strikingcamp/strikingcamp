@@ -33,9 +33,9 @@ export default function AdminDashboardView({
     featuredEvents,
   } = initialData;
 
-  // Calcul du taux d'occupation moyen du jour (sur base 20 places par session Small Group)
+  // Calcul du taux d'occupation moyen du jour (sur base 12 places par session Small Group)
   const totalCapacityToday = upcomingSessionsToday.reduce(
-    (acc, s) => acc + (s.max_capacity || 20),
+    (acc, s) => acc + (s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12)),
     0
   );
   const occupancyRate =
@@ -151,7 +151,7 @@ export default function AdminDashboardView({
               {occupancyRate}%
             </div>
             <p className="text-[11px] text-brand-white/40">
-              Base capacité max 20 pers / cours
+              Base capacité max 12 pers / cours
             </p>
           </div>
         </div>
