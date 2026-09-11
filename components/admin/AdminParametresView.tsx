@@ -25,6 +25,8 @@ import {
   FileText,
   Check,
   X,
+  Mail,
+  LogOut,
 } from "lucide-react";
 import {
   type AdminSettingsData,
@@ -33,6 +35,10 @@ import {
   triggerScheduleSyncServerAction,
   revalidateApplicationCacheServerAction,
   runSystemDiagnosticServerAction,
+  requestAdminEmailChangeServerAction,
+  updateAdminPasswordServerAction,
+  signOutCurrentAdminSessionServerAction,
+  revokeAllAdminSessionsServerAction,
 } from "@/app/(admin)/admin/parametres/actions";
 import { type ServiceSetting } from "@/lib/supabase/services";
 import { siteData } from "@/data/content";
@@ -51,8 +57,22 @@ export default function AdminParametresView({ initialData }: AdminParametresView
 
   // Données locales
   const [services, setServices] = useState<ServiceSetting[]>(initialData.services);
+  const adminEmail = initialData.adminUser.email;
   const auditLogs = initialData.auditLogs;
   const [diagnosticReport, setDiagnosticReport] = useState<SystemDiagnosticReport | null>(null);
+
+  // Modales de sécurité compte
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
+
+  // Formulaires modales sécurité
+  const [emailInput, setEmailInput] = useState("");
+  const [currentPasswordInput, setCurrentPasswordInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [modalSuccess, setModalSuccess] = useState<string | null>(null);
 
   // Messages de retour
   const [feedback, setFeedback] = useState<{
@@ -60,7 +80,7 @@ export default function AdminParametresView({ initialData }: AdminParametresView
     message: string;
   } | null>(null);
 
-  // Modales de confirmation
+  // Modales de confirmation maintenance
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -82,6 +102,147 @@ export default function AdminParametresView({ initialData }: AdminParametresView
     setTimeout(() => {
       setFeedback((prev) => (prev?.message === message ? null : prev));
     }, 6000);
+  };
+
+  // Handlers Sécurité Compte Admin
+  const handleOpenEmailModal = () => {
+    setEmailInput("");
+    setModalError(null);
+    setModalSuccess(null);
+    setIsEmailModalOpen(true);
+  };
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalError(null);
+    setModalSuccess(null);
+
+    const email = emailInput.trim();
+    if (!email) {
+      setModalError("L'adresse email est requise.");
+      return;
+    }
+    if (email.toLowerCase() === adminEmail.toLowerCase()) {
+      setModalError("La nouvelle adresse email doit être différente de l'adresse actuelle.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await requestAdminEmailChangeServerAction(email);
+        if (res.success) {
+          setModalSuccess(res.message || "Un email de confirmation a été envoyé.");
+          triggerFeedback("success", res.message || "Demande envoyée avec succès.");
+          setTimeout(() => {
+            setIsEmailModalOpen(false);
+          }, 2500);
+        } else {
+          setModalError(res.error || "Impossible de modifier l'adresse email.");
+        }
+      } catch {
+        setModalError("Une erreur inattendue est survenue.");
+      }
+    });
+  };
+
+  const handleOpenPasswordModal = () => {
+    setCurrentPasswordInput("");
+    setPasswordInput("");
+    setConfirmPasswordInput("");
+    setModalError(null);
+    setModalSuccess(null);
+    setIsPasswordModalOpen(true);
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalError(null);
+    setModalSuccess(null);
+
+    if (!currentPasswordInput) {
+      setModalError("Veuillez saisir votre mot de passe actuel.");
+      return;
+    }
+    if (!passwordInput || passwordInput.length < 8) {
+      setModalError("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    if (passwordInput !== confirmPasswordInput) {
+      setModalError("Les deux mots de passe ne correspondent pas.");
+      return;
+    }
+    if (currentPasswordInput.trim() === passwordInput.trim()) {
+      setModalError("Le nouveau mot de passe doit être différent du mot de passe actuel.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await updateAdminPasswordServerAction(
+          currentPasswordInput,
+          passwordInput,
+          confirmPasswordInput
+        );
+        if (res.success) {
+          setModalSuccess("Votre mot de passe a été modifié avec succès.");
+          triggerFeedback("success", "Votre mot de passe a été modifié avec succès.");
+          setCurrentPasswordInput("");
+          setPasswordInput("");
+          setConfirmPasswordInput("");
+          setTimeout(() => {
+            setIsPasswordModalOpen(false);
+          }, 2000);
+        } else {
+          setModalError(res.error || "Échec de la modification du mot de passe.");
+        }
+      } catch {
+        setModalError("Une erreur inattendue est survenue.");
+      }
+    });
+  };
+
+  const handleSignOutCurrentSession = () => {
+    startTransition(async () => {
+      try {
+        const res = await signOutCurrentAdminSessionServerAction();
+        if (res.success) {
+          triggerFeedback("success", "Session déconnectée avec succès. Redirection...");
+          setTimeout(() => {
+            router.replace("/connexion");
+          }, 800);
+        } else {
+          triggerFeedback("error", res.error || "Échec de la déconnexion.");
+        }
+      } catch {
+        triggerFeedback("error", "Une erreur inattendue est survenue.");
+      }
+    });
+  };
+
+  const handleOpenRevokeModal = () => {
+    setModalError(null);
+    setIsRevokeModalOpen(true);
+  };
+
+  const handleRevokeAllSubmit = () => {
+    setModalError(null);
+    startTransition(async () => {
+      try {
+        const res = await revokeAllAdminSessionsServerAction();
+        if (res.success) {
+          triggerFeedback("success", "Toutes les sessions ont été révoquées. Redirection...");
+          setIsRevokeModalOpen(false);
+          setTimeout(() => {
+            router.replace("/connexion?revoked=all");
+          }, 1200);
+        } else {
+          setModalError(res.error || "Échec de la révocation des sessions.");
+          triggerFeedback("error", res.error || "Échec de la révocation.");
+        }
+      } catch {
+        setModalError("Une erreur inattendue est survenue.");
+      }
+    });
   };
 
   // 1. Déclenchement de la confirmation de changement de statut de service
@@ -622,88 +783,216 @@ export default function AdminParametresView({ initialData }: AdminParametresView
       {/* ========================================================================= */}
       {activeTab === "securite" && (
         <div className="space-y-6">
-          {/* Diagnostic Compte Admin & Protections */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Compte Admin Connecté */}
-            <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-xl p-6 space-y-4">
-              <h3 className="text-sm font-heading font-bold uppercase text-brand-white flex items-center gap-2">
-                <UserCheck size={16} className="text-brand-blue" />
-                Compte Administrateur Connecté
-              </h3>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1.5 border-b border-brand-white/5">
-                  <span className="text-brand-white/50">Email</span>
-                  <span className="font-semibold text-brand-white">
-                    {initialData.adminUser.email}
+          {/* Compte Administrateur & Sessions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 1. Compte Administrateur (Email & Mot de passe) */}
+            <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-xl p-6 space-y-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-brand-white/10 pb-3 mb-4">
+                  <h3 className="text-sm font-heading font-bold uppercase text-brand-white flex items-center gap-2">
+                    <UserCheck size={16} className="text-brand-blue" />
+                    Compte Administrateur
+                  </h3>
+                  <span className="px-2 py-0.5 rounded bg-brand-blue/10 text-brand-blue text-[10px] font-bold uppercase">
+                    Authentification Supabase
                   </span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-brand-white/5">
-                  <span className="text-brand-white/50">UUID Utilisateur</span>
-                  <span className="font-mono text-[11px] text-brand-blue truncate max-w-[220px]">
-                    {initialData.adminUser.id}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-brand-white/5">
-                  <span className="text-brand-white/50">Rôle (app_metadata)</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold text-[10px] uppercase">
-                    {initialData.adminUser.role}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5">
-                  <span className="text-brand-white/50">Session Supabase</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Active & Vérifiée
-                  </span>
+
+                <div className="space-y-4 text-xs">
+                  {/* Email de connexion */}
+                  <div className="p-4 rounded-lg bg-[#080d1a]/60 border border-brand-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-brand-white/40">
+                        Email de connexion
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleOpenEmailModal}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue border border-brand-blue/30 text-[11px] font-heading font-bold uppercase tracking-wider transition-colors"
+                      >
+                        <Mail size={12} />
+                        Modifier l&apos;email
+                      </button>
+                    </div>
+                    <p className="font-semibold text-brand-white text-sm">
+                      {adminEmail}
+                    </p>
+                    <p className="text-[11px] text-brand-white/40">
+                      L&apos;adresse email utilisée pour accéder à votre espace administrateur.
+                    </p>
+                  </div>
+
+                  {/* Mot de passe */}
+                  <div className="p-4 rounded-lg bg-[#080d1a]/60 border border-brand-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-brand-white/40">
+                        Mot de passe
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleOpenPasswordModal}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-brand-white/10 hover:bg-brand-white/20 text-brand-white border border-brand-white/20 text-[11px] font-heading font-bold uppercase tracking-wider transition-colors"
+                      >
+                        <Lock size={12} />
+                        Modifier le mot de passe
+                      </button>
+                    </div>
+                    <p className="font-mono text-xs text-brand-white/50 tracking-widest">
+                      ••••••••••••••••
+                    </p>
+                    <p className="text-[11px] text-brand-white/40">
+                      Votre mot de passe est protégé et n&apos;est jamais affiché.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Protections d'Authentification & RLS */}
-            <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-xl p-6 space-y-4">
+            {/* 2. Sessions & Connexions */}
+            <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-xl p-6 space-y-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-brand-white/10 pb-3 mb-4">
+                  <h3 className="text-sm font-heading font-bold uppercase text-brand-white flex items-center gap-2">
+                    <Clock size={16} className="text-brand-blue" />
+                    Session Actuelle
+                  </h3>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Active
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="p-4 rounded-lg bg-[#080d1a]/60 border border-brand-white/5 space-y-2">
+                    <div className="flex justify-between py-1 border-b border-brand-white/5">
+                      <span className="text-brand-white/50">Email</span>
+                      <span className="font-semibold text-brand-white">
+                        {adminEmail}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-brand-white/5">
+                      <span className="text-brand-white/50">Dernière connexion</span>
+                      <span className="font-semibold text-brand-white">
+                        {initialData.adminUser.lastSignInAt
+                          ? new Date(initialData.adminUser.lastSignInAt).toLocaleString("fr-FR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "Session active"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-brand-white/5">
+                      <span className="text-brand-white/50">Date de création</span>
+                      <span className="font-semibold text-brand-white">
+                        {initialData.adminUser.createdAt
+                          ? new Date(initialData.adminUser.createdAt).toLocaleDateString("fr-FR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-brand-white/5">
+                      <span className="text-brand-white/50">Fournisseur d&apos;authentification</span>
+                      <span className="font-semibold text-brand-white uppercase text-[11px]">
+                        {initialData.adminUser.provider || "Email / Mot de passe"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1">
+                      <span className="text-brand-white/50">Identifiant UUID</span>
+                      <span className="font-mono text-[11px] text-brand-blue truncate max-w-[200px]">
+                        {initialData.adminUser.id}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions de déconnexion */}
+              <div className="pt-4 border-t border-brand-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleSignOutCurrentSession}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white border border-brand-white/10 text-xs font-heading font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+                >
+                  <LogOut size={13} />
+                  Déconnecter cette session
+                </button>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleOpenRevokeModal}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-heading font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+                >
+                  <LogOut size={13} />
+                  Déconnecter toutes les sessions
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Privilèges Administrateur & Protections Serveur */}
+          <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
               <h3 className="text-sm font-heading font-bold uppercase text-brand-white flex items-center gap-2">
                 <ShieldAlert size={16} className="text-brand-blue" />
-                Protections Administrateur & RLS
+                Privilèges Administrateur & Protections Serveur
               </h3>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1.5 border-b border-brand-white/5">
-                  <span className="text-brand-white/50">assertAdminUser() (Serveur)</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Actif (Fail-Closed)
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-brand-white/5">
-                  <span className="text-brand-white/50">public.is_admin() (SQL RLS)</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Protégé
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-brand-white/5">
-                  <span className="text-brand-white/50">RLS (Tables sensibles)</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Activé
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5">
-                  <span className="text-brand-white/50">Sécurisation Cron</span>
-                  <span
-                    className={cn(
-                      "font-semibold flex items-center gap-1",
-                      initialData.security.cronProtectionStatus === "PROTÉGÉ"
-                        ? "text-emerald-400"
-                        : "text-amber-400"
-                    )}
-                  >
-                    {initialData.security.cronProtectionStatus === "PROTÉGÉ" ? (
-                      <>
-                        <CheckCircle2 size={12} /> {initialData.env.cronSecret ? "Protégé (CRON_SECRET)" : "Protégé (Repli SERVICE_ROLE_KEY)"}
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={12} /> Non configuré
-                      </>
-                    )}
-                  </span>
-                </div>
+              <span className="px-2.5 py-0.5 rounded bg-brand-white/5 text-brand-white/40 border border-brand-white/10 text-[10px] font-bold uppercase">
+                Lecture seule stricte
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+              <div className="p-3.5 rounded-lg bg-[#080d1a]/50 border border-brand-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-white/40">
+                  Rôle (app_metadata)
+                </span>
+                <p className="text-sm font-heading font-bold text-emerald-400 uppercase">
+                  {initialData.adminUser.role}
+                </p>
+                <p className="text-[10px] text-brand-white/40">Source immuable Supabase Auth</p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-[#080d1a]/50 border border-brand-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-white/40">
+                  Protection Serveur
+                </span>
+                <p className="text-sm font-heading font-bold text-emerald-400 uppercase flex items-center gap-1">
+                  <CheckCircle2 size={14} /> assertAdminUser()
+                </p>
+                <p className="text-[10px] text-brand-white/40">Contrôle Fail-Closed systématique</p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-[#080d1a]/50 border border-brand-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-white/40">
+                  Sécurité BDD (RLS)
+                </span>
+                <p className="text-sm font-heading font-bold text-emerald-400 uppercase flex items-center gap-1">
+                  <CheckCircle2 size={14} /> public.is_admin()
+                </p>
+                <p className="text-[10px] text-brand-white/40">Politiques SQL actives</p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-[#080d1a]/50 border border-brand-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-white/40">
+                  Protection Cron
+                </span>
+                <p className="text-sm font-heading font-bold text-emerald-400 uppercase flex items-center gap-1">
+                  <CheckCircle2 size={14} /> {initialData.security.cronProtectionStatus}
+                </p>
+                <p className="text-[10px] text-brand-white/40">
+                  {initialData.env.cronSecret ? "CRON_SECRET actif" : "Repli SERVICE_ROLE actif"}
+                </p>
               </div>
             </div>
           </div>
@@ -1092,6 +1381,289 @@ export default function AdminParametresView({ initialData }: AdminParametresView
               >
                 {isPending && <RefreshCw size={14} className="animate-spin" />}
                 Confirmer l&apos;opération
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODALE 1 : MODIFIER L'EMAIL DE CONNEXION */}
+      {/* ========================================================================= */}
+      {isEmailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0f172a] border border-brand-white/20 rounded-xl p-6 max-w-md w-full space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
+              <div className="flex items-center gap-2.5 text-brand-white">
+                <div className="w-8 h-8 rounded-lg bg-brand-blue/10 border border-brand-blue/30 flex items-center justify-center text-brand-blue shrink-0">
+                  <Mail size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-heading font-bold uppercase text-brand-white">
+                    Modifier l&apos;adresse email
+                  </h3>
+                  <p className="text-[10px] text-brand-white/40 uppercase font-semibold">
+                    Compte administrateur
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => setIsEmailModalOpen(false)}
+                className="text-brand-white/40 hover:text-brand-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div className="p-3 rounded-lg bg-[#080d1a]/60 border border-brand-white/5 space-y-1 text-xs">
+                <span className="text-[10px] uppercase font-bold text-brand-white/40">
+                  Email actuel
+                </span>
+                <p className="font-semibold text-brand-white">{adminEmail}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="admin-new-email"
+                  className="block text-xs font-heading font-bold uppercase tracking-wider text-brand-white/70"
+                >
+                  Nouvelle adresse email
+                </label>
+                <input
+                  id="admin-new-email"
+                  type="email"
+                  required
+                  autoFocus
+                  disabled={isPending}
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="nouvelle-adresse@exemple.fr"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-[#080d1a] border border-brand-white/20 text-brand-white text-xs placeholder:text-brand-white/30 focus:outline-none focus:border-brand-blue transition-colors disabled:opacity-50"
+                />
+              </div>
+
+              <p className="text-[11px] text-brand-white/50 leading-relaxed">
+                Un email de confirmation sera envoyé à la nouvelle adresse. Vous devrez cliquer sur le lien reçu pour valider définitivement le changement.
+              </p>
+
+              {modalError && (
+                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              {modalSuccess && (
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+                  <CheckCircle2 size={14} className="shrink-0" />
+                  <span>{modalSuccess}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-brand-white/10">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => setIsEmailModalOpen(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5 transition-colors disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending || !emailInput}
+                  className="px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider bg-brand-blue hover:bg-brand-blue/90 text-brand-black transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isPending && <RefreshCw size={14} className="animate-spin" />}
+                  Envoyer la demande
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODALE 2 : MODIFIER LE MOT DE PASSE */}
+      {/* ========================================================================= */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0f172a] border border-brand-white/20 rounded-xl p-6 max-w-md w-full space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
+              <div className="flex items-center gap-2.5 text-brand-white">
+                <div className="w-8 h-8 rounded-lg bg-brand-white/10 border border-brand-white/20 flex items-center justify-center text-brand-white shrink-0">
+                  <Lock size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-heading font-bold uppercase text-brand-white">
+                    Modifier le mot de passe
+                  </h3>
+                  <p className="text-[10px] text-brand-white/40 uppercase font-semibold">
+                    Compte administrateur
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="text-brand-white/40 hover:text-brand-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="admin-current-password"
+                  className="block text-xs font-heading font-bold uppercase tracking-wider text-brand-white/70"
+                >
+                  Mot de passe actuel
+                </label>
+                <input
+                  id="admin-current-password"
+                  type="password"
+                  required
+                  autoFocus
+                  disabled={isPending}
+                  value={currentPasswordInput}
+                  onChange={(e) => setCurrentPasswordInput(e.target.value)}
+                  placeholder="Votre mot de passe actuel"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-[#080d1a] border border-brand-white/20 text-brand-white text-xs placeholder:text-brand-white/30 focus:outline-none focus:border-brand-blue transition-colors disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="admin-new-password"
+                  className="block text-xs font-heading font-bold uppercase tracking-wider text-brand-white/70"
+                >
+                  Nouveau mot de passe
+                </label>
+                <input
+                  id="admin-new-password"
+                  type="password"
+                  required
+                  disabled={isPending}
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Minimum 8 caractères"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-[#080d1a] border border-brand-white/20 text-brand-white text-xs placeholder:text-brand-white/30 focus:outline-none focus:border-brand-blue transition-colors disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="admin-confirm-password"
+                  className="block text-xs font-heading font-bold uppercase tracking-wider text-brand-white/70"
+                >
+                  Confirmer le nouveau mot de passe
+                </label>
+                <input
+                  id="admin-confirm-password"
+                  type="password"
+                  required
+                  disabled={isPending}
+                  value={confirmPasswordInput}
+                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                  placeholder="Répétez le nouveau mot de passe"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-[#080d1a] border border-brand-white/20 text-brand-white text-xs placeholder:text-brand-white/30 focus:outline-none focus:border-brand-blue transition-colors disabled:opacity-50"
+                />
+              </div>
+
+              <p className="text-[11px] text-brand-white/50 leading-relaxed">
+                Le mot de passe doit comporter au moins 8 caractères. Il est chiffré et protégé par Supabase Auth.
+              </p>
+
+              {modalError && (
+                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              {modalSuccess && (
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+                  <CheckCircle2 size={14} className="shrink-0" />
+                  <span>{modalSuccess}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-brand-white/10">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5 transition-colors disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending || !currentPasswordInput || !passwordInput || !confirmPasswordInput}
+                  className="px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider bg-brand-blue hover:bg-brand-blue/90 text-brand-black transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isPending && <RefreshCw size={14} className="animate-spin" />}
+                  Modifier le mot de passe
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODALE 3 : DÉCONNEXION DE TOUTES LES SESSIONS */}
+      {/* ========================================================================= */}
+      {isRevokeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0f172a] border border-rose-500/30 rounded-xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0">
+                <LogOut size={20} />
+              </div>
+              <div>
+                <h3 className="text-base font-heading font-black uppercase text-brand-white">
+                  Déconnecter toutes les sessions ?
+                </h3>
+                <p className="text-[10px] text-rose-400 uppercase font-semibold">
+                  Action de sécurité sensible
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-brand-white/70 leading-relaxed">
+              Cette action déconnectera votre compte administrateur de tous les appareils actuellement connectés. Votre session active prendra fin immédiatement et vous serez redirigé vers la page de connexion.
+            </p>
+
+            {modalError && (
+              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <AlertTriangle size={14} className="shrink-0" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-brand-white/10">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => setIsRevokeModalOpen(false)}
+                className="px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5 transition-colors disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleRevokeAllSubmit}
+                className="px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider bg-rose-500 hover:bg-rose-600 text-white transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-rose-500/20"
+              >
+                {isPending && <RefreshCw size={14} className="animate-spin" />}
+                Déconnecter toutes les sessions
               </button>
             </div>
           </div>

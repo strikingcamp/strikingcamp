@@ -1,13 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { assertAdminUser } from "@/lib/supabase/auth-admin";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import {
-  getAdminServiceSettingsList,
-  updateAdminServiceStatus,
-  type ServiceSetting,
-} from "@/lib/supabase/services";
+import { getAdminServiceSettingsList, updateAdminServiceStatus, type ServiceSetting } from "@/lib/supabase/services";
+import { getAuthRedirectUrl } from "@/lib/auth-helpers";
 
 export interface AdminUserAccountInfo {
   id: string;
@@ -15,6 +13,7 @@ export interface AdminUserAccountInfo {
   role: string;
   lastSignInAt?: string | null;
   createdAt?: string | null;
+  provider?: string | null;
 }
 
 export interface SystemCapacitiesInfo {
@@ -144,6 +143,7 @@ export async function getAdminSettingsDataServerAction(): Promise<ActionResponse
       role: (user.app_metadata?.role as string) || "ADMIN",
       lastSignInAt: user.last_sign_in_at || null,
       createdAt: user.created_at || null,
+      provider: (user.app_metadata?.provider as string) || "email",
     };
 
     // 2. Statut des services
@@ -693,6 +693,290 @@ export async function runSystemDiagnosticServerAction(): Promise<ActionResponse<
     return {
       success: false,
       error: error.message || "Erreur lors du diagnostic système.",
+    };
+  }
+}
+
+/**
+ * Envoie une demande de modification d'adresse email pour le compte administrateur connecté.
+ * Déclenche l'envoi d'un email de confirmation par Supabase Auth avec lien de retour.
+ */
+export async function requestAdminEmailChangeServerAction(
+  newEmail: string
+): Promise<ActionResponse<{ oldEmail: string; newEmail: string }>> {
+  try {
+    const admin = await assertAdminUser();
+
+    if (!newEmail || typeof newEmail !== "string") {
+      return {
+        success: false,
+        error: "L'adresse email est requise.",
+      };
+    }
+
+    const normalizedEmail = newEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return {
+        success: false,
+        error: "Le format de l'adresse email est invalide.",
+      };
+    }
+
+    const currentEmail = (admin.email || "").trim().toLowerCase();
+    if (normalizedEmail === currentEmail) {
+      return {
+        success: false,
+        error: "La nouvelle adresse email doit être différente de votre adresse actuelle.",
+      };
+    }
+
+    const supabase = await createClient();
+    const redirectUrl = getAuthRedirectUrl("/admin/parametres");
+
+    const { error } = await supabase.auth.updateUser(
+      { email: normalizedEmail },
+      { emailRedirectTo: redirectUrl }
+    );
+
+    if (error) {
+      console.error("[requestAdminEmailChange] Erreur Supabase updateUser :", error.message);
+      return {
+        success: false,
+        error: error.message || "Impossible d'initier le changement d'adresse email.",
+      };
+    }
+
+    // Traçabilité immuable dans l'audit log (catégorie AUTH)
+    await recordAdminAudit(
+      admin.id,
+      admin.email || "admin@strikingcamp.fr",
+      "ADMIN_EMAIL_CHANGE_REQUESTED",
+      "AUTH",
+      {
+        old_email: currentEmail,
+        requested_email: normalizedEmail,
+        requested_at: new Date().toISOString(),
+      }
+    );
+
+    revalidatePath("/admin/parametres");
+
+    return {
+      success: true,
+      message: "Un email de confirmation a été envoyé à la nouvelle adresse.",
+      data: { oldEmail: currentEmail, newEmail: normalizedEmail },
+    };
+  } catch (err) {
+    const error = err as Error;
+    console.error("[requestAdminEmailChange] Exception :", error);
+    return {
+      success: false,
+      error: error.message || "Erreur lors de la demande de modification d'email.",
+    };
+  }
+}
+
+/**
+ * Met à jour le mot de passe du compte administrateur connecté via Supabase Auth.
+ * Vérifie d'abord le mot de passe actuel sans corrompre la session active.
+ * Ne stocke, ne logge et ne transmet JAMAIS le mot de passe.
+ */
+export async function updateAdminPasswordServerAction(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword?: string
+): Promise<ActionResponse<void>> {
+  try {
+    const admin = await assertAdminUser();
+
+    if (!currentPassword || typeof currentPassword !== "string") {
+      return {
+        success: false,
+        error: "Le mot de passe actuel est requis.",
+      };
+    }
+
+    if (!newPassword || typeof newPassword !== "string") {
+      return {
+        success: false,
+        error: "Le nouveau mot de passe est obligatoire.",
+      };
+    }
+
+    const trimmedNewPassword = newPassword.trim();
+    if (trimmedNewPassword.length < 8) {
+      return {
+        success: false,
+        error: "Le nouveau mot de passe doit contenir au moins 8 caractères.",
+      };
+    }
+
+    if (confirmPassword !== undefined && trimmedNewPassword !== confirmPassword.trim()) {
+      return {
+        success: false,
+        error: "Les deux mots de passe saisis ne correspondent pas.",
+      };
+    }
+
+    if (currentPassword.trim() === trimmedNewPassword) {
+      return {
+        success: false,
+        error: "Le nouveau mot de passe doit être différent du mot de passe actuel.",
+      };
+    }
+
+    // 1. Vérification sécurisée du mot de passe actuel via un client Auth éphémère
+    // (persistSession: false garantit qu'aucun cookie/session existante n'est altéré)
+    const tempAuthClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    );
+
+    const { error: signInError } = await tempAuthClient.auth.signInWithPassword({
+      email: admin.email || "",
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      return {
+        success: false,
+        error: "Le mot de passe actuel est incorrect.",
+      };
+    }
+
+    // 2. Mise à jour du mot de passe sur la session active
+    const supabase = await createClient();
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: trimmedNewPassword,
+    });
+
+    if (updateError) {
+      console.error("[updateAdminPassword] Erreur Supabase updateUser :", updateError.message);
+      return {
+        success: false,
+        error: updateError.message || "Impossible de mettre à jour le mot de passe administrateur.",
+      };
+    }
+
+    // 3. Traçabilité immuable (catégorie AUTH) SANS AUCUNE donnée sensible
+    await recordAdminAudit(
+      admin.id,
+      admin.email || "admin@strikingcamp.fr",
+      "ADMIN_PASSWORD_CHANGED",
+      "AUTH",
+      {
+        admin_id: admin.id,
+        updated_at: new Date().toISOString(),
+      }
+    );
+
+    revalidatePath("/admin/parametres");
+
+    return {
+      success: true,
+      message: "Votre mot de passe a été modifié avec succès.",
+    };
+  } catch (err) {
+    const error = err as Error;
+    console.error("[updateAdminPassword] Exception :", error);
+    return {
+      success: false,
+      error: error.message || "Erreur lors de la modification du mot de passe.",
+    };
+  }
+}
+
+/**
+ * Déconnecte uniquement la session active courante de l'administrateur.
+ */
+export async function signOutCurrentAdminSessionServerAction(): Promise<ActionResponse<{ shouldRedirect: boolean }>> {
+  try {
+    await assertAdminUser();
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/parametres");
+
+    return {
+      success: true,
+      message: "Session déconnectée avec succès.",
+      data: { shouldRedirect: true },
+    };
+  } catch (err) {
+    const error = err as Error;
+    console.error("[signOutCurrentAdminSession] Exception :", error);
+    return {
+      success: false,
+      error: error.message || "Erreur lors de la déconnexion.",
+    };
+  }
+}
+
+/**
+ * Révoque l'ensemble des sessions actives pour le compte administrateur connecté.
+ * Utilise l'API Supabase Admin globale (service_role) puis déconnecte la session courante.
+ */
+export async function revokeAllAdminSessionsServerAction(): Promise<ActionResponse<{ shouldRedirect: boolean }>> {
+  try {
+    const admin = await assertAdminUser();
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return {
+        success: false,
+        error: "Configuration administrative insuffisante pour la révocation globale (clé service_role absente).",
+      };
+    }
+
+    const adminSupabase = createAdminClient();
+    const { error } = await adminSupabase.auth.admin.signOut(admin.id, "global");
+
+    if (error) {
+      console.error("[revokeAllAdminSessions] Erreur admin.signOut :", error.message);
+      return {
+        success: false,
+        error: error.message || "Échec de la révocation globale des sessions.",
+      };
+    }
+
+    // Traçabilité immuable (catégorie AUTH)
+    await recordAdminAudit(
+      admin.id,
+      admin.email || "admin@strikingcamp.fr",
+      "ADMIN_SIGN_OUT_ALL",
+      "AUTH",
+      {
+        admin_id: admin.id,
+        scope: "global",
+        executed_at: new Date().toISOString(),
+      }
+    );
+
+    // Déconnexion de la session locale courante
+    const localSupabase = await createClient();
+    await localSupabase.auth.signOut();
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/parametres");
+
+    return {
+      success: true,
+      message: "Toutes les sessions administrateur ont été révoquées avec succès.",
+      data: { shouldRedirect: true },
+    };
+  } catch (err) {
+    const error = err as Error;
+    console.error("[revokeAllAdminSessions] Exception :", error);
+    return {
+      success: false,
+      error: error.message || "Erreur lors de la révocation des sessions.",
     };
   }
 }
