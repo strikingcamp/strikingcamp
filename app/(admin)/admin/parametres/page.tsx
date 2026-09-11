@@ -1,35 +1,29 @@
-import Link from "next/link";
-import { Settings, Shield, ArrowLeft } from "lucide-react";
+import { getAdminSettingsDataServerAction } from "./actions";
+import AdminParametresView from "@/components/admin/AdminParametresView";
+import type { Metadata } from "next";
 
-export default function AdminParametresPage() {
-  return (
-    <div className="space-y-6">
-      <div className="border-b border-brand-white/10 pb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
-            Paramètres & <span className="text-brand-blue">Sécurité</span>
-          </h1>
-          <p className="text-xs text-brand-white/60 mt-1">
-            Gestion des accès administrateur et sécurité du système.
-          </p>
-        </div>
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-semibold rounded uppercase tracking-wider border border-brand-white/10"
-        >
-          <ArrowLeft size={14} /> Retour Dashboard
-        </Link>
-      </div>
+export const dynamic = "force-dynamic";
 
-      <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-xl p-12 text-center space-y-3">
-        <Shield size={32} className="mx-auto text-brand-blue/60" />
-        <h3 className="text-lg font-heading font-bold uppercase text-brand-white">
-          Module Paramètres Admin
-        </h3>
-        <p className="text-xs text-brand-white/50 max-w-md mx-auto">
-          Ce module permettra de gérer les profils ayant le rôle ADMIN et les configurations globales du club.
+export const metadata: Metadata = {
+  title: "Paramètres & Sécurité | Administration Striking Camp",
+  description: "Gestion des paramètres généraux, des services, de la sécurité et de la maintenance.",
+};
+
+export default async function AdminParametresPage() {
+  const result = await getAdminSettingsDataServerAction();
+
+  if (!result.success || !result.data) {
+    return (
+      <div className="p-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm">
+        <h2 className="font-heading font-bold text-base uppercase mb-1">
+          Erreur de chargement des paramètres
+        </h2>
+        <p className="text-xs text-rose-300/80">
+          {result.error || "Impossible de récupérer les données administratives."}
         </p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <AdminParametresView initialData={result.data} />;
 }
