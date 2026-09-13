@@ -8,7 +8,6 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -48,8 +47,8 @@ const DISCIPLINE_ICONS: Record<string, typeof Flame> = {
   Boxing: Flame,
   "Boxe Thaï": Award,
   Striking: Dumbbell,
-  "KB Shred": Sparkles,
-  "Boxing Shred": Sparkles,
+  "KB Shred": Flame,
+  "Boxing Shred": Flame,
   "Lady Striking": Heart,
   "Boxing Bag": Dumbbell,
 };
@@ -411,9 +410,8 @@ export default function TrialBookingModal({
                     <ChevronLeft size={18} />
                   </button>
                 )}
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
-                  <Sparkles size={12} />
-                  Cours d&apos;Essai Gratuit
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
+                  Cours d&apos;Essai
                 </div>
               </div>
 
@@ -601,7 +599,7 @@ export default function TrialBookingModal({
                 <div className="p-3.5 rounded-xl bg-brand-white/5 border border-brand-white/10 flex items-center gap-2.5 text-[11px] text-brand-white/50">
                   <Shield size={14} className="shrink-0 text-brand-blue" />
                   <span>
-                    Les cours d&apos;essai gratuits sont proposés exclusivement sur nos formats{" "}
+                    Les cours d&apos;essai sont proposés exclusivement sur nos formats{" "}
                     {isSmallGroupActive ? "collectifs et Small Group." : "collectifs."}
                   </span>
                 </div>
@@ -795,7 +793,7 @@ export default function TrialBookingModal({
                 <div className="p-3.5 rounded-2xl bg-[#0c1626] border border-brand-blue/30 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center shrink-0">
-                      <Sparkles size={18} />
+                      <Calendar size={18} />
                     </div>
                     <div>
                       <span className="text-xs font-heading font-black uppercase text-brand-white block">
@@ -918,7 +916,7 @@ export default function TrialBookingModal({
                       className="mt-0.5 rounded border-brand-white/20 bg-[#0b1322] text-brand-blue focus:ring-0 cursor-pointer"
                     />
                     <span>
-                      J&apos;accepte d&apos;être contacté par le Striking Camp par email ou téléphone concernant mon cours d&apos;essai gratuit.
+                      J&apos;accepte d&apos;être contacté par le Striking Camp par email ou téléphone concernant mon cours d&apos;essai.
                     </span>
                   </label>
                 </div>
@@ -953,16 +951,12 @@ export default function TrialBookingModal({
                   <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
                     <div className="flex items-center gap-2">
                       <span className="px-2.5 py-0.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-xs uppercase tracking-wider">
-                        Cours d&apos;Essai Gratuit
+                        Cours d&apos;Essai
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full bg-brand-white/5 border border-brand-white/10 text-brand-white/80 font-heading font-black text-xs uppercase tracking-wider">
                         {selectedSession.type === "collective" ? "Cours Collectif" : "Small Group"}
                       </span>
                     </div>
-
-                    <span className="text-xs font-bold text-brand-blue uppercase">
-                      100% Offert
-                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -1041,7 +1035,7 @@ export default function TrialBookingModal({
                     ) : (
                       <>
                         <CheckCircle2 size={18} className="text-brand-black" />
-                        <span>Confirmer mon cours d&apos;essai gratuit</span>
+                        <span>Confirmer mon cours d&apos;essai</span>
                       </>
                     )}
                   </button>

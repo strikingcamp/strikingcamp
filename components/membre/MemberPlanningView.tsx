@@ -12,7 +12,6 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Award,
   AlertTriangle,
   X,
@@ -77,7 +76,7 @@ const PRIVATE_DISCIPLINES = [
   { name: "Kick Boxing", desc: "Pieds-poings, timing, enchaînements et déplacements", icon: Target },
   { name: "Striking", desc: "Percussion polyvalente, transitions et puissance", icon: Award },
   { name: "Boxing Bag", desc: "Travail intensif aux sacs de frappe, cardio et frappe lourde", icon: Dumbbell },
-  { name: "KB Shred", desc: "Conditioning martial haute intensité et renforcement", icon: Sparkles },
+  { name: "KB Shred", desc: "Conditioning martial haute intensité et renforcement", icon: Flame },
 ];
 
 const PRIVATE_LEVELS = [
@@ -628,7 +627,6 @@ export default function MemberPlanningView() {
                 : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
             )}
           >
-            <Sparkles size={16} />
             <span>Cours privés</span>
           </button>
         )}
@@ -1063,7 +1061,6 @@ export default function MemberPlanningView() {
                         }}
                         className="w-full py-2.5 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-[#00d8ff]/20"
                       >
-                        <Sparkles size={14} />
                         Réserver ce créneau
                       </button>
                     </div>
@@ -1703,7 +1700,6 @@ export default function MemberPlanningView() {
                   href="/tarifs"
                   className="flex-1 py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-2 shadow-lg shadow-[#00d8ff]/20"
                 >
-                  <Sparkles size={14} />
                   Voir les formules
                 </Link>
               </div>

@@ -7,7 +7,6 @@ import {
   Clock,
   MapPin,
   Tag,
-  Sparkles,
   Plus,
   Edit2,
   Trash2,
@@ -164,7 +163,7 @@ export default function AdminEvenementsView({ initialEvents }: AdminEvenementsVi
         <div>
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-lg bg-brand-blue/10 text-brand-blue border border-brand-blue/20">
-              <Sparkles size={20} />
+              <Calendar size={20} />
             </span>
             <h1 className="text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
               Gestion des <span className="text-brand-blue">Événements</span>

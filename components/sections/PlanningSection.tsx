@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Clock, Users, ArrowRight } from "lucide-react";
+import { Clock, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
@@ -74,8 +74,7 @@ export default function PlanningSection({
       
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
-          <Sparkles size={14} />
+        <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
           Horaires & Créneaux
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white">
@@ -235,9 +234,8 @@ export default function PlanningSection({
 
       {/* Bottom Notice / Reservation Banner */}
       <div className="mt-14 sm:mt-16 text-center p-8 bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border border-brand-blue/30 rounded-3xl max-w-2xl mx-auto space-y-4 shadow-2xl shadow-brand-blue/10 relative overflow-hidden">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
-          <Sparkles size={12} />
-          Cours d&apos;Essai 100% Gratuit
+        <div className="inline-flex items-center px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
+          Cours d&apos;Essai
         </div>
         <h3 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
           Envie de tester une première séance ?

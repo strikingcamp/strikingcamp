@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Sparkles, ArrowRight, ShieldCheck, Target, HeartHandshake } from "lucide-react";
+import { ArrowRight, ShieldCheck, Target, HeartHandshake } from "lucide-react";
 
 const pillars = [
   {
@@ -35,8 +35,7 @@ export default function ClubSection() {
         {/* Colonne gauche (Sticky Header + Image d'ambiance) */}
         <div className="w-full lg:w-1/3 lg:sticky lg:top-28 space-y-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
-              <Sparkles size={14} />
+            <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
               Le Club
             </div>
             <motion.h1 

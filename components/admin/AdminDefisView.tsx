@@ -17,7 +17,6 @@ import {
   Lock,
   Eye,
   Sliders,
-  Sparkles,
   RefreshCw,
   Video,
   ListOrdered,
@@ -659,7 +658,6 @@ export default function AdminDefisView() {
                     <div>
                       <span className="text-[10px] text-brand-white/50 uppercase font-bold block">Points XP</span>
                       <span className="font-heading font-black text-[#00d8ff] flex items-center justify-center gap-1">
-                        <Sparkles size={12} />
                         +{c.points_xp}
                       </span>
                     </div>

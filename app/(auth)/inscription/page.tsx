@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getAuthRedirectUrl } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, User, Phone, CheckSquare, Square, AlertCircle, CheckCircle, Sparkles } from "lucide-react";
+import { Loader2, Mail, Lock, User, Phone, CheckSquare, Square, AlertCircle, CheckCircle } from "lucide-react";
 
 function InscriptionForm() {
   const searchParams = useSearchParams();
@@ -162,7 +162,7 @@ function InscriptionForm() {
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] flex items-center justify-center shrink-0">
-                <Sparkles size={16} />
+                <CheckCircle size={16} />
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-brand-white/50 tracking-wider block">

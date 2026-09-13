@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  Sparkles,
   Flame,
   Users,
   Award,
@@ -259,8 +258,7 @@ export default function MembershipOnboardingView() {
       
       {/* En-tête */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-widest">
-          <Sparkles size={14} />
+        <div className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-widest">
           Adhésion Striking Camp
         </div>
         <h1 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-wider text-brand-white">

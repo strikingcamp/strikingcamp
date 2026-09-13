@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Calendar,
+  CalendarDays,
+  User,
   Users,
   BookmarkCheck,
   CreditCard,
   Layers,
-  Sparkles,
   Settings,
   ArrowLeft,
   Sliders,
@@ -40,7 +41,7 @@ const navItems = [
   {
     label: "Cours Privés",
     href: "/admin/cours-prives",
-    icon: Sparkles,
+    icon: User,
   },
   {
     label: "Validation Adhésions",
@@ -85,7 +86,7 @@ const navItems = [
   {
     label: "Événements",
     href: "/admin/evenements",
-    icon: Sparkles,
+    icon: CalendarDays,
   },
   {
     label: "Paramètres & Sécurité",

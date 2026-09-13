@@ -435,7 +435,7 @@ export async function sendTrialBookingConfirmationEmail(
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Formule</td>
-                <td style="padding: 8px 0; color: #ffffff; font-size: 14px;">Cours d'essai gratuit</td>
+                <td style="padding: 8px 0; color: #ffffff; font-size: 14px;">Cours d'essai</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Date</td>

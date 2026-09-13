@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, HelpCircle, Shield, Users, Sparkles, MapPin, Layers, Phone, ArrowRight } from "lucide-react";
+import { ChevronDown, HelpCircle, Shield, Users, MapPin, Layers, Phone, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { allFaqItems, faqCategories } from "@/data/faq";
 
 const categoryIcons: Record<string, React.ElementType> = {
   all: HelpCircle,
-  debuter: Sparkles,
+  debuter: HelpCircle,
   disciplines: Shield,
   lady: Users,
   formules: Layers,
@@ -36,8 +36,7 @@ export default function FaqPageView() {
       
       {/* En-tête de la page */}
       <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
-          <Sparkles size={14} />
+        <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
           Centre d&apos;aide & Questions Fréquentes
         </div>
         <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-black text-brand-white uppercase tracking-tight mb-4">

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Users, Calendar, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
+import { X, Users, Calendar, ArrowRight, ShieldCheck } from "lucide-react";
 import { useMember } from "../MemberContext";
 import { useRouter } from "next/navigation";
 
@@ -41,7 +41,7 @@ export default function QuickActionModal() {
             <div className="flex items-center justify-between pb-4 border-b border-brand-white/10 mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-brand-blue/20 flex items-center justify-center text-brand-blue">
-                  <Sparkles size={18} />
+                  <Calendar size={18} />
                 </div>
                 <div>
                   <h3 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white">

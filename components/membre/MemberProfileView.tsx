@@ -11,7 +11,6 @@ import {
   Edit3,
   Lock,
   ChevronRight,
-  Sparkles,
 } from "lucide-react";
 import { EditProfileModal, ChangePasswordModal } from "./modals/ProfileModals";
 import { useRouter } from "next/navigation";

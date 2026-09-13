@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sliders,
-  Sparkles,
   Users,
   User,
   CheckCircle2,
@@ -97,7 +96,7 @@ export default function AdminServicesView() {
       case "small_group":
         return <Users size={22} className="text-amber-400" />;
       case "events":
-        return <Sparkles size={22} className="text-emerald-400" />;
+        return <Calendar size={22} className="text-emerald-400" />;
       default:
         return <Sliders size={22} className="text-brand-blue" />;
     }

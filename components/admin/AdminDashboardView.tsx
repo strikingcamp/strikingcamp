@@ -6,7 +6,6 @@ import {
   BookmarkCheck,
   Percent,
   Calendar,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
   Clock,
@@ -308,7 +307,7 @@ export default function AdminDashboardView({
           <div className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-6 shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-4">
               <div className="flex items-center gap-2">
-                 <Sparkles size={16} className="text-brand-blue" />
+                <Calendar size={16} className="text-brand-blue" />
                 <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                   Événements
                 </h2>

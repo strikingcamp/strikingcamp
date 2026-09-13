@@ -17,7 +17,6 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Dumbbell,
   CheckCircle,
   Mail,
@@ -508,8 +507,7 @@ export default function AdminReservationsView({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-1 rounded-lg bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={13} />
+              <span className="px-2.5 py-1 rounded-lg bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-wider flex items-center">
                 COURS D&apos;ESSAI
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-wider flex items-center gap-1.5">
@@ -1256,7 +1254,6 @@ export default function AdminReservationsView({
                 : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
             )}
           >
-            <Sparkles size={16} />
             <span>Cours d&apos;Essai</span>
             {upcomingTrialCount > 0 && (
               <span
@@ -1678,7 +1675,7 @@ export default function AdminReservationsView({
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
               <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
-                <Sparkles size={16} className="text-brand-blue" />
+                <Calendar size={16} className="text-brand-blue" />
                 Réservations Cours d&apos;Essai — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName} ({trialBookingsForDay.length})
               </h3>
               <span className="text-[11px] text-brand-white/50">
@@ -1688,7 +1685,7 @@ export default function AdminReservationsView({
 
             {trialBookingsForDay.length === 0 ? (
               <div className="bg-[#0c1626]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
-                <Sparkles size={32} className="mx-auto text-brand-blue/40" />
+                <Calendar size={32} className="mx-auto text-brand-blue/40" />
                 <p className="text-sm font-heading font-bold uppercase text-brand-white/70">
                   Aucun cours d&apos;essai réservé pour le {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}.
                 </p>
@@ -1732,7 +1729,7 @@ export default function AdminReservationsView({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
                     <div className="flex items-center gap-3 flex-wrap">
                       <div className="px-3 py-1.5 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-sm uppercase flex items-center gap-1.5">
-                        <Sparkles size={14} />
+                        <Calendar size={14} />
                         {day.dayName} {day.dateNum} {day.monthName}
                       </div>
 

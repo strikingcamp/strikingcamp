@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Phone, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Send, ArrowRight } from "lucide-react";
+import { MapPin, Phone, Mail, CheckCircle2, AlertCircle, Loader2, Send, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
@@ -50,8 +50,7 @@ export default function ContactSection() {
       
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
-          <Sparkles size={14} />
+        <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
           Informations & Échanges
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white">

@@ -20,7 +20,6 @@ import {
   Check,
   X,
   Pencil,
-  Sparkles,
   Flame,
   Award,
 } from "lucide-react";

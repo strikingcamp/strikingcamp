@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle, Calendar, Clock, Award, ShieldCheck, Loader2, AlertCircle, Sparkles } from "lucide-react";
+import { X, CheckCircle, Calendar, Clock, Award, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 import { useMember } from "../MemberContext";
 import { cn } from "@/lib/utils";
 
@@ -100,7 +100,7 @@ export default function BookingConfirmModal() {
                 {isPrivate && (
                   <div className="mb-4 p-3.5 bg-emerald-950/30 border border-emerald-500/30 rounded-lg flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Sparkles size={16} className="text-emerald-400 shrink-0" />
+                      <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
                       <div>
                         <p className="text-xs font-bold uppercase text-emerald-300">
                           Quota mensuel Cours Privés

@@ -8,7 +8,6 @@ import {
   Clock,
   Info,
   Calendar,
-  Sparkles,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -69,7 +68,7 @@ export default function MemberAlertsView() {
   const getAlertIcon = (type: AlertType) => {
     switch (type) {
       case "nouvel_evenement":
-        return <Sparkles size={18} className="text-amber-400" />;
+        return <Calendar size={18} className="text-amber-400" />;
       case "confirmation":
         return <CheckCircle size={18} className="text-[#22c55e]" />;
       case "annulation":
@@ -125,7 +124,7 @@ export default function MemberAlertsView() {
       {/* Catégories d'alertes prévues */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <div className="bg-[#0f172a] border border-amber-500/20 rounded-lg p-3 text-center">
-          <Sparkles size={16} className="text-amber-400 mx-auto mb-1" />
+          <Calendar size={16} className="text-amber-400 mx-auto mb-1" />
           <p className="text-[10px] font-heading font-bold uppercase tracking-wider text-amber-300">
             Nouvel Événement
           </p>
@@ -179,7 +178,7 @@ export default function MemberAlertsView() {
               href="/evenements"
               className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-heading font-bold text-xs uppercase tracking-wider rounded-sm hover:bg-amber-500 hover:text-black transition-colors"
             >
-              <Sparkles size={14} />
+              <Calendar size={14} />
               Découvrir les événements
             </Link>
             <Link

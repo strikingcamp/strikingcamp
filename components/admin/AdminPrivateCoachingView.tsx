@@ -11,7 +11,6 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  Sparkles,
   Settings2,
   RefreshCw,
   AlertTriangle,
@@ -374,8 +373,7 @@ export default function AdminPrivateCoachingView({
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-white/10 pb-6">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#00d8ff]/10 border border-[#00d8ff]/30 rounded-full text-[#00d8ff] text-xs font-semibold uppercase tracking-wider mb-1">
-            <Sparkles size={13} />
+          <div className="inline-flex items-center px-3 py-1 bg-[#00d8ff]/10 border border-[#00d8ff]/30 rounded-full text-[#00d8ff] text-xs font-semibold uppercase tracking-wider mb-1">
             <span>Coaching Individuel</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-wider text-brand-white">

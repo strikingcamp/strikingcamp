@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Play,
   ArrowLeft,
-  Sparkles,
   ChevronRight,
   ShieldCheck,
   RefreshCw,
@@ -298,7 +297,6 @@ export default function MemberDefisView() {
             {/* Récompenses */}
             <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0 bg-black/40 p-4 rounded-xl border border-brand-white/10">
               <div className="flex items-center gap-1.5 text-[#00d8ff] font-heading font-black text-sm">
-                <Sparkles size={16} />
                 +{challengeDetail.points_xp} XP
               </div>
               {challengeDetail.badge_reward && (
@@ -558,7 +556,6 @@ export default function MemberDefisView() {
 
                 <div className="w-20 h-20 rounded-3xl bg-[#00d8ff]/20 border border-[#00d8ff]/40 text-[#00d8ff] flex items-center justify-center mx-auto shadow-xl shadow-[#00d8ff]/20 relative">
                   <Trophy size={42} />
-                  <Sparkles size={18} className="absolute top-1 right-1 text-amber-300 animate-pulse" />
                 </div>
 
                 <div className="space-y-2">
@@ -578,7 +575,7 @@ export default function MemberDefisView() {
                   <div className="space-y-0.5">
                     <span className="text-[10px] uppercase font-bold text-brand-white/50 block">Expérience</span>
                     <span className="text-sm font-heading font-black text-[#00d8ff] flex items-center justify-center gap-1">
-                      <Sparkles size={14} /> +{challengeDetail.points_xp} XP
+                      +{challengeDetail.points_xp} XP
                     </span>
                   </div>
                   <div className="space-y-0.5">
@@ -618,8 +615,7 @@ export default function MemberDefisView() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8 pt-2 pb-24">
       {/* En-tête */}
       <div className="space-y-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#00d8ff]/10 border border-[#00d8ff]/30 rounded-full text-[#00d8ff] text-xs font-semibold uppercase tracking-wider mb-2">
-          <Sparkles size={13} />
+        <div className="inline-flex items-center px-3 py-1 bg-[#00d8ff]/10 border border-[#00d8ff]/30 rounded-full text-[#00d8ff] text-xs font-semibold uppercase tracking-wider mb-2">
           <span>Gamification & Performance</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-wider text-brand-white">
@@ -722,7 +718,6 @@ export default function MemberDefisView() {
                       {c.stepsCount} {c.stepsCount > 1 ? "étapes" : "étape"}
                     </span>
                     <span className="flex items-center gap-1 text-amber-400 font-heading font-bold">
-                      <Sparkles size={13} />
                       +{c.points_xp} XP
                     </span>
                   </div>

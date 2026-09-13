@@ -12,7 +12,6 @@ import {
   X,
   Loader2,
   ArrowLeft,
-  Sparkles,
   Users,
   Shield,
   Layers,
@@ -564,8 +563,8 @@ export default function AdminFormulesView({
                       {renderTypeBadge(plan.type)}
                       {renderCommitmentBadge(plan.commitment)}
                       {plan.type === "private" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                          <Sparkles size={11} /> {plan.private_sessions_per_period || 8} séances privées
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          {plan.private_sessions_per_period || 8} séances privées
                         </span>
                       )}
                     </div>

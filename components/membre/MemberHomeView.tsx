@@ -8,7 +8,6 @@ import {
   Flame,
   ShieldCheck,
   XCircle,
-  Sparkles,
   Trophy,
   Target,
   Award,
@@ -161,7 +160,7 @@ export default function MemberHomeView({
         >
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30 shrink-0">
-              <Sparkles size={24} />
+              <ShieldCheck size={24} />
             </div>
             <div className="space-y-1">
               <span className="text-[10px] font-heading font-black text-brand-blue uppercase tracking-widest px-2.5 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 inline-block">
@@ -197,7 +196,7 @@ export default function MemberHomeView({
         >
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-[#00d8ff]/15 text-[#00d8ff] flex items-center justify-center border border-[#00d8ff]/30 shrink-0">
-              <Sparkles size={20} />
+              <Flame size={20} />
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider font-bold text-[#00d8ff]">
@@ -358,8 +357,7 @@ export default function MemberHomeView({
                 <span className="text-brand-white/60">
                   {featuredChallenge.completedStepsCount} / {featuredChallenge.stepsCount} {featuredChallenge.stepsCount > 1 ? "étapes validées" : "étape validée"}
                 </span>
-                <span className="text-[#00d8ff] flex items-center gap-1.5">
-                  <Sparkles size={12} />
+                <span className="text-[#00d8ff] font-heading font-bold">
                   +{featuredChallenge.points_xp} XP
                 </span>
               </div>

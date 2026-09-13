@@ -23,7 +23,6 @@ import {
   UserX,
   CreditCard,
   History,
-  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -734,8 +733,8 @@ export default function AdminMembersView({
                       {member.activeSubscription?.private_sessions_quota !== null &&
                         member.activeSubscription?.private_sessions_quota !== undefined && (
                           <div className="flex items-center justify-between text-[11px] text-amber-300">
-                            <span className="flex items-center gap-1">
-                              <Sparkles size={11} /> Quota séances privées :
+                            <span>
+                              Quota séances privées :
                             </span>
                             <span className="font-bold">
                               {member.activeSubscription.private_sessions_quota} séances
@@ -1159,7 +1158,7 @@ export default function AdminMembersView({
                     {selectedMember.activeSubscription.private_sessions_quota !== null &&
                       selectedMember.activeSubscription.private_sessions_quota !== undefined && (
                         <div className="text-xs text-amber-300 font-semibold flex items-center gap-1 pt-1">
-                          <Sparkles size={13} /> Quota restant :{" "}
+                          Quota restant :{" "}
                           <span className="font-black text-sm">
                             {selectedMember.activeSubscription.private_sessions_quota} séances
                           </span>
