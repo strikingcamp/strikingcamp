@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Users,
   Check,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -527,177 +528,157 @@ export default function TrialBookingModal({
                 ───────────────────────────────────────────────────────────────── */}
             {!loadingSessions && !loadError && step === 1 && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Format 1 : COURS D'ESSAI PRIVÉ (25 €) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                  {/* CARTE 1 — COURS D'ESSAI PRIVÉ (25 €) */}
                   {isPrivateActive && (
                     <button
                       type="button"
                       onClick={() => handleSelectType("private")}
                       className={cn(
-                        "group p-5 sm:p-6 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
+                        "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
                         selectedType === "private"
                           ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
                           : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
                       )}
                     >
-                      <div className="space-y-3">
+                      <div className="space-y-4">
+                        {/* Header : Icône + Compteur de créneaux discret */}
                         <div className="flex items-center justify-between">
                           <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
                             <User size={24} />
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2.5 py-1 rounded-full bg-brand-blue/20 border border-brand-blue/40 text-xs font-heading font-black text-brand-blue">
-                              {TRIAL_PRICING.private.priceFormatted}
+                          {availableCountsByType.private > 0 && (
+                            <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
+                              {availableCountsByType.private} créneaux
                             </span>
-                            {availableCountsByType.private > 0 && (
-                              <span className="px-2 py-0.5 rounded-full bg-brand-white/5 border border-brand-white/10 text-[10px] font-heading font-bold uppercase text-brand-white/70">
-                                {availableCountsByType.private} créneau{availableCountsByType.private > 1 ? "x" : ""}
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
 
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-base sm:text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                              Cours d&apos;Essai Privé
-                            </h3>
-                            <span className="text-sm font-heading font-black text-brand-blue">
-                              25 €
-                            </span>
-                          </div>
-                          <p className="text-xs text-brand-white/50 font-medium mt-0.5">
-                            Séance individuelle avec le coach • 25 €
+                        {/* Titre & Description courte */}
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
+                            COURS D’ESSAI PRIVÉ
+                          </h3>
+                          <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
+                            Une séance individuelle avec le coach, adaptée à ton niveau et à tes objectifs.
                           </p>
                         </div>
 
-                        <p className="text-xs text-brand-white/70 leading-relaxed">
-                          Séance 100% sur-mesure et individualisée avec le coach pour progresser à ton rythme et perfectionner tes techniques.
-                        </p>
+                        {/* Prix unique */}
+                        <div className="pt-2">
+                          <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
+                            25 €
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="pt-4 mt-4 border-t border-brand-white/5 flex items-center justify-between text-xs font-heading font-bold uppercase text-brand-blue">
-                        <span>Choisir ce format • 25 €</span>
-                        <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      {/* Bouton d'action */}
+                      <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
+                        <span>CHOISIR CE FORMAT</span>
+                        <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
                       </div>
                     </button>
                   )}
 
-                  {/* Format 2 : COURS D'ESSAI SMALL GROUP (15 €) */}
+                  {/* CARTE 2 — SMALL GROUP (15 €) */}
                   {isSmallGroupActive && (
                     <button
                       type="button"
                       onClick={() => handleSelectType("small_group")}
                       className={cn(
-                        "group p-5 sm:p-6 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
+                        "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
                         selectedType === "small_group"
                           ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
                           : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
                       )}
                     >
-                      <div className="space-y-3">
+                      <div className="space-y-4">
+                        {/* Header : Icône + Compteur de créneaux discret */}
                         <div className="flex items-center justify-between">
                           <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
                             <Users size={24} />
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2.5 py-1 rounded-full bg-brand-blue/20 border border-brand-blue/40 text-xs font-heading font-black text-brand-blue">
-                              {TRIAL_PRICING.small_group.priceFormatted}
+                          {availableCountsByType.small_group > 0 && (
+                            <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
+                              {availableCountsByType.small_group} créneaux
                             </span>
-                            {availableCountsByType.small_group > 0 && (
-                              <span className="px-2 py-0.5 rounded-full bg-brand-white/5 border border-brand-white/10 text-[10px] font-heading font-bold uppercase text-brand-white/70">
-                                {availableCountsByType.small_group} créneau{availableCountsByType.small_group > 1 ? "x" : ""}
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
 
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-base sm:text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                              Small Group
-                            </h3>
-                            <span className="text-sm font-heading font-black text-brand-blue">
-                              15 €
-                            </span>
-                          </div>
-                          <p className="text-xs text-brand-white/50 font-medium mt-0.5">
-                            Séance en petit groupe • 12 pers. max • 15 €
+                        {/* Titre & Description courte */}
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
+                            SMALL GROUP
+                          </h3>
+                          <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
+                            Petit groupe, encadrement rapproché et travail technique personnalisé.
                           </p>
                         </div>
 
-                        <p className="text-xs text-brand-white/70 leading-relaxed">
-                          Encadrement rapproché par le coach, perfectionnement technique, suivi individualisé et haute intensité.
-                        </p>
+                        {/* Prix unique */}
+                        <div className="pt-2">
+                          <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
+                            15 €
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="pt-4 mt-4 border-t border-brand-white/5 flex items-center justify-between text-xs font-heading font-bold uppercase text-brand-blue">
-                        <span>Choisir ce format • 15 €</span>
-                        <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      {/* Bouton d'action */}
+                      <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
+                        <span>CHOISIR CE FORMAT</span>
+                        <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
                       </div>
                     </button>
                   )}
 
-                  {/* Format 3 : COURS D'ESSAI COLLECTIF (10 €) */}
+                  {/* CARTE 3 — COURS COLLECTIF (10 €) */}
                   <button
                     type="button"
                     onClick={() => handleSelectType("collective")}
                     className={cn(
-                      "group p-5 sm:p-6 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
+                      "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
                       selectedType === "collective"
                         ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
                         : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
                     )}
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-4">
+                      {/* Header : Icône + Compteur de créneaux discret */}
                       <div className="flex items-center justify-between">
                         <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
                           <Flame size={24} />
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2.5 py-1 rounded-full bg-brand-blue/20 border border-brand-blue/40 text-xs font-heading font-black text-brand-blue">
-                            {TRIAL_PRICING.collective.priceFormatted}
+                        {availableCountsByType.collective > 0 && (
+                          <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
+                            {availableCountsByType.collective} créneaux
                           </span>
-                          {availableCountsByType.collective > 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-brand-white/5 border border-brand-white/10 text-[10px] font-heading font-bold uppercase text-brand-white/70">
-                              {availableCountsByType.collective} créneau{availableCountsByType.collective > 1 ? "x" : ""}
-                            </span>
-                          )}
-                        </div>
+                        )}
                       </div>
 
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-base sm:text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                            Cours Collectif
-                          </h3>
-                          <span className="text-sm font-heading font-black text-brand-blue">
-                            10 €
-                          </span>
-                        </div>
-                        <p className="text-xs text-brand-white/50 font-medium mt-0.5">
-                          Séance collective • 10 €
+                      {/* Titre & Description courte */}
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
+                          COURS COLLECTIF
+                        </h3>
+                        <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
+                          Une séance collective dynamique pour découvrir l’entraînement Striking Camp.
                         </p>
                       </div>
 
-                      <p className="text-xs text-brand-white/70 leading-relaxed">
-                        Dynamique d&apos;équipe stimulante, travail cardio-boxing explosif, puissance et dépassement de soi.
-                      </p>
+                      {/* Prix unique */}
+                      <div className="pt-2">
+                        <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
+                          10 €
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="pt-4 mt-4 border-t border-brand-white/5 flex items-center justify-between text-xs font-heading font-bold uppercase text-brand-blue">
-                      <span>Choisir ce format • 10 €</span>
-                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    {/* Bouton d'action */}
+                    <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
+                      <span>CHOISIR CE FORMAT</span>
+                      <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
                     </div>
                   </button>
-                </div>
-
-                {/* Tarifs officiels des cours d'essai */}
-                <div className="p-3.5 rounded-xl bg-brand-white/5 border border-brand-white/10 flex items-center gap-2.5 text-[11px] text-brand-white/70">
-                  <Shield size={14} className="shrink-0 text-brand-blue" />
-                  <span>
-                    Tarifs officiels des cours d&apos;essai : Collectif <strong>10 €</strong> • Small Group <strong>15 €</strong> • Cours Privé <strong>25 €</strong>.
-                  </span>
                 </div>
               </div>
             )}
