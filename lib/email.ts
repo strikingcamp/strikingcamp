@@ -378,6 +378,8 @@ export interface TrialBookingEmailData {
   prospectEmail: string;
   prospectName: string;
   discipline: string;
+  sessionType?: string;
+  price?: string;
   date: string;
   time: string;
   location?: string;
@@ -388,6 +390,8 @@ export interface AdminTrialNotificationData {
   prospectEmail: string;
   prospectPhone: string;
   discipline: string;
+  sessionType?: string;
+  price?: string;
   date: string;
   time: string;
 }
@@ -407,6 +411,8 @@ export async function sendTrialBookingConfirmationEmail(
   }
 
   const location = data.location || OFFICIAL_VENUE;
+  const trialPrice = data.price || "10 €";
+  const trialType = data.sessionType || "Collectif";
 
   try {
     const { error } = await resend.emails.send({
@@ -430,12 +436,20 @@ export async function sendTrialBookingConfirmationEmail(
           <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 20px; margin-bottom: 24px;">
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; width: 120px;">Discipline</td>
-                <td style="padding: 8px 0; color: #00d8ff; font-size: 14px; font-weight: bold;">${data.discipline}</td>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; width: 120px;">Séance</td>
+                <td style="padding: 8px 0; color: #ffffff; font-size: 14px; font-weight: bold;">Cours d'Essai</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Formule</td>
-                <td style="padding: 8px 0; color: #ffffff; font-size: 14px;">Cours d'essai</td>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Format</td>
+                <td style="padding: 8px 0; color: #00d8ff; font-size: 14px; font-weight: bold;">${trialType}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Discipline</td>
+                <td style="padding: 8px 0; color: #ffffff; font-size: 14px; font-weight: bold;">${data.discipline}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Tarif</td>
+                <td style="padding: 8px 0; color: #00d8ff; font-size: 16px; font-weight: bold;">${trialPrice}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Date</td>
@@ -533,16 +547,24 @@ export async function sendAdminTrialBookingNotification(
               </td>
             </tr>
             <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Format</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 14px; font-weight: bold;">
+                Cours d'Essai (${data.sessionType || "Collectif"})
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Tarif</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #00d8ff; font-size: 15px; font-weight: bold;">
+                ${data.price || "10 €"}
+              </td>
+            </tr>
+            <tr>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Discipline</td>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #00d8ff; font-size: 14px; font-weight: bold;">${data.discipline}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Date & Heure</td>
-              <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 14px; font-weight: bold;">${data.date} à ${data.time}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Type</td>
-              <td style="padding: 8px 0; color: #f59e0b; font-size: 13px; font-weight: bold;">COURS D'ESSAI</td>
+              <td style="padding: 8px 0; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Date & Heure</td>
+              <td style="padding: 8px 0; color: #ffffff; font-size: 14px; font-weight: bold;">${data.date} à ${data.time}</td>
             </tr>
           </table>
 

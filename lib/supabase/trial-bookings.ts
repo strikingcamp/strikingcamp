@@ -28,7 +28,7 @@ export interface TrialBookingResult {
 export interface TrialSessionOption {
   id: string;
   discipline: string;
-  type: "small_group" | "collective";
+  type: "small_group" | "collective" | "private";
   level?: string | null;
   starts_at: string;
   ends_at?: string | null;
@@ -98,8 +98,32 @@ export async function isSmallGroupServiceActive(
 }
 
 /**
+ * Vérifie si le service Cours Privés est actif dans public.service_settings.
+ */
+export async function isPrivateServiceActive(
+  supabase: SupabaseClient
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from("service_settings")
+      .select("is_active")
+      .eq("service_key", "private")
+      .maybeSingle();
+
+    if (error || !data) {
+      return true; // Actif par défaut si non spécifié
+    }
+
+    return Boolean(data.is_active);
+  } catch (err) {
+    console.error("[isPrivateServiceActive] Erreur lecture service_settings :", err);
+    return true;
+  }
+}
+
+/**
  * Récupère l'ensemble des créneaux réels futurs éligibles aux cours d'essai.
- * - Filtre strict : futures (starts_at > NOW()), actives (is_active = true), collectives ou small group (si service actif).
+ * - Filtre strict : futures (starts_at > NOW()), actives (is_active = true), collectives, small group ou privées selon disponibilité.
  * - Calcule les places restantes réelles (capacité - bookings confirmés - trial_bookings confirmés).
  * - Utilise strictement le fuseau Europe/Paris pour le formatage.
  */
@@ -109,11 +133,15 @@ export async function getAvailableTrialSessions(
   try {
     const nowIso = new Date().toISOString();
 
-    // 0. Vérification du statut du service Small Group
-    const smallGroupActive = await isSmallGroupServiceActive(supabase);
-    const allowedTypes = smallGroupActive
-      ? ["collective", "small_group"]
-      : ["collective"];
+    // 0. Vérification du statut des services dans service_settings
+    const [smallGroupActive, privateActive] = await Promise.all([
+      isSmallGroupServiceActive(supabase),
+      isPrivateServiceActive(supabase),
+    ]);
+
+    const allowedTypes = ["collective"];
+    if (smallGroupActive) allowedTypes.push("small_group");
+    if (privateActive) allowedTypes.push("private");
 
     // 1. Récupération des séances futures selon les types autorisés
     const { data: sessions, error: sessionsErr } = await supabase
@@ -123,7 +151,7 @@ export async function getAvailableTrialSessions(
       .eq("is_active", true)
       .gt("starts_at", nowIso)
       .order("starts_at", { ascending: true })
-      .limit(60);
+      .limit(90);
 
     if (sessionsErr || !sessions) {
       console.error("[getAvailableTrialSessions] Erreur lecture class_sessions :", sessionsErr);
@@ -171,17 +199,9 @@ export async function getAvailableTrialSessions(
       const disc = (s.discipline || "").trim();
       const rawType = (s.type || "").toLowerCase().trim();
 
-      // Exclusion de sécurité absolue pour les cours privés
-      if (
-        rawType === "private" ||
-        disc.toLowerCase().includes("privé") ||
-        disc.toLowerCase().includes("prive")
-      ) {
-        continue;
-      }
-
       const isCollective = rawType === "collective";
-      const maxCap = s.max_capacity ?? (isCollective ? 50 : 12);
+      const isPrivate = rawType === "private";
+      const maxCap = s.max_capacity ?? (isCollective ? 50 : isPrivate ? 1 : 12);
       const bookedM = memberCounts.get(s.id) || 0;
       const bookedT = trialCounts.get(s.id) || 0;
       const placesOccupied = bookedM + bookedT;
@@ -195,7 +215,7 @@ export async function getAvailableTrialSessions(
         endTime = formatToParisTime(s.ends_at);
       } else {
         const sDate = new Date(s.starts_at);
-        const eDate = new Date(sDate.getTime() + 50 * 60 * 1000);
+        const eDate = new Date(sDate.getTime() + (isPrivate ? 50 : 60) * 60 * 1000);
         endTime = formatToParisTime(eDate);
       }
 
@@ -221,8 +241,8 @@ export async function getAvailableTrialSessions(
 
       result.push({
         id: s.id,
-        discipline: disc,
-        type: isCollective ? "collective" : "small_group",
+        discipline: disc || (isPrivate ? "Cours Privé" : "Boxe"),
+        type: isCollective ? "collective" : isPrivate ? "private" : "small_group",
         level: s.level,
         starts_at: s.starts_at,
         ends_at: s.ends_at,

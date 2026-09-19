@@ -5,6 +5,11 @@ import {
   sendAdminTrialBookingNotification,
 } from "@/lib/email";
 import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
+import {
+  getTrialPrice,
+  getTrialPriceFormatted,
+  getTrialTypeLabel,
+} from "@/lib/trial-pricing";
 
 export async function POST(req: NextRequest) {
   try {
@@ -116,6 +121,22 @@ export async function POST(req: NextRequest) {
       const startsAt = (res.starts_at as string) || "";
       const endsAt = (res.ends_at as string) || "";
 
+      let rawType = (res.type as string) || "";
+      if (!rawType) {
+        const { data: sessionInfo } = await supabase
+          .from("class_sessions")
+          .select("type")
+          .eq("id", classSessionId)
+          .maybeSingle();
+        if (sessionInfo?.type) {
+          rawType = sessionInfo.type;
+        }
+      }
+
+      const typeLabel = getTrialTypeLabel(rawType);
+      const priceFormatted = getTrialPriceFormatted(rawType);
+      const priceValue = getTrialPrice(rawType);
+
       let formattedDate = "Date confirmée";
       let formattedTime = "Horaire confirmé";
 
@@ -158,6 +179,8 @@ export async function POST(req: NextRequest) {
           prospectEmail: cleanEmail,
           prospectName: cleanFirstName,
           discipline,
+          sessionType: typeLabel,
+          price: priceFormatted,
           date: formattedDate,
           time: formattedTime,
           location: "Marseille Fight Club — 268 avenue de la Capelette, 13010 Marseille",
@@ -167,6 +190,8 @@ export async function POST(req: NextRequest) {
           prospectEmail: cleanEmail,
           prospectPhone: cleanPhone,
           discipline,
+          sessionType: typeLabel,
+          price: priceFormatted,
           date: formattedDate,
           time: formattedTime,
         }),
@@ -190,6 +215,10 @@ export async function POST(req: NextRequest) {
         success: true,
         bookingId,
         discipline,
+        type: rawType || "collective",
+        typeLabel,
+        price: priceFormatted,
+        priceValue,
         date: formattedDate,
         time: formattedTime,
         firstName: cleanFirstName,

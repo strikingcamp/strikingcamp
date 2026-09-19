@@ -235,13 +235,13 @@ export default function PlanningSection({
       {/* Bottom Notice / Reservation Banner */}
       <div className="mt-14 sm:mt-16 text-center p-8 bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border border-brand-blue/30 rounded-3xl max-w-2xl mx-auto space-y-4 shadow-2xl shadow-brand-blue/10 relative overflow-hidden">
         <div className="inline-flex items-center px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
-          Cours d&apos;Essai
+          Cours d&apos;Essai • Dès 10 €
         </div>
         <h3 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
           Envie de tester une première séance ?
         </h3>
         <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed max-w-lg mx-auto">
-          Venez tester un premier entraînement encadré par le coach au club de Marseille. Choisissez votre format, votre discipline et votre créneau en 1 minute.
+          Venez tester un premier entraînement encadré par le coach au club de Marseille (Collectif 10 € • Small Group 15 €). Choisissez votre format, votre discipline et votre créneau en 1 minute.
         </p>
         <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
           <button
