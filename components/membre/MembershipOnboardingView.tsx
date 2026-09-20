@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  CreditCard,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -16,7 +14,6 @@ import {
   Loader2,
   Calendar,
   Lock,
-  ArrowRight,
   ShieldCheck,
   PhoneCall,
   Check,
@@ -34,7 +31,6 @@ import { useMember } from "@/components/membre/MemberContext";
 import { cn } from "@/lib/utils";
 
 export default function MembershipOnboardingView() {
-  const router = useRouter();
   const supabase = createClient();
   const { hasActiveSubscription, planName, refreshMemberData } = useMember();
 

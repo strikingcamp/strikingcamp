@@ -19,7 +19,6 @@ import {
   Flame,
   Dumbbell,
   Target,
-  PhoneCall,
   ShieldAlert,
   MessageCircle,
   Loader2,
@@ -37,7 +36,6 @@ import { cn } from "@/lib/utils";
 
 type Category = "Cours privés" | "Small Group" | "Collectifs";
 type DayName = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
-type DayFilter = "Tous" | DayName;
 
 interface DemoSlot {
   id: string;
@@ -125,14 +123,6 @@ function generateSlotsFromData(
   mondayDate: Date,
   dayDateMap: Record<DayName, { dateNum: number; fullDateLabel: string; dateStr: string }>
 ): DemoSlot[] {
-  console.log("[MemberPlanningView] generateSlotsFromData démarré :", {
-    availableSessionsCount: availableSessions.length,
-    userBookingsCount: userBookingsList.length,
-    allConfirmedBookingsCount: allConfirmedBookings.length,
-    currentUserId,
-    mondayDateStr: dayDateMap["Lundi"]?.dateStr,
-  });
-
   const defaultMondayStr = dayDateMap["Lundi"]?.dateStr || formatToParisDate(mondayDate);
   const slots: DemoSlot[] = [];
 
@@ -146,8 +136,6 @@ function generateSlotsFromData(
       const sDateStr = formatToParisDate(s.starts_at);
       return sDateStr >= mondayStr && (!saturdayStr || sDateStr <= saturdayStr);
     });
-
-    console.log(`[MemberPlanningView] ${weekSessions.length} séances trouvées pour la semaine ${mondayStr} -> ${saturdayStr}`);
 
     if (weekSessions.length > 0) {
       // Regrouper par template_id + date Paris pour détecter d'éventuels doublons
@@ -267,7 +255,6 @@ function generateSlotsFromData(
         });
       }
 
-      console.log("[MemberPlanningView] Total slots générés depuis les class_sessions réelles :", slots.length);
       return slots;
     }
   }
@@ -288,8 +275,6 @@ export default function MemberPlanningView() {
     bookSmallGroup,
     cancelSmallGroup,
     bookSlot,
-    cancelSlot,
-    addSynchronizedBooking,
     removeSynchronizedBooking,
   } = useMember();
 
@@ -481,12 +466,6 @@ export default function MemberPlanningView() {
       return;
     }
 
-    console.log("[MemberPlanningView] --> Clic bouton « Confirmer la réservation » :", {
-      slot: selectedSlotForBooking,
-      classSessionId: selectedSlotForBooking.classSessionId,
-      currentUserId,
-    });
-
     setIsSubmitting(true);
     setBookingError(null);
 
@@ -498,22 +477,17 @@ export default function MemberPlanningView() {
     // 1. Réservation réelle Small Group via RPC Supabase
     if (!isPriv) {
       const targetSessionId = selectedSlotForBooking.classSessionId || selectedSlotForBooking.id;
-      console.log("[MemberPlanningView] Cible Small Group : targetSessionId =", targetSessionId);
 
       if (!targetSessionId || !targetSessionId.includes("-")) {
         const errorMsg = "Impossible de réserver : cette séance ne possède pas d'identifiant Supabase valide (UUID). Veuillez rafraîchir le planning.";
-        console.error("[MemberPlanningView]", errorMsg, selectedSlotForBooking);
         setBookingError(errorMsg);
         setIsSubmitting(false);
         return;
       }
 
-      console.log("[MemberPlanningView] Appel de bookSmallGroup(targetSessionId)...");
       const result = await bookSmallGroup(targetSessionId);
-      console.log("[MemberPlanningView] Résultat retourné par bookSmallGroup :", result);
 
       if (!result.success) {
-        console.error("[MemberPlanningView] Échec réservation Small Group :", result.error);
         setBookingError(result.error || "Impossible de réserver ce cours Small Group.");
         setIsSubmitting(false);
         return;
@@ -521,7 +495,6 @@ export default function MemberPlanningView() {
     } else {
       // 2. Réservation Cours Privé
       const sessionId = selectedSlotForBooking.classSessionId || selectedSlotForBooking.id;
-      console.log("[MemberPlanningView] Réservation Cours Privé...", { sessionId, slot: selectedSlotForBooking });
 
       const result = await bookSlot({
         id: selectedSlotForBooking.id,
@@ -897,7 +870,6 @@ export default function MemberPlanningView() {
                 {privateSlotsForSelectedDay.map(slot => {
                   const isMine = slot.isBookedByMe;
                   const isOcc = slot.isOccupiedByOther;
-                  const isQuotaBlocked = !isMine && !isOcc && remainingQuota <= 0;
 
                   // 🔷 1. MA RÉSERVATION EXISTANTE
                   if (isMine) {

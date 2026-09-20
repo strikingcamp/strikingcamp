@@ -5,7 +5,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 const disciplines = [
   {

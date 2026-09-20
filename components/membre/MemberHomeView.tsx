@@ -9,10 +9,6 @@ import {
   ShieldCheck,
   XCircle,
   Trophy,
-  Target,
-  Award,
-  Zap,
-  Lock,
   ArrowRight,
   Play,
   CheckCircle2,
@@ -33,16 +29,13 @@ import { cn } from "@/lib/utils";
 
 interface MemberHomeViewProps {
   firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
+  lastName?: string;
+  email?: string;
+  role?: string;
 }
 
 export default function MemberHomeView({
   firstName,
-  lastName,
-  email,
-  role,
 }: MemberHomeViewProps) {
   const [supabase] = useState(() => createClient());
   const {

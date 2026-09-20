@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Phone, Mail, CheckCircle2, AlertCircle, Loader2, Send, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 

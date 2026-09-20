@@ -11,7 +11,6 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  Settings2,
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
@@ -21,7 +20,6 @@ import {
   updateRecurringTemplateServerAction,
   toggleRecurringTemplateStatusServerAction,
   toggleDayTemplatesStatusServerAction,
-  deleteRecurringTemplateServerAction,
   triggerScheduleGenerationServerAction,
   type RecurringTemplateItem,
   type AdminDatedSessionItem,

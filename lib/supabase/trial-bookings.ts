@@ -47,31 +47,6 @@ export interface TrialDisciplineOption {
   availableCount: number;
 }
 
-const DAY_NAMES_FR = [
-  "Dimanche",
-  "Lundi",
-  "Mardi",
-  "Mercredi",
-  "Jeudi",
-  "Vendredi",
-  "Samedi",
-];
-
-const MONTH_NAMES_FR = [
-  "Janvier",
-  "Février",
-  "Mars",
-  "Avril",
-  "Mai",
-  "Juin",
-  "Juillet",
-  "Août",
-  "Septembre",
-  "Octobre",
-  "Novembre",
-  "Décembre",
-];
-
 /**
  * Vérifie si le service Small Group est actif dans public.service_settings.
  * Source unique de vérité pour la disponibilité du Small Group.

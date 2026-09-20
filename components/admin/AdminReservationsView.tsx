@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
   Users,
-  Search,
   Printer,
   ArrowLeft,
   Clock,
@@ -37,15 +36,14 @@ import {
   formatToParisTime,
 } from "@/lib/supabase/admin";
 
-const DAY_NAMES_FR = [
-  "Dimanche",
-  "Lundi",
-  "Mardi",
-  "Mercredi",
-  "Jeudi",
-  "Vendredi",
-  "Samedi",
-];
+const DAYS_SHORT_FR: Record<string, string> = {
+  Lundi: "Lun",
+  Mardi: "Mar",
+  Mercredi: "Mer",
+  Jeudi: "Jeu",
+  Vendredi: "Ven",
+  Samedi: "Sam",
+};
 
 const MONTH_NAMES_FR = [
   "Janvier",
@@ -61,15 +59,6 @@ const MONTH_NAMES_FR = [
   "Novembre",
   "Décembre",
 ];
-
-const DAYS_SHORT_FR: Record<string, string> = {
-  Lundi: "Lun",
-  Mardi: "Mar",
-  Mercredi: "Mer",
-  Jeudi: "Jeu",
-  Vendredi: "Ven",
-  Samedi: "Sam",
-};
 
 const OFFICIAL_PRIVATE_HOURS = [
   { start: "08:00", end: "08:50" },
@@ -447,7 +436,7 @@ export default function AdminReservationsView({
       }
     }
 
-    let totalSgSessions = (weeklyData.smallGroupSessions || []).length;
+    const totalSgSessions = (weeklyData.smallGroupSessions || []).length;
     let totalSgInscrits = 0;
     for (const s of weeklyData.smallGroupSessions || []) {
       const bks = bookingsBySession[s.id] || [];

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, User } from "lucide-react";
+import { Bell } from "lucide-react";
 
 interface MemberHeaderProps {
   firstName?: string;

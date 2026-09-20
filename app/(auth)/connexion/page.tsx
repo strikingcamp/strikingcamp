@@ -10,7 +10,6 @@ import { Loader2, Mail, Lock, AlertCircle, CheckCircle } from "lucide-react";
 function ConnexionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/membre";
   const callbackError = searchParams.get("error");
   const resetSuccess = searchParams.get("reset") === "success";
 

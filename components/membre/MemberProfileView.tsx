@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   User,
   Mail,
@@ -14,7 +13,6 @@ import {
 } from "lucide-react";
 import { EditProfileModal, ChangePasswordModal } from "./modals/ProfileModals";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 interface MemberProfileViewProps {
   initialUser: {
@@ -29,19 +27,11 @@ interface MemberProfileViewProps {
 }
 
 export default function MemberProfileView({ initialUser }: MemberProfileViewProps) {
-  const [userData, setUserData] = useState(initialUser);
+  const userData = initialUser;
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoggingOut] = useState(false);
   const router = useRouter();
-
-  const handleSignOut = async () => {
-    setIsLoggingOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/connexion");
-    router.refresh();
-  };
 
   const initials = userData.firstName
     ? `${userData.firstName.charAt(0)}${userData.lastName ? userData.lastName.charAt(0) : ""}`.toUpperCase()

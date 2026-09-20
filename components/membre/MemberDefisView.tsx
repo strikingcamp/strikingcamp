@@ -7,20 +7,16 @@ import {
   Flame,
   Target,
   Award,
-  Zap,
   Lock,
   CheckCircle2,
   Play,
   ArrowLeft,
-  ChevronRight,
-  ShieldCheck,
   RefreshCw,
   ExternalLink,
   Dumbbell,
   HeartPulse,
   Apple,
   AlertCircle,
-  Clock,
   Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -31,7 +27,6 @@ import {
   completeChallengeStep,
   type MemberChallengeCardData,
   type MemberChallengeDetailData,
-  type MemberStepDetail,
   type ChallengeCategory,
 } from "@/lib/supabase/challenges";
 import { cn } from "@/lib/utils";

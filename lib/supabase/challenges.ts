@@ -106,8 +106,8 @@ export async function getMemberChallenges(
     });
 
     // 3. Récupérer la progression du membre connecté si disponible
-    let progressMap: Record<string, { progress_percentage: number; status: string }> = {};
-    let completionsCountByChallenge: Record<string, number> = {};
+    const progressMap: Record<string, { progress_percentage: number; status: string }> = {};
+    const completionsCountByChallenge: Record<string, number> = {};
 
     if (userId) {
       const { data: progressList } = await supabase

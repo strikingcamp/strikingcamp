@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Phone, Mail, Lock, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { X, User, Phone, Lock, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface EditProfileModalProps {

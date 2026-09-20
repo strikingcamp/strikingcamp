@@ -30,7 +30,6 @@ import {
   type TrialSessionOption,
 } from "@/lib/supabase/trial-bookings";
 import {
-  TRIAL_PRICING,
   getTrialPriceFormatted,
   getTrialTypeLabel,
   getTrialCategoryLabel,

@@ -8,9 +8,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Calendar,
   Phone,
-  User,
   CreditCard,
   AlertTriangle,
   Loader2,
@@ -20,8 +18,6 @@ import {
   Check,
   X,
   Pencil,
-  Flame,
-  Award,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {

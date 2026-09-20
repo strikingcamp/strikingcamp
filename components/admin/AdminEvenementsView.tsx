@@ -6,7 +6,6 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Tag,
   Plus,
   Edit2,
   Trash2,
@@ -512,7 +511,7 @@ function EventEditorModal({ event, onClose, onSuccess }: EventEditorModalProps) 
   const isEditing = Boolean(event);
 
   const [title, setTitle] = useState(event?.title || "");
-  const [slug, setSlug] = useState(event?.slug || "");
+  const slug = event?.slug || "";
   const [category, setCategory] = useState<EventCategory>(event?.category || "stage");
   const [categoryLabel, setCategoryLabel] = useState(
     event?.categoryLabel || "Stage Technique"

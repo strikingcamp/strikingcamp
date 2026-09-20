@@ -13,7 +13,6 @@ import {
   Power,
   ShieldCheck,
   Calendar,
-  Lock,
   ArrowRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,7 +20,6 @@ import {
   getAdminServiceSettingsList,
   updateAdminServiceStatus,
   type ServiceSetting,
-  DEFAULT_SERVICE_SETTINGS,
 } from "@/lib/supabase/services";
 import { cn } from "@/lib/utils";
 

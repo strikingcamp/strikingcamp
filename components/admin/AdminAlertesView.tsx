@@ -4,14 +4,8 @@ import { useState } from "react";
 import {
   Bell,
   Plus,
-  Send,
   Trash2,
   Edit2,
-  Calendar,
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  Eye,
   X,
   Users,
 } from "lucide-react";

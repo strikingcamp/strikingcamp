@@ -30,7 +30,6 @@ import {
   type AdminMembersPageData,
   type CreateMemberPayload,
   type UpdateMemberPayload,
-  createMemberAdmin,
   updateMemberAdmin,
 } from "@/lib/supabase/admin";
 import { createMemberServerAction } from "@/app/(admin)/admin/membres/actions";

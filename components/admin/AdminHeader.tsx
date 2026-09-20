@@ -1,7 +1,6 @@
 "use client";
 
 import { Menu, Shield, LogOut } from "lucide-react";
-import Link from "next/link";
 
 interface AdminHeaderProps {
   onToggleSidebar?: () => void;

@@ -43,31 +43,6 @@ export interface SmallGroupBooking {
   class_session?: ClassSession | null;
 }
 
-const DAY_NAMES_FR = [
-  "Dimanche",
-  "Lundi",
-  "Mardi",
-  "Mercredi",
-  "Jeudi",
-  "Vendredi",
-  "Samedi",
-];
-
-const MONTH_NAMES_FR = [
-  "Janvier",
-  "Février",
-  "Mars",
-  "Avril",
-  "Mai",
-  "Juin",
-  "Juillet",
-  "Août",
-  "Septembre",
-  "Octobre",
-  "Novembre",
-  "Décembre",
-];
-
 /**
  * Récupère l'ensemble des abonnements actifs du membre pour déterminer ses droits d'accès cumulés.
  */
@@ -308,8 +283,6 @@ export async function bookSmallGroupSession(
   supabase: SupabaseClient,
   classSessionId: string
 ): Promise<{ success: boolean; error?: string; bookingId?: string }> {
-  console.log("--> [bookSmallGroupSession] class_session_id envoyé :", classSessionId);
-
   // 1. Contrôle temporel strict : vérifier que la séance n'est pas terminée (now < ends_at)
   const { data: sessionData, error: sessionError } = await supabase
     .from("class_sessions")
@@ -336,13 +309,6 @@ export async function bookSmallGroupSession(
 
   const { data, error } = await supabase.rpc("create_small_group_booking", {
     p_class_session_id: classSessionId,
-  });
-
-  console.log("--> [bookSmallGroupSession] Résultat RPC Supabase :", {
-    data,
-    error_message: error?.message,
-    error_code: error?.code,
-    error_details: error?.details,
   });
 
   if (error) {
@@ -386,8 +352,6 @@ export async function cancelSmallGroupSession(
   supabase: SupabaseClient,
   bookingId: string
 ): Promise<{ success: boolean; error?: string }> {
-  console.log("--> [cancelSmallGroupSession] booking_id envoyé :", bookingId);
-
   // 1. Contrôle temporel strict : vérifier que la séance associée n'est pas terminée (now < ends_at)
   const { data: bookingData, error: bookingError } = await supabase
     .from("bookings")
@@ -413,13 +377,6 @@ export async function cancelSmallGroupSession(
 
   const { data, error } = await supabase.rpc("cancel_small_group_booking", {
     p_booking_id: bookingId,
-  });
-
-  console.log("--> [cancelSmallGroupSession] Résultat RPC Supabase :", {
-    data,
-    error_message: error?.message,
-    error_code: error?.code,
-    error_details: error?.details,
   });
 
   if (error) {

@@ -15,7 +15,6 @@ import {
   Phone,
   CreditCard,
   AlertCircle,
-  CheckCircle2,
   X,
   Loader2,
   Calendar,
@@ -79,7 +78,6 @@ export default function AdminSubscriptionsView({
   const [formEndDate, setFormEndDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   // Formulaire Modification
   const [editPlanId, setEditPlanId] = useState("");
@@ -289,7 +287,6 @@ export default function AdminSubscriptionsView({
     setFormStartDate(new Date().toISOString().split("T")[0]);
     setFormEndDate("");
     setFormError(null);
-    setFormSuccess(null);
     setIsAddModalOpen(true);
   };
 
@@ -1199,7 +1196,7 @@ export default function AdminSubscriptionsView({
                     Aucun abonnement trouvé pour ce membre.
                   </p>
                 ) : (
-                  memberHistoryList.map((sub, index) => (
+                  memberHistoryList.map((sub) => (
                     <div
                       key={sub.id}
                       className="p-4 rounded-xl bg-[#0f172a] border border-brand-white/5 space-y-2"

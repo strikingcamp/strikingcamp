@@ -217,9 +217,9 @@ export default function AdminPlanningView({
   const [colFormDay, setColFormDay] = useState<DayName>("Mardi");
   const [colFormStart, setColFormStart] = useState("18:00");
   const [colFormEnd, setColFormEnd] = useState("19:00");
-  const [colFormDiscipline, setColFormDiscipline] = useState("Kick Boxing");
-  const [colFormLevel, setColFormLevel] = useState("Tous niveaux (Accès libre)");
-  const [colFormCapacity, setColFormCapacity] = useState(20);
+  const [colFormDiscipline, setColFormDiscipline] = useState("Boxe Anglaise");
+  const colFormLevel = "Tous niveaux (Accès libre)";
+  const colFormCapacity = 20;
 
   // Modal Édition Collectifs
   const [editingCollectiveSession, setEditingCollectiveSession] = useState<CollectiveSessionItem | null>(null);

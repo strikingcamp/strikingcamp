@@ -7,11 +7,8 @@ import {
   Clock,
   MapPin,
   User,
-  Tag,
   CheckCircle2,
-  Flame,
   ArrowRight,
-  ShieldCheck,
   History,
 } from "lucide-react";
 import Link from "next/link";

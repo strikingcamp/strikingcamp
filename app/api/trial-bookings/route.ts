@@ -4,7 +4,7 @@ import {
   sendTrialBookingConfirmationEmail,
   sendAdminTrialBookingNotification,
 } from "@/lib/email";
-import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
+import { formatToParisTime } from "@/lib/supabase/admin";
 import {
   getTrialPrice,
   getTrialPriceFormatted,

@@ -16,7 +16,6 @@ export default function BookingConfirmModal() {
 
   const isPrivate = selectedSlot?.sessionType === "Cours Privé";
   const quotaRemaining = privateQuota?.sessionsRemaining ?? 0;
-  const isQuotaExhausted = isPrivate && quotaRemaining <= 0;
 
   const handleConfirm = async () => {
     if (!selectedSlot) return;

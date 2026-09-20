@@ -65,7 +65,6 @@ export async function getServiceSettingsMap(
     }
   }
 
-  console.log("[getServiceSettingsMap] Statuts des services chargés depuis la BDD :", map);
   return map;
 }
 
@@ -91,7 +90,6 @@ export async function getAdminServiceSettingsList(
     throw new Error(`[getAdminServiceSettingsList] ${error.message}`);
   }
 
-  console.log("[getAdminServiceSettingsList] Services chargés depuis la BDD :", data);
   return (data || []) as ServiceSetting[];
 }
 
@@ -103,7 +101,7 @@ export async function updateAdminServiceStatus(
   supabase: SupabaseClient,
   serviceKey: string,
   isActive: boolean,
-  previousValue?: boolean
+  _previousValue?: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Appel strict et exclusif de la RPC sécurisée admin_update_service_status
@@ -114,14 +112,6 @@ export async function updateAdminServiceStatus(
         p_is_active: isActive,
       }
     );
-
-    console.log("[updateAdminServiceStatus RPC Result]", {
-      serviceId: serviceKey,
-      previousValue: previousValue ?? !isActive,
-      newValue: isActive,
-      supabaseResponse: rpcData,
-      error: rpcError,
-    });
 
     if (rpcError) {
       console.error("[updateAdminServiceStatus] Erreur RPC admin_update_service_status :", {

@@ -9,7 +9,7 @@ export default function QuickActionModal() {
   const { isQuickActionOpen, closeQuickAction, hasPrivateAccess, privateQuota } = useMember();
   const router = useRouter();
 
-  const handleNavigate = (tab?: string) => {
+  const handleNavigate = () => {
     closeQuickAction();
     router.push("/membre/planning");
   };
@@ -67,7 +67,7 @@ export default function QuickActionModal() {
               {/* Option: Cours Privé (si abonné privé) */}
               {hasPrivateAccess && (
                 <button
-                  onClick={() => handleNavigate("private")}
+                  onClick={() => handleNavigate()}
                   className="w-full text-left p-4 rounded-xl bg-gradient-to-r from-[#062c1d]/40 to-[#0f172a] hover:from-[#062c1d]/60 border border-emerald-500/30 hover:border-emerald-500/50 transition-all duration-200 group flex items-start gap-4 cursor-pointer"
                 >
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black flex items-center justify-center shrink-0 transition-colors">
@@ -91,7 +91,7 @@ export default function QuickActionModal() {
 
               {/* Option: Séance Small Group */}
               <button
-                onClick={() => handleNavigate("small_group")}
+                onClick={() => handleNavigate()}
                 className="w-full text-left p-4 rounded-xl bg-brand-white/[0.03] hover:bg-brand-blue/10 border border-brand-white/10 hover:border-brand-blue/40 transition-all duration-200 group flex items-start gap-4 cursor-pointer"
               >
                 <div className="w-12 h-12 rounded-xl bg-brand-blue/10 group-hover:bg-brand-blue text-brand-blue group-hover:text-brand-black flex items-center justify-center shrink-0 transition-colors">
