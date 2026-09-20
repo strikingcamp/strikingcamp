@@ -26,25 +26,27 @@ export default async function PlanningPage() {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
     );
 
-    // 1. Lecture du statut du service Small Group
-    const { data: setting } = await supabase
-      .from("service_settings")
-      .select("is_active")
-      .eq("service_key", "small_group")
-      .maybeSingle();
+    // 1. & 2. Lecture parallèle du statut Small Group et des créneaux récurrents actifs
+    const [settingRes, templatesRes] = await Promise.all([
+      supabase
+        .from("service_settings")
+        .select("is_active")
+        .eq("service_key", "small_group")
+        .maybeSingle(),
+      supabase
+        .from("recurring_schedule_templates")
+        .select("day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
+        .eq("is_active", true)
+        .in("type", ["small_group", "collective"])
+        .order("day_of_week", { ascending: true })
+        .order("start_time", { ascending: true }),
+    ]);
 
-    if (setting) {
-      isSmallGroupActive = Boolean(setting.is_active);
+    if (settingRes.data) {
+      isSmallGroupActive = Boolean(settingRes.data.is_active);
     }
 
-    // 2. Lecture des créneaux récurrents actifs
-    const { data: templates, error } = await supabase
-      .from("recurring_schedule_templates")
-      .select("day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
-      .eq("is_active", true)
-      .in("type", ["small_group", "collective"])
-      .order("day_of_week", { ascending: true })
-      .order("start_time", { ascending: true });
+    const { data: templates, error } = templatesRes;
 
     if (!error && templates && templates.length > 0) {
       const dynamicSchedule: Record<PlanningCategory, Record<DayName, ScheduleCourse[]>> = {

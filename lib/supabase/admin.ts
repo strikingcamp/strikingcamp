@@ -259,31 +259,6 @@ const MONTH_NAMES_FR = [
   "Décembre",
 ];
 
-function formatFrDate(isoString: string): string {
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return isoString;
-  const dayName = DAY_NAMES_FR[d.getDay()];
-  const day = d.getDate();
-  const month = MONTH_NAMES_FR[d.getMonth()];
-  return `${dayName} ${day} ${month}`;
-}
-
-function formatFrTime(isoString: string): string {
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
-
-function unwrapSingle<T>(val: T | T[] | null | undefined): T | null {
-  if (!val) return null;
-  if (Array.isArray(val)) return val.length > 0 ? val[0] : null;
-  return val;
-};
-
 /**
  * Récupère l'ensemble des données du Dashboard Admin
  */
@@ -291,21 +266,48 @@ export async function getAdminDashboardData(
   supabase: SupabaseClient
 ): Promise<AdminDashboardStats> {
   try {
-    // 1. Nombre total de profils membres
-    const { count: totalMembersCount, error: membersError } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
+    // 1. & 2. & 3. & 4. & 5. Récupération parallèle des données de base du Dashboard
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
 
-    if (membersError) {
-      console.warn("Erreur comptage profiles :", membersError.message);
+    const [membersRes, subscriptionsRes, sessionsRes, recentBookingsRes, eventsRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true }),
+      supabase
+        .from("subscriptions")
+        .select("id, status, plan:plans(id, name, type)")
+        .eq("status", "active"),
+      supabase
+        .from("class_sessions")
+        .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
+        .gte("starts_at", startOfToday.toISOString())
+        .lte("starts_at", endOfToday.toISOString())
+        .order("starts_at", { ascending: true }),
+      supabase
+        .from("bookings")
+        .select("id, user_id, class_session_id, status, created_at")
+        .eq("status", "confirmed")
+        .order("created_at", { ascending: false })
+        .limit(6),
+      supabase
+        .from("events")
+        .select("*")
+        .in("status", ["published", "confirmed"])
+        .order("is_featured", { ascending: false })
+        .order("starts_at", { ascending: true, nullsFirst: false })
+        .limit(3),
+    ]);
+
+    const totalMembersCount = membersRes.count;
+    if (membersRes.error) {
+      console.warn("Erreur comptage profiles :", membersRes.error.message);
     }
 
-    // 2. Abonnements actifs
-    const { data: subscriptionsData, error: subError } = await supabase
-      .from("subscriptions")
-      .select("id, status, plan:plans(id, name, type)")
-      .eq("status", "active");
-
+    const subscriptionsData = subscriptionsRes.data;
+    const subError = subscriptionsRes.error;
     let smallGroupCount = 0;
     let collectiveCount = 0;
 
@@ -321,36 +323,29 @@ export async function getAdminDashboardData(
       }
     }
 
-    // 3. Séances du jour
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-
-    const { data: todaySessions, error: sessionsError } = await supabase
-      .from("class_sessions")
-      .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
-      .gte("starts_at", startOfToday.toISOString())
-      .lte("starts_at", endOfToday.toISOString())
-      .order("starts_at", { ascending: true });
-
+    const todaySessions = sessionsRes.data;
+    const sessionsError = sessionsRes.error;
     const upcomingSessionsToday: AdminClassSessionSummary[] = [];
     let todayBookingsTotal = 0;
 
     if (!sessionsError && todaySessions && todaySessions.length > 0) {
       const sessionIds = todaySessions.map((s) => s.id);
 
-      const { data: sessionBookings } = await supabase
-        .from("bookings")
-        .select("id, class_session_id")
-        .in("class_session_id", sessionIds)
-        .eq("status", "confirmed");
+      const [sessionBookingsRes, sessionTrialBookingsRes] = await Promise.all([
+        supabase
+          .from("bookings")
+          .select("id, class_session_id")
+          .in("class_session_id", sessionIds)
+          .eq("status", "confirmed"),
+        supabase
+          .from("trial_bookings")
+          .select("id, class_session_id")
+          .in("class_session_id", sessionIds)
+          .eq("status", "confirmed"),
+      ]);
 
-      const { data: sessionTrialBookings } = await supabase
-        .from("trial_bookings")
-        .select("id, class_session_id")
-        .in("class_session_id", sessionIds)
-        .eq("status", "confirmed");
+      const sessionBookings = sessionBookingsRes.data;
+      const sessionTrialBookings = sessionTrialBookingsRes.data;
 
       const bookingCountsBySession = new Map<string, number>();
       if (sessionBookings) {
@@ -393,13 +388,7 @@ export async function getAdminDashboardData(
     }
 
     // 4. Dernières réservations enregistrées
-    const { data: recentBookingsData } = await supabase
-      .from("bookings")
-      .select("id, user_id, class_session_id, status, created_at")
-      .eq("status", "confirmed")
-      .order("created_at", { ascending: false })
-      .limit(6);
-
+    const recentBookingsData = recentBookingsRes.data;
     const recentBookings: AdminBookingSummary[] = [];
 
     if (recentBookingsData && recentBookingsData.length > 0) {
@@ -410,18 +399,19 @@ export async function getAdminDashboardData(
         new Set(recentBookingsData.map((b) => b.class_session_id).filter(Boolean))
       );
 
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name")
-        .in("id", recentUserIds);
+      const [profsRes, sesssRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, first_name, last_name")
+          .in("id", recentUserIds),
+        supabase
+          .from("class_sessions")
+          .select("id, discipline, starts_at, ends_at")
+          .in("id", recentSessionIds),
+      ]);
 
-      const { data: sesss } = await supabase
-        .from("class_sessions")
-        .select("id, discipline, starts_at, ends_at")
-        .in("id", recentSessionIds);
-
-      const profMap = new Map((profs || []).map((p) => [p.id, p]));
-      const sessMap = new Map((sesss || []).map((s) => [s.id, s]));
+      const profMap = new Map((profsRes.data || []).map((p) => [p.id, p]));
+      const sessMap = new Map((sesssRes.data || []).map((s) => [s.id, s]));
 
       for (const b of recentBookingsData) {
         const rawProf = profMap.get(b.user_id);
@@ -454,16 +444,11 @@ export async function getAdminDashboardData(
       }
     }
 
-    // 5. Événements à venir (Supabase en priorité, repli gracieux sur clubEvents)
+    // 5. Événements à venir
     let featuredEvents: ClubEvent[] = [];
     try {
-      const { data: dbEvents, error: eventsErr } = await supabase
-        .from("events")
-        .select("*")
-        .in("status", ["published", "confirmed"])
-        .order("is_featured", { ascending: false })
-        .order("starts_at", { ascending: true, nullsFirst: false })
-        .limit(3);
+      const dbEvents = eventsRes.data;
+      const eventsErr = eventsRes.error;
 
       if (!eventsErr && dbEvents && dbEvents.length > 0) {
         const { mapDbEventToClubEvent } = await import("./events");
@@ -706,10 +691,6 @@ export async function getAdminSessionReservations(
     // 6. Assembler la liste des participants avec l'émargement réel
     const participants: AdminBookingParticipant[] = bookings.map((b) => {
       const prof = profilesMap.get(b.user_id);
-      const memberName = prof
-        ? `${prof.first_name || ""} ${rawProf(prof.first_name, prof.last_name)}`.trim() || "Membre"
-        : "Membre";
-
       const phone = prof?.phone || "—";
       const planName = subsMap.get(b.user_id) || "Formule Active";
 
@@ -759,10 +740,6 @@ export async function getAdminSessionReservations(
       allSessionsList: [],
     };
   }
-}
-
-function rawProf(first?: string, last?: string): string {
-  return `${last || ""}`.trim();
 }
 
 /**
@@ -890,95 +867,84 @@ export async function getAdminWeeklyReservationsData(
 
     const sessionIds = weekSessions.map((s) => s.id);
 
-    // 3. Récupération des réservations réelles associées
+    // 3. Récupération parallèle des réservations membres et essais associées
     let allBookings: any[] = [];
-    if (sessionIds.length > 0) {
-      const { data: bData, error: bErr } = await supabase
-        .from("bookings")
-        .select("id, user_id, class_session_id, status, attendance_status, attended_at, is_late_cancellation, cancellation_reason, created_at")
-        .in("class_session_id", sessionIds)
-        .order("created_at", { ascending: true });
-
-      if (bErr) {
-        console.error("[getAdminWeeklyReservationsData] Erreur bookings :", bErr);
-      } else {
-        allBookings = bData || [];
-      }
-    }
-
-    // 3. bis Récupération des réservations de cours d'essai associées
     let allTrialBookings: any[] = [];
+
     if (sessionIds.length > 0) {
-      try {
-        const { data: tbData, error: tbErr } = await supabase
+      const [bookingsRes, trialBookingsRes] = await Promise.all([
+        supabase
+          .from("bookings")
+          .select("id, user_id, class_session_id, status, attendance_status, attended_at, is_late_cancellation, cancellation_reason, created_at")
+          .in("class_session_id", sessionIds)
+          .order("created_at", { ascending: true }),
+        supabase
           .from("trial_bookings")
           .select("id, class_session_id, first_name, last_name, email, phone, status, attendance_status, attended_at, created_at")
           .in("class_session_id", sessionIds)
-          .order("created_at", { ascending: true });
+          .order("created_at", { ascending: true }),
+      ]);
 
-        if (tbErr) {
-          console.warn("[getAdminWeeklyReservationsData] Information trial_bookings :", tbErr.message);
-        } else {
-          allTrialBookings = tbData || [];
-        }
-      } catch (tbEx) {
-        console.warn("[getAdminWeeklyReservationsData] Exception trial_bookings :", tbEx);
+      if (bookingsRes.error) {
+        console.error("[getAdminWeeklyReservationsData] Erreur bookings :", bookingsRes.error);
+      } else {
+        allBookings = bookingsRes.data || [];
+      }
+
+      if (trialBookingsRes.error) {
+        console.warn("[getAdminWeeklyReservationsData] Information trial_bookings :", trialBookingsRes.error.message);
+      } else {
+        allTrialBookings = trialBookingsRes.data || [];
       }
     }
 
-    // 4. Récupération des profils et abonnements des membres
+    // 4. Récupération parallèle des profils, auth et abonnements des membres
     const userIds = Array.from(new Set(allBookings.map((b) => b.user_id)));
     const profilesMap = new Map<string, { first_name?: string | null; last_name?: string | null; phone?: string | null }>();
     const authUsersMap = new Map<string, { email?: string; first_name?: string; last_name?: string; phone?: string }>();
-    const subsMap = new Map<string, string>();
     const userSubsListMap = new Map<
       string,
       Array<{ status: string; planName: string; allowsPrivate: boolean }>
     >();
 
     if (userIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, phone")
-        .in("id", userIds);
+      const authAdmin = (supabase as any).auth?.admin;
+      const hasAuthAdmin = authAdmin && typeof authAdmin.listUsers === "function";
 
-      if (profilesData) {
-        for (const p of profilesData) {
+      const [profilesRes, authListRes, subsRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, first_name, last_name, phone")
+          .in("id", userIds),
+        hasAuthAdmin ? authAdmin.listUsers() : Promise.resolve({ data: null }),
+        supabase
+          .from("subscriptions")
+          .select("id, user_id, status, started_at, plan:plans(name, type, allows_private)")
+          .in("user_id", userIds)
+          .order("started_at", { ascending: false }),
+      ]);
+
+      if (profilesRes.data) {
+        for (const p of profilesRes.data) {
           profilesMap.set(p.id, p);
         }
       }
 
-      // Récupération des données auth (email, métadonnées) via l'Admin API si disponible
-      try {
-        const authAdmin = (supabase as any).auth?.admin;
-        if (authAdmin && typeof authAdmin.listUsers === "function") {
-          const { data: authList } = await authAdmin.listUsers();
-          if (authList?.users) {
-            for (const u of authList.users) {
-              if (userIds.includes(u.id)) {
-                authUsersMap.set(u.id, {
-                  email: u.email,
-                  first_name: u.user_metadata?.first_name,
-                  last_name: u.user_metadata?.last_name,
-                  phone: u.user_metadata?.phone || u.phone,
-                });
-              }
-            }
+      if (authListRes?.data?.users) {
+        for (const u of authListRes.data.users) {
+          if (userIds.includes(u.id)) {
+            authUsersMap.set(u.id, {
+              email: u.email,
+              first_name: u.user_metadata?.first_name,
+              last_name: u.user_metadata?.last_name,
+              phone: u.user_metadata?.phone || u.phone,
+            });
           }
         }
-      } catch (authErr) {
-        // Fallback silencieux en cas d'impossibilité d'accès à auth.admin
       }
 
-      // Abonnements sans filtre destructeur status = 'active'
-      const { data: subsData } = await supabase
-        .from("subscriptions")
-        .select("id, user_id, status, started_at, plan:plans(name, type, allows_private)")
-        .in("user_id", userIds)
-        .order("started_at", { ascending: false });
-
-      if (subsData) {
-        for (const sub of subsData) {
+      if (subsRes.data) {
+        for (const sub of subsRes.data) {
           const rawPlan = Array.isArray(sub.plan) ? sub.plan[0] : sub.plan;
           if (rawPlan?.name) {
             if (!userSubsListMap.has(sub.user_id)) {
@@ -1960,47 +1926,47 @@ export async function getAdminMembersData(
   supabase: SupabaseClient
 ): Promise<AdminMembersPageData> {
   try {
-    // 1. Récupérer les profils membres
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, first_name, last_name, phone, created_at, updated_at")
-      .order("last_name", { ascending: true })
-      .order("first_name", { ascending: true });
+    // 1. & 2. & 3. & 4. Récupération parallèle des profils, abonnements, réservations et formules
+    const [profilesRes, subscriptionsRes, bookingsRes, plansRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, first_name, last_name, phone, created_at, updated_at")
+        .order("last_name", { ascending: true })
+        .order("first_name", { ascending: true }),
+      supabase
+        .from("subscriptions")
+        .select(
+          "id, user_id, plan_id, status, started_at, ends_at, private_sessions_quota, created_at, plan:plans(id, name, type, price_cents, commitment, private_sessions_per_period, allows_private, allows_small_group, allows_collective)"
+        )
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("bookings")
+        .select("id, user_id, class_session_id, status, created_at, class_session:class_sessions(id, discipline, type, starts_at, ends_at)")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("plans")
+        .select("id, name, code, type, commitment, price_cents, private_sessions_per_period, allows_private, allows_small_group, allows_collective, is_active, display_order")
+        .order("display_order", { ascending: true }),
+    ]);
 
-    if (profilesError) {
-      console.error("Erreur getAdminMembersData (profiles) :", profilesError);
+    const profilesData = profilesRes.data;
+    if (profilesRes.error) {
+      console.error("Erreur getAdminMembersData (profiles) :", profilesRes.error);
     }
 
-    // 2. Récupérer tous les abonnements avec jointure sur plans
-    const { data: subscriptionsData, error: subError } = await supabase
-      .from("subscriptions")
-      .select(
-        "id, user_id, plan_id, status, started_at, ends_at, private_sessions_quota, created_at, plan:plans(id, name, type, price_cents, commitment, private_sessions_per_period, allows_private, allows_small_group, allows_collective)"
-      )
-      .order("created_at", { ascending: false });
-
-    if (subError) {
-      console.error("Erreur getAdminMembersData (subscriptions) :", subError);
+    const subscriptionsData = subscriptionsRes.data;
+    if (subscriptionsRes.error) {
+      console.error("Erreur getAdminMembersData (subscriptions) :", subscriptionsRes.error);
     }
 
-    // 3. Récupérer toutes les réservations avec jointure sur class_sessions
-    const { data: bookingsData, error: bookingsError } = await supabase
-      .from("bookings")
-      .select("id, user_id, class_session_id, status, created_at, class_session:class_sessions(id, discipline, type, starts_at, ends_at)")
-      .order("created_at", { ascending: false });
-
-    if (bookingsError) {
-      console.error("Erreur getAdminMembersData (bookings) :", bookingsError);
+    const bookingsData = bookingsRes.data;
+    if (bookingsRes.error) {
+      console.error("Erreur getAdminMembersData (bookings) :", bookingsRes.error);
     }
 
-    // 4. Récupérer les formules actives
-    const { data: plansData, error: plansError } = await supabase
-      .from("plans")
-      .select("id, name, code, type, commitment, price_cents, private_sessions_per_period, allows_private, allows_small_group, allows_collective, is_active, display_order")
-      .order("display_order", { ascending: true });
-
-    if (plansError) {
-      console.error("Erreur getAdminMembersData (plans) :", plansError);
+    const plansData = plansRes.data;
+    if (plansRes.error) {
+      console.error("Erreur getAdminMembersData (plans) :", plansRes.error);
     }
 
     const plans: AdminPlanItem[] = (plansData || []).map((p: Record<string, unknown>) => ({

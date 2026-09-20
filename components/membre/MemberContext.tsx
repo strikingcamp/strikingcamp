@@ -169,7 +169,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     cycleStart: "2026-08-25T00:00:00Z",
     cycleEnd: "2026-09-25T23:59:59Z",
   });
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingData] = useState(false);
 
   const [availableSessions, setAvailableSessions] = useState<ClassSession[]>([]);
   const [allConfirmedBookings, setAllConfirmedBookings] = useState<ConfirmedBookingInfo[]>([]);
@@ -195,18 +195,6 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const supabase = createClient();
-
-  // Sauvegarde automatique des réservations synchronisées
-  const saveBookings = useCallback((newList: BookingSlot[]) => {
-    setUserBookings(newList);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(DEMO_STORAGE_KEY_BOOKINGS, JSON.stringify(newList));
-      } catch (err) {
-        console.error("Erreur sauvegarde localStorage :", err);
-      }
-    }
-  }, []);
 
   // Action : Ajouter une réservation synchronisée
   const addSynchronizedBooking = useCallback((newSlot: BookingSlot) => {
@@ -277,37 +265,32 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
   const refreshMemberData = useCallback(async () => {
     try {
-      console.log("[MemberContext] --> refreshMemberData() démarré...");
+      // 0. & 1. & 2. Chargement parallèle des données globales et de l'utilisateur
+      const [settingsRes, sessionsRes, confirmedRes, authUserRes] = await Promise.allSettled([
+        getServiceSettingsMap(supabase),
+        getActiveClassSessions(supabase),
+        getConfirmedBookingsSummaryAction(),
+        supabase.auth.getUser(),
+      ]);
 
-      // 0. Charger les paramètres globaux des services (Feature flags)
-      try {
-        const settings = await getServiceSettingsMap(supabase);
-        setServiceSettings(settings);
-      } catch (settingsErr) {
-        console.warn("[MemberContext] Erreur lecture service_settings (conservation de l'état précédent) :", settingsErr);
+      if (settingsRes.status === "fulfilled") {
+        setServiceSettings(settingsRes.value);
+      } else {
+        console.warn("[MemberContext] Erreur lecture service_settings (conservation de l'état précédent) :", settingsRes.reason);
       }
 
-      // 1. Toujours charger les sessions réelles et les réservations globales (accès public/anon ou auth)
-      const sessions = await getActiveClassSessions(supabase);
-      console.log("[MemberContext] class_sessions récupérées :", sessions.length, "créneaux");
-      setAvailableSessions(sessions);
+      if (sessionsRes.status === "fulfilled") {
+        setAvailableSessions(sessionsRes.value);
+      }
 
-      try {
-        const confirmedBookingsData = await getConfirmedBookingsSummaryAction();
-        console.log("[MemberContext] Total réservations confirmées en base (Server Action) :", confirmedBookingsData.length);
-        setAllConfirmedBookings(confirmedBookingsData || []);
-      } catch (confirmedErr) {
-        console.warn("[MemberContext] Erreur lecture réservations confirmées via Server Action :", confirmedErr);
+      if (confirmedRes.status === "fulfilled") {
+        setAllConfirmedBookings(confirmedRes.value || []);
+      } else {
+        console.warn("[MemberContext] Erreur lecture réservations confirmées via Server Action :", confirmedRes.reason);
         setAllConfirmedBookings([]);
       }
 
-      // 2. Vérification de la session utilisateur connectée
-      const {
-        data: { user },
-        error: userErr,
-      } = await supabase.auth.getUser();
-
-      console.log("[MemberContext] Utilisateur Supabase connecté :", user ? `${user.email} (ID: ${user.id})` : "Aucun utilisateur connecté", { userErr });
+      const user = authUserRes.status === "fulfilled" ? authUserRes.value.data?.user : null;
 
       if (!user) {
         setCurrentUserId(null);
@@ -317,26 +300,31 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
       setCurrentUserId(user.id);
 
-      const access = await getMemberPlanAccess(supabase, user.id);
-      console.log("[MemberContext] Droits d'accès formule :", access);
-      setHasActiveSubscription(access.hasActiveSubscription);
-      setHasPrivateAccess(access.hasPrivateAccess);
-      setHasSmallGroupAccess(access.hasSmallGroupAccess);
-      setHasCollectiveAccess(access.hasCollectiveAccess);
-      setPlanName(access.planName || "Formule Active");
-      setActivePlanNames(access.activePlanNames || []);
-      setPrivateSessionsQuota(access.privateSessionsQuota ?? 8);
+      // 3. Chargement parallèle des droits d'accès, du quota privé et des réservations du membre
+      const [accessRes, quotaStatusRes, realBookingsRes] = await Promise.allSettled([
+        getMemberPlanAccess(supabase, user.id),
+        getMemberPrivateQuotaStatus(supabase),
+        getMemberUpcomingBookings(supabase, user.id),
+      ]);
 
-      const quotaStatus = await getMemberPrivateQuotaStatus(supabase);
-      if (quotaStatus.success) {
-        setPrivateQuota(quotaStatus);
+      if (accessRes.status === "fulfilled") {
+        const access = accessRes.value;
+        setHasActiveSubscription(access.hasActiveSubscription);
+        setHasPrivateAccess(access.hasPrivateAccess);
+        setHasSmallGroupAccess(access.hasSmallGroupAccess);
+        setHasCollectiveAccess(access.hasCollectiveAccess);
+        setPlanName(access.planName || "Formule Active");
+        setActivePlanNames(access.activePlanNames || []);
+        setPrivateSessionsQuota(access.privateSessionsQuota ?? 8);
       }
 
-      // Récupération des réservations réelles de l'utilisateur
-      const realBookings = await getMemberUpcomingBookings(supabase, user.id);
-      console.log("[MemberContext] Réservations de l'utilisateur :", realBookings.length, realBookings);
-      setUserBookings(realBookings);
+      if (quotaStatusRes.status === "fulfilled" && quotaStatusRes.value.success) {
+        setPrivateQuota(quotaStatusRes.value);
+      }
 
+      if (realBookingsRes.status === "fulfilled") {
+        setUserBookings(realBookingsRes.value);
+      }
     } catch (err) {
       console.error("[MemberContext] Erreur lors du chargement des données membre :", err);
     }
@@ -372,7 +360,6 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   // Réservation Small Group réelle via RPC Supabase
   const bookSmallGroup = async (slotOrId: BookingSlot | string) => {
     const sessionId = typeof slotOrId === "string" ? slotOrId : (slotOrId.classSessionId || slotOrId.id);
-    console.log("[MemberContext] --> bookSmallGroup appelé avec sessionId :", sessionId, "currentUserId :", currentUserId);
 
     if (!sessionId || !sessionId.includes("-")) {
       const msg = `Identifiant de séance invalide ou non UUID : ${sessionId}`;
@@ -381,21 +368,17 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     }
 
     const result = await apiBookSmallGroup(supabase, sessionId);
-    console.log("[MemberContext] <-- Résultat apiBookSmallGroup :", result);
 
     if (!result.success) {
       return { success: false, error: result.error || "Impossible d'effectuer la réservation." };
     }
 
-    console.log("[MemberContext] ✅ Réservation validée, rafraîchissement des données...");
     await refreshMemberData();
     return { success: true, bookingId: result.bookingId };
   };
 
   // Annulation Small Group réelle via RPC Supabase
   const cancelSmallGroup = async (bookingId: string) => {
-    console.log("[MemberContext] --> cancelSmallGroup appelé avec bookingId :", bookingId);
-
     if (!bookingId || !bookingId.includes("-")) {
       const msg = `Identifiant de réservation invalide : ${bookingId}`;
       console.error("[MemberContext] ERREUR :", msg);
@@ -403,13 +386,11 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     }
 
     const result = await apiCancelSmallGroup(supabase, bookingId);
-    console.log("[MemberContext] <-- Résultat apiCancelSmallGroup :", result);
 
     if (!result.success) {
       return { success: false, error: result.error || "Impossible d'annuler cette réservation." };
     }
 
-    console.log("[MemberContext] ✅ Annulation validée, rafraîchissement des données...");
     await refreshMemberData();
     return { success: true };
   };
