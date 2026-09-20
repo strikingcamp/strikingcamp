@@ -1,62 +1,121 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { siteData } from "@/data/content";
+import TrialBookingModal from "@/components/modals/TrialBookingModal";
 
 export default function HeroSection() {
+  const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
+
   return (
-    <section id="accueil" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#020817] pt-20">
-      {/* Background Image */}
+    <section id="accueil" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#020817] pt-20 pb-12 px-4">
+      {/* Background Image with optimized darkening */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-top bg-no-repeat grayscale opacity-60"
+        className="absolute inset-0 z-0 bg-cover bg-top bg-no-repeat grayscale opacity-50"
         style={{ backgroundImage: `url('/BGround.jpeg')` }}
       />
-      {/* Light Uniform Overlay (No dark bottom gradient) */}
-      <div className="absolute inset-0 z-10 bg-brand-black/20" />
+      {/* Dark overlay ensuring high legibility while keeping fighters visible */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-[#020817]/75 via-[#020817]/55 to-[#020817]/85 pointer-events-none" />
 
-      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col items-center text-center">
-
-
+      <div className="relative z-20 max-w-4xl mx-auto w-full flex flex-col items-center text-center">
+        {/* 1. LOGO & TITRE */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className="mb-6 max-w-4xl"
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="flex flex-col items-center"
         >
-          <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.85] tracking-tighter">
-            <span className="text-brand-blue">{siteData.hero.title}</span>{" "}
-            <span className="text-brand-white">{siteData.hero.title2}</span>
+          {/* SC Emblem Icon */}
+          <div className="relative w-20 h-14 sm:w-28 sm:h-18 md:w-32 md:h-20 mb-1 sm:mb-2">
+            <Image
+              src="/logo-sc.png"
+              alt="Striking Camp"
+              fill
+              priority
+              sizes="(max-width: 640px) 80px, (max-width: 768px) 112px, 128px"
+              className="object-contain"
+            />
+          </div>
+
+          {/* Main Title: STRIKING CAMP */}
+          <h1 className="font-heading text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black uppercase leading-[0.88] tracking-tighter">
+            <span className="text-brand-white">{siteData.hero.title}</span>{" "}
+            <span className="text-brand-blue">{siteData.hero.title2}</span>
           </h1>
         </motion.div>
 
+        {/* 2. SLOGAN : RELÈVE LE DÉFI (avec filets bleus) */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
+          className="flex items-center justify-center gap-3 sm:gap-4 mt-2 sm:mt-3 mb-1.5 sm:mb-2 w-full"
+        >
+          <div className="h-[2px] w-6 sm:w-12 md:w-20 bg-brand-blue rounded-full" />
+          <h2 className="font-heading text-base sm:text-xl md:text-2xl font-black italic tracking-widest text-brand-white uppercase whitespace-nowrap">
+            RELÈVE LE DÉFI
+          </h2>
+          <div className="h-[2px] w-6 sm:w-12 md:w-20 bg-brand-blue rounded-full" />
+        </motion.div>
+
+        {/* 3. PHRASE DESCRIPTIVE (non grasse, italique) */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="font-heading text-xs sm:text-sm md:text-base font-normal italic tracking-wide text-brand-white uppercase max-w-xl px-2 leading-tight"
+        >
+          VENEZ DÉCOUVRIR L’UNIVERS DES SPORTS DE COMBAT DEBOUT
+        </motion.p>
+
+        {/* 4. DISCIPLINES (non grasses, rapprochées, avec puces bleues) */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.6 }}
-          className="max-w-2xl mx-auto mb-10"
+          transition={{ duration: 0.7, delay: 0.4 }}
+          className="flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-3 gap-y-1 font-heading text-xs sm:text-sm font-normal tracking-wider text-brand-white uppercase mt-1.5 sm:mt-2"
         >
-          <h3 className="text-2xl md:text-3xl font-bold text-brand-white mb-2 uppercase tracking-wide">
-            RELÈVE LE DÉFI
-          </h3>
-          <p className="text-lg md:text-xl text-brand-white/70 font-light">
-            Votre transformation commence ici
-          </p>
+          <span>BOXE</span>
+          <span className="text-brand-blue text-[9px] sm:text-[11px]">•</span>
+          <span>KICK BOXING</span>
+          <span className="text-brand-blue text-[9px] sm:text-[11px]">•</span>
+          <span>BOXE THAÏ</span>
+          <span className="text-brand-blue text-[9px] sm:text-[11px]">•</span>
+          <span>STRIKING</span>
+          <span className="text-brand-blue text-[9px] sm:text-[11px]">•</span>
+          <span>MMA</span>
         </motion.div>
 
+        {/* 5. BOUTONS D'ACTION (largeur contrôlée sur mobile, proportionnée aux disciplines) */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="flex justify-center w-full sm:w-auto"
+          transition={{ duration: 0.7, delay: 0.55 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-7 sm:mt-9 w-full sm:w-auto"
         >
+          <button
+            type="button"
+            onClick={() => setIsTrialModalOpen(true)}
+            className="w-[290px] max-w-[calc(100vw-48px)] sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md text-center shadow-lg shadow-brand-blue/20 cursor-pointer"
+          >
+            RÉSERVER UN COURS D’ESSAI
+          </button>
           <a
             href="/connexion"
-            className="px-8 py-4 bg-brand-blue text-brand-black font-heading font-bold uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md text-center shadow-lg shadow-brand-blue/20"
+            className="w-[290px] max-w-[calc(100vw-48px)] sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-brand-black/30 border border-brand-white/80 hover:border-brand-white text-brand-white hover:bg-brand-white hover:text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider transition-colors duration-300 rounded-md text-center"
           >
             {siteData.hero.secondaryCta}
           </a>
         </motion.div>
       </div>
+
+      {/* Modale de Réservation de Cours d'Essai */}
+      <TrialBookingModal
+        isOpen={isTrialModalOpen}
+        onClose={() => setIsTrialModalOpen(false)}
+      />
     </section>
   );
 }
