@@ -1,9 +1,18 @@
 import { MetadataRoute } from 'next';
+import { getAllDisciplineSlugs } from '@/data/disciplines';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://strikingcamp.com';
+  const slugs = getAllDisciplineSlugs();
 
-  return [
+  const disciplineEntries: MetadataRoute.Sitemap = slugs.map((slug) => ({
+    url: `${baseUrl}/disciplines/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.9,
+  }));
+
+  const staticEntries: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -65,4 +74,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.1,
     },
   ];
+
+  return [...staticEntries, ...disciplineEntries];
 }
