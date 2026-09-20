@@ -1,12 +1,21 @@
 import { MetadataRoute } from 'next';
 import { getAllDisciplineSlugs } from '@/data/disciplines';
+import { getAllFormatSlugs } from '@/data/formats';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://strikingcamp.com';
   const slugs = getAllDisciplineSlugs();
+  const formatSlugs = getAllFormatSlugs();
 
   const disciplineEntries: MetadataRoute.Sitemap = slugs.map((slug) => ({
     url: `${baseUrl}/disciplines/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.9,
+  }));
+
+  const formatEntries: MetadataRoute.Sitemap = formatSlugs.map((slug) => ({
+    url: `${baseUrl}/cours/${slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
     priority: 0.9,
@@ -75,5 +84,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  return [...staticEntries, ...disciplineEntries];
+  return [...staticEntries, ...disciplineEntries, ...formatEntries];
 }
