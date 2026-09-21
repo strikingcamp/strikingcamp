@@ -3,7 +3,7 @@ import { getAllDisciplineSlugs } from '@/data/disciplines';
 import { getAllFormatSlugs } from '@/data/formats';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://strikingcamp.com';
+  const baseUrl = 'https://www.strikingcamp.com';
   const slugs = getAllDisciplineSlugs();
   const formatSlugs = getAllFormatSlugs();
 

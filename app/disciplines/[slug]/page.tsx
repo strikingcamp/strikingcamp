@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: DisciplinePageProps): Promise
     };
   }
 
-  const canonicalUrl = `https://strikingcamp.com/disciplines/${discipline.slug}`;
+  const canonicalUrl = `https://www.strikingcamp.com/disciplines/${discipline.slug}`;
 
   return {
     title: discipline.metaTitle,
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: DisciplinePageProps): Promise
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: discipline.metaTitle,
+      title: `${discipline.metaTitle} | Striking Camp`,
       description: discipline.metaDescription,
       url: canonicalUrl,
       siteName: "Striking Camp",
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: DisciplinePageProps): Promise
       type: "website",
       images: [
         {
-          url: discipline.image,
+          url: `https://www.strikingcamp.com${discipline.image}`,
           width: 1200,
           height: 630,
           alt: discipline.alt,
@@ -52,9 +52,9 @@ export async function generateMetadata({ params }: DisciplinePageProps): Promise
     },
     twitter: {
       card: "summary_large_image",
-      title: discipline.metaTitle,
+      title: `${discipline.metaTitle} | Striking Camp`,
       description: discipline.metaDescription,
-      images: [discipline.image],
+      images: [`https://www.strikingcamp.com${discipline.image}`],
     },
   };
 }
@@ -67,8 +67,8 @@ export default async function DisciplinePage({ params }: DisciplinePageProps) {
     notFound();
   }
 
-  // Schema.org Structured Data
-  const jsonLd = {
+  // Schema.org Structured Data : Course & BreadcrumbList
+  const courseJsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
     name: `${discipline.title} — Striking Camp Marseille`,
@@ -76,7 +76,7 @@ export default async function DisciplinePage({ params }: DisciplinePageProps) {
     provider: {
       "@type": "SportsActivityLocation",
       name: "Striking Camp",
-      image: "https://strikingcamp.com/icon.png",
+      image: "https://www.strikingcamp.com/icon.png",
       address: {
         "@type": "PostalAddress",
         streetAddress: "268 avenue de la Capelette",
@@ -85,15 +85,44 @@ export default async function DisciplinePage({ params }: DisciplinePageProps) {
         addressCountry: "FR",
       },
       telephone: "06.14.95.88.49",
-      url: "https://strikingcamp.com",
+      url: "https://www.strikingcamp.com",
     },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Accueil",
+        item: "https://www.strikingcamp.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Disciplines",
+        item: "https://www.strikingcamp.com/#disciplines",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: discipline.title,
+        item: `https://www.strikingcamp.com/disciplines/${discipline.slug}`,
+      },
+    ],
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <DisciplineDetailView discipline={discipline} />
     </>

@@ -3,9 +3,36 @@ import { createClient } from "@supabase/supabase-js";
 import PricingSection from "@/components/sections/PricingSection";
 
 export const metadata: Metadata = {
-  title: "Tarifs et Formules de Boxe à Marseille | Striking Camp",
+  title: "Tarifs et Formules de Boxe à Marseille (13010)",
   description:
     "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Collectifs, Small Group et Cours Privés (8 séances/mois). Sans engagement ou annuel.",
+  alternates: {
+    canonical: "https://www.strikingcamp.com/tarifs",
+  },
+  openGraph: {
+    title: "Tarifs et Formules de Boxe à Marseille (13010) | Striking Camp",
+    description:
+      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Collectifs, Small Group et Cours Privés.",
+    url: "https://www.strikingcamp.com/tarifs",
+    siteName: "Striking Camp",
+    locale: "fr_FR",
+    type: "website",
+    images: [
+      {
+        url: "https://www.strikingcamp.com/sacSalle.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Tarifs et Formules Striking Camp Marseille 13010",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tarifs et Formules de Boxe à Marseille (13010) | Striking Camp",
+    description:
+      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Collectifs, Small Group et Cours Privés.",
+    images: ["https://www.strikingcamp.com/sacSalle.jpg"],
+  },
 };
 
 export const dynamic = "force-dynamic";

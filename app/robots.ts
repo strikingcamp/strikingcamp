@@ -18,6 +18,6 @@ export default function robots(): MetadataRoute.Robots {
         '/mot-de-passe-oublie',
       ],
     },
-    sitemap: 'https://strikingcamp.com/sitemap.xml',
+    sitemap: 'https://www.strikingcamp.com/sitemap.xml',
   };
 }

@@ -62,17 +62,17 @@ export default function JsonLd() {
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": ["SportsActivityLocation", "ExerciseGym"],
-    "@id": "https://strikingcamp.com/#organization",
+    "@id": "https://www.strikingcamp.com/#organization",
     name: "Striking Camp",
     alternateName: ["Striking Camp Marseille", "Striking Camp 13010"],
     description:
       "Club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes. Coaching individuel et Small Group par Mahfoud Mohamed.",
-    url: "https://strikingcamp.com",
+    url: "https://www.strikingcamp.com",
     telephone: "+33614958849",
     email: "strikingcamp13@gmail.com",
     priceRange: "€€",
-    image: "https://strikingcamp.com/icon.png",
-    logo: "https://strikingcamp.com/icon.png",
+    image: "https://www.strikingcamp.com/icon.png",
+    logo: "https://www.strikingcamp.com/icon.png",
     address: {
       "@type": "PostalAddress",
       streetAddress: "268 avenue de la Capelette",
@@ -113,7 +113,7 @@ export default function JsonLd() {
       "Kick Boxing",
       "Boxe Thaï",
       "Muay Thaï",
-      "Striking MMA",
+      "Striking",
       "Lady Striking",
       "Boxing Bag",
       "KB Shred",
@@ -122,17 +122,17 @@ export default function JsonLd() {
     ],
   };
 
-  const faqSchema = {
+  const webSiteSchema = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: defaultFaqItems.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
-    })),
+    "@type": "WebSite",
+    "@id": "https://www.strikingcamp.com/#website",
+    url: "https://www.strikingcamp.com",
+    name: "Striking Camp",
+    description: "Club de Boxe & Sports de Combat à Marseille (13010)",
+    publisher: {
+      "@id": "https://www.strikingcamp.com/#organization",
+    },
+    inLanguage: "fr-FR",
   };
 
   return (
@@ -143,7 +143,7 @@ export default function JsonLd() {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
       />
     </>
   );

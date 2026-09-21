@@ -1,5 +1,8 @@
 export const metadata = {
-  title: "Politique de cookies | Striking Camp",
+  title: "Politique de cookies",
+  alternates: {
+    canonical: "https://www.strikingcamp.com/cookies",
+  },
 };
 
 export default function CookiesPage() {

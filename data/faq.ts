@@ -45,7 +45,7 @@ export const allFaqItems: FaqItemDetailed[] = [
     category: "disciplines",
     question: "Quels sports de combat sont enseignés au Striking Camp ?",
     answer:
-      "Le club propose des cours de Boxe Anglaise, Kick Boxing, Boxe Thaï (Muay Thaï), Striking adapté au MMA, Boxing Bag (travail au sac), KB Shred (renforcement fonctionnel) et Lady Striking (section féminine).",
+      "Le club propose des cours de Boxe Anglaise, Kick Boxing, Boxe Thaï (Muay Thaï), Striking (combat debout complet), Boxing Bag (travail au sac), KB Shred (renforcement fonctionnel) et Lady Striking (section féminine).",
   },
   {
     category: "disciplines",
@@ -61,9 +61,9 @@ export const allFaqItems: FaqItemDetailed[] = [
   },
   {
     category: "disciplines",
-    question: "En quoi consiste le cours de Striking orienté MMA ?",
+    question: "En quoi consiste la discipline du Striking ?",
     answer:
-      "Ce cours développe le combat debout appliqué aux spécificités des arts martiaux mixtes (MMA) : gestion de la distance, déplacements, feintes, frappes en clinch et transitions pour contrer les tentatives de mise au sol.",
+      "Le Striking est une discipline qui mélange les sports de combat debout : boxe anglaise, kick boxing et boxe thaï, avec le contrôle de la cage, le clinch et des techniques de lutte gréco-romaine adaptées au travail debout.",
   },
   {
     category: "disciplines",

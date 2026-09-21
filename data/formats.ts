@@ -125,7 +125,7 @@ export const formatsData: Record<string, FormatDetail> = {
       "Progression accélérée et mesurable",
       "Corrections techniques instantanées"
     ],
-    metaTitle: "Coaching Privé de Boxe à Marseille 13010 | Striking Camp",
+    metaTitle: "Coaching Privé de Boxe à Marseille 13010",
     metaDescription: "Bénéficiez d'un coaching privé sur-mesure au Striking Camp Marseille : cours particulier avec le coach Mahfoud, technique, pattes d'ours et progression garantie.",
     preselectedType: "private"
   },
@@ -217,7 +217,7 @@ export const formatsData: Record<string, FormatDetail> = {
       "Dynamique de groupe motivante",
       "Accès aux disciplines du club"
     ],
-    metaTitle: "Cours de Boxe en Small Group à Marseille 13010 | Striking Camp",
+    metaTitle: "Cours de Boxe en Small Group à Marseille 13010",
     metaDescription: "Entraînez-vous en Small Group au Striking Camp Marseille : effectif réduit (12 max), suivi personnalisé, drills techniques et émulation collective.",
     preselectedType: "small_group"
   },
@@ -309,7 +309,7 @@ export const formatsData: Record<string, FormatDetail> = {
       "Dépense physique et cardio élevé",
       "Créneaux matin, midi et soir"
     ],
-    metaTitle: "Cours Collectifs de Boxe à Marseille 13010 | Striking Camp",
+    metaTitle: "Cours Collectifs de Boxe à Marseille 13010",
     metaDescription: "Rejoignez les cours collectifs du Striking Camp à Marseille : Boxe Anglaise, Kick Boxing, Boxe Thaï et Striking dans une ambiance dynamique et motivante.",
     preselectedType: "collective"
   }

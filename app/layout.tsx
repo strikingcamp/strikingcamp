@@ -19,31 +19,40 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://strikingcamp.com"),
+  metadataBase: new URL("https://www.strikingcamp.com"),
   title: {
     default: "Striking Camp | Club de Boxe & Sports de Combat à Marseille (13010)",
     template: "%s | Striking Camp",
   },
-  description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking MMA et cours Lady 100% femmes. Coaching individuel et Small Group.",
-  keywords: "club de boxe marseille, salle de boxe marseille 13010, kick boxing marseille, boxe thaï marseille, lady striking marseille, cours boxe femme marseille, meilleur coach boxe marseille, capelette 13010, mma striking marseille",
+  description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes. Coaching individuel et Small Group.",
+  keywords: "club de boxe marseille, salle de boxe marseille 13010, kick boxing marseille, boxe thaï marseille, lady striking marseille, cours boxe femme marseille, coach boxe marseille, capelette 13010, striking marseille",
   authors: [{ name: "Striking Camp" }],
   creator: "Striking Camp",
   publisher: "Striking Camp",
   alternates: {
-    canonical: "/",
+    canonical: "https://www.strikingcamp.com",
   },
   openGraph: {
     title: "Striking Camp | Club de Boxe & Sports de Combat à Marseille",
     description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes.",
-    url: "https://strikingcamp.com",
+    url: "https://www.strikingcamp.com",
     siteName: "Striking Camp",
     locale: "fr_FR",
     type: "website",
+    images: [
+      {
+        url: "/sacSalle.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Salle de Boxe et Sports de Combat Striking Camp Marseille 13010",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Striking Camp | Club de Boxe & Sports de Combat à Marseille",
     description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes.",
+    images: ["/sacSalle.jpg"],
   },
 };
 

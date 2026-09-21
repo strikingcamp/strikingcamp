@@ -1,7 +1,10 @@
 import { siteData } from "@/data/content";
 
 export const metadata = {
-  title: "Mentions Légales | Striking Camp",
+  title: "Mentions Légales",
+  alternates: {
+    canonical: "https://www.strikingcamp.com/mentions-legales",
+  },
 };
 
 export default function LegalPage() {

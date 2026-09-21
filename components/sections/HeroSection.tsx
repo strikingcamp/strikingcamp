@@ -39,10 +39,15 @@ export default function HeroSection() {
             />
           </div>
 
-          {/* Main Title: STRIKING CAMP */}
-          <h1 className="font-heading text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black uppercase leading-[0.88] tracking-tighter">
-            <span className="text-brand-white">{siteData.hero.title}</span>{" "}
-            <span className="text-brand-blue">{siteData.hero.title2}</span>
+          {/* Main Title: STRIKING CAMP + Sous-titre sémantique */}
+          <h1 className="flex flex-col items-center">
+            <span className="font-heading text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black uppercase leading-[0.88] tracking-tighter">
+              <span className="text-brand-white">{siteData.hero.title}</span>{" "}
+              <span className="text-brand-blue">{siteData.hero.title2}</span>
+            </span>
+            <span className="font-heading text-xs sm:text-sm md:text-base font-semibold tracking-wider text-brand-blue uppercase mt-2 sm:mt-3">
+              Club de boxe et sports de combat à Marseille
+            </span>
           </h1>
         </motion.div>
 
@@ -85,7 +90,7 @@ export default function HeroSection() {
           <span className="text-brand-blue text-[9px] sm:text-[11px]">•</span>
           <span>STRIKING</span>
           <span className="text-brand-blue text-[9px] sm:text-[11px]">•</span>
-          <span>MMA</span>
+          <span>LADY STRIKING</span>
         </motion.div>
 
         {/* 5. BOUTONS D'ACTION (largeur contrôlée sur mobile, proportionnée aux disciplines) */}

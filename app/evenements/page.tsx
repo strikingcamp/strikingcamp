@@ -7,9 +7,36 @@ import { createClient } from "@/lib/supabase/server";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Événements & Stages de Sports de Combat à Marseille | Striking Camp",
+  title: "Événements, Stages & Masterclasses de Boxe à Marseille (13010)",
   description:
     "Participez aux stages intensifs, masterclasses et camps d'entraînement de Boxe Anglaise, Kick Boxing et Muay Thaï au Striking Camp Marseille (13010).",
+  alternates: {
+    canonical: "https://www.strikingcamp.com/evenements",
+  },
+  openGraph: {
+    title: "Événements & Stages de Boxe à Marseille (13010) | Striking Camp",
+    description:
+      "Participez aux stages intensifs, masterclasses et camps d'entraînement au Striking Camp Marseille (13010).",
+    url: "https://www.strikingcamp.com/evenements",
+    siteName: "Striking Camp",
+    locale: "fr_FR",
+    type: "website",
+    images: [
+      {
+        url: "https://www.strikingcamp.com/sacSalle.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Événements et Stages Striking Camp Marseille 13010",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Événements & Stages de Boxe à Marseille (13010) | Striking Camp",
+    description:
+      "Participez aux stages intensifs et camps d'entraînement au Striking Camp Marseille.",
+    images: ["https://www.strikingcamp.com/sacSalle.jpg"],
+  },
 };
 
 export default async function EvenementsPage() {

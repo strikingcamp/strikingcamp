@@ -1,5 +1,8 @@
 export const metadata = {
-  title: "Politique de confidentialité | Striking Camp",
+  title: "Politique de confidentialité",
+  alternates: {
+    canonical: "https://www.strikingcamp.com/confidentialite",
+  },
 };
 
 export default function PrivacyPage() {

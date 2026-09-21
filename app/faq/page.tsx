@@ -3,26 +3,35 @@ import FaqPageView from "@/components/sections/FaqPageView";
 import { allFaqItems } from "@/data/faq";
 
 export const metadata: Metadata = {
-  title: "FAQ Boxe & Sports de Combat à Marseille | Striking Camp 13010",
+  title: "FAQ — Questions Fréquentes sur la Boxe à Marseille (13010)",
   description:
     "Toutes les réponses à vos questions sur les cours de Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking (100% femmes), Small Group et cours privés au Striking Camp Marseille.",
   alternates: {
-    canonical: "/faq",
+    canonical: "https://www.strikingcamp.com/faq",
   },
   openGraph: {
-    title: "FAQ Boxe & Sports de Combat à Marseille | Striking Camp 13010",
+    title: "FAQ — Questions Fréquentes | Striking Camp Marseille (13010)",
     description:
       "Toutes les réponses à vos questions sur les cours de Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking (100% femmes), Small Group et cours privés au Striking Camp Marseille.",
-    url: "https://strikingcamp.com/faq",
+    url: "https://www.strikingcamp.com/faq",
     siteName: "Striking Camp",
     locale: "fr_FR",
     type: "website",
+    images: [
+      {
+        url: "https://www.strikingcamp.com/sacSalle.jpg",
+        width: 1200,
+        height: 630,
+        alt: "FAQ Striking Camp Marseille 13010",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "FAQ Boxe & Sports de Combat à Marseille | Striking Camp 13010",
+    title: "FAQ — Questions Fréquentes | Striking Camp Marseille (13010)",
     description:
       "Toutes les réponses à vos questions sur les cours de Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking et cours privés au Striking Camp Marseille.",
+    images: ["https://www.strikingcamp.com/sacSalle.jpg"],
   },
 };
 
@@ -48,13 +57,13 @@ export default function FaqPage() {
         "@type": "ListItem",
         position: 1,
         name: "Accueil",
-        item: "https://strikingcamp.com",
+        item: "https://www.strikingcamp.com",
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "FAQ",
-        item: "https://strikingcamp.com/faq",
+        item: "https://www.strikingcamp.com/faq",
       },
     ],
   };

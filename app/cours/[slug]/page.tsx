@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: FormatPageProps): Promise<Met
     };
   }
 
-  const canonicalUrl = `https://strikingcamp.com/cours/${format.slug}`;
+  const canonicalUrl = `https://www.strikingcamp.com/cours/${format.slug}`;
 
   return {
     title: format.metaTitle,
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: FormatPageProps): Promise<Met
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: format.metaTitle,
+      title: `${format.metaTitle} | Striking Camp`,
       description: format.metaDescription,
       url: canonicalUrl,
       siteName: "Striking Camp",
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: FormatPageProps): Promise<Met
       type: "website",
       images: [
         {
-          url: format.image,
+          url: `https://www.strikingcamp.com${format.image}`,
           width: 1200,
           height: 630,
           alt: format.alt,
@@ -52,9 +52,9 @@ export async function generateMetadata({ params }: FormatPageProps): Promise<Met
     },
     twitter: {
       card: "summary_large_image",
-      title: format.metaTitle,
+      title: `${format.metaTitle} | Striking Camp`,
       description: format.metaDescription,
-      images: [format.image],
+      images: [`https://www.strikingcamp.com${format.image}`],
     },
   };
 }
@@ -67,8 +67,8 @@ export default async function FormatPage({ params }: FormatPageProps) {
     notFound();
   }
 
-  // Schema.org Structured Data
-  const jsonLd = {
+  // Schema.org Structured Data : Course & BreadcrumbList
+  const courseJsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
     name: `${format.title} — Striking Camp Marseille`,
@@ -76,7 +76,7 @@ export default async function FormatPage({ params }: FormatPageProps) {
     provider: {
       "@type": "SportsActivityLocation",
       name: "Striking Camp",
-      image: "https://strikingcamp.com/icon.png",
+      image: "https://www.strikingcamp.com/icon.png",
       address: {
         "@type": "PostalAddress",
         streetAddress: "268 avenue de la Capelette",
@@ -85,15 +85,44 @@ export default async function FormatPage({ params }: FormatPageProps) {
         addressCountry: "FR",
       },
       telephone: "06.14.95.88.49",
-      url: "https://strikingcamp.com",
+      url: "https://www.strikingcamp.com",
     },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Accueil",
+        item: "https://www.strikingcamp.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Nos cours",
+        item: "https://www.strikingcamp.com/#cours",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: format.title,
+        item: `https://www.strikingcamp.com/cours/${format.slug}`,
+      },
+    ],
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <FormatDetailView format={format} />
     </>

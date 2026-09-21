@@ -82,7 +82,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
       "Pattes d'ours & Paos",
       "Opposition progressive encadrée"
     ],
-    metaTitle: "Cours de Boxe Anglaise à Marseille 13010 | Striking Camp",
+    metaTitle: "Cours de Boxe Anglaise à Marseille 13010",
     metaDescription: "Découvrez les cours de Boxe Anglaise au Striking Camp à Marseille : travail des poings, déplacements, footwork, drills aux pattes d'ours et sparring guidé.",
     preselectedDiscipline: "Boxe Anglaise"
   },
@@ -145,7 +145,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
       "Travail aux paos & sac",
       "Cardio combat & timing"
     ],
-    metaTitle: "Cours de Kick Boxing à Marseille 13010 | Striking Camp",
+    metaTitle: "Cours de Kick Boxing à Marseille 13010",
     metaDescription: "Apprenez le Kick Boxing à Marseille au Striking Camp : combinaisons pieds-poings, drills techniques, paos, sac et sparring guidé par le coach Mahfoud.",
     preselectedDiscipline: "Kick Boxing"
   },
@@ -208,7 +208,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
       "Clinch & Saisies",
       "Paos thaïlandais authentiques"
     ],
-    metaTitle: "Cours de Boxe Thaï (Muay Thaï) à Marseille 13010 | Striking Camp",
+    metaTitle: "Cours de Boxe Thaï (Muay Thaï) à Marseille 13010",
     metaDescription: "Cours de Boxe Thaï à Marseille au Striking Camp : travail complet des poings, pieds, coudes, genoux, clinch et paos thaïlandais encadrés par le coach.",
     preselectedDiscipline: "Boxe Thaï"
   },
@@ -217,28 +217,28 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
     slug: "striking",
     title: "STRIKING",
     h1: "Striking",
-    subtitle: "Le travail des sports de combat debout adapté aux exigences du MMA.",
-    category: "Combat Debout & MMA",
+    subtitle: "L'art du combat debout : boxe anglaise, kick boxing, boxe thaï, clinch et lutte gréco-romaine debout.",
+    category: "Combat Debout Complet",
     image: "/striking.jpg",
-    alt: "Cours de Striking adapté au MMA à Marseille - Striking Camp",
-    shortDescription: "Le travail des sports de combat debout (Anglaise, Kick, Thaï) intégrant les contraintes spécifiques du MMA, le contrôle de cage et le clinch.",
+    alt: "Entraînement de Striking à Marseille - Striking Camp",
+    shortDescription: "Discipline combinant la Boxe Anglaise, le Kick Boxing et la Boxe Thaï avec le travail de clinch, le contrôle de cage et les techniques de lutte debout.",
     intro: [
-      "Le Striking est une approche moderne des sports de combat debout qui rassemble les techniques les plus efficaces de la Boxe Anglaise, du Kick Boxing et de la Boxe Thaï, tout en intégrant les contraintes et réalités spécifiques du MMA.",
-      "Le travail ne se limite donc pas aux frappes : le pratiquant apprend également à contrôler l'espace et la cage, à gérer le clinch et à intégrer des techniques de lutte, notamment issues de la lutte gréco-romaine, afin de comprendre comment les différentes phases de combat s'enchaînent avec fluidité."
+      "Le Striking est une discipline qui mélange les sports de combat debout : boxe anglaise, kick boxing et boxe thaï, avec le contrôle de la cage, le clinch et des techniques de lutte gréco-romaine adaptées au travail debout.",
+      "Au Striking Camp à Marseille (13010), l'entraînement permet d'apprendre à lier les percussions, à contrôler l'espace et la cage, à gérer le clinch et à intégrer des préhensions debout pour un combat fluide et complet."
     ],
     sections: [
       {
         title: "FONDAMENTAUX",
         badge: "Postures & Cadrage",
-        description: "Les bases du combat debout adaptées aux distances et menaces du MMA :",
+        description: "Les bases du combat debout complet, de la gestion des distances et des appuis :",
         points: [
-          "Posture hybride et centre de gravité stable pour réagir aux tentatives d'amenée au sol",
+          "Posture hybride et centre de gravité stable pour maintenir l'équilibre et la réactivité",
           "Garde active et vision périphérique large",
           "Déplacements dynamiques et changements d'angles rapides",
           "Gestion de la distance longue, intermédiaire et de contact",
-          "Cadrage intelligent pour couper la trajectoire de fuite de l'adversaire",
-          "Combinaisons de poings de boxe anglaise adaptées aux gants de frappe réduits",
-          "Coups de pied et de genoux de Kick et Thaï intégrés sans perte d'équilibre",
+          "Cadrage intelligent pour couper la trajectoire de fuite du partenaire",
+          "Combinaisons complètes de poings issues du noble art",
+          "Coups de pied et de genoux de Kick et Thaï intégrés avec équilibre",
           "Positionnement spécifique et gestion des repères spatiaux de la cage"
         ]
       },
@@ -251,7 +251,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
           "Travail du timing sur les entrées explosives et les sorties sécurisées",
           "Développement de la précision sur cibles mobiles",
           "Exercices de feintes pour ouvrir des opportunités d'impact ou de contrôle",
-          "Combinaisons adaptées au contexte MMA avec paos, pattes d'ours, sac et partenaire"
+          "Combinaisons debout complètes avec paos, pattes d'ours, sac et partenaire"
         ]
       },
       {
@@ -259,7 +259,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
         badge: "Section Spécifique",
         description: "La maîtrise essentielle des phases de contact rapproché et de gestion de la cage :",
         points: [
-          "Contrôle de la cage : utilisation des surfaces pour coincer et neutraliser l'adversaire",
+          "Contrôle de la cage : utilisation des surfaces pour cadrer et neutraliser l'adversaire",
           "Positionnement du corps, de la tête et des appuis contre le grillage",
           "Maintien de la pression physique et gestion de l'énergie",
           "Travail offensif et défensif en clinch (underhooks, overhooks, head control)",
@@ -271,7 +271,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
         badge: "Contrôles & Gréco-Romaine",
         description: "L'introduction méthodique des techniques de lutte indispensables au Striking complet :",
         points: [
-          "Introduction de techniques de préhension adaptées au travail Striking / MMA",
+          "Introduction de techniques de préhension adaptées au travail de Striking debout",
           "Contrôles du haut du corps et verrouillages issus de la lutte gréco-romaine",
           "Utilisation du pummeling pour gagner la position dominante au contact",
           "Défense active contre les projections et maintien de la posture debout",
@@ -281,7 +281,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
       {
         title: "SPARRING GUIDÉ",
         badge: "Opposition & Scénarios",
-        description: "Une mise en pratique encadrée permettant d'intégrer toutes les composantes du combat :",
+        description: "Une mise en pratique encadrée permettant d'intégrer toutes les composantes du combat debout :",
         points: [
           "Mise en situation d'opposition contrôlée avec consignes et objectifs fixés par le coach",
           "Travail par scénarios ciblés : gestion de la distance, timing, déplacements",
@@ -291,13 +291,13 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
       }
     ],
     highlights: [
-      "Debout adapté aux exigences MMA",
+      "Combinaisons debout complètes",
       "Clinch & Contrôle de la cage",
       "Techniques de lutte gréco-romaine",
       "Transitions frappes-contrôles"
     ],
-    metaTitle: "Cours de Striking MMA à Marseille 13010 | Striking Camp",
-    metaDescription: "Perfectionnez votre Striking au Striking Camp à Marseille : frappes debout adaptées au MMA, clinch, contrôle de cage et notions de lutte avec le coach.",
+    metaTitle: "Cours de Striking et Combat Debout à Marseille 13010",
+    metaDescription: "Perfectionnez votre Striking au Striking Camp à Marseille : frappes debout complètes, clinch, contrôle de cage et lutte gréco-romaine avec le coach.",
     preselectedDiscipline: "Striking"
   },
 
@@ -357,7 +357,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
       "Cardio-boxing & Renforcement",
       "Défoulement & Confiance en soi"
     ],
-    metaTitle: "Cours Lady Striking 100% Femmes à Marseille | Striking Camp",
+    metaTitle: "Cours Lady Striking 100% Femmes à Marseille",
     metaDescription: "Cours de boxe et striking 100% femmes à Marseille au Striking Camp : technique, cardio, sac de frappe et confiance en soi dans une ambiance bienveillante.",
     preselectedDiscipline: "Lady Striking"
   },
@@ -427,7 +427,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
       "Jeux éducatifs & ludiques",
       "Respect, discipline & sécurité"
     ],
-    metaTitle: "Cours de Boxe Enfant (Kid Boxing) à Marseille 13010 | Striking Camp",
+    metaTitle: "Cours de Boxe Enfant (Kid Boxing) à Marseille 13010",
     metaDescription: "Cours de Kid Boxing pour enfants à Marseille au Striking Camp : motricité, coordination, équilibre et apprentissage ludique dans un cadre sécurisant.",
     preselectedDiscipline: "Kick Boxing"
   }
