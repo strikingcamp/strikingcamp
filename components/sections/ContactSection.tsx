@@ -267,20 +267,6 @@ export default function ContactSection() {
             </div>
           </div>
 
-          {/* Google Maps Container */}
-          <div className="rounded-2xl overflow-hidden border border-brand-white/10 h-64 w-full shadow-2xl relative bg-[#0c1322]">
-            <iframe
-              title="Localisation Striking Camp Marseille"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2904.5779532890696!2d5.399580476839304!3d43.2812239770514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12c9bf5c1df7c491%3A0x7d0246a48972e340!2s268%20Av.%20de%20la%20Capelette%2C%2013010%20Marseille!5e0!3m2!1sfr!2sfr!4v1700000000000!5m2!1sfr!2sfr"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen={false}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="filter grayscale contrast-125 opacity-85 hover:opacity-100 transition-opacity"
-            />
-          </div>
 
           {/* Social Network Box */}
           <div className="p-5 bg-[#0c1322] border border-brand-white/10 rounded-2xl flex items-center justify-between">
