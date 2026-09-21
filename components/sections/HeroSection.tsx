@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { siteData } from "@/data/content";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
+import { trackBookingClick, trackCtaClick } from "@/lib/analytics";
 
 export default function HeroSection() {
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
@@ -102,13 +103,17 @@ export default function HeroSection() {
         >
           <button
             type="button"
-            onClick={() => setIsTrialModalOpen(true)}
+            onClick={() => {
+              trackBookingClick("trial_modal", "hero_main");
+              setIsTrialModalOpen(true);
+            }}
             className="w-[290px] max-w-[calc(100vw-48px)] sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md text-center shadow-lg shadow-brand-blue/20 cursor-pointer"
           >
             RÉSERVER UN COURS D’ESSAI
           </button>
           <a
             href="/connexion"
+            onClick={() => trackCtaClick("Espace Membre", "hero_secondary")}
             className="w-[290px] max-w-[calc(100vw-48px)] sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-brand-black/30 border border-brand-white/80 hover:border-brand-white text-brand-white hover:bg-brand-white hover:text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider transition-colors duration-300 rounded-md text-center"
           >
             {siteData.hero.secondaryCta}

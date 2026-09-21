@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Phone, Mail, CheckCircle2, AlertCircle, Loader2, Send, ArrowRight } from "lucide-react";
+import { trackContactClick, trackPhoneClick } from "@/lib/analytics";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 
@@ -34,6 +35,7 @@ export default function ContactSection() {
       if (res.ok && data.success) {
         setStatus("success");
         setFormData({ name: "", email: "", message: "", honeypot: "" });
+        trackContactClick("form_submit");
       } else {
         setStatus("error");
         setErrorMsg(data.error || "Une erreur est survenue.");
@@ -214,6 +216,7 @@ export default function ContactSection() {
                     href="https://maps.google.com/?q=268+Avenue+de+la+Capelette+13010+Marseille"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackContactClick("maps_direction")}
                     className="inline-flex items-center gap-1 text-xs font-bold text-brand-blue hover:text-brand-white uppercase tracking-wider mt-1.5 transition-colors"
                   >
                     Ouvrir dans Google Maps
@@ -233,6 +236,7 @@ export default function ContactSection() {
                   </h3>
                   <a
                     href="tel:0614958849"
+                    onClick={() => trackPhoneClick("contact_page")}
                     className="text-sm font-semibold text-brand-white/90 hover:text-brand-blue transition-colors mt-0.5 block"
                   >
                     06.14.95.88.49

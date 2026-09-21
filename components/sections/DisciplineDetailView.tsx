@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronRight, CheckCircle2, Shield, Calendar, Users, MapPin, Sparkles } from "lucide-react";
 import { DisciplineDetail, publicDisciplineList } from "@/data/disciplines";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
+import { trackDisciplineView, trackBookingClick } from "@/lib/analytics";
 
 interface DisciplineDetailViewProps {
   discipline: DisciplineDetail;
@@ -14,6 +15,10 @@ interface DisciplineDetailViewProps {
 
 export default function DisciplineDetailView({ discipline }: DisciplineDetailViewProps) {
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
+
+  useEffect(() => {
+    trackDisciplineView(discipline.slug);
+  }, [discipline.slug]);
 
   // Other disciplines for the bottom carousel / navigation
   const otherDisciplines = publicDisciplineList.filter((d) => d.slug !== discipline.slug);
@@ -114,7 +119,10 @@ export default function DisciplineDetailView({ discipline }: DisciplineDetailVie
           >
             <button
               type="button"
-              onClick={() => setIsTrialModalOpen(true)}
+              onClick={() => {
+                trackBookingClick("trial_modal", `discipline_hero_${discipline.slug}`);
+                setIsTrialModalOpen(true);
+              }}
               className="w-full sm:w-auto px-7 sm:px-8 py-3.5 sm:py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white transition-all duration-300 rounded-md text-center shadow-lg shadow-brand-blue/25 hover:shadow-brand-blue/40 cursor-pointer flex items-center justify-center gap-2"
             >
               RÉSERVER UN COURS D’ESSAI
@@ -295,7 +303,10 @@ export default function DisciplineDetailView({ discipline }: DisciplineDetailVie
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <button
               type="button"
-              onClick={() => setIsTrialModalOpen(true)}
+              onClick={() => {
+                trackBookingClick("trial_modal", `discipline_bottom_${discipline.slug}`);
+                setIsTrialModalOpen(true);
+              }}
               className="w-full sm:w-auto px-8 py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider rounded-md hover:bg-brand-white transition-all shadow-lg shadow-brand-blue/30 cursor-pointer flex items-center justify-center gap-2"
             >
               RÉSERVER MON COURS D’ESSAI

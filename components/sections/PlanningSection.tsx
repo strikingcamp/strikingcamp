@@ -6,6 +6,7 @@ import { Clock, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
+import { trackScheduleView, trackBookingClick } from "@/lib/analytics";
 
 import {
   type DayName as Day,
@@ -99,6 +100,7 @@ export default function PlanningSection({
                   onClick={() => {
                     setActiveCategory(category);
                     setActiveDay("Tous");
+                    trackScheduleView(category);
                   }}
                   className={cn(
                     "flex-1 py-3 px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
@@ -119,7 +121,10 @@ export default function PlanningSection({
       <div role="group" aria-label="Filtrer par jour" className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-12">
         <button
           aria-pressed={activeDay === "Tous"}
-          onClick={() => setActiveDay("Tous")}
+          onClick={() => {
+            setActiveDay("Tous");
+            trackScheduleView("Tous");
+          }}
           className={cn(
             "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
             activeDay === "Tous"
@@ -133,7 +138,10 @@ export default function PlanningSection({
           <button
             key={day}
             aria-pressed={activeDay === day}
-            onClick={() => setActiveDay(day)}
+            onClick={() => {
+              setActiveDay(day);
+              trackScheduleView(day);
+            }}
             className={cn(
               "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
               activeDay === day
@@ -251,6 +259,7 @@ export default function PlanningSection({
           <button
             type="button"
             onClick={() => {
+              trackBookingClick("trial_modal", "planning_cta");
               setSelectedDisciplineForModal(undefined);
               setIsTrialModalOpen(true);
             }}

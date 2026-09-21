@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteData } from "@/data/content";
+import { openCookiePreferences } from "@/lib/analytics";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -107,6 +108,15 @@ export default function Footer() {
                 <Link href="/cookies" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Politique de cookies
                 </Link>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => openCookiePreferences()}
+                  className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded-sm"
+                >
+                  Gestion des cookies
+                </button>
               </li>
             </ul>
           </div>

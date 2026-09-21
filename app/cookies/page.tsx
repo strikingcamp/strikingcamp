@@ -1,3 +1,5 @@
+import ManageCookiesButton from "@/components/analytics/ManageCookiesButton";
+
 export const metadata = {
   title: "Politique de cookies",
   alternates: {
@@ -19,12 +21,15 @@ export default function CookiesPage() {
 
           <section>
             <h2 className="font-bold text-brand-white text-xl uppercase tracking-wider mb-4">2. Utilisation des cookies</h2>
-            <p>Ce site utilise des cookies strictement nécessaires à son fonctionnement technique et, le cas échéant, des cookies de mesure d'audience anonymisée pour améliorer l'expérience utilisateur.</p>
+            <p>Ce site utilise des cookies strictement nécessaires à son fonctionnement technique et, avec votre accord explicite, des cookies de mesure d'audience anonymisée (Google Analytics) pour améliorer l'expérience utilisateur et les services du club.</p>
           </section>
           
-          <section>
-            <h2 className="font-bold text-brand-white text-xl uppercase tracking-wider mb-4">3. Gestion des cookies</h2>
-            <p>Vous pouvez à tout moment configurer votre navigateur pour bloquer ces cookies. Cependant, certaines fonctionnalités du site pourraient ne plus fonctionner correctement.</p>
+          <section className="space-y-4">
+            <h2 className="font-bold text-brand-white text-xl uppercase tracking-wider mb-4">3. Gestion de vos préférences</h2>
+            <p>Vous pouvez à tout moment accepter, refuser ou modifier vos choix concernant les cookies non essentiels directement via notre panneau de préférences ci-dessous ou depuis le lien &quot;Gestion des cookies&quot; présent en bas de chaque page du site.</p>
+            <div className="pt-2">
+              <ManageCookiesButton />
+            </div>
           </section>
         </div>
       </div>

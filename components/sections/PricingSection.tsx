@@ -6,6 +6,7 @@ import { CheckCircle2, ShieldCheck, Users, Layers, ArrowRight } from "lucide-rea
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { trackPricingView, trackBookingClick } from "@/lib/analytics";
 
 type PlanCategory = "Cours Privés" | "Small Group" | "Collectifs";
 type BillingCycle = "Annuel" | "Mensuel";
@@ -224,7 +225,10 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
                 key={cat.id}
                 role="tab"
                 aria-selected={isActive}
-                onClick={() => setActiveCategory(cat.id)}
+                onClick={() => {
+                  setActiveCategory(cat.id);
+                  trackPricingView(cat.id);
+                }}
                 className={cn(
                   "py-3 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
                   isActive
@@ -339,6 +343,7 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
                 <div className="space-y-2 pt-2">
                   <Link
                     href="/connexion"
+                    onClick={() => trackBookingClick("membership", "pricing_card")}
                     className="w-full py-3.5 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-blue/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
                   >
                     SOUSCRIRE EN LIGNE

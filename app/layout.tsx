@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import GlobalBackground from "@/components/layout/GlobalBackground";
 import JsonLd from "@/components/seo/JsonLd";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
+import CookieConsent from "@/components/analytics/CookieConsent";
 import "./globals.css";
 
 const inter = Inter({
@@ -84,6 +85,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <CookieConsent />
         <GoogleAnalytics />
       </body>
     </html>
