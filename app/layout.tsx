@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import GlobalBackground from "@/components/layout/GlobalBackground";
 import JsonLd from "@/components/seo/JsonLd";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import "./globals.css";
 
 const inter = Inter({
@@ -71,10 +72,19 @@ export default function RootLayout({
         <JsonLd />
       </head>
       <body suppressHydrationWarning className="min-h-screen bg-[#020817] text-brand-white flex flex-col font-sans relative">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-blue focus:text-brand-black focus:font-heading focus:font-bold focus:rounded-sm focus:shadow-xl focus:outline-none"
+        >
+          Aller au contenu principal
+        </a>
         <GlobalBackground />
         <Navbar />
-        <main className="flex-grow relative z-10">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-grow relative z-10 outline-none">
+          {children}
+        </main>
         <Footer />
+        <GoogleAnalytics />
       </body>
     </html>
   );

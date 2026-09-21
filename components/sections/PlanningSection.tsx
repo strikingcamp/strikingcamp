@@ -88,21 +88,23 @@ export default function PlanningSection({
       {/* Category Switcher Tabs (Affiché uniquement si plus d'une catégorie est disponible) */}
       {categories.length > 1 && (
         <div className="flex justify-center mb-6 sm:mb-8">
-          <div className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-xl max-w-md w-full">
+          <div role="tablist" aria-label="Catégories de planning" className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-xl max-w-md w-full">
             {categories.map((category) => {
               const isActive = currentCategory === category;
               return (
                 <button
                   key={category}
+                  role="tab"
+                  aria-selected={isActive}
                   onClick={() => {
                     setActiveCategory(category);
                     setActiveDay("Tous");
                   }}
                   className={cn(
-                    "flex-1 py-3 px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer text-center",
+                    "flex-1 py-3 px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
                     isActive
                       ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/25 font-black"
-                      : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+                      : "text-brand-white/80 hover:text-brand-white hover:bg-brand-white/5"
                   )}
                 >
                   {category}
@@ -114,14 +116,15 @@ export default function PlanningSection({
       )}
 
       {/* Days Filter (Pills) */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-12">
+      <div role="group" aria-label="Filtrer par jour" className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-12">
         <button
+          aria-pressed={activeDay === "Tous"}
           onClick={() => setActiveDay("Tous")}
           className={cn(
-            "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
+            "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
             activeDay === "Tous"
               ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
-              : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
+              : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
           )}
         >
           Tous les jours
@@ -129,12 +132,13 @@ export default function PlanningSection({
         {activeDays.map((day) => (
           <button
             key={day}
+            aria-pressed={activeDay === day}
             onClick={() => setActiveDay(day)}
             className={cn(
-              "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
+              "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
               activeDay === day
                 ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
-                : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
+                : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
             )}
           >
             {day}

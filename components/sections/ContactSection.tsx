@@ -127,7 +127,7 @@ export default function ContactSection() {
                 value={formData.name}
                 onChange={handleChange}
                 disabled={status === "loading"}
-                className="w-full bg-brand-white/5 border border-brand-white/10 rounded-lg px-4 py-3 text-brand-white placeholder-brand-white/30 focus:outline-none focus:border-brand-blue focus:bg-brand-white/10 transition-all text-sm"
+                className="w-full bg-brand-white/5 border border-brand-white/10 rounded-lg px-4 py-3 text-brand-white placeholder-brand-white/50 focus:outline-none focus:border-brand-blue focus:bg-brand-white/10 focus-visible:ring-2 focus-visible:ring-brand-blue transition-all text-sm"
                 placeholder="Ex. Thomas Dubois"
               />
             </div>
@@ -143,7 +143,7 @@ export default function ContactSection() {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={status === "loading"}
-                className="w-full bg-brand-white/5 border border-brand-white/10 rounded-lg px-4 py-3 text-brand-white placeholder-brand-white/30 focus:outline-none focus:border-brand-blue focus:bg-brand-white/10 transition-all text-sm"
+                className="w-full bg-brand-white/5 border border-brand-white/10 rounded-lg px-4 py-3 text-brand-white placeholder-brand-white/50 focus:outline-none focus:border-brand-blue focus:bg-brand-white/10 focus-visible:ring-2 focus-visible:ring-brand-blue transition-all text-sm"
                 placeholder="Ex. thomas@example.com"
               />
             </div>
@@ -159,7 +159,7 @@ export default function ContactSection() {
                 value={formData.message}
                 onChange={handleChange}
                 disabled={status === "loading"}
-                className="w-full bg-brand-white/5 border border-brand-white/10 rounded-lg px-4 py-3 text-brand-white placeholder-brand-white/30 focus:outline-none focus:border-brand-blue focus:bg-brand-white/10 transition-all text-sm resize-none"
+                className="w-full bg-brand-white/5 border border-brand-white/10 rounded-lg px-4 py-3 text-brand-white placeholder-brand-white/50 focus:outline-none focus:border-brand-blue focus:bg-brand-white/10 focus-visible:ring-2 focus-visible:ring-brand-blue transition-all text-sm resize-none"
                 placeholder="Bonjour, je souhaite des renseignements sur les cours et les tarifs..."
               />
             </div>
@@ -167,17 +167,17 @@ export default function ContactSection() {
             <button
               type="submit"
               disabled={status === "loading"}
-              className="w-full py-4 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all shadow-lg shadow-brand-blue/20 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-4 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all shadow-lg shadow-brand-blue/20 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
             >
               {status === "loading" ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={18} className="animate-spin" aria-hidden="true" />
                   Envoi en cours…
                 </>
               ) : (
                 <>
                   ENVOYER LE MESSAGE
-                  <Send size={15} />
+                  <Send size={15} aria-hidden="true" />
                 </>
               )}
             </button>

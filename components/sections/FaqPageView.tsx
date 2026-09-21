@@ -48,7 +48,7 @@ export default function FaqPageView() {
       </div>
 
       {/* Filtres par Catégorie (Pills) */}
-      <div className="flex flex-wrap justify-center gap-2 mb-10 sm:mb-12">
+      <div role="tablist" aria-label="Catégories FAQ" className="flex flex-wrap justify-center gap-2 mb-10 sm:mb-12">
         {faqCategories.map((cat) => {
           const Icon = categoryIcons[cat.id] || HelpCircle;
           const isActive = activeCategory === cat.id;
@@ -57,15 +57,17 @@ export default function FaqPageView() {
             <button
               key={cat.id}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2",
+                "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
                 isActive
                   ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
-                  : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
+                  : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
               )}
             >
-              <Icon size={14} className={isActive ? "text-brand-black" : "text-brand-blue"} />
+              <Icon size={14} className={isActive ? "text-brand-black" : "text-brand-blue"} aria-hidden="true" />
               <span>{cat.label}</span>
             </button>
           );
@@ -76,6 +78,8 @@ export default function FaqPageView() {
       <div className="space-y-3.5 mb-16">
         {filteredItems.map((item, index) => {
           const isOpen = !!openQuestions[item.question];
+          const btnId = `faq-page-btn-${index}`;
+          const panelId = `faq-page-panel-${index}`;
 
           return (
             <motion.div
@@ -93,9 +97,11 @@ export default function FaqPageView() {
             >
               <button
                 type="button"
-                onClick={() => toggleQuestion(item.question)}
-                className="w-full text-left p-5 sm:p-6 flex justify-between items-center gap-4 cursor-pointer focus:outline-none"
+                id={btnId}
+                aria-controls={panelId}
                 aria-expanded={isOpen}
+                onClick={() => toggleQuestion(item.question)}
+                className="w-full text-left p-5 sm:p-6 flex justify-between items-center gap-4 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
               >
                 <span className={cn(
                   "font-heading text-base sm:text-lg md:text-xl font-bold uppercase tracking-wide transition-colors",
@@ -110,6 +116,7 @@ export default function FaqPageView() {
                       ? "bg-brand-blue text-brand-black border-brand-blue rotate-180"
                       : "bg-brand-white/5 text-brand-white/60 border-brand-white/15"
                   )}
+                  aria-hidden="true"
                 >
                   <ChevronDown size={16} />
                 </div>
@@ -118,6 +125,9 @@ export default function FaqPageView() {
               <AnimatePresence initial={false}>
                 {isOpen && (
                   <motion.div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={btnId}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}

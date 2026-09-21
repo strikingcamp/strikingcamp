@@ -214,7 +214,7 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
 
       {/* Category Tabs (Pills) */}
       <div className="flex justify-center mb-6">
-        <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl w-full">
+        <div role="tablist" aria-label="Catégories d'abonnements" className="flex flex-wrap items-center justify-center gap-2 max-w-2xl w-full">
           {categories.map((cat) => {
             const Icon = cat.icon;
             const isActive = currentCategory === cat.id;
@@ -222,15 +222,17 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
             return (
               <button
                 key={cat.id}
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
-                  "py-3 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+                  "py-3 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
                   isActive
                     ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
-                    : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
+                    : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
                 )}
               >
-                <Icon size={16} className={cn("shrink-0", isActive ? "text-brand-black" : "text-brand-blue")} />
+                <Icon size={16} className={cn("shrink-0", isActive ? "text-brand-black" : "text-brand-blue")} aria-hidden="true" />
                 <span>{cat.label}</span>
               </button>
             );
@@ -240,18 +242,20 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
 
       {/* Billing Cycle Switcher (Annuel / Mensuel) */}
       <div className="flex justify-center mb-10 sm:mb-12">
-        <div className="inline-flex p-1 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg">
+        <div role="tablist" aria-label="Engagement d'abonnement" className="inline-flex p-1 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg">
           {(["Annuel", "Mensuel"] as BillingCycle[]).map((cycle) => {
             const isActive = activeCycle === cycle;
             return (
               <button
                 key={cycle}
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveCycle(cycle)}
                 className={cn(
-                  "py-2 px-5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
+                  "py-2 px-5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
                   isActive
                     ? "bg-brand-blue/20 text-brand-blue border border-brand-blue/30 font-black shadow-sm"
-                    : "text-brand-white/60 hover:text-brand-white"
+                    : "text-brand-white/75 hover:text-brand-white"
                 )}
               >
                 {cycle === "Annuel" ? "Engagement 12 mois" : "Sans engagement"}
@@ -295,7 +299,7 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold uppercase tracking-wider text-brand-white">
                     {currentCategory}
                   </h2>
-                  <p className="text-xs sm:text-sm text-brand-white/70 mt-1">
+                  <p className="text-xs sm:text-sm text-brand-white/75 mt-1">
                     {currentPlan.subtitle} • Accompagnement pédagogique complet
                   </p>
                 </div>
@@ -308,7 +312,7 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
                   <div className="space-y-2 text-xs sm:text-sm text-brand-white/80">
                     {currentPlan.features.map((feature, idx) => (
                       <div key={idx} className="flex items-start gap-2.5">
-                        <CheckCircle2 size={16} className="text-[#22c55e] shrink-0 mt-0.5" />
+                        <CheckCircle2 size={16} className="text-[#22c55e] shrink-0 mt-0.5" aria-hidden="true" />
                         <span className="leading-relaxed">{feature}</span>
                       </div>
                     ))}
@@ -319,14 +323,14 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
               {/* Right: CTA & Price Card */}
               <div className="bg-[#070c16]/80 border border-brand-white/10 rounded-xl p-6 text-center space-y-4">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-brand-white/50">
+                  <p className="text-xs uppercase tracking-wider text-brand-white/75">
                     Tarif d&apos;abonnement
                   </p>
                   <div className="flex items-baseline justify-center gap-1 mt-1">
                     <span className="text-4xl sm:text-5xl font-heading font-black text-brand-blue">
                       {currentPlan.price}
                     </span>
-                    <span className="text-xs text-brand-white/60 font-medium uppercase tracking-wider">
+                    <span className="text-xs text-brand-white/75 font-medium uppercase tracking-wider">
                       / mois
                     </span>
                   </div>
@@ -335,20 +339,20 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
                 <div className="space-y-2 pt-2">
                   <Link
                     href="/connexion"
-                    className="w-full py-3.5 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-blue/30"
+                    className="w-full py-3.5 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-blue/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
                   >
                     SOUSCRIRE EN LIGNE
-                    <ArrowRight size={16} />
+                    <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
                     href="/contact"
-                    className="block w-full py-2.5 px-4 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors"
+                    className="block w-full py-2.5 px-4 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
                   >
                     Une question sur les tarifs ?
                   </Link>
                 </div>
 
-                <p className="text-[11px] text-brand-white/40 leading-tight">
+                <p className="text-[11px] text-brand-white/70 leading-tight">
                   Paiement sécurisé • Aucun engagement caché.
                 </p>
               </div>
@@ -363,13 +367,13 @@ export default function PricingSection({ isSmallGroupActive = false }: PricingSe
         <h3 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white">
           Besoin d&apos;un conseil sur la formule adaptée ?
         </h3>
-        <p className="text-xs sm:text-sm text-brand-white/60 leading-relaxed max-w-lg mx-auto">
+        <p className="text-xs sm:text-sm text-brand-white/75 leading-relaxed max-w-lg mx-auto">
           Contactez le coach Mahfoud pour échanger sur vos objectifs et déterminer le programme le plus adapté à votre progression.
         </p>
         <div className="pt-2">
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
           >
             CONTACTER LE CLUB
           </Link>

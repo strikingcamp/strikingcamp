@@ -33,15 +33,15 @@ export default function FormatDetailView({ format }: FormatDetailViewProps) {
     <div className="min-h-screen bg-transparent text-brand-white font-sans">
       {/* 1. Fil d'Ariane (Breadcrumbs) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-4">
-        <nav aria-label="Fil d'ariane" className="flex items-center gap-2 text-xs text-brand-white/50 font-medium">
+        <nav aria-label="Fil d'ariane" className="flex items-center gap-2 text-xs text-brand-white/75 font-medium">
           <Link href="/" className="hover:text-brand-blue transition-colors">
             Accueil
           </Link>
-          <ChevronRight size={13} className="text-brand-white/30" />
+          <ChevronRight size={13} className="text-brand-white/50" aria-hidden="true" />
           <Link href="/#cours" className="hover:text-brand-blue transition-colors">
             Nos cours
           </Link>
-          <ChevronRight size={13} className="text-brand-white/30" />
+          <ChevronRight size={13} className="text-brand-white/50" aria-hidden="true" />
           <span className="text-brand-blue font-semibold">{format.h1}</span>
         </nav>
       </div>

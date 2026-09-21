@@ -176,16 +176,18 @@ export default function EventsSection({ initialEvents }: EventsSectionProps) {
       {/* ━━━━━━━━━━━━━━━━━━━━
           FILTRE PAR CATÉGORIES
           ━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+      <div role="tablist" aria-label="Filtrer les événements" className="flex flex-wrap items-center justify-center gap-2 mb-10">
         {filterTabs.map((tab) => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer",
+              "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
               activeTab === tab.id
                 ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20"
-                : "bg-brand-white/5 text-brand-white/70 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
+                : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
             )}
           >
             {tab.label}

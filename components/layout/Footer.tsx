@@ -24,7 +24,7 @@ export default function Footer() {
             <p className="text-brand-white/80 text-sm leading-relaxed">
               Boxe Anglaise, Kickboxing & Muay Thaï
             </p>
-            <address className="not-italic text-brand-white/60 text-xs leading-relaxed space-y-1">
+            <address className="not-italic text-brand-white/75 text-xs leading-relaxed space-y-1">
               <p>268 avenue de la Capelette</p>
               <p>13010 Marseille — France</p>
               <p className="pt-1">
@@ -50,37 +50,37 @@ export default function Footer() {
           
           {/* COLONNE 2 : NAVIGATION */}
           <div>
-            <h4 className="text-brand-white font-heading font-bold uppercase tracking-wider mb-5 text-sm">
+            <p className="text-brand-white font-heading font-bold uppercase tracking-wider mb-5 text-sm">
               Navigation
-            </h4>
+            </p>
             <ul className="space-y-3">
               <li>
-                <Link href="/" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Accueil
                 </Link>
               </li>
               <li>
-                <Link href="/club" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/club" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Le Club
                 </Link>
               </li>
               <li>
-                <Link href="/planning" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/planning" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Planning
                 </Link>
               </li>
               <li>
-                <Link href="/tarifs" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/tarifs" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Tarifs
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/faq" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   FAQ
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/contact" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Contact
                 </Link>
               </li>
@@ -89,22 +89,22 @@ export default function Footer() {
 
           {/* COLONNE 3 : INFORMATIONS */}
           <div>
-            <h4 className="text-brand-white font-heading font-bold uppercase tracking-wider mb-5 text-sm">
+            <p className="text-brand-white font-heading font-bold uppercase tracking-wider mb-5 text-sm">
               Informations
-            </h4>
+            </p>
             <ul className="space-y-3">
               <li>
-                <Link href="/mentions-legales" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/mentions-legales" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Mentions légales
                 </Link>
               </li>
               <li>
-                <Link href="/confidentialite" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/confidentialite" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Politique de confidentialité
                 </Link>
               </li>
               <li>
-                <Link href="/cookies" className="text-brand-white/60 hover:text-brand-blue transition-colors text-sm font-medium">
+                <Link href="/cookies" className="text-brand-white/75 hover:text-brand-blue transition-colors text-sm font-medium">
                   Politique de cookies
                 </Link>
               </li>
@@ -113,18 +113,18 @@ export default function Footer() {
 
           {/* COLONNE 4 : SOCIAL */}
           <div>
-            <h4 className="text-brand-white font-heading font-bold uppercase tracking-wider mb-5 text-sm">
+            <p className="text-brand-white font-heading font-bold uppercase tracking-wider mb-5 text-sm">
               Social
-            </h4>
+            </p>
             <div className="flex items-center space-x-4">
               <a
                 href={siteData.contact.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Instagram Striking Camp"
-                className="w-10 h-10 rounded-lg bg-brand-white/5 border border-brand-white/10 flex items-center justify-center text-brand-white/70 hover:text-brand-blue hover:border-brand-blue/40 hover:bg-brand-blue/10 transition-all duration-300 shadow-sm"
+                aria-label="Suivre Striking Camp sur Instagram"
+                className="w-10 h-10 rounded-lg bg-brand-white/5 border border-brand-white/10 flex items-center justify-center text-brand-white/80 hover:text-brand-blue hover:border-brand-blue/40 hover:bg-brand-blue/10 transition-all duration-300 shadow-sm"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
@@ -134,10 +134,10 @@ export default function Footer() {
                 href={siteData.contact.youtube}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="YouTube Striking Camp"
-                className="w-10 h-10 rounded-lg bg-brand-white/5 border border-brand-white/10 flex items-center justify-center text-brand-white/70 hover:text-brand-blue hover:border-brand-blue/40 hover:bg-brand-blue/10 transition-all duration-300 shadow-sm"
+                aria-label="Suivre Striking Camp sur YouTube"
+                className="w-10 h-10 rounded-lg bg-brand-white/5 border border-brand-white/10 flex items-center justify-center text-brand-white/80 hover:text-brand-blue hover:border-brand-blue/40 hover:bg-brand-blue/10 transition-all duration-300 shadow-sm"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path>
                   <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
                 </svg>
@@ -148,7 +148,7 @@ export default function Footer() {
         
         {/* LIGNE DE SÉPARATION & COPYRIGHT */}
         <div className="border-t border-brand-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-brand-white/40 text-xs text-center md:text-left">
+          <p className="text-brand-white/70 text-xs text-center md:text-left">
             © 2026 Striking Camp. Tous droits réservés.
           </p>
         </div>

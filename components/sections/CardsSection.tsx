@@ -68,18 +68,20 @@ export default function CardsSection() {
                 <div className="pt-3 border-t border-brand-white/10 flex items-center justify-between gap-2 mt-auto">
                   <Link
                     href={`/disciplines/${card.slug}`}
+                    aria-label={`En savoir plus sur le cours de ${card.title}`}
                     className="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-brand-blue hover:text-brand-white uppercase tracking-wider transition-colors duration-200"
                   >
                     <span>EN SAVOIR PLUS</span>
-                    <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" />
+                    <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
                   </Link>
 
                   <Link
                     href="/planning"
-                    className="inline-flex items-center gap-1 text-[11px] font-heading font-medium text-brand-white/50 hover:text-brand-white uppercase tracking-wider transition-colors"
+                    aria-label={`Consulter le planning des cours de ${card.title}`}
+                    className="inline-flex items-center gap-1 text-[11px] font-heading font-medium text-brand-white/75 hover:text-brand-white uppercase tracking-wider transition-colors"
                   >
                     <span>Planning</span>
-                    <ArrowRight size={11} />
+                    <ArrowRight size={11} aria-hidden="true" />
                   </Link>
                 </div>
               </div>

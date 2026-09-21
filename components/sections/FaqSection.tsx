@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
-import { defaultFaqItems } from "@/components/seo/JsonLd";
+import { allFaqItems } from "@/data/faq";
 import { cn } from "@/lib/utils";
 
 interface FaqSectionProps {
@@ -22,6 +22,8 @@ export default function FaqSection({
   const toggleFaq = (index: number) => {
     setOpenIndex((prev) => (prev === index ? null : index));
   };
+
+  const displayedFaqItems = allFaqItems.slice(0, 6);
 
   return (
     <section id="faq" className={cn("py-24 bg-transparent font-sans relative z-10", className)}>
@@ -45,15 +47,17 @@ export default function FaqSection({
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-20 h-1 bg-brand-blue mx-auto mb-4"
           />
-          <p className="text-brand-white/70 text-base sm:text-lg font-light max-w-2xl mx-auto leading-relaxed">
+          <p className="text-brand-white/75 text-base sm:text-lg font-light max-w-2xl mx-auto leading-relaxed">
             {subtitle}
           </p>
         </div>
 
         {/* Liste accordéon FAQ */}
         <div className="space-y-4">
-          {defaultFaqItems.map((item, index) => {
+          {displayedFaqItems.map((item, index) => {
             const isOpen = openIndex === index;
+            const btnId = `faq-home-btn-${index}`;
+            const panelId = `faq-home-panel-${index}`;
 
             return (
               <motion.div
@@ -71,9 +75,11 @@ export default function FaqSection({
               >
                 <button
                   type="button"
-                  onClick={() => toggleFaq(index)}
-                  className="w-full text-left p-5 sm:p-6 flex justify-between items-center gap-4 cursor-pointer focus:outline-none"
+                  id={btnId}
+                  aria-controls={panelId}
                   aria-expanded={isOpen}
+                  onClick={() => toggleFaq(index)}
+                  className="w-full text-left p-5 sm:p-6 flex justify-between items-center gap-4 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
                 >
                   <span className="font-heading text-lg sm:text-xl font-bold uppercase tracking-wide text-brand-white">
                     {item.question}
@@ -85,6 +91,7 @@ export default function FaqSection({
                         ? "bg-brand-blue text-brand-black border-brand-blue rotate-180"
                         : "bg-transparent text-brand-white/60 border-brand-white/20"
                     )}
+                    aria-hidden="true"
                   >
                     <ChevronDown size={18} />
                   </div>
@@ -93,6 +100,9 @@ export default function FaqSection({
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={btnId}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}

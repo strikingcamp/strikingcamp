@@ -57,7 +57,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-brand-white/70 hover:text-brand-white transition-colors uppercase tracking-wider"
+              className="text-sm font-medium text-brand-white/80 hover:text-brand-white transition-colors uppercase tracking-wider"
             >
               {link.label}
             </Link>
@@ -72,9 +72,11 @@ export default function Navbar() {
 
         {/* Mobile Menu Toggle */}
         <button
-          className="md:hidden text-brand-white p-2"
+          className="md:hidden text-brand-white p-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle menu"
+          aria-label={isMobileMenuOpen ? "Fermer le menu de navigation" : "Ouvrir le menu de navigation"}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-menu"
         >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -84,6 +86,7 @@ export default function Navbar() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
+            id="mobile-menu"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "100vh" }}
             exit={{ opacity: 0, height: 0 }}
