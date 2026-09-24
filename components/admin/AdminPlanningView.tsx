@@ -32,10 +32,10 @@ import {
 } from "@/app/(admin)/admin/planning/actions";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TYPES ET DÉFINITIONS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-type AdminTab = "Small Group" | "Collectifs";
 type DayName = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
 type LevelCategory = "Fondamentaux" | "Drills" | "Cardio" | "100% féminin" | "Sparring";
 
@@ -50,18 +50,6 @@ interface SmallGroupSessionItem {
   maxCapacity: number;
   isActive: boolean;
   bookedCount?: number;
-}
-
-interface CollectiveSessionItem {
-  id: string;
-  templateId?: string;
-  day: DayName;
-  startTime: string;
-  endTime: string;
-  discipline: string;
-  level: string;
-  maxCapacity?: number;
-  isActive: boolean;
 }
 
 const DAYS_ORDER: DayName[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
@@ -104,13 +92,6 @@ const FALLBACK_SMALL_GROUP: SmallGroupSessionItem[] = [
   { id: "sg_23", day: "Samedi", startTime: "12:00", endTime: "13:00", discipline: "Lady Striking", level: "Sparring", maxCapacity: 12, isActive: true },
 ];
 
-// Fallback initial officiel Collectifs (3 séances)
-const FALLBACK_COLLECTIVE: CollectiveSessionItem[] = [
-  { id: "col_1", day: "Mardi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", isActive: true },
-  { id: "col_2", day: "Vendredi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", isActive: true },
-  { id: "col_3", day: "Samedi", startTime: "10:00", endTime: "11:00", discipline: "Kick Boxing", level: "Tous niveaux (Accès libre)", isActive: true },
-];
-
 function getLevelBadgeClasses(level: string): string {
   const lvl = (level || "").toLowerCase();
   if (lvl.includes("fondament") || lvl.includes("tous niveaux") || lvl.includes("débutant") || lvl.includes("debutant")) {
@@ -141,7 +122,6 @@ export default function AdminPlanningView({
   initialSessions = [],
 }: AdminPlanningViewProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<AdminTab>("Small Group");
 
   // Initialisation à partir des données Supabase réelles
   const initialSgFromDb: SmallGroupSessionItem[] = useMemo(() => {
@@ -162,35 +142,12 @@ export default function AdminPlanningView({
     return FALLBACK_SMALL_GROUP;
   }, [initialTemplates]);
 
-  const initialColFromDb: CollectiveSessionItem[] = useMemo(() => {
-    const colTmpl = initialTemplates.filter((t) => t.type === "collective");
-    if (colTmpl.length > 0) {
-      return colTmpl.map((t) => ({
-        id: t.id,
-        templateId: t.id,
-        day: indexToDayName(t.day_of_week),
-        startTime: t.start_time.slice(0, 5),
-        endTime: t.end_time.slice(0, 5),
-        discipline: t.discipline,
-        level: t.level,
-        maxCapacity: t.max_capacity,
-        isActive: t.is_active,
-      }));
-    }
-    return FALLBACK_COLLECTIVE;
-  }, [initialTemplates]);
-
-  // État Small Group & Collectifs (alimentés par Supabase)
+  // État Small Group (alimenté par Supabase)
   const [smallGroupSessions, setSmallGroupSessions] = useState<SmallGroupSessionItem[]>(initialSgFromDb);
-  const [collectiveSessions, setCollectiveSessions] = useState<CollectiveSessionItem[]>(initialColFromDb);
 
   useEffect(() => {
     setSmallGroupSessions(initialSgFromDb);
   }, [initialSgFromDb]);
-
-  useEffect(() => {
-    setCollectiveSessions(initialColFromDb);
-  }, [initialColFromDb]);
 
   // État de chargement global des actions
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -219,18 +176,6 @@ export default function AdminPlanningView({
   // Modal Édition Small Group
   const [editingSgSession, setEditingSgSession] = useState<SmallGroupSessionItem | null>(null);
   const [editScope, setEditScope] = useState<"recurring" | "single">("recurring");
-
-  // Modal Ajout Collectif
-  const [isAddColModalOpen, setIsAddColModalOpen] = useState(false);
-  const [colFormDay, setColFormDay] = useState<DayName>("Mardi");
-  const [colFormStart, setColFormStart] = useState("18:00");
-  const [colFormEnd, setColFormEnd] = useState("19:00");
-  const [colFormDiscipline, setColFormDiscipline] = useState("Boxe Anglaise");
-  const colFormLevel = "Tous niveaux (Accès libre)";
-  const colFormCapacity = 20;
-
-  // Modal Édition Collectifs
-  const [editingCollectiveSession, setEditingCollectiveSession] = useState<CollectiveSessionItem | null>(null);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ACTIONS SERVEUR / SUPABASE
@@ -427,133 +372,7 @@ export default function AdminPlanningView({
     }
   };
 
-  // Toggle Actif / Désactivé pour Collectif
-  const toggleCollectiveSession = async (id: string) => {
-    const current = collectiveSessions.find((s) => s.id === id);
-    if (!current) return;
-    const newStatus = !current.isActive;
 
-    setCollectiveSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: newStatus } : s)));
-    setIsSubmitting(true);
-
-    try {
-      const res = await toggleRecurringTemplateStatusServerAction(id, newStatus);
-      if (res.success) {
-        showNotification(`Cours collectif ${current.discipline} (${current.day}) ${newStatus ? "activé" : "désactivé"}.`);
-        router.refresh();
-      } else {
-        setCollectiveSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s)));
-        showNotification(res.error || "Erreur lors de la modification.", "error");
-      }
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Erreur serveur.";
-      setCollectiveSessions((prev) => prev.map((s) => (s.id === id ? { ...s, isActive: !newStatus } : s)));
-      showNotification(errorMsg, "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Ajout d'un cours collectif
-  const handleAddCollectiveSession = async () => {
-    setIsSubmitting(true);
-    try {
-      const res = await createRecurringTemplateServerAction({
-        day_of_week: dayNameToIndex(colFormDay),
-        start_time: colFormStart,
-        end_time: colFormEnd,
-        type: "collective",
-        discipline: colFormDiscipline,
-        level: colFormLevel,
-        max_capacity: colFormCapacity,
-      });
-
-      if (res.success && res.data) {
-        const newCol: CollectiveSessionItem = {
-          id: res.data.id,
-          templateId: res.data.id,
-          day: colFormDay,
-          startTime: colFormStart,
-          endTime: colFormEnd,
-          discipline: colFormDiscipline,
-          level: colFormLevel,
-          maxCapacity: colFormCapacity,
-          isActive: true,
-        };
-        setCollectiveSessions((prev) => [...prev, newCol]);
-        setIsAddColModalOpen(false);
-        showNotification(`Cours collectif ${colFormDiscipline} (${colFormDay}) ajouté avec succès.`);
-        router.refresh();
-      } else {
-        showNotification(res.error || "Erreur lors de la création du cours collectif.", "error");
-      }
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Erreur serveur.";
-      showNotification(errorMsg, "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Édition d'un cours collectif
-  const handleSaveEditCollectiveSession = async () => {
-    if (!editingCollectiveSession) return;
-    setIsSubmitting(true);
-
-    try {
-      const res = await updateRecurringTemplateServerAction(
-        editingCollectiveSession.id,
-        {
-          day_of_week: dayNameToIndex(editingCollectiveSession.day),
-          start_time: editingCollectiveSession.startTime,
-          end_time: editingCollectiveSession.endTime,
-          discipline: editingCollectiveSession.discipline,
-          level: editingCollectiveSession.level,
-          max_capacity: editingCollectiveSession.maxCapacity || 50,
-          is_active: editingCollectiveSession.isActive,
-        },
-        true
-      );
-
-      if (res.success) {
-        setCollectiveSessions((prev) =>
-          prev.map((s) => (s.id === editingCollectiveSession.id ? editingCollectiveSession : s))
-        );
-        setEditingCollectiveSession(null);
-        showNotification("Cours collectif modifié avec succès.");
-        router.refresh();
-      } else {
-        showNotification(res.error || "Erreur lors de la modification.", "error");
-      }
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Erreur inattendue.";
-      showNotification(errorMsg, "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Suppression d'un cours collectif
-  const handleDeleteCollectiveSession = async (id: string) => {
-    if (!window.confirm("Voulez-vous supprimer ce cours collectif ?")) return;
-    setIsSubmitting(true);
-    try {
-      const res = await deleteRecurringTemplateServerAction(id);
-      if (res.success) {
-        setCollectiveSessions((prev) => prev.filter((s) => s.id !== id));
-        setEditingCollectiveSession(null);
-        showNotification(res.message || "Cours collectif supprimé.");
-        router.refresh();
-      } else {
-        showNotification(res.error || "Erreur lors de la suppression.", "error");
-      }
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Erreur serveur.";
-      showNotification(errorMsg, "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Groupement Small Group par jour
   const sgByDay = useMemo(() => {
@@ -589,7 +408,7 @@ export default function AdminPlanningView({
             PLANNING & COURS
           </h1>
           <p className="text-xs sm:text-sm text-brand-white/60">
-            Source de vérité officielle : gérez la semaine type Small Group et Collectifs, synchronisée en direct avec le site public et l&apos;espace membre.
+            Source de vérité officielle : gérez la semaine type Small Group, synchronisée en direct avec le site public et l&apos;espace membre.
           </p>
         </div>
 
@@ -680,48 +499,16 @@ export default function AdminPlanningView({
       </AnimatePresence>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          LES 2 ONGLETS : SMALL GROUP & COLLECTIFS
+          PLANNING SMALL GROUP (SEMAINE TYPE OFFICIELLE PERSISTÉE)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid grid-cols-2 gap-1.5 shadow-xl">
-        <button
-          onClick={() => setActiveTab("Small Group")}
-          className={cn(
-            "py-3.5 px-3 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-            activeTab === "Small Group"
-              ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-              : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-          )}
-        >
-          <Users size={16} />
-          <span>Small Group</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("Collectifs")}
-          className={cn(
-            "py-3.5 px-3 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-            activeTab === "Collectifs"
-              ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-              : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-          )}
-        >
-          <Calendar size={16} />
-          <span>Collectifs</span>
-        </button>
-      </div>
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          ONGLET 1 : SMALL GROUP (SEMAINE TYPE OFFICIELLE PERSISTÉE)
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {activeTab === "Small Group" && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0b1b33]/40 border border-[#00d8ff]/20 rounded-2xl p-4">
-            <div className="flex items-center gap-2.5 text-xs text-[#00d8ff]">
-              <Users size={18} className="shrink-0" />
-              <span>
-                <strong>Planning Small Group (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>20 max</strong>.
-              </span>
-            </div>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0b1b33]/40 border border-[#00d8ff]/20 rounded-2xl p-4">
+          <div className="flex items-center gap-2.5 text-xs text-[#00d8ff]">
+            <Users size={18} className="shrink-0" />
+            <span>
+              <strong>Planning Small Group (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>12 max</strong>.
+            </span>
+          </div>
 
             <button
               onClick={() => setIsAddSgModalOpen(true)}
@@ -819,100 +606,6 @@ export default function AdminPlanningView({
             })}
           </div>
         </div>
-      )}
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          ONGLET 2 : COLLECTIFS
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {activeTab === "Collectifs" && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0f172a] border border-brand-white/10 rounded-2xl p-5">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs font-heading font-bold uppercase text-[#00d8ff]">
-                <Info size={16} />
-                <span>Règle des cours collectifs</span>
-              </div>
-              <p className="text-xs text-brand-white/70 leading-relaxed">
-                Les cours collectifs sont affichés en <strong>« Accès libre sans réservation »</strong> sur le site public et dans l&apos;espace membre.
-              </p>
-            </div>
-
-            <button
-              onClick={() => setIsAddColModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#00d8ff]/20 shrink-0 cursor-pointer"
-            >
-              <Plus size={15} />
-              Ajouter un cours collectif
-            </button>
-          </div>
-
-          <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-              <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                Planning officiel des cours collectifs
-              </h2>
-              <span className="text-xs text-brand-white/40">{collectiveSessions.length} créneaux configurés</span>
-            </div>
-
-            <div className="space-y-3">
-              {collectiveSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={cn(
-                    "p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all",
-                    session.isActive
-                      ? "bg-black/30 border-brand-white/10 hover:border-brand-white/20"
-                      : "bg-zinc-900/60 border-zinc-800 opacity-60"
-                  )}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="text-base font-heading font-bold uppercase tracking-wide text-brand-white">
-                        {session.day} · {session.discipline}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/10 text-brand-white border border-brand-white/20">
-                        {session.level}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#00d8ff]/10 text-[#00d8ff] border border-[#00d8ff]/20">
-                        Accès libre sans réservation
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-brand-white/60">
-                      <span className="flex items-center gap-1 font-bold text-[#00d8ff]">
-                        <Clock size={13} />
-                        {session.startTime} → {session.endTime}
-                      </span>
-                      <span className="text-brand-white/40">• 60 min · Collectif · Capacité illimitée · Accès libre</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 justify-end">
-                    <button
-                      onClick={() => setEditingCollectiveSession(session)}
-                      className="p-2 rounded-lg bg-brand-white/5 hover:bg-brand-white/15 text-brand-white/80 hover:text-brand-white border border-brand-white/10 transition-colors cursor-pointer"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      onClick={() => toggleCollectiveSession(session.id)}
-                      disabled={isSubmitting}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
-                        session.isActive
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
-                          : "bg-zinc-800 text-zinc-500 border border-zinc-700 hover:bg-zinc-700"
-                      )}
-                    >
-                      {session.isActive ? "Actif" : "Désactivé"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODAL : AJOUT SÉANCE SMALL GROUP
@@ -1284,262 +977,6 @@ export default function AdminPlanningView({
         )}
       </AnimatePresence>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          MODAL : AJOUT COURS COLLECTIF
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <AnimatePresence>
-        {isAddColModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsAddColModalOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
-                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                  Ajouter un cours collectif
-                </h3>
-                <button
-                  onClick={() => setIsAddColModalOpen(false)}
-                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div
-                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
-                style={{ WebkitOverflowScrolling: "touch" }}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Jour
-                    </label>
-                    <select
-                      value={colFormDay}
-                      onChange={(e) => setColFormDay(e.target.value as DayName)}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    >
-                      {DAYS_ORDER.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Discipline
-                    </label>
-                    <input
-                      type="text"
-                      value={colFormDiscipline}
-                      onChange={(e) => setColFormDiscipline(e.target.value)}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Heure de début
-                    </label>
-                    <input
-                      type="time"
-                      value={colFormStart}
-                      onChange={(e) => setColFormStart(e.target.value)}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Heure de fin
-                    </label>
-                    <input
-                      type="time"
-                      value={colFormEnd}
-                      onChange={(e) => setColFormEnd(e.target.value)}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
-                <button
-                  onClick={() => setIsAddColModalOpen(false)}
-                  className="flex-1 py-2.5 sm:py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleAddCollectiveSession}
-                  disabled={isSubmitting}
-                  className="flex-1 py-2.5 sm:py-3 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Plus size={16} />
-                  <span>Ajouter</span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          MODAL : MODIFIER COURS COLLECTIF
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <AnimatePresence>
-        {editingCollectiveSession && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setEditingCollectiveSession(null)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="relative w-full max-w-lg max-h-[calc(100dvh-1.5rem)] bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
-                <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                  Modifier le cours collectif
-                </h3>
-                <button
-                  onClick={() => setEditingCollectiveSession(null)}
-                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div
-                className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
-                style={{ WebkitOverflowScrolling: "touch" }}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Jour
-                    </label>
-                    <select
-                      value={editingCollectiveSession.day}
-                      onChange={(e) =>
-                        setEditingCollectiveSession({
-                          ...editingCollectiveSession,
-                          day: e.target.value as DayName,
-                        })
-                      }
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    >
-                      {DAYS_ORDER.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Discipline
-                    </label>
-                    <input
-                      type="text"
-                      value={editingCollectiveSession.discipline}
-                      onChange={(e) =>
-                        setEditingCollectiveSession({
-                          ...editingCollectiveSession,
-                          discipline: e.target.value,
-                        })
-                      }
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Heure de début
-                    </label>
-                    <input
-                      type="time"
-                      value={editingCollectiveSession.startTime}
-                      onChange={(e) =>
-                        setEditingCollectiveSession({
-                          ...editingCollectiveSession,
-                          startTime: e.target.value,
-                        })
-                      }
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Heure de fin
-                    </label>
-                    <input
-                      type="time"
-                      value={editingCollectiveSession.endTime}
-                      onChange={(e) =>
-                        setEditingCollectiveSession({
-                          ...editingCollectiveSession,
-                          endTime: e.target.value,
-                        })
-                      }
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white font-mono text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-[#0a101d] border-t border-brand-white/10 flex items-center justify-between gap-2.5 sm:gap-3 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
-                <button
-                  type="button"
-                  onClick={() => handleDeleteCollectiveSession(editingCollectiveSession.id)}
-                  disabled={isSubmitting}
-                  className="p-2.5 sm:p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl transition-all cursor-pointer shrink-0"
-                  title="Supprimer ce cours collectif"
-                >
-                  <Trash2 size={16} />
-                </button>
-
-                <div className="flex gap-2 flex-1 justify-end">
-                  <button
-                    onClick={() => setEditingCollectiveSession(null)}
-                    disabled={isSubmitting}
-                    className="py-2.5 px-3.5 sm:py-3 sm:px-5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={handleSaveEditCollectiveSession}
-                    disabled={isSubmitting}
-                    className="py-2.5 px-4 sm:py-3 sm:px-6 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-[#00d8ff]/20 flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting && <Loader2 size={15} className="animate-spin" />}
-                    <span>Enregistrer</span>
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

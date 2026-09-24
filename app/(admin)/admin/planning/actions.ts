@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { assertAdminUser } from "@/lib/supabase/auth-admin";
 
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Lundi, 5=Samedi
-export type SessionType = "small_group" | "collective" | "private";
+export type SessionType = "small_group" | "private";
 
 export interface RecurringTemplateItem {
   id: string;
@@ -136,12 +136,12 @@ export async function getAdminPlanningDataServerAction(): Promise<AdminPlanningD
     const sessions: AdminDatedSessionItem[] = rawSessions.map((s) => ({
       id: s.id,
       template_id: s.template_id,
-      type: (s.type || "small_group") as SessionType,
+      type: (s.type === "private" ? "private" : "small_group") as SessionType,
       discipline: s.discipline,
       level: s.level || "Tous niveaux",
       starts_at: s.starts_at,
       ends_at: s.ends_at || s.starts_at,
-      max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
+      max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
       is_active: s.is_active ?? true,
       bookedCount: countsMap.get(s.id) || 0,
     }));

@@ -57,7 +57,7 @@ export default function AdminSubscriptionsView({
     "all" | "active" | "paused" | "expired" | "cancelled"
   >("all");
   const [typeFilter, setTypeFilter] = useState<
-    "all" | "small_group" | "collective" | "private"
+    "all" | "small_group" | "private"
   >("all");
 
   // Modales
@@ -92,7 +92,7 @@ export default function AdminSubscriptionsView({
   // Calcul des statistiques en temps réel
   const stats = useMemo(() => {
     let activeSmallGroup = 0;
-    let activeCollective = 0;
+    let activePrivate = 0;
     let paused = 0;
     let expired = 0;
     let cancelled = 0;
@@ -104,11 +104,8 @@ export default function AdminSubscriptionsView({
           sub.planName.toLowerCase().includes("small group")
         ) {
           activeSmallGroup++;
-        } else if (
-          sub.planType === "collective" ||
-          sub.planName.toLowerCase().includes("collectif")
-        ) {
-          activeCollective++;
+        } else {
+          activePrivate++;
         }
       } else if (sub.status === "paused" || (sub.status as string) === "suspended") {
         paused++;
@@ -121,9 +118,9 @@ export default function AdminSubscriptionsView({
 
     return {
       total: subscriptions.length,
-      activeTotal: activeSmallGroup + activeCollective,
+      activeTotal: activeSmallGroup + activePrivate,
       activeSmallGroup,
-      activeCollective,
+      activePrivate,
       paused,
       suspended: paused,
       expired,
@@ -155,15 +152,11 @@ export default function AdminSubscriptionsView({
         const isSg =
           sub.planType === "small_group" ||
           sub.planName.toLowerCase().includes("small group");
-        const isColl =
-          sub.planType === "collective" ||
-          sub.planName.toLowerCase().includes("collectif");
         const isPriv =
           sub.planType === "private" ||
           sub.planName.toLowerCase().includes("privé");
 
         if (typeFilter === "small_group" && !isSg) return false;
-        if (typeFilter === "collective" && !isColl) return false;
         if (typeFilter === "private" && !isPriv) return false;
       }
 
@@ -432,21 +425,11 @@ export default function AdminSubscriptionsView({
     const isSg =
       planType === "small_group" ||
       planName.toLowerCase().includes("small group");
-    const isColl =
-      planType === "collective" ||
-      planName.toLowerCase().includes("collectif");
 
     if (isSg) {
       return (
         <span className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[9px] font-bold uppercase tracking-wider">
           Small Group
-        </span>
-      );
-    }
-    if (isColl) {
-      return (
-        <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[9px] font-bold uppercase tracking-wider">
-          Collectif
         </span>
       );
     }
@@ -531,11 +514,11 @@ export default function AdminSubscriptionsView({
           </div>
         </div>
 
-        {/* Actifs Collectifs */}
+        {/* Actifs Privés */}
         <div className="bg-[#0f172a]/80 border border-brand-white/10 rounded-xl p-5 shadow-lg space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
-              Actifs Collectifs
+              Actifs Privés
             </span>
             <div className="w-9 h-9 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center border border-purple-500/30">
               <CreditCard size={18} />
@@ -543,10 +526,10 @@ export default function AdminSubscriptionsView({
           </div>
           <div className="space-y-1">
             <div className="text-3xl font-heading font-black text-brand-white">
-              {stats.activeCollective}
+              {stats.activePrivate}
             </div>
             <p className="text-[11px] text-brand-white/40">
-              Accès libre aux cours collectifs
+              Coaching et cours privés
             </p>
           </div>
         </div>
@@ -612,7 +595,6 @@ export default function AdminSubscriptionsView({
             >
               <option value="all">Toutes formules</option>
               <option value="small_group">Small Group</option>
-              <option value="collective">Collectif</option>
               <option value="private">Privé</option>
             </select>
           </div>
@@ -909,7 +891,7 @@ export default function AdminSubscriptionsView({
                       <option value="">-- Choisir une formule --</option>
                       {plans.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} [{p.type === "small_group" ? "Small Group" : p.type === "collective" ? "Collectif" : "Privé"}]
+                          {p.name} [{p.type === "small_group" ? "Small Group" : "Privé"}]
                         </option>
                       ))}
                     </select>
@@ -1058,7 +1040,7 @@ export default function AdminSubscriptionsView({
                   >
                     {plans.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} [{p.type === "small_group" ? "Small Group" : p.type === "collective" ? "Collectif" : "Privé"}]
+                        {p.name} [{p.type === "small_group" ? "Small Group" : "Privé"}]
                       </option>
                     ))}
                   </select>

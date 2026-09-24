@@ -5,14 +5,14 @@ import PricingSection from "@/components/sections/PricingSection";
 export const metadata: Metadata = {
   title: "Tarifs et Formules de Boxe à Marseille (13010)",
   description:
-    "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Collectifs, Small Group et Cours Privés (8 séances/mois). Sans engagement ou annuel.",
+    "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Small Group et Cours Privés (8 séances/mois). Sans engagement ou annuel.",
   alternates: {
     canonical: "https://www.strikingcamp.com/tarifs",
   },
   openGraph: {
     title: "Tarifs et Formules de Boxe à Marseille (13010) | Striking Camp",
     description:
-      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Collectifs, Small Group et Cours Privés.",
+      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Small Group et Cours Privés.",
     url: "https://www.strikingcamp.com/tarifs",
     siteName: "Striking Camp",
     locale: "fr_FR",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Tarifs et Formules de Boxe à Marseille (13010) | Striking Camp",
     description:
-      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Collectifs, Small Group et Cours Privés.",
+      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Small Group et Cours Privés.",
     images: ["https://www.strikingcamp.com/sacSalle.jpg"],
   },
 };
@@ -38,8 +38,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function TarifsPage() {
-  let isSmallGroupActive = false;
-  let isCollectiveActive = true;
+  let isSmallGroupActive = true;
   let isPrivateActive = true;
 
   try {
@@ -55,7 +54,6 @@ export default async function TarifsPage() {
     if (settings && settings.length > 0) {
       for (const s of settings) {
         if (s.service_key === "small_group") isSmallGroupActive = Boolean(s.is_active);
-        if (s.service_key === "collective") isCollectiveActive = Boolean(s.is_active);
         if (s.service_key === "private") isPrivateActive = Boolean(s.is_active);
       }
     }
@@ -67,7 +65,6 @@ export default async function TarifsPage() {
     <div className="pt-20 bg-transparent min-h-screen">
       <PricingSection
         isSmallGroupActive={isSmallGroupActive}
-        isCollectiveActive={isCollectiveActive}
         isPrivateActive={isPrivateActive}
       />
     </div>

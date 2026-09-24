@@ -103,7 +103,7 @@ export const allFaqItems: FaqItemDetailed[] = [
     category: "formules",
     question: "Quelles sont les formules d'entraînement proposées ?",
     answer:
-      "Striking Camp propose trois formats d'entraînement : les Cours Collectifs pour s'entraîner en groupe, les séances en Small Group pour un encadrement en effectif restreint avec suivi technique personnalisé, et les Cours Privés pour un accompagnement individuel avec le coach Mahfoud.",
+      "Striking Camp propose deux formats d'entraînement : les séances en Small Group (12 participants maximum) pour un encadrement en effectif restreint avec suivi technique personnalisé, et les Cours Privés (coaching individuel 1-on-1) avec le coach Mahfoud.",
   },
   {
     category: "formules",

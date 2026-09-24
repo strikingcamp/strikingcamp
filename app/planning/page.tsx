@@ -45,8 +45,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PlanningPage() {
   let scheduleData: Record<PlanningCategory, Record<DayName, ScheduleCourse[]>> = publicScheduleData;
-  let isSmallGroupActive = false;
-  let isCollectiveActive = true;
+  let isSmallGroupActive = true;
 
   try {
     const supabase = createClient(
@@ -54,25 +53,24 @@ export default async function PlanningPage() {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
     );
 
-    // 1. & 2. Lecture parallèle du statut des services et des créneaux récurrents actifs
+    // 1. & 2. Lecture parallèle du statut du service Small Group et des créneaux récurrents actifs
     const [settingsRes, templatesRes] = await Promise.all([
       supabase
         .from("service_settings")
-        .select("service_key, is_active"),
+        .select("service_key, is_active")
+        .eq("service_key", "small_group")
+        .maybeSingle(),
       supabase
         .from("recurring_schedule_templates")
         .select("day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
         .eq("is_active", true)
-        .in("type", ["small_group", "collective"])
+        .eq("type", "small_group")
         .order("day_of_week", { ascending: true })
         .order("start_time", { ascending: true }),
     ]);
 
     if (settingsRes.data) {
-      for (const s of settingsRes.data) {
-        if (s.service_key === "small_group") isSmallGroupActive = Boolean(s.is_active);
-        if (s.service_key === "collective") isCollectiveActive = Boolean(s.is_active);
-      }
+      isSmallGroupActive = Boolean(settingsRes.data.is_active);
     }
 
     const { data: templates, error } = templatesRes;
@@ -87,30 +85,21 @@ export default async function PlanningPage() {
           Vendredi: [],
           Samedi: [],
         },
-        Collectifs: {
-          Lundi: [],
-          Mardi: [],
-          Mercredi: [],
-          Jeudi: [],
-          Vendredi: [],
-          Samedi: [],
-        },
       };
 
       for (const t of templates) {
         const day = DAYS_ORDER[t.day_of_week];
         if (!day) continue;
 
-        const cat: PlanningCategory = t.type === "collective" ? "Collectifs" : "Small Group";
         const timeFormatted = t.end_time
           ? `${t.start_time.slice(0, 5)} → ${t.end_time.slice(0, 5)}`
           : t.start_time.slice(0, 5);
 
-        dynamicSchedule[cat][day].push({
+        dynamicSchedule["Small Group"][day].push({
           name: t.discipline,
           level: t.level,
           time: timeFormatted,
-          places: t.type === "small_group" ? String(t.max_capacity || 12) : undefined,
+          places: String(t.max_capacity || 12),
         });
       }
 
@@ -125,7 +114,6 @@ export default async function PlanningPage() {
       <PlanningSection
         initialScheduleData={scheduleData}
         isSmallGroupActive={isSmallGroupActive}
-        isCollectiveActive={isCollectiveActive}
       />
     </div>
   );

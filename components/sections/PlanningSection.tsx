@@ -42,30 +42,18 @@ function getBadgeColor(level?: string) {
 interface PlanningSectionProps {
   initialScheduleData?: Record<Category, Record<Day, ScheduleCourse[]>>;
   isSmallGroupActive?: boolean;
-  isCollectiveActive?: boolean;
 }
 
 export default function PlanningSection({
   initialScheduleData,
-  isSmallGroupActive = false,
-  isCollectiveActive = true,
+  isSmallGroupActive = true,
 }: PlanningSectionProps = {}) {
   const scheduleData = initialScheduleData || defaultScheduleData;
-  const categories: Category[] = [];
-  if (isCollectiveActive) categories.push("Collectifs");
-  if (isSmallGroupActive) categories.push("Small Group");
+  const currentCategory: Category = "Small Group";
 
-  const defaultCategory: Category = categories[0] || "Collectifs";
-
-  const [activeCategory, setActiveCategory] = useState<Category>(defaultCategory);
   const [activeDay, setActiveDay] = useState<DayFilter>("Tous");
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [selectedDisciplineForModal, setSelectedDisciplineForModal] = useState<string | undefined>(undefined);
-
-  // Sécurisation : basculer automatiquement vers une catégorie active si celle en cours est désactivée
-  const currentCategory: Category = categories.includes(activeCategory)
-    ? activeCategory
-    : defaultCategory;
 
   // Jours ayant au moins un créneau dans la catégorie active
   const activeDays = days.filter(
@@ -86,40 +74,15 @@ export default function PlanningSection({
           PLANNING <span className="text-brand-blue">DES COURS</span>
         </h1>
         <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-          Découvrez nos créneaux en petit comité, avec un accès illimité à toutes nos disciplines.
+          Découvrez nos créneaux en petit comité (12 places max), avec un accès illimité à toutes nos disciplines.
         </p>
-      </div>
 
-      {/* Category Switcher Tabs (Affiché uniquement si plus d'une catégorie est disponible) */}
-      {categories.length > 1 && (
-        <div className="flex justify-center mb-6 sm:mb-8">
-          <div role="tablist" aria-label="Catégories de planning" className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-xl max-w-md w-full">
-            {categories.map((category) => {
-              const isActive = currentCategory === category;
-              return (
-                <button
-                  key={category}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => {
-                    setActiveCategory(category);
-                    setActiveDay("Tous");
-                    trackScheduleView(category);
-                  }}
-                  className={cn(
-                    "flex-1 py-3 px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                    isActive
-                      ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/25 font-black"
-                      : "text-brand-white/80 hover:text-brand-white hover:bg-brand-white/5"
-                  )}
-                >
-                  {category}
-                </button>
-              );
-            })}
+        {!isSmallGroupActive && (
+          <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs font-semibold max-w-md mx-auto">
+            Les créneaux Small Group sont actuellement en pause ou en réorganisation.
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Days Filter (Pills) */}
       <div role="group" aria-label="Filtrer par jour" className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-12">
@@ -162,7 +125,7 @@ export default function PlanningSection({
       <div className="max-w-4xl mx-auto min-h-[380px]">
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${activeCategory}-${activeDay}`}
+            key={activeDay}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
@@ -170,7 +133,7 @@ export default function PlanningSection({
             className="space-y-10"
           >
             {daysToRender.map((day) => {
-              const courses = scheduleData[activeCategory][day];
+              const courses = scheduleData["Small Group"][day];
               if (!courses || courses.length === 0) return null;
 
               return (
@@ -251,13 +214,13 @@ export default function PlanningSection({
       {/* Bottom Notice / Reservation Banner */}
       <div className="mt-14 sm:mt-16 text-center p-8 bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border border-brand-blue/30 rounded-3xl max-w-2xl mx-auto space-y-4 shadow-2xl shadow-brand-blue/10 relative overflow-hidden">
         <div className="inline-flex items-center px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
-          Cours d&apos;Essai • Dès 10 €
+          Cours d&apos;Essai • 15 €
         </div>
         <h3 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
           Envie de tester une première séance ?
         </h3>
         <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed max-w-lg mx-auto">
-          Venez tester un premier entraînement encadré par le coach au club de Marseille (Collectif 10 € • Small Group 15 €). Choisissez votre format, votre discipline et votre créneau en 1 minute.
+          Venez tester un premier entraînement encadré par le coach au club de Marseille (Small Group 15 €). Choisissez votre discipline et votre créneau en 1 minute.
         </p>
         <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
           <button

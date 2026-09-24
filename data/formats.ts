@@ -220,105 +220,12 @@ export const formatsData: Record<string, FormatDetail> = {
     metaTitle: "Cours de Boxe en Small Group à Marseille 13010",
     metaDescription: "Entraînez-vous en Small Group au Striking Camp Marseille : effectif réduit (12 max), suivi personnalisé, drills techniques et émulation collective.",
     preselectedType: "small_group"
-  },
-
-  "collectifs": {
-    slug: "collectifs",
-    title: "COURS COLLECTIFS",
-    h1: "Cours collectifs",
-    subtitle: "Apprendre, progresser et pratiquer les sports de combat debout dans une dynamique de groupe.",
-    category: "Dynamique Collective",
-    image: "/kickboxing.jpg",
-    alt: "Cours Collectifs de Boxe et Kick Boxing à Marseille - Striking Camp",
-    shortDescription: "Des séances accessibles à tous pour apprendre, progresser et développer sa technique dans une dynamique de groupe.",
-    intro: [
-      "Les cours collectifs incarnent l'énergie et la culture sportive du Striking Camp à Marseille (13010). Ils offrent à chacun l'opportunité de s'entraîner avec intensité, d'apprendre des techniques authentiques et de partager la passion du combat debout.",
-      "Structurés par cycles et disciplines (Boxe Anglaise, Kick Boxing, Boxe Thaï, Striking, Lady Striking, Kid Boxing), nos cours collectifs sont conçus pour allier exigence technique, dépense physique complète et convivialité."
-    ],
-    targetAudience: {
-      title: "Pour quel public ?",
-      description: "Les cours collectifs accueillent tous les profils de pratiquants dans un cadre structuré et sécurisé :",
-      items: [
-        "Tous les niveaux : du grand débutant au pratiquant régulier et confirmé",
-        "Personnes recherchant un entraînement complet combinant cardio intense et technique",
-        "Passionnés souhaitant pratiquer régulièrement avec une grande variété de partenaires",
-        "Sportifs motivés par l'énergie collective, le partage et la culture du club"
-      ]
-    },
-    sessionFlow: {
-      title: "Comment se déroule une séance ?",
-      steps: [
-        {
-          number: "01",
-          title: "Échauffement martial & Cardio",
-          description: "Montée progressive en fréquence cardiaque, footwork, corde à sauter et mobilité articulaire."
-        },
-        {
-          number: "02",
-          title: "Apprentissage technique & Démonstration",
-          description: "Explication détaillée des combinaisons du jour par le coach et décomposition des mouvements."
-        },
-        {
-          number: "03",
-          title: "Drills, Sac de frappe & Paos",
-          description: "Répétition intensive par binômes, travail de percussion aux sacs lourds et paos."
-        },
-        {
-          number: "04",
-          title: "Mises en situation & Renforcement",
-          description: "Sparring guidé à la touche légère (selon niveau) et circuit de renforcement musculaire final."
-        }
-      ]
-    },
-    sections: [
-      {
-        title: "APPRENTISSAGE DES FONDAMENTAUX ET DRILLS",
-        badge: "Répétition & Technique",
-        description: "Une progression pas-à-pas pour maîtriser l'ensemble des composantes du combat debout :",
-        points: [
-          "Apprentissage rigoureux des fondamentaux : posture, garde, équilibre et déplacements",
-          "Travail de la distance, du cadrage et de la vision globale",
-          "Répétitions techniques d'enchaînements poings et pieds-poings",
-          "Frappes au sac lourd et travail aux pattes d'ours / paos thaï"
-        ]
-      },
-      {
-        title: "DÉPENSE CARDIO ET RENFORCEMENT COMBAT",
-        badge: "Condition Physique",
-        description: "Des séances rythmées qui forgent le physique et le mental :",
-        points: [
-          "Développement de l'endurance musculaire et du souffle",
-          "Exercices fractionnés au sac et circuits fonctionnels",
-          "Amélioration de l'explosivité, de la réactivité et du tonus postural"
-        ]
-      },
-      {
-        title: "MISES EN SITUATION ET SPARRING GUIDÉ",
-        badge: "Application Contrôlée",
-        description: "L'opportunité de tester ses réflexes en toute sécurité :",
-        points: [
-          "Exercices d'opposition à thème sous la supervision attentive du coach",
-          "Sparring guidé à la touche légère, basé sur le respect et l'apprentissage mutuel",
-          "Progression adaptée selon l'expérience et le rythme de chacun"
-        ]
-      }
-    ],
-    benefits: [
-      "Ambiance collective et stimulante",
-      "Toutes disciplines debout enseignées",
-      "Dépense physique et cardio élevé",
-      "Créneaux matin, midi et soir"
-    ],
-    metaTitle: "Cours Collectifs de Boxe à Marseille 13010",
-    metaDescription: "Rejoignez les cours collectifs du Striking Camp à Marseille : Boxe Anglaise, Kick Boxing, Boxe Thaï et Striking dans une ambiance dynamique et motivante.",
-    preselectedType: "small_group"
   }
 };
 
 export const publicFormatList = [
   formatsData["coaching-prive"],
-  formatsData["small-group"],
-  formatsData["collectifs"]
+  formatsData["small-group"]
 ];
 
 export function getFormatBySlug(slug: string): FormatDetail | undefined {

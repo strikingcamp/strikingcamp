@@ -48,7 +48,7 @@ export default function AdminMembersView({
   const [members, setMembers] = useState<AdminMemberDetail[]>(initialData.members);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<
-    "all" | "active_sub" | "no_sub" | "small_group" | "collective" | "private"
+    "all" | "active_sub" | "no_sub" | "small_group" | "private"
   >("all");
 
   // Formules actives
@@ -96,9 +96,6 @@ export default function AdminMembersView({
     const smallGroupMembers = members.filter(
       (m) => m.activeSubscription?.planType === "small_group"
     ).length;
-    const collectiveMembers = members.filter(
-      (m) => m.activeSubscription?.planType === "collective"
-    ).length;
     const privateMembers = members.filter(
       (m) => m.activeSubscription?.planType === "private"
     ).length;
@@ -108,7 +105,6 @@ export default function AdminMembersView({
       withActiveSubscription,
       withoutSubscription,
       smallGroupMembers,
-      collectiveMembers,
       privateMembers,
     };
   }, [members]);
@@ -122,12 +118,6 @@ export default function AdminMembersView({
       if (
         filterCategory === "small_group" &&
         m.activeSubscription?.planType !== "small_group"
-      ) {
-        return false;
-      }
-      if (
-        filterCategory === "collective" &&
-        m.activeSubscription?.planType !== "collective"
       ) {
         return false;
       }
@@ -336,12 +326,6 @@ export default function AdminMembersView({
             <Users size={11} /> {sub.planName}
           </span>
         );
-      case "collective":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            <Layers size={11} /> {sub.planName}
-          </span>
-        );
       case "private":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
@@ -406,7 +390,7 @@ export default function AdminMembersView({
       </div>
 
       {/* KPI STATS CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* Total Membres */}
         <div className="bg-[#0f172a]/90 border border-brand-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div className="flex items-center justify-between">
@@ -483,26 +467,6 @@ export default function AdminMembersView({
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
               Membres Small Group
-            </span>
-          </div>
-        </div>
-
-        {/* Collectif */}
-        <div className="bg-[#0f172a]/90 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-              Collectif
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Layers size={14} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-300">
-              {stats.collectiveMembers}
-            </span>
-            <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              Membres Collectifs
             </span>
           </div>
         </div>
@@ -592,17 +556,6 @@ export default function AdminMembersView({
             )}
           >
             <Users size={13} /> Small Group ({stats.smallGroupMembers})
-          </button>
-          <button
-            onClick={() => setFilterCategory("collective")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
-              filterCategory === "collective"
-                ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-            )}
-          >
-            <Layers size={13} /> Collectifs ({stats.collectiveMembers})
           </button>
           <button
             onClick={() => setFilterCategory("private")}
@@ -1258,7 +1211,7 @@ export default function AdminMembersView({
                     >
                       <div className="space-y-0.5">
                         <span className="font-semibold text-brand-white block">
-                          {b.discipline} • {b.sessionType === "small_group" ? "Small Group" : "Collectif"}
+                          {b.discipline} • {b.sessionType === "private" ? "Cours Privé" : "Small Group"}
                         </span>
                         <span className="text-[11px] text-brand-white/40">
                           {new Date(b.starts_at).toLocaleDateString("fr-FR", {

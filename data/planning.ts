@@ -1,22 +1,11 @@
 export type DayName = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
-export type PlanningCategory = "Small Group" | "Collectifs";
+export type PlanningCategory = "Small Group";
 
 export interface ScheduleCourse {
   name: string;
   level?: string;
   time: string;
   places?: string;
-}
-
-export interface CollectiveScheduleItem {
-  id: string;
-  day: DayName;
-  startTime: string;
-  endTime: string;
-  discipline: string;
-  level: string;
-  maxCapacity?: number;
-  isActive?: boolean;
 }
 
 export interface SmallGroupScheduleItem {
@@ -33,41 +22,7 @@ export interface SmallGroupScheduleItem {
 export const DAYS_ORDER: DayName[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 1. PLANNING OFFICIEL COLLECTIFS (3 SÉANCES) — SOURCE DE VÉRITÉ
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-export const OFFICIAL_COLLECTIVE_SESSIONS: CollectiveScheduleItem[] = [
-  {
-    id: "col_1",
-    day: "Mardi",
-    startTime: "18:00",
-    endTime: "19:00",
-    discipline: "Kick Boxing",
-    level: "Tous niveaux (Accès libre)",
-    isActive: true,
-  },
-  {
-    id: "col_2",
-    day: "Vendredi",
-    startTime: "18:00",
-    endTime: "19:00",
-    discipline: "Kick Boxing",
-    level: "Tous niveaux (Accès libre)",
-    isActive: true,
-  },
-  {
-    id: "col_3",
-    day: "Samedi",
-    startTime: "10:00",
-    endTime: "11:00",
-    discipline: "Kick Boxing",
-    level: "Tous niveaux (Accès libre)",
-    isActive: true,
-  },
-];
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 2. PLANNING OFFICIEL SMALL GROUP — SOURCE DE VÉRITÉ
+// PLANNING OFFICIEL SMALL GROUP — SOURCE DE VÉRITÉ
 // (60 MIN PAR DÉFAUT, 50 MIN UNIQUEMENT POUR CARDIO)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -123,17 +78,6 @@ export const publicScheduleData: Record<PlanningCategory, Record<DayName, Schedu
         level: s.level,
         time: s.endTime ? `${s.startTime} → ${s.endTime}` : s.startTime,
         places: String(s.maxCapacity || 12),
-      }));
-    return acc;
-  }, {} as Record<DayName, ScheduleCourse[]>),
-
-  Collectifs: DAYS_ORDER.reduce((acc, day) => {
-    acc[day] = OFFICIAL_COLLECTIVE_SESSIONS
-      .filter((s) => s.day === day && s.isActive !== false)
-      .map((s) => ({
-        name: s.discipline,
-        level: s.level,
-        time: s.endTime ? `${s.startTime} → ${s.endTime}` : s.startTime,
       }));
     return acc;
   }, {} as Record<DayName, ScheduleCourse[]>),

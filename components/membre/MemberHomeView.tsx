@@ -163,7 +163,7 @@ export default function MemberHomeView({
                 Choisissez votre formule d&apos;entraînement
               </h3>
               <p className="text-xs text-brand-white/60 max-w-md">
-                Sélectionnez votre formule (Cours Privé, Small Group ou Collectif) pour activer vos réservations.
+                Sélectionnez votre formule (Cours Privé ou Small Group) pour activer vos réservations.
               </p>
             </div>
           </div>

@@ -37,13 +37,13 @@ export interface MembershipPlanOption {
   id: string;
   name: string;
   code?: string | null;
-  type: "private" | "small_group" | "collective" | string;
+  type: "private" | "small_group" | string;
   commitment?: "monthly" | "annual" | string | null;
   price_cents: number;
   private_sessions_per_period?: number | null;
   allows_private: boolean;
   allows_small_group: boolean;
-  allows_collective: boolean;
+  allows_collective?: boolean;
   is_active: boolean;
   display_order?: number | null;
 }

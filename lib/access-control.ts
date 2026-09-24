@@ -1,23 +1,20 @@
 /**
  * Module centralisé de gestion des droits d'accès aux cours du Striking Camp.
  *
- * Nouvelle grille tarifaire & règles métier officielles :
- * ─────────────────────────────────────────────────────────────────────────────
- * Formule              │ Accès Privé │ Accès Small Group │ Accès Collectif
- * ─────────────────────┼─────────────┼───────────────────┼────────────────
- * Cours Privé Mensuel  │     Oui     │        Oui        │      Oui
- * Cours Privé Annuel   │     Oui     │        Oui        │      Oui
- * Small Group Mensuel  │     Non     │        Oui        │      Oui
- * Small Group Annuel   │     Non     │        Oui        │      Oui
- * Collectif Mensuel    │     Non     │        Non        │      Oui
- * Collectif Annuel     │     Non     │        Non        │      Oui
- * ─────────────────────────────────────────────────────────────────────────────
+ * Grille tarifaire & règles métier officielles :
+ * ─────────────────────────────────────────────────────────────
+ * Formule              │ Accès Privé │ Accès Small Group
+ * ─────────────────────┼─────────────┼───────────────────
+ * Cours Privé Mensuel  │     Oui     │        Oui
+ * Cours Privé Annuel   │     Oui     │        Oui
+ * Small Group Mensuel  │     Non     │        Oui
+ * Small Group Annuel   │     Non     │        Oui
+ * ─────────────────────────────────────────────────────────────
  */
 
 export interface PlanAccessRights {
   allowsPrivate: boolean;
   allowsSmallGroup: boolean;
-  allowsCollective: boolean;
 }
 
 export interface PlanLike {
@@ -43,7 +40,6 @@ export interface CumulativeMemberAccess {
   hasActiveSubscription: boolean;
   hasPrivateAccess: boolean;
   hasSmallGroupAccess: boolean;
-  hasCollectiveAccess: boolean;
   privateSessionsQuota: number | null;
   activePlanNames: string[];
   validSubscriptionsCount: number;
@@ -56,19 +52,17 @@ export interface CumulativeMemberAccess {
  */
 export function computePlanAccess(plan: PlanLike | null | undefined): PlanAccessRights {
   if (!plan) {
-    return { allowsPrivate: false, allowsSmallGroup: false, allowsCollective: false };
+    return { allowsPrivate: false, allowsSmallGroup: false };
   }
 
   // 1. Si les colonnes explicites sont déjà peuplées dans public.plans
   if (
     typeof plan.allows_private === "boolean" &&
-    typeof plan.allows_small_group === "boolean" &&
-    typeof plan.allows_collective === "boolean"
+    typeof plan.allows_small_group === "boolean"
   ) {
     return {
       allowsPrivate: plan.allows_private,
       allowsSmallGroup: plan.allows_small_group,
-      allowsCollective: plan.allows_collective,
     };
   }
 
@@ -88,17 +82,11 @@ export function computePlanAccess(plan: PlanLike | null | undefined): PlanAccess
     rawType === "smallgroup" ||
     rawName.includes("small group");
 
-  const isCollective =
-    rawType === "collective" ||
-    rawType === "collectif" ||
-    rawName.includes("collectif");
-
   if (isPrivate) {
-    // Les formules Cours Privé (Mensuel & Annuel) donnent accès total : Privé + Small Group + Collectif
+    // Les formules Cours Privé (Mensuel & Annuel) donnent accès total : Privé + Small Group
     return {
       allowsPrivate: true,
       allowsSmallGroup: true,
-      allowsCollective: true,
     };
   }
 
@@ -106,15 +94,6 @@ export function computePlanAccess(plan: PlanLike | null | undefined): PlanAccess
     return {
       allowsPrivate: false,
       allowsSmallGroup: true,
-      allowsCollective: true,
-    };
-  }
-
-  if (isCollective) {
-    return {
-      allowsPrivate: false,
-      allowsSmallGroup: false,
-      allowsCollective: true,
     };
   }
 
@@ -122,7 +101,6 @@ export function computePlanAccess(plan: PlanLike | null | undefined): PlanAccess
   return {
     allowsPrivate: false,
     allowsSmallGroup: false,
-    allowsCollective: false,
   };
 }
 
@@ -173,7 +151,6 @@ export function computeCumulativeAccess(
       hasActiveSubscription: false,
       hasPrivateAccess: false,
       hasSmallGroupAccess: false,
-      hasCollectiveAccess: false,
       privateSessionsQuota: null,
       activePlanNames: [],
       validSubscriptionsCount: 0,
@@ -182,7 +159,6 @@ export function computeCumulativeAccess(
 
   let hasPrivateAccess = false;
   let hasSmallGroupAccess = false;
-  let hasCollectiveAccess = false;
   let totalQuota: number | null = null;
   const activePlanNames: string[] = [];
   let validCount = 0;
@@ -198,7 +174,6 @@ export function computeCumulativeAccess(
 
     if (rights.allowsPrivate) hasPrivateAccess = true;
     if (rights.allowsSmallGroup) hasSmallGroupAccess = true;
-    if (rights.allowsCollective) hasCollectiveAccess = true;
 
     if (plan?.name) {
       activePlanNames.push(plan.name.trim());
@@ -213,7 +188,6 @@ export function computeCumulativeAccess(
     hasActiveSubscription: validCount > 0,
     hasPrivateAccess,
     hasSmallGroupAccess,
-    hasCollectiveAccess,
     privateSessionsQuota: totalQuota,
     activePlanNames: Array.from(new Set(activePlanNames)),
     validSubscriptionsCount: validCount,

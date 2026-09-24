@@ -18,7 +18,6 @@ export interface AdminUserAccountInfo {
 
 export interface SystemCapacitiesInfo {
   smallGroup: number;
-  collective: number;
   private: number;
 }
 
@@ -157,7 +156,6 @@ export async function getAdminSettingsDataServerAction(): Promise<ActionResponse
     // 3. Capacités système (Sources officielles de vérité en lecture seule)
     const capacities: SystemCapacitiesInfo = {
       smallGroup: 12,
-      collective: 50,
       private: 1,
     };
 

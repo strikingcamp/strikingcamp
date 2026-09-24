@@ -21,13 +21,13 @@ export default async function AdminPlanningPage() {
     supabase
       .from("recurring_schedule_templates")
       .select("*")
-      .in("type", ["small_group", "collective"])
+      .eq("type", "small_group")
       .order("day_of_week", { ascending: true })
       .order("start_time", { ascending: true }),
     supabase
       .from("class_sessions")
       .select("id, template_id, type, discipline, level, starts_at, ends_at, max_capacity, is_active")
-      .in("type", ["small_group", "collective"])
+      .eq("type", "small_group")
       .gte("starts_at", startDate.toISOString())
       .lte("starts_at", endDate.toISOString())
       .order("starts_at", { ascending: true }),
@@ -86,7 +86,7 @@ export default async function AdminPlanningPage() {
     level: s.level || "Tous niveaux",
     starts_at: s.starts_at,
     ends_at: s.ends_at || s.starts_at,
-    max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
+    max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
     is_active: s.is_active ?? true,
     bookedCount: countsMap.get(s.id) || 0,
   }));

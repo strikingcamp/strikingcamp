@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ShieldCheck, Users, Layers, ArrowRight } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { trackPricingView, trackBookingClick } from "@/lib/analytics";
 
-type PlanCategory = "Cours Privés" | "Small Group" | "Collectifs";
+type PlanCategory = "Cours Privés" | "Small Group";
 type BillingCycle = "Annuel" | "Mensuel";
 
 type PlanDetails = {
@@ -35,7 +35,6 @@ const defaultPricing: Record<
         "8 séances privées par mois",
         "Suivi technique sur-mesure avec le coach",
         "Accès illimité aux séances Small Group",
-        "Accès illimité aux cours collectifs",
         "Frais d'adhésion offerts",
       ],
     },
@@ -49,7 +48,6 @@ const defaultPricing: Record<
         "8 séances privées par mois",
         "Suivi technique sur-mesure avec le coach",
         "Accès illimité aux séances Small Group",
-        "Accès illimité aux cours collectifs",
         "Possibilité d'inviter un(e) ami(e)",
         "Frais d'adhésion offerts",
       ],
@@ -64,7 +62,7 @@ const defaultPricing: Record<
       commitmentKey: "annual",
       features: [
         "Accès illimité aux séances Small Group",
-        "Suivi technique personnalisé en groupe réduit",
+        "Suivi technique personnalisé en groupe réduit (12 max)",
         "Toutes disciplines incluses",
         "Frais d'adhésion : 90€",
       ],
@@ -77,37 +75,9 @@ const defaultPricing: Record<
       commitmentKey: "monthly",
       features: [
         "Accès illimité aux séances Small Group",
-        "Suivi technique personnalisé en groupe réduit",
+        "Suivi technique personnalisé en groupe réduit (12 max)",
         "Toutes disciplines incluses",
         "Frais d'adhésion : 90€",
-      ],
-    },
-  },
-  Collectifs: {
-    Annuel: {
-      price: "35€",
-      priceValue: 35,
-      subtitle: "Engagement 12 mois",
-      planKey: "collective_annual",
-      commitmentKey: "annual",
-      features: [
-        "Accès illimité aux cours collectifs officiels",
-        "Kick Boxing & Striking",
-        "Préparation physique & cardio combat",
-        "Frais d'adhésion : 39€",
-      ],
-    },
-    Mensuel: {
-      price: "60€",
-      priceValue: 60,
-      subtitle: "Sans engagement",
-      planKey: "collective_monthly",
-      commitmentKey: "monthly",
-      features: [
-        "Accès illimité aux cours collectifs officiels",
-        "Kick Boxing & Striking",
-        "Préparation physique & cardio combat",
-        "Frais d'adhésion : 39€",
       ],
     },
   },
@@ -115,34 +85,30 @@ const defaultPricing: Record<
 
 interface PricingSectionProps {
   isSmallGroupActive?: boolean;
-  isCollectiveActive?: boolean;
   isPrivateActive?: boolean;
 }
 
 const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
   { id: "Small Group", label: "Small Group", icon: Users, badge: "Recommandé" },
-  { id: "Collectifs", label: "Collectifs", icon: Layers, badge: "Accès libre" },
   { id: "Cours Privés", label: "Cours Privés", icon: ShieldCheck, badge: "Sur-mesure" },
 ];
 
 export default function PricingSection({
-  isSmallGroupActive = false,
-  isCollectiveActive = true,
+  isSmallGroupActive = true,
   isPrivateActive = true,
 }: PricingSectionProps = {}) {
   const supabase = createClient();
 
   const categories = ALL_CATEGORIES.filter((cat) => {
     if (cat.id === "Small Group") return isSmallGroupActive;
-    if (cat.id === "Collectifs") return isCollectiveActive;
     if (cat.id === "Cours Privés") return isPrivateActive;
     return true;
   });
 
   const defaultCategory: PlanCategory =
-    categories.find((c) => c.id === "Collectifs")?.id ||
+    categories.find((c) => c.id === "Small Group")?.id ||
     categories[0]?.id ||
-    "Collectifs";
+    "Small Group";
 
   const [activeCategory, setActiveCategory] = useState<PlanCategory>(defaultCategory);
   const [activeCycle, setActiveCycle] = useState<BillingCycle>("Annuel");
@@ -151,7 +117,7 @@ export default function PricingSection({
   // Sécurisation : si la catégorie active n'est pas dans les catégories autorisées, basculer vers la première disponible
   const currentCategory: PlanCategory = categories.some((c) => c.id === activeCategory)
     ? activeCategory
-    : (categories[0]?.id || "Collectifs");
+    : (categories[0]?.id || "Small Group");
 
   // Synchronisation dynamique avec public.plans (Supabase)
   useEffect(() => {
@@ -176,12 +142,6 @@ export default function PricingSection({
                   updated["Small Group"][cycle].priceValue = euros;
                   updated["Small Group"][cycle].planKey = p.code || p.id;
                 }
-              } else if (p.type === "collective") {
-                if (updated["Collectifs"]?.[cycle]) {
-                  updated["Collectifs"][cycle].price = `${euros}€`;
-                  updated["Collectifs"][cycle].priceValue = euros;
-                  updated["Collectifs"][cycle].planKey = p.code || p.id;
-                }
               } else if (p.type === "private" && (p.private_sessions_per_period === 8 || !p.private_sessions_per_period)) {
                 if (updated["Cours Privés"]?.[cycle]) {
                   updated["Cours Privés"][cycle].price = `${euros}€`;
@@ -204,7 +164,7 @@ export default function PricingSection({
 
   const currentPlan =
     livePricing[currentCategory]?.[activeCycle] ||
-    defaultPricing["Collectifs"][activeCycle];
+    defaultPricing["Small Group"][activeCycle];
 
   return (
     <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">

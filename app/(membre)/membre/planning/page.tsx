@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 /**
  * Page Planning de l'espace membre — /membre/planning
  *
- * Permet la réservation des cours Small Group et la consultation des cours collectifs.
+ * Permet la réservation des cours Small Group et des cours privés.
  */
 export default function MembrePlanningPage() {
   return <MemberPlanningView />;

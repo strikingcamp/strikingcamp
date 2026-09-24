@@ -99,8 +99,6 @@ export async function POST(req: NextRequest) {
         sessionType =
           session.type === "private"
             ? "Cours Privé"
-            : session.type === "collective"
-            ? "Collectif"
             : "Small Group";
 
         if (session.starts_at) {

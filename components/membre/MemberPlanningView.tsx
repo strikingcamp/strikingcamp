@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 // TYPES
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-type Category = "Cours privés" | "Small Group" | "Collectifs";
+type Category = "Cours privés" | "Small Group";
 type DayName = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
 
 interface DemoSlot {
@@ -177,8 +177,7 @@ function generateSlotsFromData(
           rawType === "prive" ||
           (s.discipline || "").toLowerCase().includes("privé") ||
           (s.discipline || "").toLowerCase().includes("prive");
-        const isCol = rawType === "collective" || rawType === "collectif";
-        const category: Category = isPriv ? "Cours privés" : isCol ? "Collectifs" : "Small Group";
+        const category: Category = isPriv ? "Cours privés" : "Small Group";
 
         const isCardio =
           (s.level || "").toLowerCase().includes("cardio") ||
@@ -195,7 +194,7 @@ function generateSlotsFromData(
           endTime = formatToParisTime(eDate);
         }
 
-        const maxCapacity = s.max_capacity ?? (isPriv ? 1 : isCol ? 50 : 12);
+        const maxCapacity = s.max_capacity ?? (isPriv ? 1 : 12);
 
         // Réservations confirmées associées à cette séance (class_session.id)
         const bookingsForSession = allConfirmedBookings.filter(
@@ -229,8 +228,6 @@ function generateSlotsFromData(
 
         const isOccupiedByOther = isPriv
           ? (bookingsForSession.some((b) => b.user_id !== currentUserId) || (bookedCount >= 1 && !isBookedByMe))
-          : isCol
-          ? false
           : (bookedCount >= maxCapacity && !isBookedByMe);
 
         const endsAtIso = s.ends_at || null;
@@ -253,7 +250,7 @@ function generateSlotsFromData(
           startTime,
           endTime,
           discipline,
-          level: s.level || (isPriv ? "Individuel (50 min)" : isCol ? "Tous niveaux (Accès libre)" : "Fondamentaux"),
+          level: s.level || (isPriv ? "Individuel (50 min)" : "Fondamentaux"),
           maxCapacity,
           bookedCount,
           isOccupiedByOther,
@@ -281,7 +278,6 @@ export default function MemberPlanningView() {
     hasPrivateAccess,
     isSmallGroupEnabled,
     isPrivateEnabled,
-    isCollectiveEnabled,
     bookSmallGroup,
     cancelSmallGroup,
     bookSlot,
@@ -293,9 +289,8 @@ export default function MemberPlanningView() {
     const cats: Category[] = [];
     if (isPrivateEnabled) cats.push("Cours privés");
     if (isSmallGroupEnabled) cats.push("Small Group");
-    if (isCollectiveEnabled) cats.push("Collectifs");
     return cats;
-  }, [isPrivateEnabled, isSmallGroupEnabled, isCollectiveEnabled]);
+  }, [isPrivateEnabled, isSmallGroupEnabled]);
 
   // Onglets & Navigation
   const [activeCategory, setActiveCategory] = useState<Category>(() => availableCategories[0] || "Cours privés");
@@ -383,10 +378,9 @@ export default function MemberPlanningView() {
     return rawSlots.filter(s => {
       if (s.category === "Small Group" && !isSmallGroupEnabled) return false;
       if (s.category === "Cours privés" && !isPrivateEnabled) return false;
-      if (s.category === "Collectifs" && !isCollectiveEnabled) return false;
       return true;
     });
-  }, [availableSessions, userBookings, allConfirmedBookings, currentUserId, mondayDate, dayDateMap, isSmallGroupEnabled, isPrivateEnabled, isCollectiveEnabled]);
+  }, [availableSessions, userBookings, allConfirmedBookings, currentUserId, mondayDate, dayDateMap, isSmallGroupEnabled, isPrivateEnabled]);
 
   // Créneaux privés pour le jour sélectionné (triés chronologiquement)
   const privateSlotsForSelectedDay = useMemo(() => {
@@ -395,7 +389,7 @@ export default function MemberPlanningView() {
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [slots, selectedDayName]);
 
-  // Groupement des séances Small Group & Collectifs par jour
+  // Groupement des séances Small Group par jour
   const weekSessionsByDay = useMemo(() => {
     const grouped: Record<DayName, DemoSlot[]> = {
       Lundi: [], Mardi: [], Mercredi: [], Jeudi: [], Vendredi: [], Samedi: [],
@@ -606,7 +600,6 @@ export default function MemberPlanningView() {
       {availableCategories.length > 0 && (
         <div className={cn(
           "bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid gap-1.5 shadow-xl shadow-black/30",
-          availableCategories.length === 3 ? "grid-cols-3" :
           availableCategories.length === 2 ? "grid-cols-2" : "grid-cols-1"
         )}>
           {isPrivateEnabled && (
@@ -635,21 +628,6 @@ export default function MemberPlanningView() {
             >
               <Users size={16} />
               <span>Small Group</span>
-            </button>
-          )}
-
-          {isCollectiveEnabled && (
-            <button
-              onClick={() => setActiveCategory("Collectifs")}
-              className={cn(
-                "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-                activeCategory === "Collectifs"
-                  ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-                  : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-              )}
-            >
-              <CalendarIcon size={16} />
-              <span>Collectifs</span>
             </button>
           )}
         </div>
@@ -1306,81 +1284,7 @@ export default function MemberPlanningView() {
         </div>
       )}
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          SECTION 3 : COLLECTIFS (3 COURS — AUCUN BOUTON RÉSERVER)
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {activeCategory === "Collectifs" && (
-        <div className="space-y-6">
-          <div className="bg-brand-white/5 border border-brand-white/10 rounded-2xl p-4 flex items-center gap-3 text-xs text-brand-white/80">
-            <Info size={18} className="shrink-0 text-[#00d8ff]" />
-            <span>
-              <strong>Cours Collectifs Officiels (Kick Boxing) :</strong> En accès libre et illimité pour tous les membres actifs du club. Présentez-vous directement à la salle aux horaires indiqués ci-dessous (sans réservation).
-            </span>
-          </div>
 
-          <div className="space-y-3">
-            {activeDaysWithSessions.length === 0 && (
-              <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
-                <p className="text-sm font-heading font-bold uppercase text-brand-white">
-                  Aucun cours collectif programmé cette semaine
-                </p>
-                <p className="text-xs text-brand-white/50">
-                  Consultez les autres semaines ou contactez l&apos;accueil du club.
-                </p>
-              </div>
-            )}
-            {DAYS_ORDER.map(day => {
-              const daySessions = weekSessionsByDay[day];
-              if (!daySessions || daySessions.length === 0) return null;
-
-              return (
-                <div key={day} className="space-y-3">
-                  <div className="flex items-center gap-2 border-b border-brand-white/10 pb-2">
-                    <span className="w-1.5 h-4 rounded-full bg-brand-white" />
-                    <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                      {day}
-                    </h3>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {daySessions.map(session => (
-                      <div
-                        key={session.id}
-                        className="border border-brand-white/10 bg-[#0f172a] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="text-base sm:text-lg font-heading font-bold uppercase tracking-wide text-brand-white">
-                              {session.discipline}
-                            </span>
-                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-brand-white/10 text-brand-white border-brand-white/20">
-                              {session.level}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3 text-xs text-brand-white/60">
-                            <span className="flex items-center gap-1 font-bold text-[#00d8ff]">
-                              <Clock size={13} />
-                              {session.startTime} → {session.endTime}
-                            </span>
-                            <span className="text-brand-white/40">
-                              • 60 min · Collectif
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="px-3.5 py-1.5 bg-brand-white/5 border border-brand-white/10 rounded-xl text-xs font-semibold uppercase text-brand-white/60 text-center">
-                          Accès libre sans réservation
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODAL 1 : CONFIRMATION DE RÉSERVATION

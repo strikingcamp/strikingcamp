@@ -38,7 +38,7 @@ export interface BookingEmailData {
   memberEmail: string;
   memberName: string;
   discipline: string;
-  sessionType: string; // "Small Group" | "Cours Privé" | "Collectif"
+  sessionType: string; // "Small Group" | "Cours Privé"
   date: string;
   time: string;
   location?: string;
@@ -549,13 +549,13 @@ export async function sendAdminTrialBookingNotification(
             <tr>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Format</td>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 14px; font-weight: bold;">
-                Cours d'Essai (${data.sessionType || "Collectif"})
+                Cours d'Essai (${data.sessionType || "Small Group"})
               </td>
             </tr>
             <tr>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Tarif</td>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #00d8ff; font-size: 15px; font-weight: bold;">
-                ${data.price || "10 €"}
+                ${data.price || "15 €"}
               </td>
             </tr>
             <tr>

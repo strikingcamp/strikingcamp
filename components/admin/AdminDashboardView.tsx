@@ -25,7 +25,7 @@ export default function AdminDashboardView({
     totalMembers,
     activeSubscriptionsCount,
     smallGroupSubscriptionsCount,
-    collectiveSubscriptionsCount,
+    privateSubscriptionsCount,
     todayBookingsCount,
     upcomingSessionsToday,
     recentBookings,
@@ -34,7 +34,7 @@ export default function AdminDashboardView({
 
   // Calcul du taux d'occupation moyen du jour (sur base 12 places par session Small Group)
   const totalCapacityToday = upcomingSessionsToday.reduce(
-    (acc, s) => acc + (s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12)),
+    (acc, s) => acc + (s.max_capacity || (s.type === "private" ? 1 : 12)),
     0
   );
   const occupancyRate =
@@ -110,7 +110,7 @@ export default function AdminDashboardView({
               {activeSubscriptionsCount}
             </div>
             <p className="text-[11px] text-[#22c55e] font-semibold">
-              {smallGroupSubscriptionsCount} Small Group · {collectiveSubscriptionsCount} Collectif
+              {smallGroupSubscriptionsCount} Small Group · {privateSubscriptionsCount} Privé
             </p>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function AdminDashboardView({
                             {session.discipline}
                           </span>
                           <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/20">
-                            {session.type === "small_group" ? "Small Group" : "Collectif"}
+                            {session.type === "private" ? "Privé" : "Small Group"}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-brand-white/60">

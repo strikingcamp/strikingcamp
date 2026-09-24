@@ -5,7 +5,7 @@ export interface AdminDashboardStats {
   totalMembers: number;
   activeSubscriptionsCount: number;
   smallGroupSubscriptionsCount: number;
-  collectiveSubscriptionsCount: number;
+  privateSubscriptionsCount: number;
   todayBookingsCount: number;
   upcomingSessionsToday: AdminClassSessionSummary[];
   recentBookings: AdminBookingSummary[];
@@ -75,7 +75,7 @@ export interface AdminBookingSummary {
 
 export interface AdminSessionFormData {
   discipline: string;
-  type: "small_group" | "collective";
+  type: "small_group" | "private";
   level?: string;
   starts_at: string;
   ends_at: string;
@@ -138,7 +138,7 @@ export interface AdminSubscriptionsData {
   stats: {
     totalCount: number;
     activeSmallGroupCount: number;
-    activeCollectiveCount: number;
+    activePrivateCount: number;
     pausedCount: number;
     suspendedCount: number;
     expiredCount: number;
@@ -209,7 +209,6 @@ export interface AdminMembersPageData {
     withActiveSubscription: number;
     withoutSubscription: number;
     smallGroupMembers: number;
-    collectiveMembers: number;
     privateMembers: number;
   };
 }
@@ -309,7 +308,7 @@ export async function getAdminDashboardData(
     const subscriptionsData = subscriptionsRes.data;
     const subError = subscriptionsRes.error;
     let smallGroupCount = 0;
-    let collectiveCount = 0;
+    let privateCount = 0;
 
     if (!subError && subscriptionsData) {
       for (const sub of subscriptionsData) {
@@ -317,8 +316,8 @@ export async function getAdminDashboardData(
         const pType = (rawPlan?.type || "").toLowerCase();
         if (pType === "small_group" || (rawPlan?.name || "").toLowerCase().includes("small group")) {
           smallGroupCount++;
-        } else if (pType === "collective" || (rawPlan?.name || "").toLowerCase().includes("collectif")) {
-          collectiveCount++;
+        } else {
+          privateCount++;
         }
       }
     }
@@ -380,7 +379,7 @@ export async function getAdminDashboardData(
           level: s.level,
           starts_at: s.starts_at,
           ends_at: s.ends_at,
-          max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
+          max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
           bookedCount: count,
           is_active: s.is_active ?? true,
         });
@@ -468,7 +467,7 @@ export async function getAdminDashboardData(
       totalMembers: totalMembersCount || 0,
       activeSubscriptionsCount: subscriptionsData?.length || 0,
       smallGroupSubscriptionsCount: smallGroupCount,
-      collectiveSubscriptionsCount: collectiveCount,
+      privateSubscriptionsCount: privateCount,
       todayBookingsCount: todayBookingsTotal,
       upcomingSessionsToday,
       recentBookings,
@@ -480,7 +479,7 @@ export async function getAdminDashboardData(
       totalMembers: 0,
       activeSubscriptionsCount: 0,
       smallGroupSubscriptionsCount: 0,
-      collectiveSubscriptionsCount: 0,
+      privateSubscriptionsCount: 0,
       todayBookingsCount: 0,
       upcomingSessionsToday: [],
       recentBookings: [],
@@ -547,7 +546,7 @@ export async function getAdminWeeklyPlanning(
     level: s.level,
     starts_at: s.starts_at,
     ends_at: s.ends_at,
-    max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
+    max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
     bookedCount: bookingCountsMap.get(s.id) || 0,
     is_active: s.is_active ?? true,
   }));
@@ -600,7 +599,7 @@ export async function getAdminSessionReservations(
       level: s.level,
       starts_at: s.starts_at,
       ends_at: s.ends_at,
-      max_capacity: s.max_capacity || (s.type === "collective" ? 50 : s.type === "private" ? 1 : 12),
+      max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
       bookedCount: countsMap.get(s.id) || 0,
       is_active: s.is_active ?? true,
     }));
@@ -626,7 +625,7 @@ export async function getAdminSessionReservations(
       level: activeSessionRaw.level,
       starts_at: activeSessionRaw.starts_at,
       ends_at: activeSessionRaw.ends_at,
-      max_capacity: activeSessionRaw.max_capacity || (activeSessionRaw.type === "collective" ? 50 : activeSessionRaw.type === "private" ? 1 : 12),
+      max_capacity: activeSessionRaw.max_capacity || (activeSessionRaw.type === "private" ? 1 : 12),
       bookedCount: countsMap.get(activeSessionRaw.id) || 0,
       is_active: activeSessionRaw.is_active ?? true,
     };
@@ -1194,11 +1193,7 @@ export async function getAdminWeeklyReservationsData(
         rawType === "prive" ||
         (s.discipline || "").toLowerCase().includes("privé") ||
         (s.discipline || "").toLowerCase().includes("prive");
-      const hasConfirmedBookings = (confirmedCountsMap.get(s.id) || 0) > 0;
-      const isCol = rawType === "collective";
-      if (isPriv) return false;
-      if (hasConfirmedBookings) return true;
-      return !isCol;
+      return !isPriv;
     });
 
     const smallGroupSessions: AdminClassSessionSummary[] = [];
@@ -1409,7 +1404,7 @@ export async function createClassSessionAdmin(
         level: formData.level?.trim() || null,
         starts_at: formData.starts_at,
         ends_at: formData.ends_at,
-        max_capacity: formData.max_capacity || (formData.type === "collective" ? 50 : 12),
+        max_capacity: formData.max_capacity || (formData.type === "private" ? 1 : 12),
         is_active: formData.is_active ?? true,
       },
     ])
@@ -1577,7 +1572,7 @@ export async function getAdminSubscriptionsData(
     }
 
     let activeSmallGroupCount = 0;
-    let activeCollectiveCount = 0;
+    let activePrivateCount = 0;
     let pausedCount = 0;
     let expiredCount = 0;
 
@@ -1612,8 +1607,8 @@ export async function getAdminSubscriptionsData(
           status = "active";
           if (planType === "small_group" || planName.toLowerCase().includes("small group")) {
             activeSmallGroupCount++;
-          } else if (planType === "collective" || planName.toLowerCase().includes("collectif")) {
-            activeCollectiveCount++;
+          } else {
+            activePrivateCount++;
           }
         }
 
@@ -1642,7 +1637,7 @@ export async function getAdminSubscriptionsData(
       stats: {
         totalCount: subscriptions.length,
         activeSmallGroupCount,
-        activeCollectiveCount,
+        activePrivateCount,
         pausedCount,
         suspendedCount: pausedCount,
         expiredCount,
@@ -1657,7 +1652,7 @@ export async function getAdminSubscriptionsData(
       stats: {
         totalCount: 0,
         activeSmallGroupCount: 0,
-        activeCollectiveCount: 0,
+        activePrivateCount: 0,
         pausedCount: 0,
         suspendedCount: 0,
         expiredCount: 0,
@@ -2077,7 +2072,6 @@ export async function getAdminMembersData(
       withActiveSubscription: members.filter((m) => !!m.activeSubscription).length,
       withoutSubscription: members.filter((m) => !m.activeSubscription).length,
       smallGroupMembers: members.filter((m) => m.activeSubscription?.planType === "small_group").length,
-      collectiveMembers: members.filter((m) => m.activeSubscription?.planType === "collective").length,
       privateMembers: members.filter((m) => m.activeSubscription?.planType === "private").length,
     };
 
@@ -2096,7 +2090,6 @@ export async function getAdminMembersData(
         withActiveSubscription: 0,
         withoutSubscription: 0,
         smallGroupMembers: 0,
-        collectiveMembers: 0,
         privateMembers: 0,
       },
     };

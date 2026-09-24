@@ -37,7 +37,7 @@ export default function AdminServicesView() {
     setFetchError(null);
     try {
       const list = await getAdminServiceSettingsList(supabase);
-      setServices(list);
+      setServices(list.filter((s) => s.service_key !== "collective"));
     } catch (err: any) {
       console.error("[AdminServicesView] Erreur chargement services :", err);
       setFetchError(err?.message || "Impossible de charger la configuration des services depuis Supabase.");
@@ -94,8 +94,6 @@ export default function AdminServicesView() {
         return <User size={22} className="text-[#00d8ff]" />;
       case "small_group":
         return <Users size={22} className="text-amber-400" />;
-      case "collective":
-        return <Layers size={22} className="text-sky-400" />;
       case "events":
         return <Calendar size={22} className="text-emerald-400" />;
       default:
@@ -118,13 +116,6 @@ export default function AdminServicesView() {
           bg: "bg-amber-950/20",
           glow: "shadow-amber-500/10",
           accent: "#f59e0b",
-        };
-      case "collective":
-        return {
-          border: "border-sky-500/30",
-          bg: "bg-sky-950/20",
-          glow: "shadow-sky-500/10",
-          accent: "#38bdf8",
         };
       case "events":
         return {
@@ -286,13 +277,7 @@ export default function AdminServicesView() {
                     <ArrowRight size={12} className="text-[#00d8ff]" />
                     Effet immédiat :
                   </div>
-                  {service.service_key === "collective" && (
-                    <p>
-                      {service.is_active
-                        ? "Tarifs, planning public et planning membre des cours collectifs visibles."
-                        : "Cours collectifs masqués des tarifs, planning et cours d'essai. Réservations bloquées."}
-                    </p>
-                  )}
+
                   {service.service_key === "small_group" && (
                     <p>
                       {service.is_active

@@ -4,7 +4,6 @@ import { computeCumulativeAccess, type CumulativeMemberAccess } from "@/lib/acce
 export interface MemberPlanAccess {
   hasActiveSubscription: boolean;
   hasSmallGroupAccess: boolean;
-  hasCollectiveAccess: boolean;
   hasPrivateAccess: boolean;
   privateSessionsQuota?: number | null;
   planName?: string;
@@ -32,7 +31,7 @@ export interface SmallGroupBooking {
   class_session_id?: string | null;
   classSessionId?: string | null;
   discipline: string;
-  sessionType: "Cours Privé" | "Small Group" | "Collectifs";
+  sessionType: "Cours Privé" | "Small Group";
   day: string;
   time: string;
   level?: string;
@@ -53,7 +52,7 @@ export async function getMemberPlanAccess(
   const { data: subscriptionsData, error } = await supabase
     .from("subscriptions")
     .select(
-      "id, status, started_at, ends_at, private_sessions_quota, plan:plans(id, name, type, commitment, allows_private, allows_small_group, allows_collective)"
+      "id, status, started_at, ends_at, private_sessions_quota, plan:plans(id, name, type, commitment, allows_private, allows_small_group)"
     )
     .eq("user_id", userId)
     .eq("status", "active")
@@ -69,7 +68,6 @@ export async function getMemberPlanAccess(
     return {
       hasActiveSubscription: false,
       hasSmallGroupAccess: false,
-      hasCollectiveAccess: false,
       hasPrivateAccess: false,
       privateSessionsQuota: null,
       activePlanNames: [],
@@ -87,7 +85,6 @@ export async function getMemberPlanAccess(
   return {
     hasActiveSubscription: cumulative.hasActiveSubscription,
     hasSmallGroupAccess: cumulative.hasSmallGroupAccess,
-    hasCollectiveAccess: cumulative.hasCollectiveAccess,
     hasPrivateAccess: cumulative.hasPrivateAccess,
     privateSessionsQuota: cumulative.privateSessionsQuota,
     planName: primaryPlanName,
@@ -217,11 +214,8 @@ export async function getMemberUpcomingBookings(
       rawType === "prive" ||
       (session?.discipline || "").toLowerCase().includes("privé") ||
       (session?.discipline || "").toLowerCase().includes("prive");
-    const isCollective = rawType === "collective" || rawType === "collectif";
-    const sessionType: "Cours Privé" | "Small Group" | "Collectifs" = isPrivate
+    const sessionType: "Cours Privé" | "Small Group" = isPrivate
       ? "Cours Privé"
-      : isCollective
-      ? "Collectifs"
       : "Small Group";
 
     result.push({

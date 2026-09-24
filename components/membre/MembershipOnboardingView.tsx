@@ -38,7 +38,6 @@ export default function MembershipOnboardingView() {
     refreshMemberData,
     isSmallGroupEnabled,
     isPrivateEnabled,
-    isCollectiveEnabled,
   } = useMember();
 
   const [plans, setPlans] = useState<MembershipPlanOption[]>([]);
@@ -107,7 +106,6 @@ export default function MembershipOnboardingView() {
   const filteredPlans = plans.filter((p) => {
     if (p.type === "private" && !isPrivateEnabled) return false;
     if (p.type === "small_group" && !isSmallGroupEnabled) return false;
-    if (p.type === "collective" && !isCollectiveEnabled) return false;
     if (p.commitment) {
       return p.commitment === commitmentType;
     }
@@ -323,7 +321,7 @@ export default function MembershipOnboardingView() {
 
       {/* Grille des formules disponibles */}
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredPlans.map((plan) => {
             const isSelected = selectedPlanId === plan.id;
             const isPriv = plan.allows_private || plan.type === "private";
@@ -352,13 +350,13 @@ export default function MembershipOnboardingView() {
                   <div className="flex items-center gap-3">
                     <div className={cn(
                       "w-10 h-10 rounded-xl flex items-center justify-center",
-                      isPriv ? "bg-[#00d8ff]/15 text-[#00d8ff]" : isSg ? "bg-amber-500/15 text-amber-400" : "bg-blue-500/15 text-blue-400"
+                      isPriv ? "bg-[#00d8ff]/15 text-[#00d8ff]" : "bg-amber-500/15 text-amber-400"
                     )}>
-                      {isPriv ? <Flame size={20} /> : isSg ? <Users size={20} /> : <Award size={20} />}
+                      {isPriv ? <Flame size={20} /> : <Users size={20} />}
                     </div>
                     <div>
                       <span className="text-[10px] font-heading font-black uppercase tracking-wider text-brand-white/40 block">
-                        {isPriv ? "Formule Premium" : isSg ? "Formule Semi-Privée" : "Accès Collectif"}
+                        {isPriv ? "Formule Premium" : "Formule Small Group"}
                       </span>
                       <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                         {plan.name}
@@ -387,13 +385,9 @@ export default function MembershipOnboardingView() {
                     {(isPriv || isSg) && (
                       <div className="flex items-center gap-2">
                         <Check size={14} className="text-brand-blue shrink-0" />
-                        <span>Accès illimité aux <strong>Small Groups</strong> (20 max)</span>
+                        <span>Accès illimité aux <strong>Small Groups</strong> (12 max)</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Check size={14} className="text-brand-blue shrink-0" />
-                      <span>Accès illimité aux <strong>Cours Collectifs</strong></span>
-                    </div>
                     <div className="flex items-center gap-2">
                       <Check size={14} className="text-brand-blue shrink-0" />
                       <span>Suivi de progression & Accès aux Défis</span>

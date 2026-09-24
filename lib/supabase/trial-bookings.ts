@@ -28,7 +28,7 @@ export interface TrialBookingResult {
 export interface TrialSessionOption {
   id: string;
   discipline: string;
-  type: "small_group" | "collective" | "private";
+  type: "small_group" | "private";
   level?: string | null;
   starts_at: string;
   ends_at?: string | null;
@@ -69,30 +69,6 @@ export async function isSmallGroupServiceActive(
   } catch (err) {
     console.error("[isSmallGroupServiceActive] Erreur lecture service_settings :", err);
     return false;
-  }
-}
-
-/**
- * Vérifie si le service Cours Collectifs est actif dans public.service_settings.
- */
-export async function isCollectiveServiceActive(
-  supabase: SupabaseClient
-): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .from("service_settings")
-      .select("is_active")
-      .eq("service_key", "collective")
-      .maybeSingle();
-
-    if (error || !data) {
-      return true; // Actif par défaut si non spécifié
-    }
-
-    return Boolean(data.is_active);
-  } catch (err) {
-    console.error("[isCollectiveServiceActive] Erreur lecture service_settings :", err);
-    return true;
   }
 }
 

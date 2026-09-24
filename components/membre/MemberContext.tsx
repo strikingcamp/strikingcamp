@@ -31,7 +31,7 @@ import { getConfirmedBookingsSummaryAction } from "@/app/(membre)/actions";
 export type BookingSlot = {
   id?: string;
   discipline: string;
-  sessionType: "Cours Privé" | "Small Group" | "Collectifs";
+  sessionType: "Cours Privé" | "Small Group";
   day: string;
   time: string;
   level?: string;
@@ -109,7 +109,6 @@ interface MemberContextType {
   hasActiveSubscription: boolean;
   hasPrivateAccess: boolean;
   hasSmallGroupAccess: boolean;
-  hasCollectiveAccess: boolean;
   planName: string;
   activePlanNames: string[];
   privateSessionsQuota: number | null;
@@ -124,7 +123,6 @@ interface MemberContextType {
   serviceSettings: Record<string, boolean>;
   isSmallGroupEnabled: boolean;
   isPrivateEnabled: boolean;
-  isCollectiveEnabled: boolean;
   isEventsEnabled: boolean;
 
   // Real & Synchronized User Bookings
@@ -157,7 +155,6 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   const [hasActiveSubscription, setHasActiveSubscription] = useState(true);
   const [hasPrivateAccess, setHasPrivateAccess] = useState(true);
   const [hasSmallGroupAccess, setHasSmallGroupAccess] = useState(true);
-  const [hasCollectiveAccess, setHasCollectiveAccess] = useState(true);
   const [planName, setPlanName] = useState("Formule Complète");
   const [activePlanNames, setActivePlanNames] = useState<string[]>(["Cours Privé - Mensuel", "Small Group"]);
   const [privateSessionsQuota, setPrivateSessionsQuota] = useState<number | null>(8);
@@ -313,7 +310,6 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         setHasActiveSubscription(access.hasActiveSubscription);
         setHasPrivateAccess(access.hasPrivateAccess);
         setHasSmallGroupAccess(access.hasSmallGroupAccess);
-        setHasCollectiveAccess(access.hasCollectiveAccess);
         setPlanName(access.planName || "Formule Active");
         setActivePlanNames(access.activePlanNames || []);
         setPrivateSessionsQuota(access.privateSessionsQuota ?? 8);
@@ -459,7 +455,6 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
   const isSmallGroupEnabled = serviceSettings.small_group !== false;
   const isPrivateEnabled = serviceSettings.private !== false;
-  const isCollectiveEnabled = serviceSettings.collective !== false;
   const isEventsEnabled = serviceSettings.events !== false;
 
   return (
@@ -480,7 +475,6 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         hasActiveSubscription,
         hasPrivateAccess,
         hasSmallGroupAccess,
-        hasCollectiveAccess,
         planName,
         activePlanNames,
         privateSessionsQuota,
@@ -491,7 +485,6 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         serviceSettings,
         isSmallGroupEnabled,
         isPrivateEnabled,
-        isCollectiveEnabled,
         isEventsEnabled,
         userBookings,
         addSynchronizedBooking,

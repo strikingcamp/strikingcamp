@@ -636,7 +636,7 @@ export default function AdminParametresView({ initialData }: AdminParametresView
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-[#080d1a]/50 border border-brand-blue/20 rounded-xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-heading font-bold uppercase text-brand-blue">
@@ -651,23 +651,6 @@ export default function AdminParametresView({ initialData }: AdminParametresView
                 </p>
                 <div className="pt-2 border-t border-brand-white/5 text-[10px] text-brand-white/40">
                   Vérifié dans RPC <code>book_small_group_session</code> & templates.
-                </div>
-              </div>
-
-              <div className="bg-[#080d1a]/50 border border-brand-white/10 rounded-xl p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-heading font-bold uppercase text-brand-white/70">
-                    Cours Collectifs
-                  </span>
-                  <span className="text-xl font-heading font-black text-brand-white">
-                    {initialData.capacities.collective} max
-                  </span>
-                </div>
-                <p className="text-xs text-brand-white/60">
-                  Grandes séances d&apos;entraînement, sacs de frappe et sparring selon les niveaux.
-                </p>
-                <div className="pt-2 border-t border-brand-white/5 text-[10px] text-brand-white/40">
-                  Jauge d&apos;accueil standard pour les formules collectives.
                 </div>
               </div>
 

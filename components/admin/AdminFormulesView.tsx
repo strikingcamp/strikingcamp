@@ -42,7 +42,7 @@ export default function AdminFormulesView({
   const [plans, setPlans] = useState<AdminPlanItem[]>(initialPlans);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<
-    "all" | "small_group" | "collective" | "private"
+    "all" | "small_group" | "private"
   >("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
@@ -64,14 +64,12 @@ export default function AdminFormulesView({
     const total = plans.length;
     const active = plans.filter((p) => p.is_active).length;
     const smallGroupCount = plans.filter((p) => p.type === "small_group").length;
-    const collectiveCount = plans.filter((p) => p.type === "collective").length;
     const privateCount = plans.filter((p) => p.type === "private").length;
 
     return {
       total,
       active,
       smallGroupCount,
-      collectiveCount,
       privateCount,
     };
   }, [plans]);
@@ -213,12 +211,6 @@ export default function AdminFormulesView({
             <Users size={12} /> Small Group
           </span>
         );
-      case "collective":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            <Layers size={12} /> Collectif
-          </span>
-        );
       case "private":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
@@ -286,7 +278,7 @@ export default function AdminFormulesView({
       </div>
 
       {/* KPI STATS CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Total Formules */}
         <div className="bg-[#0f172a]/90 border border-brand-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div className="flex items-center justify-between">
@@ -347,28 +339,8 @@ export default function AdminFormulesView({
           </div>
         </div>
 
-        {/* Collectif */}
-        <div className="bg-[#0f172a]/90 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-              Collectifs
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Layers size={14} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-300">
-              {stats.collectiveCount}
-            </span>
-            <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              Accès cours illimité
-            </span>
-          </div>
-        </div>
-
         {/* Cours Privés */}
-        <div className="bg-[#0f172a]/90 border border-amber-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20 col-span-2 lg:col-span-1">
+        <div className="bg-[#0f172a]/90 border border-amber-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
               Cours Privés
@@ -413,17 +385,6 @@ export default function AdminFormulesView({
             )}
           >
             <Users size={13} /> Small Group ({stats.smallGroupCount})
-          </button>
-          <button
-            onClick={() => setTypeFilter("collective")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
-              typeFilter === "collective"
-                ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-            )}
-          >
-            <Layers size={13} /> Collectifs ({stats.collectiveCount})
           </button>
           <button
             onClick={() => setTypeFilter("private")}
