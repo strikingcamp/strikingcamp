@@ -86,7 +86,7 @@ export default function PlanningSection({
           PLANNING <span className="text-brand-blue">DES COURS</span>
         </h1>
         <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-          Découvrez nos créneaux du matin, du midi et du soir : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking et KB Shred.
+          Découvrez nos créneaux en petit comité, avec un accès illimité à toutes nos disciplines.
         </p>
       </div>
 

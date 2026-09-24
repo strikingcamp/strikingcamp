@@ -57,16 +57,15 @@ const defaultPricing: Record<
   },
   "Small Group": {
     Annuel: {
-      price: "80€",
-      priceValue: 80,
+      price: "79€",
+      priceValue: 79,
       subtitle: "Engagement 12 mois",
       planKey: "small_group_annual",
       commitmentKey: "annual",
       features: [
         "Accès illimité aux séances Small Group",
-        "Accès illimité aux cours collectifs",
         "Suivi technique personnalisé en groupe réduit",
-        "Toutes disciplines incluses (Boxe, Kick, Thaï)",
+        "Toutes disciplines incluses",
         "Frais d'adhésion : 39€",
       ],
     },
