@@ -165,10 +165,10 @@ export async function POST(req: NextRequest) {
         if (endsAt) {
           endTime = formatToParisTime(endsAt);
         } else {
-          const eDate = new Date(sDate.getTime() + 50 * 60 * 1000);
+          const eDate = new Date(sDate.getTime() + 60 * 60 * 1000);
           endTime = formatToParisTime(eDate);
         }
-        formattedTime = `${startTime} – ${endTime}`;
+        formattedTime = `${startTime} → ${endTime}`;
       }
 
       const fullName = `${cleanFirstName} ${cleanLastName}`;
@@ -215,8 +215,8 @@ export async function POST(req: NextRequest) {
         success: true,
         bookingId,
         discipline,
-        type: rawType || "collective",
-        typeLabel,
+        type: rawType || "small_group",
+        typeLabel: typeLabel || "Small Group",
         price: priceFormatted,
         priceValue,
         date: formattedDate,

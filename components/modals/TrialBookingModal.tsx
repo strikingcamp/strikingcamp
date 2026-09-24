@@ -15,7 +15,6 @@ import {
   Phone,
   Mail,
   User,
-  Flame,
   ChevronRight,
   Users,
   Check,
@@ -26,14 +25,10 @@ import { createClient } from "@/lib/supabase/client";
 import {
   getAvailableTrialSessions,
   isSmallGroupServiceActive,
-  isPrivateServiceActive,
-  isCollectiveServiceActive,
   type TrialSessionOption,
 } from "@/lib/supabase/trial-bookings";
 import {
   getTrialPriceFormatted,
-  getTrialTypeLabel,
-  getTrialCategoryLabel,
   type TrialSessionType,
 } from "@/lib/trial-pricing";
 
@@ -44,21 +39,34 @@ interface TrialBookingModalProps {
   preselectedType?: TrialSessionType;
 }
 
-export type Step = 1 | 2 | 3 | 4 | 5 | 6;
+export type Step = 1 | 2 | 3 | 4 | 5;
 
-const DISCIPLINE_DESCRIPTIONS: Record<string, string> = {
-  "Kick Boxing": "Pieds-poings, cardio et précision technique",
-  "Boxe Anglaise": "Frappe aux poings, esquives et combinaisons",
-  Boxing: "Fondamentaux de frappe, rythme et explosivité",
-  "Boxe Thaï": "Muay Thaï complet, corps-à-corps et percussions",
-  Striking: "Percussions martiales hybrides et puissance",
-  "KB Shred": "Conditioning martial haute intensité & renforcement",
-  "Boxing Shred": "Conditioning martial haute intensité & renforcement",
-  "Lady Striking": "Cours 100% féminin, technique et cardio-boxing",
-  "Boxing Bag": "Travail intensif aux sacs de frappe et endurance",
-  "Cours Privé": "Séance individuelle sur-mesure avec le coach",
-  "Conditioning / Shred": "Conditioning martial haute intensité & renforcement",
-};
+const TRIAL_DISCIPLINES = [
+  {
+    name: "Kick Boxing",
+    schedule: "Mardi · 18:00 → 19:00",
+    timeStr: "18:00 → 19:00",
+    dayName: "Mardi",
+    description: "Pieds-poings, cardio et précision technique en petit groupe encadré.",
+    badge: "Mardi 18:00 → 19:00",
+  },
+  {
+    name: "Boxe Thaï",
+    schedule: "Vendredi · 18:00 → 19:00",
+    timeStr: "18:00 → 19:00",
+    dayName: "Vendredi",
+    description: "Muay Thaï complet, percussions et corps-à-corps en petit groupe encadré.",
+    badge: "Vendredi 18:00 → 19:00",
+  },
+  {
+    name: "Boxe Anglaise",
+    schedule: "Samedi · 09:00 → 10:00",
+    timeStr: "09:00 → 10:00",
+    dayName: "Samedi",
+    description: "Noble art, travail des appuis, esquives et combinaisons en petit groupe.",
+    badge: "Samedi 09:00 → 10:00",
+  },
+];
 
 const VENUE_NAME = "Marseille Fight Club";
 const VENUE_ADDRESS = "268 avenue de la Capelette, 13010 Marseille";
@@ -67,26 +75,18 @@ export default function TrialBookingModal({
   isOpen,
   onClose,
   preselectedDiscipline,
-  preselectedType,
 }: TrialBookingModalProps) {
   const supabase = useMemo(() => createClient(), []);
 
-  // 1. État du parcours multi-étapes (1 à 6)
+  // 1. État du parcours multi-étapes (1 à 5)
   const [step, setStep] = useState<Step>(1);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessions, setSessions] = useState<TrialSessionOption[]>([]);
   const [isSmallGroupActive, setIsSmallGroupActive] = useState<boolean>(true);
-  const [isPrivateActive, setIsPrivateActive] = useState<boolean>(true);
-  const [isCollectiveActive, setIsCollectiveActive] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // 2. Données sélectionnées par le prospect
-  const [selectedType, setSelectedType] = useState<TrialSessionType | null>(
-    preselectedType || null
-  );
-  const [selectedDiscipline, setSelectedDiscipline] = useState<string>(
-    preselectedDiscipline || ""
-  );
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string>("");
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -107,13 +107,9 @@ export default function TrialBookingModal({
     time: string;
   } | null>(null);
 
-  // Chargement des créneaux réels et vérification du statut des services dès l'ouverture de la modale
+  // Chargement des créneaux réels dès l'ouverture de la modale
   useEffect(() => {
     if (isOpen) {
-      setStep(1);
-      setSelectedType(preselectedType || null);
-      setSelectedDiscipline("");
-      setSelectedSessionId("");
       setSubmitError(null);
       setLoadingSessions(true);
       setLoadError(null);
@@ -121,25 +117,30 @@ export default function TrialBookingModal({
       Promise.all([
         getAvailableTrialSessions(supabase),
         isSmallGroupServiceActive(supabase),
-        isPrivateServiceActive(supabase),
-        isCollectiveServiceActive(supabase),
       ])
-        .then(([data, smallGroupActive, privateActive, collectiveActive]) => {
+        .then(([data, smallGroupActive]) => {
           setSessions(data);
           setIsSmallGroupActive(smallGroupActive);
-          setIsPrivateActive(privateActive);
-          setIsCollectiveActive(collectiveActive);
 
-          // Si le service pré-choisi est désactivé, réinitialiser
-          if (!smallGroupActive && preselectedType === "small_group") {
-            setSelectedType(null);
+          // Si une discipline est pré-sélectionnée et correspond à un créneau d'essai officiel
+          let targetDiscipline = "";
+          if (preselectedDiscipline) {
+            const match = TRIAL_DISCIPLINES.find(
+              (d) => d.name.toLowerCase() === preselectedDiscipline.toLowerCase()
+            );
+            if (match) {
+              targetDiscipline = match.name;
+            }
           }
-          if (!privateActive && preselectedType === "private") {
-            setSelectedType(null);
+
+          if (targetDiscipline) {
+            setSelectedDiscipline(targetDiscipline);
+            setStep(2);
+          } else {
+            setSelectedDiscipline("");
+            setStep(1);
           }
-          if (!collectiveActive && preselectedType === "collective") {
-            setSelectedType(null);
-          }
+          setSelectedSessionId("");
         })
         .catch((err) => {
           console.error("Erreur chargement créneaux d'essai :", err);
@@ -149,7 +150,7 @@ export default function TrialBookingModal({
           setLoadingSessions(false);
         });
     }
-  }, [isOpen, supabase, preselectedType]);
+  }, [isOpen, supabase, preselectedDiscipline]);
 
   // Fermeture sur touche Échap
   useEffect(() => {
@@ -162,93 +163,40 @@ export default function TrialBookingModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, isSubmitting, onClose]);
 
-  // Nombre de créneaux disponibles par type de cours
-  const availableCountsByType = useMemo(() => {
-    let privateCount = 0;
-    let smallGroupCount = 0;
-    let collectiveCount = 0;
+  // Nombre de créneaux disponibles par discipline
+  const availableCountsByDiscipline = useMemo(() => {
+    let kickBoxingCount = 0;
+    let boxeThaiCount = 0;
+    let boxeAnglaiseCount = 0;
 
     for (const s of sessions) {
       if (s.isAvailable) {
-        if (s.type === "private") privateCount++;
-        else if (s.type === "small_group") smallGroupCount++;
-        else if (s.type === "collective") collectiveCount++;
+        const disc = s.discipline.toLowerCase();
+        if (disc === "kick boxing") kickBoxingCount++;
+        else if (disc === "boxe thaï") boxeThaiCount++;
+        else if (disc === "boxe anglaise" || disc === "boxing") boxeAnglaiseCount++;
       }
     }
 
     return {
-      private: privateCount,
-      small_group: smallGroupCount,
-      collective: collectiveCount,
+      "Kick Boxing": kickBoxingCount,
+      "Boxe Thaï": boxeThaiCount,
+      "Boxe Anglaise": boxeAnglaiseCount,
     };
   }, [sessions]);
 
-  // Liste des disciplines disponibles pour le format sélectionné (Étape 2)
-  const availableDisciplinesForType = useMemo(() => {
-    if (!selectedType) return [];
-
-    const map = new Map<string, { name: string; count: number }>();
-
-    for (const s of sessions) {
-      if (s.type === selectedType && s.isAvailable) {
-        const existing = map.get(s.discipline);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          map.set(s.discipline, { name: s.discipline, count: 1 });
-        }
-      }
-    }
-
-    if (map.size === 0) {
-      let fallbackList: string[] = [];
-      if (selectedType === "collective") {
-        fallbackList = ["Kick Boxing", "Boxe Anglaise", "Boxe Thaï"];
-      } else if (selectedType === "small_group") {
-        fallbackList = [
-          "Boxing Bag",
-          "Boxing",
-          "KB Shred",
-          "Lady Striking",
-          "Kick Boxing",
-          "Boxe Anglaise",
-          "Boxe Thaï",
-        ];
-      } else {
-        // private
-        fallbackList = [
-          "Boxe Anglaise",
-          "Kick Boxing",
-          "Boxe Thaï",
-          "Striking",
-          "Boxing Shred",
-        ];
-      }
-
-      return fallbackList.map((d) => ({
-        name: d,
-        count: 0,
-        desc: DISCIPLINE_DESCRIPTIONS[d] || "Séance sur-mesure encadrée par le coach",
-      }));
-    }
-
-    return Array.from(map.values()).map((item) => ({
-      name: item.name,
-      count: item.count,
-      desc: DISCIPLINE_DESCRIPTIONS[item.name] || "Discipline encadrée par le coach",
-    }));
-  }, [sessions, selectedType]);
-
-  // Créneaux filtrés par type ET par discipline (Étape 3)
+  // Créneaux filtrés pour la discipline sélectionnée (Étape 2)
   const filteredSessions = useMemo(() => {
-    if (!selectedType || !selectedDiscipline) return [];
-    return sessions.filter(
-      (s) =>
-        s.type === selectedType &&
-        s.discipline.toLowerCase() === selectedDiscipline.toLowerCase() &&
-        s.isAvailable
-    );
-  }, [sessions, selectedType, selectedDiscipline]);
+    if (!selectedDiscipline) return [];
+    return sessions.filter((s) => {
+      const sDisc = s.discipline.toLowerCase();
+      const selDisc = selectedDiscipline.toLowerCase();
+      const match =
+        sDisc === selDisc ||
+        (selDisc.includes("anglaise") && (sDisc.includes("anglaise") || sDisc === "boxing"));
+      return match && s.isAvailable;
+    });
+  }, [sessions, selectedDiscipline]);
 
   // Séance sélectionnée
   const selectedSession = useMemo(() => {
@@ -256,44 +204,26 @@ export default function TrialBookingModal({
   }, [sessions, selectedSessionId]);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Gestionnaires de navigation du parcours
+  // Navigation du parcours
   // ───────────────────────────────────────────────────────────────────────────
 
-  // Étape 1 ➔ Étape 2 : Choix du format
-  const handleSelectType = (type: TrialSessionType) => {
-    if (type === "small_group" && !isSmallGroupActive) {
-      return;
-    }
-    if (type === "private" && !isPrivateActive) {
-      return;
-    }
-    if (type === "collective" && !isCollectiveActive) {
-      return;
-    }
-    setSelectedType(type);
-    setSelectedDiscipline("");
+  // Étape 1 ➔ Étape 2 : Choix de la discipline
+  const handleSelectDiscipline = (disc: string) => {
+    setSelectedDiscipline(disc);
     setSelectedSessionId("");
     setSubmitError(null);
     setStep(2);
   };
 
-  // Étape 2 ➔ Étape 3 : Choix de la discipline
-  const handleSelectDiscipline = (disc: string) => {
-    setSelectedDiscipline(disc);
-    setSelectedSessionId("");
+  // Étape 2 ➔ Étape 3 : Choix du créneau
+  const handleSelectSession = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
     setSubmitError(null);
     setStep(3);
   };
 
-  // Étape 3 ➔ Étape 4 : Choix du créneau
-  const handleSelectSession = (sessionId: string) => {
-    setSelectedSessionId(sessionId);
-    setSubmitError(null);
-    setStep(4);
-  };
-
-  // Étape 4 ➔ Étape 5 : Coordonnées ➔ Récapitulatif
-  const handleGoToStep5 = (e: React.FormEvent) => {
+  // Étape 3 ➔ Étape 4 : Coordonnées ➔ Récapitulatif
+  const handleGoToStep4 = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 
@@ -318,20 +248,15 @@ export default function TrialBookingModal({
       return;
     }
 
-    setStep(5);
+    setStep(4);
   };
 
-  // Étape 5 ➔ Étape 6 : Confirmation finale et soumission serveur
+  // Étape 4 ➔ Étape 5 : Confirmation finale et soumission serveur
   const handleConfirmBooking = async () => {
     if (!selectedSessionId || isSubmitting) return;
 
-    if (selectedSession?.type === "small_group" && !isSmallGroupActive) {
+    if (!isSmallGroupActive) {
       setSubmitError("Le service Small Group est actuellement indisponible.");
-      return;
-    }
-
-    if (selectedSession?.type === "collective" && !isCollectiveActive) {
-      setSubmitError("Le service Cours Collectifs est actuellement indisponible.");
       return;
     }
 
@@ -368,12 +293,13 @@ export default function TrialBookingModal({
           SESSION_ALREADY_FINISHED: "Cette séance est déjà terminée.",
           SESSION_ALREADY_STARTED: "Cette séance a déjà débuté.",
           PRIVATE_SESSION_NOT_ALLOWED: "Les cours privés ne sont pas éligibles aux cours d'essai.",
-          INVALID_SESSION_TYPE: "Ce type de séance n'est pas éligible aux cours d'essai.",
+          COLLECTIVE_TRIAL_NOT_ALLOWED: "Les cours collectifs ne sont plus disponibles en cours d'essai.",
+          INVALID_SESSION_TYPE: "Les cours d'essai sont exclusivement réservés aux créneaux Small Group (Mardi 18:00 Kick Boxing, Vendredi 18:00 Boxe Thaï et Samedi 09:00 Boxe Anglaise).",
           SERVICE_UNAVAILABLE: "Le service Small Group est actuellement désactivé et indisponible à la réservation.",
           ALREADY_BOOKED_THIS_SESSION: "Tu as déjà réservé un cours d'essai pour ce créneau !",
           ACTIVE_TRIAL_ALREADY_EXISTS:
             "Tu as déjà un cours d'essai actif à venir. Contacte le club pour modifier ton créneau.",
-          SESSION_FULL: "Désolé, ce cours est désormais complet. Choisis un autre créneau disponible.",
+          SESSION_FULL: "Désolé, ce cours est désormais complet (12 places max). Choisis un autre créneau disponible.",
         };
 
         const msg =
@@ -386,19 +312,17 @@ export default function TrialBookingModal({
         return;
       }
 
-      const confirmedType = (data.type || selectedSession?.type || selectedType || "collective") as TrialSessionType;
-
-      // Succès : Passage à l'étape 6 (Confirmation)
+      // Succès : Passage à l'étape 5 (Confirmation)
       setConfirmedBookingData({
-        discipline: data.discipline || selectedSession?.discipline || "Cours d'essai",
-        type: confirmedType,
-        typeLabel: data.typeLabel || getTrialTypeLabel(confirmedType),
-        price: data.price || getTrialPriceFormatted(confirmedType),
+        discipline: data.discipline || selectedSession?.discipline || selectedDiscipline,
+        type: "small_group",
+        typeLabel: "Small Group",
+        price: getTrialPriceFormatted("small_group"),
         date: data.date || selectedSession?.dateFormatted || "",
         time: data.time || selectedSession?.timeFormatted || "",
       });
 
-      setStep(6);
+      setStep(5);
     } catch (err) {
       console.error("[TrialBookingModal] Erreur soumission :", err);
       setSubmitError("Une erreur de communication est survenue. Veuillez vérifier votre connexion.");
@@ -421,7 +345,7 @@ export default function TrialBookingModal({
           className="fixed inset-0 bg-[#020817]/90 backdrop-blur-md"
         />
 
-        {/* Conteneur principal de la modale — Design Striking Camp 100% natif */}
+        {/* Conteneur principal de la modale */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -435,7 +359,7 @@ export default function TrialBookingModal({
           <div className="relative p-5 sm:p-6 border-b border-brand-white/10 bg-gradient-to-b from-[#0c1626] to-transparent shrink-0">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                {step > 1 && step < 6 && (
+                {step > 1 && step < 5 && (
                   <button
                     onClick={() => {
                       setSubmitError(null);
@@ -448,8 +372,9 @@ export default function TrialBookingModal({
                     <ChevronLeft size={18} />
                   </button>
                 )}
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
-                  Cours d&apos;Essai
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
+                  <Users size={13} />
+                  <span>Séance d&apos;Essai Small Group (15 €)</span>
                 </div>
               </div>
 
@@ -465,27 +390,25 @@ export default function TrialBookingModal({
 
             <div className="mt-3">
               <h2 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
-                {step === 1 && "Choisis ton format d'entraînement"}
-                {step === 2 && "Choisis ta discipline"}
-                {step === 3 && "Sélectionne ton créneau"}
-                {step === 4 && "Tes coordonnées"}
-                {step === 5 && "Vérification & Confirmation"}
-                {step === 6 && "Séance confirmée !"}
+                {step === 1 && "Choisis ta séance d'essai"}
+                {step === 2 && `Créneaux disponibles — ${selectedDiscipline}`}
+                {step === 3 && "Tes coordonnées"}
+                {step === 4 && "Vérification & Confirmation"}
+                {step === 5 && "Séance d'essai confirmée !"}
               </h2>
               <p className="text-xs sm:text-sm text-brand-white/60 mt-0.5">
-                {step === 1 && "Sélectionne le format de cours qui correspond à tes objectifs."}
-                {step === 2 && `Disciplines disponibles pour le format ${getTrialCategoryLabel(selectedType)} (${getTrialPriceFormatted(selectedType)}).`}
-                {step === 3 && "Séances disponibles en temps réel au club de Marseille."}
-                {step === 4 && "Indique où t'envoyer ta confirmation et tes accès."}
-                {step === 5 && "Vérifie les informations avant de valider ta séance."}
-                {step === 6 && "Nous avons hâte de t'accueillir sur le ring !"}
+                {step === 1 && "Séances Small Group encadrées par le coach (12 participants max)."}
+                {step === 2 && "Sélectionne la date de ton choix au club de Marseille."}
+                {step === 3 && "Indique où t'envoyer ta confirmation et tes accès."}
+                {step === 4 && "Vérifie les détails de ta séance avant de valider."}
+                {step === 5 && "Nous avons hâte de t'accueillir au Striking Camp !"}
               </p>
             </div>
 
-            {/* Barre de progression des 6 étapes en Cyan Striking Camp */}
-            {step < 6 && (
+            {/* Barre de progression des 4 étapes */}
+            {step < 5 && (
               <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-brand-white/5">
-                {[1, 2, 3, 4, 5].map((i) => (
+                {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
                     className={cn(
@@ -537,191 +460,27 @@ export default function TrialBookingModal({
               </div>
             )}
 
-            {/* ─────────────────────────────────────────────────────────────────
-                ÉTAPE 1 : CHOIX DU FORMAT (Privé 25€ vs Small Group 15€ vs Collectif 10€)
-                ───────────────────────────────────────────────────────────────── */}
-            {!loadingSessions && !loadError && step === 1 && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-                  {/* CARTE 1 — COURS D'ESSAI PRIVÉ (25 €) */}
-                  {isPrivateActive && (
-                    <button
-                      type="button"
-                      onClick={() => handleSelectType("private")}
-                      className={cn(
-                        "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
-                        selectedType === "private"
-                          ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
-                          : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
-                      )}
-                    >
-                      <div className="space-y-4">
-                        {/* Header : Icône + Compteur de créneaux discret */}
-                        <div className="flex items-center justify-between">
-                          <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
-                            <User size={24} />
-                          </div>
-                          {availableCountsByType.private > 0 && (
-                            <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
-                              {availableCountsByType.private} créneaux
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Titre & Description courte */}
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                            COURS D’ESSAI PRIVÉ
-                          </h3>
-                          <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
-                            Une séance individuelle avec le coach, adaptée à ton niveau et à tes objectifs.
-                          </p>
-                        </div>
-
-                        {/* Prix unique */}
-                        <div className="pt-2">
-                          <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
-                            25 €
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Bouton d'action */}
-                      <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
-                        <span>CHOISIR CE FORMAT</span>
-                        <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
-                      </div>
-                    </button>
-                  )}
-
-                  {/* CARTE 2 — SMALL GROUP (15 €) */}
-                  {isSmallGroupActive && (
-                    <button
-                      type="button"
-                      onClick={() => handleSelectType("small_group")}
-                      className={cn(
-                        "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
-                        selectedType === "small_group"
-                          ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
-                          : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
-                      )}
-                    >
-                      <div className="space-y-4">
-                        {/* Header : Icône + Compteur de créneaux discret */}
-                        <div className="flex items-center justify-between">
-                          <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
-                            <Users size={24} />
-                          </div>
-                          {availableCountsByType.small_group > 0 && (
-                            <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
-                              {availableCountsByType.small_group} créneaux
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Titre & Description courte */}
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                            SMALL GROUP
-                          </h3>
-                          <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
-                            Petit groupe, encadrement rapproché et travail technique personnalisé.
-                          </p>
-                        </div>
-
-                        {/* Prix unique */}
-                        <div className="pt-2">
-                          <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
-                            15 €
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Bouton d'action */}
-                      <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
-                        <span>CHOISIR CE FORMAT</span>
-                        <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
-                      </div>
-                    </button>
-                  )}
-
-                  {/* CARTE 3 — COURS COLLECTIF (10 €) */}
-                  {isCollectiveActive && (
-                    <button
-                      type="button"
-                      onClick={() => handleSelectType("collective")}
-                      className={cn(
-                        "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
-                        selectedType === "collective"
-                          ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
-                          : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
-                      )}
-                    >
-                      <div className="space-y-4">
-                        {/* Header : Icône + Compteur de créneaux discret */}
-                        <div className="flex items-center justify-between">
-                          <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
-                            <Flame size={24} />
-                          </div>
-                          {availableCountsByType.collective > 0 && (
-                            <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
-                              {availableCountsByType.collective} créneaux
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Titre & Description courte */}
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                            COURS COLLECTIF
-                          </h3>
-                          <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
-                            Une séance collective dynamique pour découvrir l’entraînement Striking Camp.
-                          </p>
-                        </div>
-
-                        {/* Prix unique */}
-                        <div className="pt-2">
-                          <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
-                            10 €
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Bouton d'action */}
-                      <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
-                        <span>CHOISIR CE FORMAT</span>
-                        <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
-                      </div>
-                    </button>
-                  )}
-                </div>
+            {/* Service Small Group désactivé */}
+            {!loadingSessions && !loadError && !isSmallGroupActive && (
+              <div className="py-12 text-center bg-[#0c1626] border border-brand-white/10 rounded-2xl p-6 space-y-3">
+                <AlertCircle size={32} className="mx-auto text-brand-blue" />
+                <h3 className="text-base font-heading font-black uppercase text-brand-white">
+                  Séances d&apos;essai temporairement indisponibles
+                </h3>
+                <p className="text-xs text-brand-white/60 max-w-sm mx-auto">
+                  Les réservations de séances d&apos;essai Small Group sont actuellement suspendues. N&apos;hésite pas à contacter directement le club.
+                </p>
               </div>
             )}
 
             {/* ─────────────────────────────────────────────────────────────────
-                ÉTAPE 2 : CHOIX DE LA DISCIPLINE
+                ÉTAPE 1 : CHOIX DE LA DISCIPLINE D'ESSAI (Mardi Kick Boxing vs Vendredi Boxe Thaï)
                 ───────────────────────────────────────────────────────────────── */}
-            {!loadingSessions && !loadError && step === 2 && (
+            {!loadingSessions && !loadError && isSmallGroupActive && step === 1 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-brand-white/5 pb-2">
-                  <span className="text-xs font-bold uppercase text-brand-white/60">
-                    Format sélectionné :{" "}
-                    <strong className="text-brand-blue">
-                      {getTrialCategoryLabel(selectedType)} ({getTrialPriceFormatted(selectedType)})
-                    </strong>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="text-[11px] font-bold text-brand-blue hover:underline cursor-pointer"
-                  >
-                    Changer de format
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {availableDisciplinesForType.map((d) => {
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  {TRIAL_DISCIPLINES.map((d) => {
+                    const count = availableCountsByDiscipline[d.name as keyof typeof availableCountsByDiscipline] || 0;
                     const isSelected = selectedDiscipline === d.name;
 
                     return (
@@ -730,26 +489,53 @@ export default function TrialBookingModal({
                         type="button"
                         onClick={() => handleSelectDiscipline(d.name)}
                         className={cn(
-                          "group p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-4",
+                          "group p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
                           isSelected
-                            ? "bg-[#0c1626] border-2 border-brand-blue shadow-lg shadow-brand-blue/15"
-                            : "bg-[#0b1322] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
+                            ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
+                            : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
                         )}
                       >
-                        <div className="space-y-1 flex-1 min-w-0">
-                          <span className="font-heading font-black text-sm uppercase text-brand-white tracking-wider block group-hover:text-brand-blue transition-colors">
-                            {d.name}
-                          </span>
-                          <span className="text-xs text-brand-white/50 block leading-relaxed">
-                            {d.desc}
-                          </span>
+                        <div className="space-y-4">
+                          {/* Header : Badge créneau + Prix */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-xs uppercase tracking-wider">
+                              {d.schedule}
+                            </span>
+                            <span className="text-2xl font-heading font-black text-brand-blue">
+                              15 €
+                            </span>
+                          </div>
+
+                          {/* Titre & Description */}
+                          <div className="space-y-1.5">
+                            <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
+                              {d.name}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
+                              {d.description}
+                            </p>
+                          </div>
+
+                          {/* Tags format */}
+                          <div className="flex items-center gap-2 text-[11px] text-brand-white/60">
+                            <span className="inline-flex items-center gap-1">
+                              <Users size={13} className="text-brand-blue" />
+                              Small Group (12 max)
+                            </span>
+                            <span>•</span>
+                            <span className="inline-flex items-center gap-1">
+                              <Clock size={13} className="text-brand-blue" />
+                              60 min
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-xs text-brand-white/40 group-hover:text-brand-white shrink-0 pl-1">
-                          <span className="text-[10px] font-bold uppercase text-brand-blue">
-                            {d.count > 0 ? `${d.count} créneau${d.count > 1 ? "s" : ""}` : "Sélectionner"}
+                        {/* Bouton d'action */}
+                        <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
+                          <span>
+                            {count > 0 ? `${count} créneau${count > 1 ? "s" : ""} disponible${count > 1 ? "s" : ""}` : "Sélectionner"}
                           </span>
-                          <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform text-brand-white/50 group-hover:text-brand-blue" />
+                          <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
                         </div>
                       </button>
                     );
@@ -759,17 +545,17 @@ export default function TrialBookingModal({
             )}
 
             {/* ─────────────────────────────────────────────────────────────────
-                ÉTAPE 3 : CHOIX DU CRÉNEAU DISPONIBLE
+                ÉTAPE 2 : CHOIX DU CRÉNEAU DISPONIBLE
                 ───────────────────────────────────────────────────────────────── */}
-            {!loadingSessions && !loadError && step === 3 && (
+            {!loadingSessions && !loadError && isSmallGroupActive && step === 2 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-brand-white/5 pb-2">
                   <span className="text-xs font-bold uppercase text-brand-white/60">
-                    Discipline : <strong className="text-brand-white">{selectedDiscipline}</strong> • Format : <strong className="text-brand-blue">{getTrialCategoryLabel(selectedType)} ({getTrialPriceFormatted(selectedType)})</strong>
+                    Discipline : <strong className="text-brand-white">{selectedDiscipline}</strong> • Format : <strong className="text-brand-blue">Small Group (15 €)</strong>
                   </span>
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(1)}
                     className="text-[11px] font-bold text-brand-blue hover:underline cursor-pointer"
                   >
                     Changer de discipline
@@ -780,28 +566,23 @@ export default function TrialBookingModal({
                   <div className="py-12 text-center bg-[#0c1626] border border-brand-white/10 rounded-2xl p-6 space-y-3">
                     <Calendar size={32} className="mx-auto text-brand-white/30" />
                     <p className="text-sm font-heading font-bold uppercase text-brand-white/80">
-                      {selectedType === "private"
-                        ? "Aucun créneau immédiat disponible pour les cours privés"
-                        : "Aucun créneau immédiat disponible pour cette discipline"}
+                      Aucun créneau immédiat disponible pour {selectedDiscipline}
                     </p>
                     <p className="text-xs text-brand-white/50 max-w-sm mx-auto">
-                      {selectedType === "private"
-                        ? "Les créneaux de séances privées sont programmés selon les disponibilités du coach. Choisis une autre discipline ou contacte-nous directement."
-                        : "Les créneaux de cette semaine sont complets. Choisis une autre discipline ou reviens très prochainement."}
+                      Les créneaux de cette semaine sont complets. Choisis l&apos;autre discipline d&apos;essai ou reviens très prochainement.
                     </p>
                     <button
                       type="button"
-                      onClick={() => setStep(2)}
+                      onClick={() => setStep(1)}
                       className="px-4 py-2 rounded-xl bg-brand-blue text-brand-black font-heading font-black text-xs uppercase tracking-wider cursor-pointer shadow-md shadow-brand-blue/20"
                     >
-                      Voir les autres disciplines
+                      Voir les autres séances
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
                     {filteredSessions.map((s) => {
                       const isSelected = selectedSessionId === s.id;
-                      const sessionPrice = getTrialPriceFormatted(s.type);
 
                       return (
                         <button
@@ -820,13 +601,8 @@ export default function TrialBookingModal({
                               <span className="font-heading font-black text-sm uppercase text-brand-white tracking-wider">
                                 {s.dayName} {s.dateFormatted.split(" ").slice(1).join(" ")}
                               </span>
-                              {s.level && (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-white/5 text-brand-white/70 border border-brand-white/10">
-                                  {s.level}
-                                </span>
-                              )}
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
-                                {getTrialTypeLabel(s.type)} ({sessionPrice})
+                                Small Group (15 €)
                               </span>
                             </div>
 
@@ -844,11 +620,9 @@ export default function TrialBookingModal({
                           </div>
 
                           <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-brand-white/5">
-                            {s.type === "small_group" && (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-heading font-bold uppercase bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
-                                {s.placesAvailable} place{s.placesAvailable > 1 ? "s" : ""} restante{s.placesAvailable > 1 ? "s" : ""}
-                              </span>
-                            )}
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-heading font-bold uppercase bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
+                              {s.placesAvailable} place{s.placesAvailable > 1 ? "s" : ""} restante{s.placesAvailable > 1 ? "s" : ""}
+                            </span>
 
                             <div
                               className={cn(
@@ -870,10 +644,10 @@ export default function TrialBookingModal({
             )}
 
             {/* ─────────────────────────────────────────────────────────────────
-                ÉTAPE 4 : COORDONNÉES DU PROSPECT
+                ÉTAPE 3 : COORDONNÉES DU PROSPECT
                 ───────────────────────────────────────────────────────────────── */}
-            {!loadingSessions && !loadError && step === 4 && selectedSession && (
-              <form onSubmit={handleGoToStep5} className="space-y-4">
+            {!loadingSessions && !loadError && isSmallGroupActive && step === 3 && selectedSession && (
+              <form onSubmit={handleGoToStep4} className="space-y-4">
                 {/* Rappel du créneau choisi et du tarif */}
                 <div className="p-3.5 rounded-2xl bg-[#0c1626] border border-brand-blue/30 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -883,10 +657,10 @@ export default function TrialBookingModal({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-heading font-black uppercase text-brand-white block">
-                          {selectedSession.discipline} ({getTrialCategoryLabel(selectedSession.type)})
+                          {selectedSession.discipline} (Small Group)
                         </span>
                         <span className="px-2 py-0.5 rounded text-[10px] font-heading font-black uppercase bg-brand-blue text-brand-black">
-                          {getTrialPriceFormatted(selectedSession.type)}
+                          15 €
                         </span>
                       </div>
                       <span className="text-[11px] text-brand-white/60 block mt-0.5">
@@ -897,7 +671,7 @@ export default function TrialBookingModal({
 
                   <button
                     type="button"
-                    onClick={() => setStep(3)}
+                    onClick={() => setStep(2)}
                     className="text-[11px] font-bold text-brand-blue hover:underline cursor-pointer shrink-0"
                   >
                     Modifier
@@ -1017,7 +791,7 @@ export default function TrialBookingModal({
                     type="submit"
                     className="w-full py-3.5 px-6 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-brand-blue/20 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>Continuer vers le récapitulatif ({getTrialPriceFormatted(selectedSession.type)})</span>
+                    <span>Continuer vers le récapitulatif (15 €)</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -1025,9 +799,9 @@ export default function TrialBookingModal({
             )}
 
             {/* ─────────────────────────────────────────────────────────────────
-                ÉTAPE 5 : RÉCAPITULATIF COMPLET AVANT CONFIRMATION
+                ÉTAPE 4 : RÉCAPITULATIF COMPLET AVANT CONFIRMATION
                 ───────────────────────────────────────────────────────────────── */}
-            {!loadingSessions && !loadError && step === 5 && selectedSession && (
+            {!loadingSessions && !loadError && isSmallGroupActive && step === 4 && selectedSession && (
               <div className="space-y-4">
                 {submitError && (
                   <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
@@ -1036,19 +810,19 @@ export default function TrialBookingModal({
                   </div>
                 )}
 
-                {/* Carte Récapitulative Officielle avec Prix Visible */}
+                {/* Carte Récapitulative Officielle */}
                 <div className="bg-[#0c1626] border border-brand-blue/30 rounded-2xl p-5 sm:p-6 shadow-[0_0_30px_rgba(47,174,224,0.1)] space-y-4 relative overflow-hidden">
                   <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
                     <div className="flex items-center gap-2">
                       <span className="px-2.5 py-0.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-xs uppercase tracking-wider">
-                        Cours d&apos;Essai
+                        Séance d&apos;Essai
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full bg-brand-white/5 border border-brand-white/10 text-brand-white/80 font-heading font-black text-xs uppercase tracking-wider">
-                        {getTrialTypeLabel(selectedSession.type)}
+                        Small Group
                       </span>
                     </div>
                     <div className="px-3 py-1 rounded-full bg-brand-blue text-brand-black font-heading font-black text-xs uppercase tracking-wider shadow-sm">
-                      {getTrialPriceFormatted(selectedSession.type)}
+                      15 €
                     </div>
                   </div>
 
@@ -1060,22 +834,20 @@ export default function TrialBookingModal({
                       <span className="text-base font-heading font-black uppercase text-brand-white block">
                         {selectedSession.discipline}
                       </span>
-                      {selectedSession.level && (
-                        <span className="text-xs text-brand-white/60">
-                          Niveau : {selectedSession.level}
-                        </span>
-                      )}
+                      <span className="text-xs text-brand-white/60">
+                        {selectedSession.level || "Fondamentaux"}
+                      </span>
                     </div>
 
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold text-brand-white/40 block">
-                        Type de cours
+                        Format
                       </span>
                       <span className="text-sm font-heading font-black uppercase text-brand-blue block">
-                        {getTrialCategoryLabel(selectedSession.type)}
+                        Small Group (12 max)
                       </span>
                       <span className="text-[11px] text-brand-white/50">
-                        Séance d&apos;essai encadrée
+                        Encadrement personnalisé
                       </span>
                     </div>
 
@@ -1093,13 +865,13 @@ export default function TrialBookingModal({
 
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold text-brand-white/40 block">
-                        Prix de la séance
+                        Tarif
                       </span>
                       <span className="text-xl font-heading font-black text-brand-blue block">
-                        {getTrialPriceFormatted(selectedSession.type)}
+                        15 €
                       </span>
                       <span className="text-[11px] text-brand-white/50">
-                        Tarif officiel du cours d&apos;essai
+                        Tarif officiel séance d&apos;essai
                       </span>
                     </div>
 
@@ -1127,11 +899,11 @@ export default function TrialBookingModal({
                   </div>
                 </div>
 
-                {/* Notice d'information tarif & futur HelloAsso */}
+                {/* Notice d'information tarif */}
                 <div className="p-3.5 rounded-xl bg-brand-white/5 border border-brand-white/10 text-xs text-brand-white/70 flex items-center gap-2.5">
                   <Shield size={16} className="shrink-0 text-brand-blue" />
                   <span>
-                    Tarif du cours d&apos;essai : <strong>{getTrialPriceFormatted(selectedSession.type)}</strong>. Règlement à effectuer sur place auprès du coach ou via le lien de confirmation.
+                    Tarif du cours d&apos;essai : <strong>15 €</strong>. Règlement sur place auprès du coach ou via le lien de confirmation.
                   </span>
                 </div>
 
@@ -1139,7 +911,7 @@ export default function TrialBookingModal({
                 <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setStep(4)}
+                    onClick={() => setStep(3)}
                     disabled={isSubmitting}
                     className="w-full sm:w-auto px-5 py-3 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white font-heading font-bold text-xs uppercase transition-colors cursor-pointer text-center"
                   >
@@ -1160,7 +932,7 @@ export default function TrialBookingModal({
                     ) : (
                       <>
                         <CheckCircle2 size={18} className="text-brand-black" />
-                        <span>Confirmer mon cours d&apos;essai ({getTrialPriceFormatted(selectedSession.type)})</span>
+                        <span>Confirmer mon cours d&apos;essai (15 €)</span>
                       </>
                     )}
                   </button>
@@ -1169,9 +941,9 @@ export default function TrialBookingModal({
             )}
 
             {/* ─────────────────────────────────────────────────────────────────
-                ÉTAPE 6 : CONFIRMATION & SUCCÈS
+                ÉTAPE 5 : CONFIRMATION & SUCCÈS
                 ───────────────────────────────────────────────────────────────── */}
-            {step === 6 && confirmedBookingData && (
+            {step === 5 && confirmedBookingData && (
               <div className="py-6 text-center space-y-5">
                 <div className="w-16 h-16 rounded-full bg-brand-blue/20 border border-brand-blue/40 text-brand-blue flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(47,174,224,0.2)]">
                   <Check size={32} />
@@ -1182,16 +954,16 @@ export default function TrialBookingModal({
                     Ton cours d&apos;essai est réservé !
                   </h3>
                   <p className="text-sm text-brand-white/70 max-w-md mx-auto">
-                    Nous avons bien bloqué ta place pour ta séance au Striking Camp.
+                    Nous avons bien bloqué ta place pour ta séance Small Group au Striking Camp.
                   </p>
                 </div>
 
-                {/* Récapitulatif Final Officiel */}
+                {/* Récapitulatif Final */}
                 <div className="bg-[#0c1626] border border-brand-blue/30 rounded-2xl p-5 text-left max-w-lg mx-auto space-y-3 shadow-[0_0_20px_rgba(47,174,224,0.1)]">
                   <div className="flex items-center justify-between border-b border-brand-white/10 pb-2.5">
                     <div>
                       <span className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-heading font-black uppercase tracking-wider inline-block mr-2">
-                        Cours d&apos;Essai
+                        Cours d&apos;Essai Small Group
                       </span>
                       <span className="font-heading font-black uppercase text-brand-white text-sm">
                         {confirmedBookingData.discipline}
@@ -1203,7 +975,7 @@ export default function TrialBookingModal({
                   </div>
 
                   <div className="text-xs space-y-1.5 text-brand-white/70">
-                    <p>🥊 <strong>Type de cours :</strong> {confirmedBookingData.typeLabel}</p>
+                    <p>🥊 <strong>Format :</strong> {confirmedBookingData.typeLabel}</p>
                     <p>📅 <strong>Date :</strong> {confirmedBookingData.date}</p>
                     <p>⏰ <strong>Horaire :</strong> {confirmedBookingData.time}</p>
                     <p>💳 <strong>Prix :</strong> <span className="text-brand-blue font-bold">{confirmedBookingData.price}</span></p>

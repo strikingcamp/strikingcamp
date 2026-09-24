@@ -411,8 +411,8 @@ export async function sendTrialBookingConfirmationEmail(
   }
 
   const location = data.location || OFFICIAL_VENUE;
-  const trialPrice = data.price || "10 €";
-  const trialType = data.sessionType || "Collectif";
+  const trialPrice = data.price || "15 €";
+  const trialType = data.sessionType || "Small Group";
 
   try {
     const { error } = await resend.emails.send({

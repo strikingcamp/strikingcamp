@@ -121,9 +121,13 @@ export async function isPrivateServiceActive(
 }
 
 /**
- * Récupère l'ensemble des créneaux réels futurs éligibles aux cours d'essai.
- * - Filtre strict : futures (starts_at > NOW()), actives (is_active = true), collectives, small group ou privées selon disponibilité.
- * - Calcule les places restantes réelles (capacité - bookings confirmés - trial_bookings confirmés).
+ * Récupère l'ensemble des créneaux réels futurs éligibles aux cours d'essai Small Group.
+ * - Filtre strict : futures (starts_at > NOW()), actives (is_active = true), type = 'small_group'.
+ * - Trois créneaux officiels d'essai :
+ *   1. Mardi à 18:00 → Kick Boxing (Small Group)
+ *   2. Vendredi à 18:00 → Boxe Thaï (Small Group)
+ *   3. Samedi à 09:00 → Boxe Anglaise (Small Group)
+ * - Calcule les places restantes réelles (capacité 12 max - bookings confirmés - trial_bookings confirmés).
  * - Utilise strictement le fuseau Europe/Paris pour le formatage.
  */
 export async function getAvailableTrialSessions(
@@ -132,23 +136,18 @@ export async function getAvailableTrialSessions(
   try {
     const nowIso = new Date().toISOString();
 
-    // 0. Vérification du statut des services dans service_settings
-    const [collectiveActive, smallGroupActive, privateActive] = await Promise.all([
-      isCollectiveServiceActive(supabase),
-      isSmallGroupServiceActive(supabase),
-      isPrivateServiceActive(supabase),
-    ]);
+    // 0. Vérification du statut du service Small Group dans service_settings
+    const smallGroupActive = await isSmallGroupServiceActive(supabase);
+    if (!smallGroupActive) {
+      return [];
+    }
 
-    const allowedTypes: string[] = [];
-    if (collectiveActive) allowedTypes.push("collective");
-    if (smallGroupActive) allowedTypes.push("small_group");
-    if (privateActive) allowedTypes.push("private");
-
-    // 1. Récupération des séances futures selon les types autorisés
+    // 1. Récupération des séances Small Group futures pour Kick Boxing, Boxe Thaï et Boxe anglaise
     const { data: sessions, error: sessionsErr } = await supabase
       .from("class_sessions")
       .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
-      .in("type", allowedTypes)
+      .eq("type", "small_group")
+      .in("discipline", ["Kick Boxing", "Boxe Thaï", "Boxe Anglaise", "Boxe anglaise", "Boxing"])
       .eq("is_active", true)
       .gt("starts_at", nowIso)
       .order("starts_at", { ascending: true })
@@ -163,9 +162,38 @@ export async function getAvailableTrialSessions(
       return [];
     }
 
-    const sessionIds = sessions.map((s) => s.id);
+    // 2. Filtrage strict sur les 3 créneaux d'essai officiels en heure de Paris :
+    // - Mardi 18:00 Kick Boxing
+    // - Vendredi 18:00 Boxe Thaï
+    // - Samedi 09:00 Boxe Anglaise
+    const trialSessions = sessions.filter((s) => {
+      const sDate = new Date(s.starts_at);
+      const dayOfWeekStr = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Europe/Paris",
+        weekday: "short",
+      }).format(sDate); // 'Tue', 'Fri', 'Sat'
+      const timeStr = formatToParisTime(s.starts_at); // '18:00', '09:00'
+      const disc = (s.discipline || "").trim();
 
-    // 2. Récupération des réservations membres confirmées
+      const isTuesdayKickBoxing =
+        dayOfWeekStr === "Tue" && timeStr === "18:00" && disc.toLowerCase() === "kick boxing";
+      const isFridayBoxeThai =
+        dayOfWeekStr === "Fri" && timeStr === "18:00" && disc.toLowerCase() === "boxe thaï";
+      const isSaturdayBoxeAnglaise =
+        dayOfWeekStr === "Sat" &&
+        timeStr === "09:00" &&
+        (disc.toLowerCase() === "boxe anglaise" || disc.toLowerCase() === "boxing");
+
+      return isTuesdayKickBoxing || isFridayBoxeThai || isSaturdayBoxeAnglaise;
+    });
+
+    if (trialSessions.length === 0) {
+      return [];
+    }
+
+    const sessionIds = trialSessions.map((s) => s.id);
+
+    // 3. Récupération des réservations membres confirmées
     const { data: memberBookings } = await supabase
       .from("bookings")
       .select("id, class_session_id")
@@ -179,7 +207,7 @@ export async function getAvailableTrialSessions(
       }
     }
 
-    // 3. Récupération des réservations d'essai confirmées
+    // 4. Récupération des réservations d'essai confirmées
     const { data: trialBookings } = await supabase
       .from("trial_bookings")
       .select("id, class_session_id")
@@ -193,20 +221,25 @@ export async function getAvailableTrialSessions(
       }
     }
 
-    // 4. Construction des options formatées
+    // 5. Construction des options formatées
     const result: TrialSessionOption[] = [];
 
-    for (const s of sessions) {
+    for (const s of trialSessions) {
       const disc = (s.discipline || "").trim();
-      const rawType = (s.type || "").toLowerCase().trim();
+      let normalizedDisc = disc;
+      if (disc.toLowerCase() === "boxing" || disc.toLowerCase() === "boxe anglaise") {
+        normalizedDisc = "Boxe anglaise";
+      } else if (disc.toLowerCase() === "kick boxing" || disc.toLowerCase() === "kickboxing") {
+        normalizedDisc = "Kick Boxing";
+      } else if (disc.toLowerCase() === "boxe thaï" || disc.toLowerCase() === "boxe thai") {
+        normalizedDisc = "Boxe Thaï";
+      }
 
-      const isCollective = rawType === "collective";
-      const isPrivate = rawType === "private";
-      const maxCap = s.max_capacity ?? (isCollective ? 50 : isPrivate ? 1 : 12);
+      const maxCap = s.max_capacity ?? 12;
       const bookedM = memberCounts.get(s.id) || 0;
       const bookedT = trialCounts.get(s.id) || 0;
       const placesOccupied = bookedM + bookedT;
-      const placesRemaining = isCollective ? 999999 : Math.max(0, maxCap - placesOccupied);
+      const placesRemaining = Math.max(0, maxCap - placesOccupied);
 
       // Calcul des dates et heures en fuseau Europe/Paris
       const dateStr = formatToParisDate(s.starts_at);
@@ -216,7 +249,7 @@ export async function getAvailableTrialSessions(
         endTime = formatToParisTime(s.ends_at);
       } else {
         const sDate = new Date(s.starts_at);
-        const eDate = new Date(sDate.getTime() + (isPrivate ? 50 : 60) * 60 * 1000);
+        const eDate = new Date(sDate.getTime() + 60 * 60 * 1000);
         endTime = formatToParisTime(eDate);
       }
 
@@ -238,13 +271,13 @@ export async function getAvailableTrialSessions(
       }).format(sDateObj);
 
       const dateFormatted = `${dayName} ${dayNum} ${monthName}`;
-      const timeFormatted = `${startTime} – ${endTime}`;
+      const timeFormatted = `${startTime} → ${endTime}`;
 
       result.push({
         id: s.id,
-        discipline: disc || (isPrivate ? "Cours Privé" : "Boxe"),
-        type: isCollective ? "collective" : isPrivate ? "private" : "small_group",
-        level: s.level,
+        discipline: normalizedDisc,
+        type: "small_group",
+        level: s.level || "Fondamentaux",
         starts_at: s.starts_at,
         ends_at: s.ends_at,
         dayName,
@@ -252,8 +285,8 @@ export async function getAvailableTrialSessions(
         dateFormatted,
         timeFormatted,
         placesAvailable: placesRemaining,
-        maxCapacity: isCollective ? 0 : maxCap,
-        isAvailable: isCollective ? true : placesRemaining > 0,
+        maxCapacity: maxCap,
+        isAvailable: placesRemaining > 0,
       });
     }
 

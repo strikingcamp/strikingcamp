@@ -311,7 +311,7 @@ export const formatsData: Record<string, FormatDetail> = {
     ],
     metaTitle: "Cours Collectifs de Boxe à Marseille 13010",
     metaDescription: "Rejoignez les cours collectifs du Striking Camp à Marseille : Boxe Anglaise, Kick Boxing, Boxe Thaï et Striking dans une ambiance dynamique et motivante.",
-    preselectedType: "collective"
+    preselectedType: "small_group"
   }
 };
 

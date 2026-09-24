@@ -102,10 +102,14 @@ export default async function PlanningPage() {
         if (!day) continue;
 
         const cat: PlanningCategory = t.type === "collective" ? "Collectifs" : "Small Group";
+        const timeFormatted = t.end_time
+          ? `${t.start_time.slice(0, 5)} → ${t.end_time.slice(0, 5)}`
+          : t.start_time.slice(0, 5);
+
         dynamicSchedule[cat][day].push({
           name: t.discipline,
           level: t.level,
-          time: t.start_time.slice(0, 5),
+          time: timeFormatted,
           places: t.type === "small_group" ? String(t.max_capacity || 12) : undefined,
         });
       }

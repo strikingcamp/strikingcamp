@@ -78,7 +78,7 @@ const DEFAULT_DEMO_BOOKINGS: BookingSlot[] = [
     discipline: "Boxing Bag",
     sessionType: "Small Group",
     day: "Lundi",
-    time: "07:00 → 07:50",
+    time: "07:00 → 08:00",
     date: "31 Août 2026",
     level: "Fondamentaux",
     status: "Inscrit (12 places)",

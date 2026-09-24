@@ -171,15 +171,6 @@ function generateSlotsFromData(
         const dStr = dateInfo?.dateStr || sDateStr;
 
         const startTime = formatToParisTime(s.starts_at);
-        let endTime = "";
-        if (s.ends_at) {
-          endTime = formatToParisTime(s.ends_at);
-        } else {
-          const sDate = new Date(s.starts_at);
-          const eDate = new Date(sDate.getTime() + 50 * 60 * 1000);
-          endTime = formatToParisTime(eDate);
-        }
-
         const rawType = (s.type || "").toLowerCase().trim();
         const isPriv =
           rawType === "private" ||
@@ -188,6 +179,21 @@ function generateSlotsFromData(
           (s.discipline || "").toLowerCase().includes("prive");
         const isCol = rawType === "collective" || rawType === "collectif";
         const category: Category = isPriv ? "Cours privés" : isCol ? "Collectifs" : "Small Group";
+
+        const isCardio =
+          (s.level || "").toLowerCase().includes("cardio") ||
+          (s.discipline || "").toLowerCase().includes("cardio") ||
+          rawType.includes("cardio");
+
+        let endTime = "";
+        if (s.ends_at) {
+          endTime = formatToParisTime(s.ends_at);
+        } else {
+          const durationMinutes = isPriv || isCardio ? 50 : 60;
+          const sDate = new Date(s.starts_at);
+          const eDate = new Date(sDate.getTime() + durationMinutes * 60 * 1000);
+          endTime = formatToParisTime(eDate);
+        }
 
         const maxCapacity = s.max_capacity ?? (isPriv ? 1 : isCol ? 50 : 12);
 
@@ -233,6 +239,9 @@ function generateSlotsFromData(
         // - now >= ends_at => cours passé et verrouillé (isPast = true)
         const isPast = Boolean(endsAtIso && Date.now() >= new Date(endsAtIso).getTime());
 
+        const rawDisc = s.discipline || "";
+        const discipline = rawDisc.toLowerCase() === "boxing" ? "Boxe anglaise" : rawDisc;
+
         slots.push({
           id: s.id,
           templateId: s.template_id,
@@ -243,7 +252,7 @@ function generateSlotsFromData(
           dateStr: dStr,
           startTime,
           endTime,
-          discipline: s.discipline,
+          discipline,
           level: s.level || (isPriv ? "Individuel (50 min)" : isCol ? "Tous niveaux (Accès libre)" : "Fondamentaux"),
           maxCapacity,
           bookedCount,
@@ -1246,7 +1255,7 @@ export default function MemberPlanningView() {
                             <Clock size={13} />
                             {session.startTime} → {session.endTime}
                           </span>
-                          <span className="text-brand-white/40">• 50 min</span>
+                          <span className="text-brand-white/40">• 60 min</span>
                         </div>
                       </div>
 
