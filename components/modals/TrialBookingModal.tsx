@@ -27,6 +27,7 @@ import {
   getAvailableTrialSessions,
   isSmallGroupServiceActive,
   isPrivateServiceActive,
+  isCollectiveServiceActive,
   type TrialSessionOption,
 } from "@/lib/supabase/trial-bookings";
 import {
@@ -76,6 +77,7 @@ export default function TrialBookingModal({
   const [sessions, setSessions] = useState<TrialSessionOption[]>([]);
   const [isSmallGroupActive, setIsSmallGroupActive] = useState<boolean>(true);
   const [isPrivateActive, setIsPrivateActive] = useState<boolean>(true);
+  const [isCollectiveActive, setIsCollectiveActive] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // 2. Données sélectionnées par le prospect
@@ -120,17 +122,22 @@ export default function TrialBookingModal({
         getAvailableTrialSessions(supabase),
         isSmallGroupServiceActive(supabase),
         isPrivateServiceActive(supabase),
+        isCollectiveServiceActive(supabase),
       ])
-        .then(([data, smallGroupActive, privateActive]) => {
+        .then(([data, smallGroupActive, privateActive, collectiveActive]) => {
           setSessions(data);
           setIsSmallGroupActive(smallGroupActive);
           setIsPrivateActive(privateActive);
+          setIsCollectiveActive(collectiveActive);
 
-          // Si Small Group est désactivé, réinitialiser tout pré-choix Small Group
+          // Si le service pré-choisi est désactivé, réinitialiser
           if (!smallGroupActive && preselectedType === "small_group") {
             setSelectedType(null);
           }
           if (!privateActive && preselectedType === "private") {
+            setSelectedType(null);
+          }
+          if (!collectiveActive && preselectedType === "collective") {
             setSelectedType(null);
           }
         })
@@ -260,6 +267,9 @@ export default function TrialBookingModal({
     if (type === "private" && !isPrivateActive) {
       return;
     }
+    if (type === "collective" && !isCollectiveActive) {
+      return;
+    }
     setSelectedType(type);
     setSelectedDiscipline("");
     setSelectedSessionId("");
@@ -317,6 +327,11 @@ export default function TrialBookingModal({
 
     if (selectedSession?.type === "small_group" && !isSmallGroupActive) {
       setSubmitError("Le service Small Group est actuellement indisponible.");
+      return;
+    }
+
+    if (selectedSession?.type === "collective" && !isCollectiveActive) {
+      setSubmitError("Le service Cours Collectifs est actuellement indisponible.");
       return;
     }
 
@@ -631,53 +646,55 @@ export default function TrialBookingModal({
                   )}
 
                   {/* CARTE 3 — COURS COLLECTIF (10 €) */}
-                  <button
-                    type="button"
-                    onClick={() => handleSelectType("collective")}
-                    className={cn(
-                      "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
-                      selectedType === "collective"
-                        ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
-                        : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
-                    )}
-                  >
-                    <div className="space-y-4">
-                      {/* Header : Icône + Compteur de créneaux discret */}
-                      <div className="flex items-center justify-between">
-                        <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Flame size={24} />
+                  {isCollectiveActive && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectType("collective")}
+                      className={cn(
+                        "group p-6 sm:p-7 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden",
+                        selectedType === "collective"
+                          ? "bg-[#0c1626] border-2 border-brand-blue shadow-[0_0_30px_rgba(47,174,224,0.18)]"
+                          : "bg-[#0c1626] border-brand-white/10 hover:border-brand-blue/50 hover:bg-[#101e35]"
+                      )}
+                    >
+                      <div className="space-y-4">
+                        {/* Header : Icône + Compteur de créneaux discret */}
+                        <div className="flex items-center justify-between">
+                          <div className="w-12 h-12 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <Flame size={24} />
+                          </div>
+                          {availableCountsByType.collective > 0 && (
+                            <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
+                              {availableCountsByType.collective} créneaux
+                            </span>
+                          )}
                         </div>
-                        {availableCountsByType.collective > 0 && (
-                          <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-[11px] font-heading font-bold uppercase text-brand-white/60">
-                            {availableCountsByType.collective} créneaux
+
+                        {/* Titre & Description courte */}
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
+                            COURS COLLECTIF
+                          </h3>
+                          <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
+                            Une séance collective dynamique pour découvrir l’entraînement Striking Camp.
+                          </p>
+                        </div>
+
+                        {/* Prix unique */}
+                        <div className="pt-2">
+                          <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
+                            10 €
                           </span>
-                        )}
+                        </div>
                       </div>
 
-                      {/* Titre & Description courte */}
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-heading font-black uppercase text-brand-white tracking-wider group-hover:text-brand-blue transition-colors">
-                          COURS COLLECTIF
-                        </h3>
-                        <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed">
-                          Une séance collective dynamique pour découvrir l’entraînement Striking Camp.
-                        </p>
+                      {/* Bouton d'action */}
+                      <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
+                        <span>CHOISIR CE FORMAT</span>
+                        <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
                       </div>
-
-                      {/* Prix unique */}
-                      <div className="pt-2">
-                        <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
-                          10 €
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Bouton d'action */}
-                    <div className="pt-5 mt-5 border-t border-brand-white/10 flex items-center justify-between text-xs font-heading font-black uppercase tracking-wider text-brand-blue group-hover:text-brand-white transition-colors">
-                      <span>CHOISIR CE FORMAT</span>
-                      <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
-                    </div>
-                  </button>
+                    </button>
+                  )}
                 </div>
               </div>
             )}

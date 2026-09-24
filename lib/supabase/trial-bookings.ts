@@ -73,6 +73,30 @@ export async function isSmallGroupServiceActive(
 }
 
 /**
+ * Vérifie si le service Cours Collectifs est actif dans public.service_settings.
+ */
+export async function isCollectiveServiceActive(
+  supabase: SupabaseClient
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from("service_settings")
+      .select("is_active")
+      .eq("service_key", "collective")
+      .maybeSingle();
+
+    if (error || !data) {
+      return true; // Actif par défaut si non spécifié
+    }
+
+    return Boolean(data.is_active);
+  } catch (err) {
+    console.error("[isCollectiveServiceActive] Erreur lecture service_settings :", err);
+    return true;
+  }
+}
+
+/**
  * Vérifie si le service Cours Privés est actif dans public.service_settings.
  */
 export async function isPrivateServiceActive(
@@ -109,12 +133,14 @@ export async function getAvailableTrialSessions(
     const nowIso = new Date().toISOString();
 
     // 0. Vérification du statut des services dans service_settings
-    const [smallGroupActive, privateActive] = await Promise.all([
+    const [collectiveActive, smallGroupActive, privateActive] = await Promise.all([
+      isCollectiveServiceActive(supabase),
       isSmallGroupServiceActive(supabase),
       isPrivateServiceActive(supabase),
     ]);
 
-    const allowedTypes = ["collective"];
+    const allowedTypes: string[] = [];
+    if (collectiveActive) allowedTypes.push("collective");
     if (smallGroupActive) allowedTypes.push("small_group");
     if (privateActive) allowedTypes.push("private");
 

@@ -32,7 +32,14 @@ import { cn } from "@/lib/utils";
 
 export default function MembershipOnboardingView() {
   const supabase = createClient();
-  const { hasActiveSubscription, planName, refreshMemberData } = useMember();
+  const {
+    hasActiveSubscription,
+    planName,
+    refreshMemberData,
+    isSmallGroupEnabled,
+    isPrivateEnabled,
+    isCollectiveEnabled,
+  } = useMember();
 
   const [plans, setPlans] = useState<MembershipPlanOption[]>([]);
   const [latestRequest, setLatestRequest] = useState<MembershipRequestItem | null>(null);
@@ -96,8 +103,11 @@ export default function MembershipOnboardingView() {
     setIsSubmitting(false);
   };
 
-  // Filtrer les formules selon le type d'engagement sélectionné si renseigné, ou afficher les formules uniques
+  // Filtrer les formules selon les services actifs et le type d'engagement
   const filteredPlans = plans.filter((p) => {
+    if (p.type === "private" && !isPrivateEnabled) return false;
+    if (p.type === "small_group" && !isSmallGroupEnabled) return false;
+    if (p.type === "collective" && !isCollectiveEnabled) return false;
     if (p.commitment) {
       return p.commitment === commitmentType;
     }

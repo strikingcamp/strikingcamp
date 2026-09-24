@@ -272,24 +272,32 @@ export default function MemberPlanningView() {
     hasPrivateAccess,
     isSmallGroupEnabled,
     isPrivateEnabled,
+    isCollectiveEnabled,
     bookSmallGroup,
     cancelSmallGroup,
     bookSlot,
     removeSynchronizedBooking,
   } = useMember();
 
+  // Catégories autorisées
+  const availableCategories: Category[] = useMemo(() => {
+    const cats: Category[] = [];
+    if (isPrivateEnabled) cats.push("Cours privés");
+    if (isSmallGroupEnabled) cats.push("Small Group");
+    if (isCollectiveEnabled) cats.push("Collectifs");
+    return cats;
+  }, [isPrivateEnabled, isSmallGroupEnabled, isCollectiveEnabled]);
+
   // Onglets & Navigation
-  const [activeCategory, setActiveCategory] = useState<Category>("Cours privés");
+  const [activeCategory, setActiveCategory] = useState<Category>(() => availableCategories[0] || "Cours privés");
   const [weekOffset, setWeekOffset] = useState<number>(0);
 
   // Synchronisation automatique de la catégorie active selon les services activés
   useEffect(() => {
-    if (!isPrivateEnabled && activeCategory === "Cours privés") {
-      setActiveCategory(isSmallGroupEnabled ? "Small Group" : "Collectifs");
-    } else if (!isSmallGroupEnabled && activeCategory === "Small Group") {
-      setActiveCategory(isPrivateEnabled ? "Cours privés" : "Collectifs");
+    if (availableCategories.length > 0 && !availableCategories.includes(activeCategory)) {
+      setActiveCategory(availableCategories[0]);
     }
-  }, [isPrivateEnabled, isSmallGroupEnabled, activeCategory]);
+  }, [availableCategories, activeCategory]);
 
   // État du parcours en entonnoir pour Cours Privés
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>(PRIVATE_DISCIPLINES[0].name);
@@ -366,9 +374,10 @@ export default function MemberPlanningView() {
     return rawSlots.filter(s => {
       if (s.category === "Small Group" && !isSmallGroupEnabled) return false;
       if (s.category === "Cours privés" && !isPrivateEnabled) return false;
+      if (s.category === "Collectifs" && !isCollectiveEnabled) return false;
       return true;
     });
-  }, [availableSessions, userBookings, allConfirmedBookings, currentUserId, mondayDate, dayDateMap, isSmallGroupEnabled, isPrivateEnabled]);
+  }, [availableSessions, userBookings, allConfirmedBookings, currentUserId, mondayDate, dayDateMap, isSmallGroupEnabled, isPrivateEnabled, isCollectiveEnabled]);
 
   // Créneaux privés pour le jour sélectionné (triés chronologiquement)
   const privateSlotsForSelectedDay = useMemo(() => {
@@ -585,53 +594,57 @@ export default function MemberPlanningView() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ONGLETS DES CATÉGORIES ACTIVÉES
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className={cn(
-        "bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid gap-1.5 shadow-xl shadow-black/30",
-        (isPrivateEnabled && isSmallGroupEnabled) ? "grid-cols-3" :
-        (isPrivateEnabled || isSmallGroupEnabled) ? "grid-cols-2" : "grid-cols-1"
-      )}>
-        {isPrivateEnabled && (
-          <button
-            onClick={() => setActiveCategory("Cours privés")}
-            className={cn(
-              "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-              activeCategory === "Cours privés"
-                ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-                : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-            )}
-          >
-            <span>Cours privés</span>
-          </button>
-        )}
-
-        {isSmallGroupEnabled && (
-          <button
-            onClick={() => setActiveCategory("Small Group")}
-            className={cn(
-              "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-              activeCategory === "Small Group"
-                ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-                : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
-            )}
-          >
-            <Users size={16} />
-            <span>Small Group</span>
-          </button>
-        )}
-
-        <button
-          onClick={() => setActiveCategory("Collectifs")}
-          className={cn(
-            "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
-            activeCategory === "Collectifs"
-              ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
-              : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+      {availableCategories.length > 0 && (
+        <div className={cn(
+          "bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid gap-1.5 shadow-xl shadow-black/30",
+          availableCategories.length === 3 ? "grid-cols-3" :
+          availableCategories.length === 2 ? "grid-cols-2" : "grid-cols-1"
+        )}>
+          {isPrivateEnabled && (
+            <button
+              onClick={() => setActiveCategory("Cours privés")}
+              className={cn(
+                "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+                activeCategory === "Cours privés"
+                  ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
+                  : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+              )}
+            >
+              <span>Cours privés</span>
+            </button>
           )}
-        >
-          <CalendarIcon size={16} />
-          <span>Collectifs</span>
-        </button>
-      </div>
+
+          {isSmallGroupEnabled && (
+            <button
+              onClick={() => setActiveCategory("Small Group")}
+              className={cn(
+                "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+                activeCategory === "Small Group"
+                  ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
+                  : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+              )}
+            >
+              <Users size={16} />
+              <span>Small Group</span>
+            </button>
+          )}
+
+          {isCollectiveEnabled && (
+            <button
+              onClick={() => setActiveCategory("Collectifs")}
+              className={cn(
+                "py-3.5 px-2 rounded-xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2",
+                activeCategory === "Collectifs"
+                  ? "bg-[#00d8ff] text-black shadow-lg shadow-[#00d8ff]/20"
+                  : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
+              )}
+            >
+              <CalendarIcon size={16} />
+              <span>Collectifs</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           NAVIGATION SEMAINE

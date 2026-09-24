@@ -46,6 +46,7 @@ export const dynamic = "force-dynamic";
 export default async function PlanningPage() {
   let scheduleData: Record<PlanningCategory, Record<DayName, ScheduleCourse[]>> = publicScheduleData;
   let isSmallGroupActive = false;
+  let isCollectiveActive = true;
 
   try {
     const supabase = createClient(
@@ -53,13 +54,11 @@ export default async function PlanningPage() {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
     );
 
-    // 1. & 2. Lecture parallèle du statut Small Group et des créneaux récurrents actifs
-    const [settingRes, templatesRes] = await Promise.all([
+    // 1. & 2. Lecture parallèle du statut des services et des créneaux récurrents actifs
+    const [settingsRes, templatesRes] = await Promise.all([
       supabase
         .from("service_settings")
-        .select("is_active")
-        .eq("service_key", "small_group")
-        .maybeSingle(),
+        .select("service_key, is_active"),
       supabase
         .from("recurring_schedule_templates")
         .select("day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
@@ -69,8 +68,11 @@ export default async function PlanningPage() {
         .order("start_time", { ascending: true }),
     ]);
 
-    if (settingRes.data) {
-      isSmallGroupActive = Boolean(settingRes.data.is_active);
+    if (settingsRes.data) {
+      for (const s of settingsRes.data) {
+        if (s.service_key === "small_group") isSmallGroupActive = Boolean(s.is_active);
+        if (s.service_key === "collective") isCollectiveActive = Boolean(s.is_active);
+      }
     }
 
     const { data: templates, error } = templatesRes;
@@ -119,6 +121,7 @@ export default async function PlanningPage() {
       <PlanningSection
         initialScheduleData={scheduleData}
         isSmallGroupActive={isSmallGroupActive}
+        isCollectiveActive={isCollectiveActive}
       />
     </div>
   );

@@ -124,6 +124,7 @@ interface MemberContextType {
   serviceSettings: Record<string, boolean>;
   isSmallGroupEnabled: boolean;
   isPrivateEnabled: boolean;
+  isCollectiveEnabled: boolean;
   isEventsEnabled: boolean;
 
   // Real & Synchronized User Bookings
@@ -458,6 +459,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
   const isSmallGroupEnabled = serviceSettings.small_group !== false;
   const isPrivateEnabled = serviceSettings.private !== false;
+  const isCollectiveEnabled = serviceSettings.collective !== false;
   const isEventsEnabled = serviceSettings.events !== false;
 
   return (
@@ -489,6 +491,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         serviceSettings,
         isSmallGroupEnabled,
         isPrivateEnabled,
+        isCollectiveEnabled,
         isEventsEnabled,
         userBookings,
         addSynchronizedBooking,

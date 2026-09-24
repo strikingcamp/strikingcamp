@@ -6,7 +6,14 @@ import { useMember } from "../MemberContext";
 import { useRouter } from "next/navigation";
 
 export default function QuickActionModal() {
-  const { isQuickActionOpen, closeQuickAction, hasPrivateAccess, privateQuota } = useMember();
+  const {
+    isQuickActionOpen,
+    closeQuickAction,
+    hasPrivateAccess,
+    privateQuota,
+    isPrivateEnabled,
+    isSmallGroupEnabled,
+  } = useMember();
   const router = useRouter();
 
   const handleNavigate = () => {
@@ -64,8 +71,8 @@ export default function QuickActionModal() {
 
             {/* Options */}
             <div className="space-y-3">
-              {/* Option: Cours Privé (si abonné privé) */}
-              {hasPrivateAccess && (
+              {/* Option: Cours Privé (si abonné privé et service activé) */}
+              {hasPrivateAccess && isPrivateEnabled && (
                 <button
                   onClick={() => handleNavigate()}
                   className="w-full text-left p-4 rounded-xl bg-gradient-to-r from-[#062c1d]/40 to-[#0f172a] hover:from-[#062c1d]/60 border border-emerald-500/30 hover:border-emerald-500/50 transition-all duration-200 group flex items-start gap-4 cursor-pointer"
@@ -89,28 +96,30 @@ export default function QuickActionModal() {
                 </button>
               )}
 
-              {/* Option: Séance Small Group */}
-              <button
-                onClick={() => handleNavigate()}
-                className="w-full text-left p-4 rounded-xl bg-brand-white/[0.03] hover:bg-brand-blue/10 border border-brand-white/10 hover:border-brand-blue/40 transition-all duration-200 group flex items-start gap-4 cursor-pointer"
-              >
-                <div className="w-12 h-12 rounded-xl bg-brand-blue/10 group-hover:bg-brand-blue text-brand-blue group-hover:text-brand-black flex items-center justify-center shrink-0 transition-colors">
-                  <Users size={24} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-base font-heading font-bold uppercase tracking-wide text-brand-white group-hover:text-brand-blue transition-colors">
-                      Séance Small Group
-                    </h4>
-                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e]">
-                      Max 12 pers.
-                    </span>
+              {/* Option: Séance Small Group (si service activé) */}
+              {isSmallGroupEnabled && (
+                <button
+                  onClick={() => handleNavigate()}
+                  className="w-full text-left p-4 rounded-xl bg-brand-white/[0.03] hover:bg-brand-blue/10 border border-brand-white/10 hover:border-brand-blue/40 transition-all duration-200 group flex items-start gap-4 cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-brand-blue/10 group-hover:bg-brand-blue text-brand-blue group-hover:text-brand-black flex items-center justify-center shrink-0 transition-colors">
+                    <Users size={24} />
                   </div>
-                  <p className="text-xs text-brand-white/60 mt-1 leading-relaxed">
-                    Entraînement technique en petit groupe : Boxing Bag, Kick Boxing, KB Shred, Striking.
-                  </p>
-                </div>
-              </button>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-base font-heading font-bold uppercase tracking-wide text-brand-white group-hover:text-brand-blue transition-colors">
+                        Séance Small Group
+                      </h4>
+                      <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e]">
+                        Max 12 pers.
+                      </span>
+                    </div>
+                    <p className="text-xs text-brand-white/60 mt-1 leading-relaxed">
+                      Entraînement technique en petit groupe : Boxing Bag, Kick Boxing, KB Shred, Striking.
+                    </p>
+                  </div>
+                </button>
+              )}
 
               {/* Option: Consulter le planning */}
               <button

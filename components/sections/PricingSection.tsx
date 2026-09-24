@@ -117,6 +117,8 @@ const defaultPricing: Record<
 
 interface PricingSectionProps {
   isSmallGroupActive?: boolean;
+  isCollectiveActive?: boolean;
+  isPrivateActive?: boolean;
 }
 
 const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
@@ -125,24 +127,33 @@ const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldChec
   { id: "Cours Privés", label: "Cours Privés", icon: ShieldCheck, badge: "Sur-mesure" },
 ];
 
-export default function PricingSection({ isSmallGroupActive = false }: PricingSectionProps = {}) {
+export default function PricingSection({
+  isSmallGroupActive = false,
+  isCollectiveActive = true,
+  isPrivateActive = true,
+}: PricingSectionProps = {}) {
   const supabase = createClient();
 
-  const categories = isSmallGroupActive
-    ? ALL_CATEGORIES
-    : ALL_CATEGORIES.filter((cat) => cat.id !== "Small Group");
+  const categories = ALL_CATEGORIES.filter((cat) => {
+    if (cat.id === "Small Group") return isSmallGroupActive;
+    if (cat.id === "Collectifs") return isCollectiveActive;
+    if (cat.id === "Cours Privés") return isPrivateActive;
+    return true;
+  });
 
-  const [activeCategory, setActiveCategory] = useState<PlanCategory>(
-    isSmallGroupActive ? "Small Group" : "Collectifs"
-  );
+  const defaultCategory: PlanCategory =
+    categories.find((c) => c.id === "Collectifs")?.id ||
+    categories[0]?.id ||
+    "Collectifs";
+
+  const [activeCategory, setActiveCategory] = useState<PlanCategory>(defaultCategory);
   const [activeCycle, setActiveCycle] = useState<BillingCycle>("Annuel");
   const [livePricing, setLivePricing] = useState(defaultPricing);
 
-  // Sécurisation : si la catégorie active est Small Group alors qu'il est inactif, forcer Collectifs
-  const currentCategory: PlanCategory =
-    !isSmallGroupActive && activeCategory === "Small Group"
-      ? "Collectifs"
-      : activeCategory;
+  // Sécurisation : si la catégorie active n'est pas dans les catégories autorisées, basculer vers la première disponible
+  const currentCategory: PlanCategory = categories.some((c) => c.id === activeCategory)
+    ? activeCategory
+    : (categories[0]?.id || "Collectifs");
 
   // Synchronisation dynamique avec public.plans (Supabase)
   useEffect(() => {

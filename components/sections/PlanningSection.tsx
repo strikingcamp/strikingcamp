@@ -42,26 +42,30 @@ function getBadgeColor(level?: string) {
 interface PlanningSectionProps {
   initialScheduleData?: Record<Category, Record<Day, ScheduleCourse[]>>;
   isSmallGroupActive?: boolean;
+  isCollectiveActive?: boolean;
 }
 
 export default function PlanningSection({
   initialScheduleData,
   isSmallGroupActive = false,
+  isCollectiveActive = true,
 }: PlanningSectionProps = {}) {
   const scheduleData = initialScheduleData || defaultScheduleData;
-  const categories: Category[] = isSmallGroupActive
-    ? ["Collectifs", "Small Group"]
-    : ["Collectifs"];
+  const categories: Category[] = [];
+  if (isCollectiveActive) categories.push("Collectifs");
+  if (isSmallGroupActive) categories.push("Small Group");
 
-  const [activeCategory, setActiveCategory] = useState<Category>("Collectifs");
+  const defaultCategory: Category = categories[0] || "Collectifs";
+
+  const [activeCategory, setActiveCategory] = useState<Category>(defaultCategory);
   const [activeDay, setActiveDay] = useState<DayFilter>("Tous");
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [selectedDisciplineForModal, setSelectedDisciplineForModal] = useState<string | undefined>(undefined);
 
-  // Sécurisation : si la catégorie active est Small Group mais qu'il est inactif, forcer Collectifs
-  const currentCategory: Category = (activeCategory === "Small Group" && !isSmallGroupActive)
-    ? "Collectifs"
-    : activeCategory;
+  // Sécurisation : basculer automatiquement vers une catégorie active si celle en cours est désactivée
+  const currentCategory: Category = categories.includes(activeCategory)
+    ? activeCategory
+    : defaultCategory;
 
   // Jours ayant au moins un créneau dans la catégorie active
   const activeDays = days.filter(

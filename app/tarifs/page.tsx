@@ -39,6 +39,8 @@ export const dynamic = "force-dynamic";
 
 export default async function TarifsPage() {
   let isSmallGroupActive = false;
+  let isCollectiveActive = true;
+  let isPrivateActive = true;
 
   try {
     const supabase = createClient(
@@ -46,22 +48,28 @@ export default async function TarifsPage() {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
     );
 
-    const { data: setting } = await supabase
+    const { data: settings } = await supabase
       .from("service_settings")
-      .select("is_active")
-      .eq("service_key", "small_group")
-      .maybeSingle();
+      .select("service_key, is_active");
 
-    if (setting) {
-      isSmallGroupActive = Boolean(setting.is_active);
+    if (settings && settings.length > 0) {
+      for (const s of settings) {
+        if (s.service_key === "small_group") isSmallGroupActive = Boolean(s.is_active);
+        if (s.service_key === "collective") isCollectiveActive = Boolean(s.is_active);
+        if (s.service_key === "private") isPrivateActive = Boolean(s.is_active);
+      }
     }
   } catch (err) {
-    console.warn("[TarifsPage] Erreur lecture service_settings (fallback désactivé) :", err);
+    console.warn("[TarifsPage] Erreur lecture service_settings (fallback par défaut) :", err);
   }
 
   return (
     <div className="pt-20 bg-transparent min-h-screen">
-      <PricingSection isSmallGroupActive={isSmallGroupActive} />
+      <PricingSection
+        isSmallGroupActive={isSmallGroupActive}
+        isCollectiveActive={isCollectiveActive}
+        isPrivateActive={isPrivateActive}
+      />
     </div>
   );
 }

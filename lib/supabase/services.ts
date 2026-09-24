@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 export interface ServiceSetting {
   id?: string;
-  service_key: "private" | "small_group" | "events" | string;
+  service_key: "private" | "small_group" | "collective" | "events" | string;
   service_name: string;
   description: string | null;
   is_active: boolean;
@@ -13,6 +13,7 @@ export interface ServiceSetting {
 export const DEFAULT_SERVICE_SETTINGS: Record<string, boolean> = {
   private: true,
   small_group: false,
+  collective: true,
   events: true,
 };
 
@@ -28,6 +29,12 @@ export const INITIAL_SERVICES_METADATA: Omit<ServiceSetting, "id">[] = [
     service_name: "Small Group",
     description: "Cours en petit groupe avec capacité limitée à 12 personnes.",
     is_active: false,
+  },
+  {
+    service_key: "collective",
+    service_name: "Cours collectifs",
+    description: "Séances collectives de Boxe Anglaise, Kick Boxing, Muay Thaï et Lady Striking.",
+    is_active: true,
   },
   {
     service_key: "events",
@@ -100,8 +107,7 @@ export async function getAdminServiceSettingsList(
 export async function updateAdminServiceStatus(
   supabase: SupabaseClient,
   serviceKey: string,
-  isActive: boolean,
-  _previousValue?: boolean
+  isActive: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Appel strict et exclusif de la RPC sécurisée admin_update_service_status
