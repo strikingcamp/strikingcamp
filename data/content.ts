@@ -14,8 +14,8 @@ export const siteData = {
     postalCode: "13010",
     city: "Marseille",
     country: "France",
-    instagram: "https://www.instagram.com/boxing_camp13/",
-    youtube: "https://www.youtube.com/@strikingcamp13",
+    instagram: "https://www.instagram.com/strikingcamp/",
+    youtube: "https://www.youtube.com/@strikingcamp",
     mapsUrl: "https://maps.google.com/?q=268+Avenue+de+la+Capelette+13010+Marseille",
   },
   hero: {

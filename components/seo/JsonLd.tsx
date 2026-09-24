@@ -62,6 +62,10 @@ export default function JsonLd() {
       "Coaching Privé",
       "Small Group Training",
     ],
+    sameAs: [
+      "https://www.instagram.com/strikingcamp/",
+      "https://www.youtube.com/@strikingcamp",
+    ],
   };
 
   const webSiteSchema = {

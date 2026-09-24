@@ -275,7 +275,7 @@ export default function ContactSection() {
             </span>
             <div className="flex items-center gap-3">
               <a
-                href="https://www.instagram.com/boxing_camp13/"
+                href="https://www.instagram.com/strikingcamp/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram Striking Camp"
@@ -286,7 +286,7 @@ export default function ContactSection() {
                 </svg>
               </a>
               <a
-                href="https://www.youtube.com/@strikingcamp13"
+                href="https://www.youtube.com/@strikingcamp"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="YouTube Striking Camp"
