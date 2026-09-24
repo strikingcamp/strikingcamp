@@ -66,21 +66,20 @@ const defaultPricing: Record<
         "Accès illimité aux séances Small Group",
         "Suivi technique personnalisé en groupe réduit",
         "Toutes disciplines incluses",
-        "Frais d'adhésion : 39€",
+        "Frais d'adhésion : 90€",
       ],
     },
     Mensuel: {
-      price: "120€",
-      priceValue: 120,
+      price: "89€",
+      priceValue: 89,
       subtitle: "Sans engagement",
       planKey: "small_group_monthly",
       commitmentKey: "monthly",
       features: [
         "Accès illimité aux séances Small Group",
-        "Accès illimité aux cours collectifs",
         "Suivi technique personnalisé en groupe réduit",
-        "Toutes disciplines incluses (Boxe, Kick, Thaï)",
-        "Frais d'adhésion : 39€",
+        "Toutes disciplines incluses",
+        "Frais d'adhésion : 90€",
       ],
     },
   },
@@ -219,7 +218,7 @@ export default function PricingSection({
           NOS <span className="text-brand-blue">TARIFS</span>
         </h1>
         <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-          Cours Collectifs, Small Group et Coaching Privé au Striking Camp. Choisissez la formule adaptée à vos objectifs et votre rythme.
+          Choisissez l’engagement adapté à vos objectifs.
         </p>
       </div>
 
