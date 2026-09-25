@@ -24,9 +24,11 @@ import { createClient } from "@/lib/supabase/client";
 import {
   type AdminPlanItem,
   type UpdatePlanPayload,
-  updatePlanAdmin,
-  togglePlanStatusAdmin,
 } from "@/lib/supabase/admin";
+import {
+  updatePlanServerAction,
+  togglePlanStatusServerAction,
+} from "@/app/(admin)/admin/formules/actions";
 import { cn } from "@/lib/utils";
 
 interface AdminFormulesViewProps {
@@ -120,7 +122,7 @@ export default function AdminFormulesView({
   // Bascule rapide Actif <-> Inactif
   const handleToggleStatus = async (plan: AdminPlanItem) => {
     const targetStatus = !plan.is_active;
-    const res = await togglePlanStatusAdmin(supabase, plan.id, targetStatus);
+    const res = await togglePlanStatusServerAction(plan.id, targetStatus);
     if (res.success) {
       setPlans((prev) =>
         prev.map((item) =>
@@ -153,8 +155,8 @@ export default function AdminFormulesView({
 
     let privateSessions: number | null = null;
     if (editingPlan.type === "private") {
-      if (editPrivateSessions !== 8 && editPrivateSessions !== 12) {
-        setModalError("Pour une formule privée, le nombre de séances doit être de 8 ou 12.");
+      if (editPrivateSessions !== 8) {
+        setModalError("Pour une formule privée, le nombre de séances doit être strictement de 8.");
         setIsSubmitting(false);
         return;
       }
@@ -169,7 +171,7 @@ export default function AdminFormulesView({
       is_active: editIsActive,
     };
 
-    const res = await updatePlanAdmin(supabase, editingPlan.id, payload);
+    const res = await updatePlanServerAction(editingPlan.id, payload);
 
     if (!res.success) {
       setModalError(res.error || "Erreur lors de la modification de la formule.");

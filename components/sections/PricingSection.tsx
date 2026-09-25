@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, ShieldCheck, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { trackPricingView, trackBookingClick } from "@/lib/analytics";
+
+export interface PublicPlan {
+  id: string;
+  name: string;
+  code?: string | null;
+  type: string;
+  commitment: "monthly" | "annual" | string | null;
+  price_cents: number;
+  private_sessions_per_period?: number | null;
+  is_active?: boolean;
+}
 
 type PlanCategory = "Cours Privés" | "Small Group";
 type BillingCycle = "Annuel" | "Mensuel";
@@ -20,16 +30,13 @@ type PlanDetails = {
   features: string[];
 };
 
-const defaultPricing: Record<
+const basePricingStructure: Record<
   PlanCategory,
-  Record<BillingCycle, PlanDetails>
+  Record<BillingCycle, Omit<PlanDetails, "price" | "priceValue" | "planKey">>
 > = {
   "Cours Privés": {
     Annuel: {
-      price: "299€",
-      priceValue: 299,
       subtitle: "Engagement 12 mois",
-      planKey: "private_8_annual",
       commitmentKey: "annual",
       features: [
         "8 séances privées par mois",
@@ -39,10 +46,7 @@ const defaultPricing: Record<
       ],
     },
     Mensuel: {
-      price: "390€",
-      priceValue: 390,
       subtitle: "Sans engagement",
-      planKey: "private_8_monthly",
       commitmentKey: "monthly",
       features: [
         "8 séances privées par mois",
@@ -55,10 +59,7 @@ const defaultPricing: Record<
   },
   "Small Group": {
     Annuel: {
-      price: "79€",
-      priceValue: 79,
       subtitle: "Engagement 12 mois",
-      planKey: "small_group_annual",
       commitmentKey: "annual",
       features: [
         "Accès illimité aux séances Small Group",
@@ -68,10 +69,7 @@ const defaultPricing: Record<
       ],
     },
     Mensuel: {
-      price: "89€",
-      priceValue: 89,
       subtitle: "Sans engagement",
-      planKey: "small_group_monthly",
       commitmentKey: "monthly",
       features: [
         "Accès illimité aux séances Small Group",
@@ -83,9 +81,64 @@ const defaultPricing: Record<
   },
 };
 
+function formatPricingFromPlans(plans: PublicPlan[] = []): Record<PlanCategory, Record<BillingCycle, PlanDetails>> {
+  const result: Record<PlanCategory, Record<BillingCycle, PlanDetails>> = {
+    "Cours Privés": {
+      Annuel: {
+        ...basePricingStructure["Cours Privés"]["Annuel"],
+        price: "—€",
+        priceValue: 0,
+        planKey: "private_annual",
+      },
+      Mensuel: {
+        ...basePricingStructure["Cours Privés"]["Mensuel"],
+        price: "—€",
+        priceValue: 0,
+        planKey: "private_monthly",
+      },
+    },
+    "Small Group": {
+      Annuel: {
+        ...basePricingStructure["Small Group"]["Annuel"],
+        price: "—€",
+        priceValue: 0,
+        planKey: "small_group_annual",
+      },
+      Mensuel: {
+        ...basePricingStructure["Small Group"]["Mensuel"],
+        price: "—€",
+        priceValue: 0,
+        planKey: "small_group_monthly",
+      },
+    },
+  };
+
+  for (const p of plans) {
+    const euros = Math.round(p.price_cents / 100);
+    const cycle: BillingCycle = p.commitment === "annual" ? "Annuel" : "Mensuel";
+
+    if (p.type === "small_group") {
+      if (result["Small Group"]?.[cycle]) {
+        result["Small Group"][cycle].price = `${euros}€`;
+        result["Small Group"][cycle].priceValue = euros;
+        result["Small Group"][cycle].planKey = p.code || p.id;
+      }
+    } else if (p.type === "private" && (p.private_sessions_per_period === 8 || !p.private_sessions_per_period)) {
+      if (result["Cours Privés"]?.[cycle]) {
+        result["Cours Privés"][cycle].price = `${euros}€`;
+        result["Cours Privés"][cycle].priceValue = euros;
+        result["Cours Privés"][cycle].planKey = p.code || p.id;
+      }
+    }
+  }
+
+  return result;
+}
+
 interface PricingSectionProps {
   isSmallGroupActive?: boolean;
   isPrivateActive?: boolean;
+  initialPlans?: PublicPlan[];
 }
 
 const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
@@ -96,9 +149,8 @@ const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldChec
 export default function PricingSection({
   isSmallGroupActive = true,
   isPrivateActive = true,
+  initialPlans = [],
 }: PricingSectionProps = {}) {
-  const supabase = createClient();
-
   const categories = ALL_CATEGORIES.filter((cat) => {
     if (cat.id === "Small Group") return isSmallGroupActive;
     if (cat.id === "Cours Privés") return isPrivateActive;
@@ -112,59 +164,17 @@ export default function PricingSection({
 
   const [activeCategory, setActiveCategory] = useState<PlanCategory>(defaultCategory);
   const [activeCycle, setActiveCycle] = useState<BillingCycle>("Annuel");
-  const [livePricing, setLivePricing] = useState(defaultPricing);
+
+  const pricingData = useMemo(() => formatPricingFromPlans(initialPlans), [initialPlans]);
 
   // Sécurisation : si la catégorie active n'est pas dans les catégories autorisées, basculer vers la première disponible
   const currentCategory: PlanCategory = categories.some((c) => c.id === activeCategory)
     ? activeCategory
     : (categories[0]?.id || "Small Group");
 
-  // Synchronisation dynamique avec public.plans (Supabase)
-  useEffect(() => {
-    async function syncPlans() {
-      try {
-        const { data: plansData } = await supabase
-          .from("plans")
-          .select("id, name, code, type, commitment, price_cents, private_sessions_per_period, is_active")
-          .eq("is_active", true);
-
-        if (plansData && plansData.length > 0) {
-          setLivePricing((prev) => {
-            const updated = JSON.parse(JSON.stringify(prev));
-
-            for (const p of plansData) {
-              const euros = Math.round(p.price_cents / 100);
-              const cycle: BillingCycle = p.commitment === "annual" ? "Annuel" : "Mensuel";
-
-              if (p.type === "small_group") {
-                if (updated["Small Group"]?.[cycle]) {
-                  updated["Small Group"][cycle].price = `${euros}€`;
-                  updated["Small Group"][cycle].priceValue = euros;
-                  updated["Small Group"][cycle].planKey = p.code || p.id;
-                }
-              } else if (p.type === "private" && (p.private_sessions_per_period === 8 || !p.private_sessions_per_period)) {
-                if (updated["Cours Privés"]?.[cycle]) {
-                  updated["Cours Privés"][cycle].price = `${euros}€`;
-                  updated["Cours Privés"][cycle].priceValue = euros;
-                  updated["Cours Privés"][cycle].planKey = p.code || p.id;
-                }
-              }
-            }
-
-            return updated;
-          });
-        }
-      } catch (err) {
-        console.warn("Utilisation des tarifs locaux :", err);
-      }
-    }
-
-    syncPlans();
-  }, [supabase]);
-
   const currentPlan =
-    livePricing[currentCategory]?.[activeCycle] ||
-    defaultPricing["Small Group"][activeCycle];
+    pricingData[currentCategory]?.[activeCycle] ||
+    pricingData["Small Group"][activeCycle];
 
   return (
     <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">

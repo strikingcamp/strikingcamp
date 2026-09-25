@@ -8,6 +8,7 @@ import { ArrowRight, ChevronRight, CheckCircle2, Shield, Calendar, Users, MapPin
 import { DisciplineDetail, publicDisciplineList } from "@/data/disciplines";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
 import { trackDisciplineView, trackBookingClick } from "@/lib/analytics";
+import { getTrialPriceFormatted } from "@/lib/trial-pricing";
 
 interface DisciplineDetailViewProps {
   discipline: DisciplineDetail;
@@ -289,7 +290,7 @@ export default function DisciplineDetailView({ discipline }: DisciplineDetailVie
       <section className="py-16 sm:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative rounded-3xl bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border border-brand-blue/30 p-8 sm:p-14 text-center shadow-[0_0_50px_rgba(47,174,224,0.15)] overflow-hidden space-y-6">
           <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest">
-            Première Séance • Dès 10 €
+            Première Séance • {getTrialPriceFormatted("small_group")}
           </div>
 
           <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-black text-brand-white uppercase tracking-tight">
