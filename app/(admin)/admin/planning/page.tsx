@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import AdminPlanningView from "@/components/admin/AdminPlanningView";
 import type { RecurringTemplateItem, AdminDatedSessionItem } from "./actions";
 
@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function AdminPlanningPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 7);

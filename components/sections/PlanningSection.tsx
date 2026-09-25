@@ -14,30 +14,10 @@ import {
   type ScheduleCourse,
   DAYS_ORDER as days,
   publicScheduleData as defaultScheduleData,
+  getLevelBadgeClasses,
 } from "@/data/planning";
 
 type DayFilter = "Tous" | Day;
-
-function getBadgeColor(level?: string) {
-  if (!level) return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
-  const lvl = level.toLowerCase();
-  if (lvl.includes("fondament") || lvl.includes("tous niveaux") || lvl.includes("débutant") || lvl.includes("debutant")) {
-    return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
-  }
-  if (lvl.includes("drill") || lvl.includes("performance") || lvl.includes("intermédiaire") || lvl.includes("intermediaire")) {
-    return "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30";
-  }
-  if (lvl.includes("cardio")) {
-    return "bg-purple-500/15 text-purple-400 border-purple-500/30";
-  }
-  if (lvl.includes("100% féminin") || lvl.includes("100% feminin") || lvl.includes("féminin") || lvl.includes("femin") || lvl.includes("femme") || lvl.includes("lady")) {
-    return "bg-pink-500/15 text-pink-400 border-pink-500/30";
-  }
-  if (lvl.includes("sparring") || lvl.includes("élite") || lvl.includes("elite") || lvl.includes("confirmé") || lvl.includes("confirme")) {
-    return "bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/30";
-  }
-  return "bg-brand-white/10 text-brand-white/70 border-brand-white/15";
-}
 
 interface PlanningSectionProps {
   initialScheduleData?: Record<Category, Record<Day, ScheduleCourse[]>>;
@@ -170,10 +150,10 @@ export default function PlanningSection({
                                 <span
                                   className={cn(
                                     "px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase border tracking-wider",
-                                    getBadgeColor(course.level)
+                                    getLevelBadgeClasses(course.level, course.name)
                                   )}
                                 >
-                                  {course.level}
+                                  {course.name === "Lady Striking" ? "100% féminin" : course.level}
                                 </span>
                               )}
                             </div>

@@ -50,6 +50,13 @@ export interface MutationResult {
   message?: string;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUuid(id: string | null | undefined): boolean {
+  if (!id || typeof id !== "string") return false;
+  return UUID_REGEX.test(id.trim());
+}
+
 /**
  * Vérifie l'authentification et le rôle ADMIN côté serveur via assertAdminUser (app_metadata uniquement).
  */
@@ -253,6 +260,14 @@ export async function createRecurringTemplateServerAction(payload: {
     const startTimeFormatted = normalizeTime(payload.start_time);
     const endTimeFormatted = normalizeTime(payload.end_time);
 
+    const effectiveDiscipline = payload.discipline;
+    const effectiveLevel =
+      effectiveDiscipline === "Lady Striking"
+        ? "100% féminin"
+        : payload.level === "100% féminin"
+        ? "Fondamentaux"
+        : payload.level;
+
     // 1. Insertion dans recurring_schedule_templates
     const { data: newTmpl, error: insertError } = await adminSupabase
       .from("recurring_schedule_templates")
@@ -261,8 +276,8 @@ export async function createRecurringTemplateServerAction(payload: {
         start_time: startTimeFormatted,
         end_time: endTimeFormatted,
         type: payload.type,
-        discipline: payload.discipline,
-        level: payload.level,
+        discipline: effectiveDiscipline,
+        level: effectiveLevel,
         max_capacity: payload.max_capacity,
         is_active: true,
         updated_at: new Date().toISOString(),
@@ -330,6 +345,13 @@ export async function updateRecurringTemplateServerAction(
   },
   forceCascade = false
 ): Promise<MutationResult> {
+  if (!isValidUuid(templateId)) {
+    return {
+      success: false,
+      error: `Identifiant de modèle récurrent invalide : "${templateId}". Un identifiant UUID Supabase valide est requis.`,
+    };
+  }
+
   try {
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
@@ -350,6 +372,13 @@ export async function updateRecurringTemplateServerAction(
     if (fetchOldErr || !oldTmpl) {
       console.error(`[AdminPlanning:Update ERROR] Step: fetch_old_template | TemplateId: ${templateId} | Code: ${fetchOldErr?.code} | Message: ${fetchOldErr?.message}`);
       return { success: false, error: fetchOldErr?.message || "Créneau introuvable." };
+    }
+
+    const targetDiscipline = normalizedPayload.discipline ?? oldTmpl.discipline;
+    if (targetDiscipline === "Lady Striking") {
+      normalizedPayload.level = "100% féminin";
+    } else if (normalizedPayload.level === "100% féminin") {
+      normalizedPayload.level = "Fondamentaux";
     }
 
     const isScheduleOrDisciplineChanged = Boolean(
@@ -560,6 +589,13 @@ export async function toggleDayTemplatesStatusServerAction(
  * Supprime un modèle récurrent (ou le désactive si des séances avec historique existent)
  */
 export async function deleteRecurringTemplateServerAction(templateId: string): Promise<MutationResult> {
+  if (!isValidUuid(templateId)) {
+    return {
+      success: false,
+      error: `Identifiant de modèle récurrent invalide : "${templateId}". Un identifiant UUID Supabase valide est requis.`,
+    };
+  }
+
   try {
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
@@ -643,13 +679,27 @@ export async function updateSingleDatedSessionServerAction(
     is_active?: boolean;
   }
 ): Promise<MutationResult> {
+  if (!isValidUuid(sessionId)) {
+    return {
+      success: false,
+      error: `Identifiant de séance invalide : "${sessionId}". Un identifiant UUID Supabase valide est requis.`,
+    };
+  }
+
   try {
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
 
+    const patch = { ...payload };
+    if (patch.discipline === "Lady Striking") {
+      patch.level = "100% féminin";
+    } else if (patch.discipline && patch.discipline !== "Lady Striking" && patch.level === "100% féminin") {
+      patch.level = "Fondamentaux";
+    }
+
     const { data: updatedSession, error: updateError } = await adminSupabase
       .from("class_sessions")
-      .update(payload)
+      .update(patch)
       .eq("id", sessionId)
       .select("*")
       .single();
@@ -679,6 +729,12 @@ export async function toggleSingleSessionStatusServerAction(
   sessionId: string,
   isActive: boolean
 ): Promise<MutationResult> {
+  if (!isValidUuid(sessionId)) {
+    return {
+      success: false,
+      error: `Identifiant de séance invalide : "${sessionId}". Un identifiant UUID Supabase valide est requis.`,
+    };
+  }
   return updateSingleDatedSessionServerAction(sessionId, { is_active: isActive });
 }
 

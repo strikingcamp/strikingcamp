@@ -28,6 +28,7 @@ import {
 import { useMember, type BookingSlot } from "./MemberContext";
 import type { ClassSession } from "@/lib/supabase/small-group";
 import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
+import { getLevelBadgeClasses } from "@/data/planning";
 import { cn } from "@/lib/utils";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1204,10 +1205,10 @@ export default function MemberPlanningView() {
                               "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
                               isPast
                                 ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/60"
-                                : "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
+                                : getLevelBadgeClasses(session.level, session.discipline)
                             )}
                           >
-                            {session.level}
+                            {session.discipline === "Lady Striking" ? "100% féminin" : session.level}
                           </span>
                           {!isPast && (
                             <span

@@ -30,14 +30,20 @@ import {
   type RecurringTemplateItem,
   type AdminDatedSessionItem,
 } from "@/app/(admin)/admin/planning/actions";
+import {
+  SMALL_GROUP_DISCIPLINES,
+  SMALL_GROUP_LEVELS,
+  getLevelBadgeClasses,
+  getStandardLevelForDiscipline,
+  DAYS_ORDER,
+  type DayName,
+  type SmallGroupLevel,
+  type SmallGroupDiscipline,
+} from "@/data/planning";
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TYPES ET DÉFINITIONS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-type DayName = "Lundi" | "Mardi" | "Mercredi" | "Jeudi" | "Vendredi" | "Samedi";
-type LevelCategory = "Fondamentaux" | "Drills" | "Cardio" | "100% féminin" | "Sparring";
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 interface SmallGroupSessionItem {
   id: string;
@@ -46,71 +52,14 @@ interface SmallGroupSessionItem {
   startTime: string;
   endTime: string;
   discipline: string;
-  level: LevelCategory;
+  level: SmallGroupLevel | string;
   maxCapacity: number;
   isActive: boolean;
   bookedCount?: number;
 }
 
-const DAYS_ORDER: DayName[] = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-
 const dayNameToIndex = (d: DayName): number => Math.max(0, DAYS_ORDER.indexOf(d));
 const indexToDayName = (i: number): DayName => DAYS_ORDER[i] || "Lundi";
-
-// Fallback initial officiel Small Group (60 min par défaut, 50 min pour Cardio)
-const FALLBACK_SMALL_GROUP: SmallGroupSessionItem[] = [
-  // Lundi
-  { id: "sg_1", day: "Lundi", startTime: "07:00", endTime: "08:00", discipline: "Boxing Bag", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_2", day: "Lundi", startTime: "11:00", endTime: "12:00", discipline: "Boxe anglaise", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_3", day: "Lundi", startTime: "12:15", endTime: "13:15", discipline: "KB Shred", level: "Drills", maxCapacity: 12, isActive: true },
-  // Mardi (Cardio à 50 min)
-  { id: "sg_4", day: "Mardi", startTime: "11:00", endTime: "11:50", discipline: "KB Shred", level: "Cardio", maxCapacity: 12, isActive: true },
-  { id: "sg_5", day: "Mardi", startTime: "12:15", endTime: "13:05", discipline: "Boxing Bag", level: "Cardio", maxCapacity: 12, isActive: true },
-  { id: "sg_6", day: "Mardi", startTime: "17:00", endTime: "18:00", discipline: "Lady Striking", level: "100% féminin", maxCapacity: 12, isActive: true },
-  { id: "sg_7", day: "Mardi", startTime: "18:00", endTime: "19:00", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  // Mercredi
-  { id: "sg_8", day: "Mercredi", startTime: "07:00", endTime: "08:00", discipline: "Boxing Bag", level: "Drills", maxCapacity: 12, isActive: true },
-  { id: "sg_9", day: "Mercredi", startTime: "11:00", endTime: "12:00", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_10", day: "Mercredi", startTime: "12:15", endTime: "13:15", discipline: "KB Shred", level: "Drills", maxCapacity: 12, isActive: true },
-  { id: "sg_11", day: "Mercredi", startTime: "17:30", endTime: "18:30", discipline: "Striking", level: "Drills", maxCapacity: 12, isActive: true },
-  { id: "sg_12", day: "Mercredi", startTime: "19:30", endTime: "20:30", discipline: "Boxe Thaï", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_13", day: "Mercredi", startTime: "20:30", endTime: "21:30", discipline: "Kick Boxing", level: "Drills", maxCapacity: 12, isActive: true },
-  // Jeudi
-  { id: "sg_14", day: "Jeudi", startTime: "11:00", endTime: "12:00", discipline: "KB Shred", level: "Drills", maxCapacity: 12, isActive: true },
-  { id: "sg_15", day: "Jeudi", startTime: "12:15", endTime: "13:15", discipline: "Striking", level: "Drills", maxCapacity: 12, isActive: true },
-  { id: "sg_16", day: "Jeudi", startTime: "17:30", endTime: "18:30", discipline: "Lady Striking", level: "100% féminin", maxCapacity: 12, isActive: true },
-  { id: "sg_17", day: "Jeudi", startTime: "19:30", endTime: "20:30", discipline: "Kick Boxing", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_18", day: "Jeudi", startTime: "20:30", endTime: "21:30", discipline: "Boxe Thaï", level: "Sparring", maxCapacity: 12, isActive: true },
-  // Vendredi
-  { id: "sg_19", day: "Vendredi", startTime: "07:00", endTime: "08:00", discipline: "Boxing Bag", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_20", day: "Vendredi", startTime: "17:00", endTime: "18:00", discipline: "Boxe Thaï", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_trial_v", day: "Vendredi", startTime: "18:00", endTime: "19:00", discipline: "Boxe Thaï", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_21", day: "Vendredi", startTime: "19:30", endTime: "20:30", discipline: "Striking", level: "Drills", maxCapacity: 12, isActive: true },
-  // Samedi
-  { id: "sg_trial_s", day: "Samedi", startTime: "09:00", endTime: "10:00", discipline: "Boxe anglaise", level: "Fondamentaux", maxCapacity: 12, isActive: true },
-  { id: "sg_22", day: "Samedi", startTime: "11:00", endTime: "12:00", discipline: "Kick Boxing", level: "Sparring", maxCapacity: 12, isActive: true },
-  { id: "sg_23", day: "Samedi", startTime: "12:00", endTime: "13:00", discipline: "Lady Striking", level: "Sparring", maxCapacity: 12, isActive: true },
-];
-
-function getLevelBadgeClasses(level: string): string {
-  const lvl = (level || "").toLowerCase();
-  if (lvl.includes("fondament") || lvl.includes("tous niveaux") || lvl.includes("débutant") || lvl.includes("debutant")) {
-    return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
-  }
-  if (lvl.includes("drill") || lvl.includes("performance") || lvl.includes("intermédiaire") || lvl.includes("intermediaire")) {
-    return "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30";
-  }
-  if (lvl.includes("cardio")) {
-    return "bg-purple-500/15 text-purple-400 border-purple-500/30";
-  }
-  if (lvl.includes("100% féminin") || lvl.includes("100% feminin") || lvl.includes("féminin") || lvl.includes("feminin") || lvl.includes("femme") || lvl.includes("lady")) {
-    return "bg-pink-500/15 text-pink-400 border-pink-500/30";
-  }
-  if (lvl.includes("sparring") || lvl.includes("élite") || lvl.includes("elite") || lvl.includes("confirmé") || lvl.includes("confirme")) {
-    return "bg-red-500/15 text-red-400 border-red-500/30";
-  }
-  return "bg-brand-white/10 text-brand-white/70 border-brand-white/20";
-}
 
 interface AdminPlanningViewProps {
   initialTemplates?: RecurringTemplateItem[];
@@ -134,12 +83,12 @@ export default function AdminPlanningView({
         startTime: t.start_time.slice(0, 5),
         endTime: t.end_time.slice(0, 5),
         discipline: t.discipline,
-        level: t.level as LevelCategory,
+        level: t.level,
         maxCapacity: t.max_capacity,
         isActive: t.is_active,
       }));
     }
-    return FALLBACK_SMALL_GROUP;
+    return [];
   }, [initialTemplates]);
 
   // État Small Group (alimenté par Supabase)
@@ -169,8 +118,8 @@ export default function AdminPlanningView({
   const [sgFormDay, setSgFormDay] = useState<DayName>("Lundi");
   const [sgFormStart, setSgFormStart] = useState("09:00");
   const [sgFormEnd, setSgFormEnd] = useState("09:50");
-  const [sgFormDiscipline, setSgFormDiscipline] = useState("Boxing Bag");
-  const [sgFormLevel, setSgFormLevel] = useState<LevelCategory>("Fondamentaux");
+  const [sgFormDiscipline, setSgFormDiscipline] = useState<string>("Boxing Bag");
+  const [sgFormLevel, setSgFormLevel] = useState<SmallGroupLevel>("Fondamentaux");
   const [sgFormCapacity, setSgFormCapacity] = useState(12);
 
   // Modal Édition Small Group
@@ -521,6 +470,12 @@ export default function AdminPlanningView({
 
           {/* Grille des séances par jour */}
           <div className="space-y-6">
+            {smallGroupSessions.length === 0 && (
+              <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
+                <p className="text-brand-white/80 font-heading font-bold">Aucun créneau Small Group configuré dans Supabase.</p>
+                <p className="text-xs text-brand-white/50">Cliquez sur « Ajouter une séance Small Group » pour créer votre premier créneau récurrent.</p>
+              </div>
+            )}
             {DAYS_ORDER.map((day) => {
               const daySessions = sgByDay[day];
               if (!daySessions || daySessions.length === 0) return null;
@@ -555,8 +510,8 @@ export default function AdminPlanningView({
                             <span className="text-base font-heading font-bold uppercase tracking-wide text-brand-white">
                               {session.discipline}
                             </span>
-                            <span className={cn("text-[10px] font-black uppercase px-2.5 py-0.5 rounded border", getLevelBadgeClasses(session.level))}>
-                              {session.level}
+                            <span className={cn("text-[10px] font-black uppercase px-2.5 py-0.5 rounded border", getLevelBadgeClasses(session.level, session.discipline))}>
+                              {session.discipline === "Lady Striking" ? "100% féminin" : session.level}
                             </span>
                             <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
                               {session.maxCapacity} places max
@@ -668,16 +623,18 @@ export default function AdminPlanningView({
                     </label>
                     <select
                       value={sgFormDiscipline}
-                      onChange={(e) => setSgFormDiscipline(e.target.value)}
+                      onChange={(e) => {
+                        const newDisc = e.target.value;
+                        setSgFormDiscipline(newDisc);
+                        setSgFormLevel(getStandardLevelForDiscipline(newDisc, sgFormLevel));
+                      }}
                       className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
                     >
-                      <option value="Boxing Bag">Boxing Bag</option>
-                      <option value="Boxe anglaise">Boxe anglaise</option>
-                      <option value="KB Shred">KB Shred</option>
-                      <option value="Kick Boxing">Kick Boxing</option>
-                      <option value="Lady Striking">Lady Striking</option>
-                      <option value="Striking">Striking</option>
-                      <option value="Boxe Thaï">Boxe Thaï</option>
+                      {SMALL_GROUP_DISCIPLINES.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -685,17 +642,27 @@ export default function AdminPlanningView({
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Niveau / Type
                     </label>
-                    <select
-                      value={sgFormLevel}
-                      onChange={(e) => setSgFormLevel(e.target.value as LevelCategory)}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    >
-                      <option value="Fondamentaux">Fondamentaux (Vert)</option>
-                      <option value="Drills">Drills (Bleu cyan)</option>
-                      <option value="Cardio">Cardio (Violet)</option>
-                      <option value="100% féminin">100% féminin (Rose)</option>
-                      <option value="Sparring">Sparring (Rouge)</option>
-                    </select>
+                    {sgFormDiscipline === "Lady Striking" ? (
+                      <div className="w-full bg-[#0a1120]/70 border border-pink-500/30 rounded-xl px-3 py-2.5 sm:py-3 text-pink-400 text-xs sm:text-sm font-semibold flex items-center justify-between">
+                        <span>100% féminin</span>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-pink-500/20 border border-pink-500/40 text-pink-300">
+                          Verrouillé
+                        </span>
+                      </div>
+                    ) : (
+                      <select
+                        value={sgFormLevel === "100% féminin" ? "Fondamentaux" : sgFormLevel}
+                        onChange={(e) => setSgFormLevel(e.target.value as SmallGroupLevel)}
+                        className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                      >
+                        <option value="Fondamentaux">Fondamentaux (Vert)</option>
+                        <option value="Drills">Drills (Bleu cyan)</option>
+                        <option value="Performance">Performance (Orange)</option>
+                        <option value="Elite">Elite (Rouge)</option>
+                        <option value="Cardio">Cardio (Violet)</option>
+                        <option value="Tous niveaux">Tous niveaux (Neutre)</option>
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -856,18 +823,22 @@ export default function AdminPlanningView({
                     </label>
                     <select
                       value={editingSgSession.discipline}
-                      onChange={(e) =>
-                        setEditingSgSession({ ...editingSgSession, discipline: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const newDisc = e.target.value;
+                        const newLevel = getStandardLevelForDiscipline(newDisc, editingSgSession.level);
+                        setEditingSgSession({
+                          ...editingSgSession,
+                          discipline: newDisc,
+                          level: newLevel,
+                        });
+                      }}
                       className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
                     >
-                      <option value="Boxing Bag">Boxing Bag</option>
-                      <option value="Boxe anglaise">Boxe anglaise</option>
-                      <option value="KB Shred">KB Shred</option>
-                      <option value="Kick Boxing">Kick Boxing</option>
-                      <option value="Lady Striking">Lady Striking</option>
-                      <option value="Striking">Striking</option>
-                      <option value="Boxe Thaï">Boxe Thaï</option>
+                      {SMALL_GROUP_DISCIPLINES.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -875,22 +846,36 @@ export default function AdminPlanningView({
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Niveau / Type
                     </label>
-                    <select
-                      value={editingSgSession.level}
-                      onChange={(e) =>
-                        setEditingSgSession({
-                          ...editingSgSession,
-                          level: e.target.value as LevelCategory,
-                        })
-                      }
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    >
-                      <option value="Fondamentaux">Fondamentaux (Vert)</option>
-                      <option value="Drills">Drills (Bleu cyan)</option>
-                      <option value="Cardio">Cardio (Violet)</option>
-                      <option value="100% féminin">100% féminin (Rose)</option>
-                      <option value="Sparring">Sparring (Rouge)</option>
-                    </select>
+                    {editingSgSession.discipline === "Lady Striking" ? (
+                      <div className="w-full bg-[#0a1120]/70 border border-pink-500/30 rounded-xl px-3 py-2.5 sm:py-3 text-pink-400 text-xs sm:text-sm font-semibold flex items-center justify-between">
+                        <span>100% féminin</span>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-pink-500/20 border border-pink-500/40 text-pink-300">
+                          Verrouillé
+                        </span>
+                      </div>
+                    ) : (
+                      <select
+                        value={
+                          editingSgSession.level === "100% féminin"
+                            ? "Fondamentaux"
+                            : editingSgSession.level
+                        }
+                        onChange={(e) =>
+                          setEditingSgSession({
+                            ...editingSgSession,
+                            level: e.target.value as SmallGroupLevel,
+                          })
+                        }
+                        className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                      >
+                        <option value="Fondamentaux">Fondamentaux (Vert)</option>
+                        <option value="Drills">Drills (Bleu cyan)</option>
+                        <option value="Performance">Performance (Orange)</option>
+                        <option value="Elite">Elite (Rouge)</option>
+                        <option value="Cardio">Cardio (Violet)</option>
+                        <option value="Tous niveaux">Tous niveaux (Neutre)</option>
+                      </select>
+                    )}
                   </div>
 
                   <div>

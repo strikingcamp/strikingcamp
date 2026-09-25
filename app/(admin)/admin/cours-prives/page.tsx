@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import AdminPrivateCoachingView from "@/components/admin/AdminPrivateCoachingView";
 import type { RecurringTemplateItem, AdminDatedSessionItem } from "@/app/(admin)/admin/planning/actions";
 
@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function AdminPrivateCoachingPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // 1. Récupération des modèles récurrents (semaine type - Cours Privés)
   let initialTemplates: RecurringTemplateItem[] = [];
