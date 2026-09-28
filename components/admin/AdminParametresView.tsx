@@ -640,7 +640,7 @@ export default function AdminParametresView({ initialData }: AdminParametresView
               <div className="bg-[#080d1a]/50 border border-brand-blue/20 rounded-xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-heading font-bold uppercase text-brand-blue">
-                    Small Group
+                    Cours Adulte
                   </span>
                   <span className="text-xl font-heading font-black text-brand-white">
                     {initialData.capacities.smallGroup} max

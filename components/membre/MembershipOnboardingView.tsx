@@ -356,7 +356,7 @@ export default function MembershipOnboardingView() {
                     </div>
                     <div>
                       <span className="text-[10px] font-heading font-black uppercase tracking-wider text-brand-white/40 block">
-                        {isPriv ? "Formule Premium" : "Formule Small Group"}
+                        {isPriv ? "Formule Premium" : "Formule Cours Adulte"}
                       </span>
                       <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                         {plan.name}
@@ -385,7 +385,7 @@ export default function MembershipOnboardingView() {
                     {(isPriv || isSg) && (
                       <div className="flex items-center gap-2">
                         <Check size={14} className="text-brand-blue shrink-0" />
-                        <span>Accès illimité aux <strong>Small Groups</strong> (12 max)</span>
+                        <span>Accès illimité aux <strong>Cours Adultes</strong> (12 max)</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2">

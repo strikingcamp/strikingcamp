@@ -23,8 +23,8 @@ export interface TrialPricingItem {
 export const TRIAL_PRICING: Record<TrialSessionType, TrialPricingItem> = {
   small_group: {
     type: "small_group",
-    label: "Small Group",
-    categoryLabel: "Small Group",
+    label: "Cours Adulte",
+    categoryLabel: "Cours Adulte",
     price: 15,
     priceFormatted: "15 €",
     badge: "Tarif Essai 15 €",

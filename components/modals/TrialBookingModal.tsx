@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -163,6 +164,25 @@ export default function TrialBookingModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, isSubmitting, onClose]);
 
+  // État de montage pour le portail DOM
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
+  // Empêcher le défilement de la page d'arrière-plan quand la modale est ouverte
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   // Nombre de créneaux disponibles par discipline
   const availableCountsByDiscipline = useMemo(() => {
     let kickBoxingCount = 0;
@@ -256,7 +276,7 @@ export default function TrialBookingModal({
     if (!selectedSessionId || isSubmitting) return;
 
     if (!isSmallGroupActive) {
-      setSubmitError("Le service Small Group est actuellement indisponible.");
+      setSubmitError("Le service Cours Adulte est actuellement indisponible.");
       return;
     }
 
@@ -294,8 +314,8 @@ export default function TrialBookingModal({
           SESSION_ALREADY_STARTED: "Cette séance a déjà débuté.",
           PRIVATE_SESSION_NOT_ALLOWED: "Les cours privés ne sont pas éligibles aux cours d'essai.",
           COLLECTIVE_TRIAL_NOT_ALLOWED: "Les cours collectifs ne sont plus disponibles en cours d'essai.",
-          INVALID_SESSION_TYPE: "Les cours d'essai sont exclusivement réservés aux créneaux Small Group (Mardi 18:00 Kick Boxing, Vendredi 18:00 Boxe Thaï et Samedi 09:00 Boxe Anglaise).",
-          SERVICE_UNAVAILABLE: "Le service Small Group est actuellement désactivé et indisponible à la réservation.",
+          INVALID_SESSION_TYPE: "Les cours d'essai sont exclusivement réservés aux créneaux Cours Adulte (Mardi 18:00 Kick Boxing, Vendredi 18:00 Boxe Thaï et Samedi 09:00 Boxe Anglaise).",
+          SERVICE_UNAVAILABLE: "Le service Cours Adulte est actuellement désactivé et indisponible à la réservation.",
           ALREADY_BOOKED_THIS_SESSION: "Tu as déjà réservé un cours d'essai pour ce créneau !",
           ACTIVE_TRIAL_ALREADY_EXISTS:
             "Tu as déjà un cours d'essai actif à venir. Contacte le club pour modifier ton créneau.",
@@ -316,7 +336,7 @@ export default function TrialBookingModal({
       setConfirmedBookingData({
         discipline: data.discipline || selectedSession?.discipline || selectedDiscipline,
         type: "small_group",
-        typeLabel: "Small Group",
+        typeLabel: "Cours Adulte",
         price: getTrialPriceFormatted("small_group"),
         date: data.date || selectedSession?.dateFormatted || "",
         time: data.time || selectedSession?.timeFormatted || "",
@@ -331,11 +351,11 @@ export default function TrialBookingModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans">
         {/* Backdrop sombre flouté */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -374,7 +394,7 @@ export default function TrialBookingModal({
                 )}
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
                   <Users size={13} />
-                  <span>Séance d&apos;Essai Small Group (15 €)</span>
+                  <span>Séance d&apos;Essai Cours Adulte (15 €)</span>
                 </div>
               </div>
 
@@ -397,7 +417,7 @@ export default function TrialBookingModal({
                 {step === 5 && "Séance d'essai confirmée !"}
               </h2>
               <p className="text-xs sm:text-sm text-brand-white/60 mt-0.5">
-                {step === 1 && "Séances Small Group encadrées par le coach (12 participants max)."}
+                {step === 1 && "Séances Cours Adulte encadrées par le coach (12 participants max)."}
                 {step === 2 && "Sélectionne la date de ton choix au club de Marseille."}
                 {step === 3 && "Indique où t'envoyer ta confirmation et tes accès."}
                 {step === 4 && "Vérifie les détails de ta séance avant de valider."}
@@ -468,7 +488,7 @@ export default function TrialBookingModal({
                   Séances d&apos;essai temporairement indisponibles
                 </h3>
                 <p className="text-xs text-brand-white/60 max-w-sm mx-auto">
-                  Les réservations de séances d&apos;essai Small Group sont actuellement suspendues. N&apos;hésite pas à contacter directement le club.
+                  Les réservations de séances d&apos;essai Cours Adulte sont actuellement suspendues. N&apos;hésite pas à contacter directement le club.
                 </p>
               </div>
             )}
@@ -520,7 +540,7 @@ export default function TrialBookingModal({
                           <div className="flex items-center gap-2 text-[11px] text-brand-white/60">
                             <span className="inline-flex items-center gap-1">
                               <Users size={13} className="text-brand-blue" />
-                              Small Group (12 max)
+                              Cours Adulte (12 max)
                             </span>
                             <span>•</span>
                             <span className="inline-flex items-center gap-1">
@@ -551,7 +571,7 @@ export default function TrialBookingModal({
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-brand-white/5 pb-2">
                   <span className="text-xs font-bold uppercase text-brand-white/60">
-                    Discipline : <strong className="text-brand-white">{selectedDiscipline}</strong> • Format : <strong className="text-brand-blue">Small Group (15 €)</strong>
+                    Discipline : <strong className="text-brand-white">{selectedDiscipline}</strong> • Format : <strong className="text-brand-blue">Cours Adulte (15 €)</strong>
                   </span>
                   <button
                     type="button"
@@ -602,7 +622,7 @@ export default function TrialBookingModal({
                                 {s.dayName} {s.dateFormatted.split(" ").slice(1).join(" ")}
                               </span>
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
-                                Small Group (15 €)
+                                Cours Adulte (15 €)
                               </span>
                             </div>
 
@@ -657,7 +677,7 @@ export default function TrialBookingModal({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-heading font-black uppercase text-brand-white block">
-                          {selectedSession.discipline} (Small Group)
+                          {selectedSession.discipline} (Cours Adulte)
                         </span>
                         <span className="px-2 py-0.5 rounded text-[10px] font-heading font-black uppercase bg-brand-blue text-brand-black">
                           15 €
@@ -818,7 +838,7 @@ export default function TrialBookingModal({
                         Séance d&apos;Essai
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full bg-brand-white/5 border border-brand-white/10 text-brand-white/80 font-heading font-black text-xs uppercase tracking-wider">
-                        Small Group
+                        Cours Adulte
                       </span>
                     </div>
                     <div className="px-3 py-1 rounded-full bg-brand-blue text-brand-black font-heading font-black text-xs uppercase tracking-wider shadow-sm">
@@ -844,7 +864,7 @@ export default function TrialBookingModal({
                         Format
                       </span>
                       <span className="text-sm font-heading font-black uppercase text-brand-blue block">
-                        Small Group (12 max)
+                        Cours Adulte (12 max)
                       </span>
                       <span className="text-[11px] text-brand-white/50">
                         Encadrement personnalisé
@@ -954,7 +974,7 @@ export default function TrialBookingModal({
                     Ton cours d&apos;essai est réservé !
                   </h3>
                   <p className="text-sm text-brand-white/70 max-w-md mx-auto">
-                    Nous avons bien bloqué ta place pour ta séance Small Group au Striking Camp.
+                    Nous avons bien bloqué ta place pour ta séance Cours Adulte au Striking Camp.
                   </p>
                 </div>
 
@@ -963,7 +983,7 @@ export default function TrialBookingModal({
                   <div className="flex items-center justify-between border-b border-brand-white/10 pb-2.5">
                     <div>
                       <span className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-heading font-black uppercase tracking-wider inline-block mr-2">
-                        Cours d&apos;Essai Small Group
+                        Cours d&apos;Essai Cours Adulte
                       </span>
                       <span className="font-heading font-black uppercase text-brand-white text-sm">
                         {confirmedBookingData.discipline}
@@ -1007,6 +1027,7 @@ export default function TrialBookingModal({
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

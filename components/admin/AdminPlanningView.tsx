@@ -357,7 +357,7 @@ export default function AdminPlanningView({
             PLANNING & COURS
           </h1>
           <p className="text-xs sm:text-sm text-brand-white/60">
-            Source de vérité officielle : gérez la semaine type Small Group, synchronisée en direct avec le site public et l&apos;espace membre.
+            Source de vérité officielle : gérez la semaine type Cours Adulte, synchronisée en direct avec le site public et l&apos;espace membre.
           </p>
         </div>
 
@@ -455,7 +455,7 @@ export default function AdminPlanningView({
           <div className="flex items-center gap-2.5 text-xs text-[#00d8ff]">
             <Users size={18} className="shrink-0" />
             <span>
-              <strong>Planning Small Group (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>12 max</strong>.
+              <strong>Planning Cours Adulte (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>12 max</strong>.
             </span>
           </div>
 
@@ -464,7 +464,7 @@ export default function AdminPlanningView({
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#00d8ff]/20 shrink-0 cursor-pointer"
             >
               <Plus size={15} />
-              Ajouter une séance Small Group
+              Ajouter une séance Cours Adulte
             </button>
           </div>
 
@@ -472,8 +472,8 @@ export default function AdminPlanningView({
           <div className="space-y-6">
             {smallGroupSessions.length === 0 && (
               <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
-                <p className="text-brand-white/80 font-heading font-bold">Aucun créneau Small Group configuré dans Supabase.</p>
-                <p className="text-xs text-brand-white/50">Cliquez sur « Ajouter une séance Small Group » pour créer votre premier créneau récurrent.</p>
+                <p className="text-brand-white/80 font-heading font-bold">Aucun créneau Cours Adulte configuré dans Supabase.</p>
+                <p className="text-xs text-brand-white/50">Cliquez sur « Ajouter une séance Cours Adulte » pour créer votre premier créneau récurrent.</p>
               </div>
             )}
             {DAYS_ORDER.map((day) => {
@@ -523,7 +523,7 @@ export default function AdminPlanningView({
                               <Clock size={13} />
                               {session.startTime} → {session.endTime}
                             </span>
-                            <span className="text-brand-white/40">• 60 min · Small Group</span>
+                            <span className="text-brand-white/40">• 60 min · Cours Adulte</span>
                           </div>
                         </div>
 
@@ -584,7 +584,7 @@ export default function AdminPlanningView({
               {/* HEADER */}
               <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
                 <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                  Ajouter une séance Small Group
+                  Ajouter une séance Cours Adulte
                 </h3>
                 <button
                   onClick={() => setIsAddSgModalOpen(false)}
@@ -749,7 +749,7 @@ export default function AdminPlanningView({
               {/* HEADER */}
               <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
                 <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                  Modifier la séance Small Group
+                  Modifier la séance Cours Adulte
                 </h3>
                 <button
                   onClick={() => setEditingSgSession(null)}

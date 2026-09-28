@@ -38,7 +38,7 @@ export interface BookingEmailData {
   memberEmail: string;
   memberName: string;
   discipline: string;
-  sessionType: string; // "Small Group" | "Cours Privé"
+  sessionType: string; // "Cours Adulte" | "Cours Privé"
   date: string;
   time: string;
   location?: string;
@@ -412,7 +412,7 @@ export async function sendTrialBookingConfirmationEmail(
 
   const location = data.location || OFFICIAL_VENUE;
   const trialPrice = data.price || "15 €";
-  const trialType = data.sessionType || "Small Group";
+  const trialType = data.sessionType || "Cours Adulte";
 
   try {
     const { error } = await resend.emails.send({
@@ -549,7 +549,7 @@ export async function sendAdminTrialBookingNotification(
             <tr>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Format</td>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #ffffff; font-size: 14px; font-weight: bold;">
-                Cours d'Essai (${data.sessionType || "Small Group"})
+                Cours d'Essai (${data.sessionType || "Cours Adulte"})
               </td>
             </tr>
             <tr>

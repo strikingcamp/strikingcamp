@@ -455,7 +455,7 @@ export default function AdminMembersView({
         <div className="bg-[#0f172a]/90 border border-brand-blue/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-blue">
-              Small Group
+              Cours Adulte
             </span>
             <div className="w-7 h-7 rounded-lg bg-brand-blue/10 border border-brand-blue/20 flex items-center justify-center text-brand-blue">
               <Users size={14} />
@@ -466,7 +466,7 @@ export default function AdminMembersView({
               {stats.smallGroupMembers}
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              Membres Small Group
+              Membres Cours Adulte
             </span>
           </div>
         </div>
@@ -555,7 +555,7 @@ export default function AdminMembersView({
                 : "bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20"
             )}
           >
-            <Users size={13} /> Small Group ({stats.smallGroupMembers})
+            <Users size={13} /> Cours Adulte ({stats.smallGroupMembers})
           </button>
           <button
             onClick={() => setFilterCategory("private")}
@@ -1211,7 +1211,7 @@ export default function AdminMembersView({
                     >
                       <div className="space-y-0.5">
                         <span className="font-semibold text-brand-white block">
-                          {b.discipline} • {b.sessionType === "private" ? "Cours Privé" : "Small Group"}
+                          {b.discipline} • {b.sessionType === "private" ? "Cours Privé" : "Cours Adulte"}
                         </span>
                         <span className="text-[11px] text-brand-white/40">
                           {new Date(b.starts_at).toLocaleDateString("fr-FR", {

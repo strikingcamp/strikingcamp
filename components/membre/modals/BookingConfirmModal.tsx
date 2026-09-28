@@ -85,7 +85,7 @@ export default function BookingConfirmModal() {
                     )}
                   >
                     <ShieldCheck size={14} />
-                    {isPrivate ? "Réservation Cours Privé" : "Réservation Small Group"}
+                    {isPrivate ? "Réservation Cours Privé" : "Réservation Cours Adulte"}
                   </div>
                   <h3 className="text-2xl font-heading font-bold uppercase tracking-wider text-brand-white">
                     Confirmer votre réservation
@@ -134,7 +134,7 @@ export default function BookingConfirmModal() {
                           : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
                       )}
                     >
-                      {selectedSlot?.sessionType || "Séance"} · {isPrivate ? "1 personne" : "Capacité 12"}
+                      {isPrivate ? "Cours Privé" : "Cours Adulte"} · {isPrivate ? "1 personne" : "Capacité 12"}
                     </span>
                   </div>
 

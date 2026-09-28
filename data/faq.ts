@@ -103,13 +103,13 @@ export const allFaqItems: FaqItemDetailed[] = [
     category: "formules",
     question: "Quelles sont les formules d'entraînement proposées ?",
     answer:
-      "Striking Camp propose deux formats d'entraînement : les séances en Small Group (12 participants maximum) pour un encadrement en effectif restreint avec suivi technique personnalisé, et les Cours Privés (coaching individuel 1-on-1) avec le coach Mahfoud.",
+      "Striking Camp propose deux formats d'entraînement : les séances en Cours Adulte (12 participants maximum) pour un encadrement en effectif restreint avec suivi technique personnalisé, et les Cours Privés (coaching individuel 1-on-1) avec le coach Mahfoud.",
   },
   {
     category: "formules",
-    question: "Qu'est-ce que le format Small Group ?",
+    question: "Qu'est-ce que le format Cours Adulte ?",
     answer:
-      "Le Small Group est un cours dispensé en effectif réduit. Cette formule permet au coach d'apporter des corrections précises et d'adapter les consignes à chaque élève, tout en profitant de la dynamique collective.",
+      "Le format Cours Adulte est un entraînement dispensé en effectif réduit. Cette formule permet au coach d'apporter des corrections précises et d'adapter les consignes à chaque élève, tout en profitant de la dynamique collective.",
   },
   {
     category: "formules",

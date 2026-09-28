@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     default: "Striking Camp | Club de Boxe & Sports de Combat à Marseille (13010)",
     template: "%s | Striking Camp",
   },
-  description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes. Coaching individuel et Small Group.",
+  description: "Le club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes. Coaching individuel et Cours Adulte.",
   keywords: "club de boxe marseille, salle de boxe marseille 13010, kick boxing marseille, boxe thaï marseille, lady striking marseille, cours boxe femme marseille, coach boxe marseille, capelette 13010, striking marseille",
   authors: [{ name: "Striking Camp" }],
   creator: "Striking Camp",

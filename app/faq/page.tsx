@@ -5,14 +5,14 @@ import { allFaqItems } from "@/data/faq";
 export const metadata: Metadata = {
   title: "FAQ — Questions Fréquentes sur la Boxe à Marseille (13010)",
   description:
-    "Toutes les réponses à vos questions sur les cours de Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking (100% femmes), Small Group et cours privés au Striking Camp Marseille.",
+    "Toutes les réponses à vos questions sur les cours de Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking (100% femmes), Cours Adulte et cours privés au Striking Camp Marseille.",
   alternates: {
     canonical: "https://www.strikingcamp.com/faq",
   },
   openGraph: {
     title: "FAQ — Questions Fréquentes | Striking Camp Marseille (13010)",
     description:
-      "Toutes les réponses à vos questions sur les cours de Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking (100% femmes), Small Group et cours privés au Striking Camp Marseille.",
+      "Toutes les réponses à vos questions sur les cours de Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking (100% femmes), Cours Adulte et cours privés au Striking Camp Marseille.",
     url: "https://www.strikingcamp.com/faq",
     siteName: "Striking Camp",
     locale: "fr_FR",

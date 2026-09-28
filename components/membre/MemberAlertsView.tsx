@@ -46,7 +46,7 @@ const mockAlertsPreview: AlertItem[] = [
     id: "2",
     type: "confirmation",
     title: "Réservation confirmée",
-    message: "Votre créneau de Small Group Kick Boxing du Mardi 18:00 est confirmé.",
+    message: "Votre créneau de Cours Adulte Kick Boxing du Mardi 18:00 est confirmé.",
     date: "Hier à 14:30",
     actionUrl: "/membre/planning",
     actionLabel: "Voir mon planning",

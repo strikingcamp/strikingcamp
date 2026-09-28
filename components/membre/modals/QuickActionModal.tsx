@@ -108,7 +108,7 @@ export default function QuickActionModal() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h4 className="text-base font-heading font-bold uppercase tracking-wide text-brand-white group-hover:text-brand-blue transition-colors">
-                        Séance Small Group
+                        Séance Cours Adulte
                       </h4>
                       <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e]">
                         Max 12 pers.

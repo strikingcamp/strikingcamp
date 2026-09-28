@@ -110,7 +110,7 @@ export default function AdminDashboardView({
               {activeSubscriptionsCount}
             </div>
             <p className="text-[11px] text-[#22c55e] font-semibold">
-              {smallGroupSubscriptionsCount} Small Group · {privateSubscriptionsCount} Privé
+              {smallGroupSubscriptionsCount} Cours Adulte · {privateSubscriptionsCount} Privé
             </p>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function AdminDashboardView({
                             {session.discipline}
                           </span>
                           <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/20">
-                            {session.type === "private" ? "Privé" : "Small Group"}
+                            {session.type === "private" ? "Privé" : "Cours Adulte"}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-brand-white/60">

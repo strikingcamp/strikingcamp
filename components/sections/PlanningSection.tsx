@@ -59,7 +59,7 @@ export default function PlanningSection({
 
         {!isSmallGroupActive && (
           <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs font-semibold max-w-md mx-auto">
-            Les créneaux Small Group sont actuellement en pause ou en réorganisation.
+            Les créneaux Cours Adulte sont actuellement en pause ou en réorganisation.
           </div>
         )}
       </div>
@@ -200,7 +200,7 @@ export default function PlanningSection({
           Envie de tester une première séance ?
         </h3>
         <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed max-w-lg mx-auto">
-          Venez tester un premier entraînement encadré par le coach au club de Marseille (Small Group 15 €). Choisissez votre discipline et votre créneau en 1 minute.
+          Venez tester un premier entraînement encadré par le coach au club de Marseille (Cours Adulte 15 €). Choisissez votre discipline et votre créneau en 1 minute.
         </p>
         <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
           <button

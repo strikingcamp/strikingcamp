@@ -163,7 +163,7 @@ export default function MemberHomeView({
                 Choisissez votre formule d&apos;entraînement
               </h3>
               <p className="text-xs text-brand-white/60 max-w-md">
-                Sélectionnez votre formule (Cours Privé ou Small Group) pour activer vos réservations.
+                Sélectionnez votre formule (Cours Privé ou Cours Adulte) pour activer vos réservations.
               </p>
             </div>
           </div>
@@ -434,7 +434,7 @@ export default function MemberHomeView({
                         : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                     )}
                   >
-                    {slot.sessionType === "Cours Privé" ? "PRIVÉ" : "GROUP"}
+                    {slot.sessionType === "Cours Privé" ? "PRIVÉ" : "ADULTE"}
                   </div>
 
                   <div className="space-y-1">
@@ -443,7 +443,7 @@ export default function MemberHomeView({
                         {slot.discipline}
                       </span>
                       <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 text-brand-white/70 border border-brand-white/10">
-                        {slot.sessionType}
+                        {slot.sessionType === "Small Group" ? "Cours Adulte" : slot.sessionType}
                       </span>
                     </div>
 

@@ -132,20 +132,20 @@ export const formatsData: Record<string, FormatDetail> = {
 
   "small-group": {
     slug: "small-group",
-    title: "SMALL GROUP",
-    h1: "Small Group",
+    title: "COURS ADULTE",
+    h1: "Cours Adulte",
     subtitle: "L’équilibre entre accompagnement technique et énergie du groupe.",
     category: "Groupe Réduit (12 max)",
     image: "/sacSalle.jpg",
-    alt: "Entraînement en Small Group au Striking Camp Marseille",
+    alt: "Entraînement en Cours Adulte au Striking Camp Marseille",
     shortDescription: "Un entraînement en petit groupe pour bénéficier d’un suivi technique tout en profitant de la dynamique du collectif.",
     intro: [
-      "Le Small Group est le format idéal pour celles et ceux qui souhaitent concilier la précision d'un accompagnement personnalisé et la dynamique stimulante de l'entraînement à plusieurs.",
+      "Le format Cours Adulte est idéal pour celles et ceux qui souhaitent concilier la précision d'un accompagnement personnalisé et la dynamique stimulante de l'entraînement à plusieurs.",
       "En limitant volontairement le nombre de participants par créneau, le coach Mahfoud Mohamed peut observer, guider et corriger chaque pratiquant en temps réel, tout en créant une véritable émulation de groupe."
     ],
     targetAudience: {
       title: "Pour quel public ?",
-      description: "Le Small Group est conçu pour tous les pratiquants recherchant un cadre d'apprentissage privilégié :",
+      description: "Les Cours Adultes sont conçus pour tous les pratiquants recherchant un cadre d'apprentissage privilégié :",
       items: [
         "Débutants souhaitant apprendre les bons gestes avec un suivi attentif du coach",
         "Pratiquants intermédiaires désireux de franchir un cap technique et tactique",
@@ -217,8 +217,8 @@ export const formatsData: Record<string, FormatDetail> = {
       "Dynamique de groupe motivante",
       "Accès aux disciplines du club"
     ],
-    metaTitle: "Cours de Boxe en Small Group à Marseille 13010",
-    metaDescription: "Entraînez-vous en Small Group au Striking Camp Marseille : effectif réduit (12 max), suivi personnalisé, drills techniques et émulation collective.",
+    metaTitle: "Cours Adulte de Boxe à Marseille 13010",
+    metaDescription: "Entraînez-vous en Cours Adulte au Striking Camp Marseille : effectif réduit (12 max), suivi personnalisé, drills techniques et émulation collective.",
     preselectedType: "small_group"
   }
 };

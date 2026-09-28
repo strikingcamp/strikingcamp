@@ -445,7 +445,7 @@ export default function AdminSubscriptionsView({
     if (isSg) {
       return (
         <span className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[9px] font-bold uppercase tracking-wider">
-          Small Group
+          Cours Adulte
         </span>
       );
     }
@@ -514,7 +514,7 @@ export default function AdminSubscriptionsView({
         <div className="bg-[#0f172a]/80 border border-brand-white/10 rounded-xl p-5 shadow-lg space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
-              Actifs Small Group
+              Actifs Cours Adulte
             </span>
             <div className="w-9 h-9 rounded-lg bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30">
               <ShieldCheck size={18} />
@@ -525,7 +525,7 @@ export default function AdminSubscriptionsView({
               {stats.activeSmallGroup}
             </div>
             <p className="text-[11px] text-[#22c55e] font-semibold">
-              Réservations Small Group autorisées
+              Réservations Cours Adulte autorisées
             </p>
           </div>
         </div>
@@ -610,7 +610,7 @@ export default function AdminSubscriptionsView({
               className="bg-[#0f172a] border border-brand-white/15 rounded-xl px-3 py-2 text-xs font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
             >
               <option value="all">Toutes formules</option>
-              <option value="small_group">Small Group</option>
+              <option value="small_group">Cours Adulte</option>
               <option value="private">Privé</option>
             </select>
           </div>
@@ -907,7 +907,7 @@ export default function AdminSubscriptionsView({
                       <option value="">-- Choisir une formule --</option>
                       {activePlans.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} [{p.type === "small_group" ? "Small Group" : "Privé"}]
+                          {p.name} [{p.type === "small_group" ? "Cours Adulte" : "Privé"}]
                         </option>
                       ))}
                     </select>
@@ -1056,7 +1056,7 @@ export default function AdminSubscriptionsView({
                   >
                     {selectableEditPlans.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} [{p.type === "small_group" ? "Small Group" : "Privé"}]{!p.is_active ? " [Historique / Inactif]" : ""}
+                        {p.name} [{p.type === "small_group" ? "Cours Adulte" : "Privé"}]{!p.is_active ? " [Historique / Inactif]" : ""}
                       </option>
                     ))}
                   </select>

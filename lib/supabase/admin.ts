@@ -434,7 +434,7 @@ export async function getAdminDashboardData(
         recentBookings.push({
           id: b.id as string,
           memberName,
-          sessionName: rawSess?.discipline || "Small Group",
+          sessionName: rawSess?.discipline || "Cours Adulte",
           sessionDate,
           sessionTime,
           status: (b.status as string) || "confirmé",

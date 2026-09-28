@@ -8,7 +8,7 @@ export default function JsonLd() {
     name: "Striking Camp",
     alternateName: ["Striking Camp Marseille", "Striking Camp 13010"],
     description:
-      "Club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes. Coaching individuel et Small Group par Mahfoud Mohamed.",
+      "Club de référence à Marseille (13010) pour les sports de combat : Boxe Anglaise, Kick Boxing, Muay Thaï, Striking et cours Lady 100% femmes. Coaching individuel et Cours Adulte par Mahfoud Mohamed.",
     url: "https://www.strikingcamp.com",
     telephone: "+33614958849",
     email: "strikingcamp13@gmail.com",
@@ -60,7 +60,7 @@ export default function JsonLd() {
       "Boxing Bag",
       "KB Shred",
       "Coaching Privé",
-      "Small Group Training",
+      "Cours Adulte",
     ],
     sameAs: [
       "https://www.instagram.com/strikingcamp/",

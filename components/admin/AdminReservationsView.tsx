@@ -504,7 +504,7 @@ export default function AdminReservationsView({
                 {sStartTime} {sEndTime ? `→ ${sEndTime}` : ""}
               </span>
               <span className="text-xs font-bold uppercase text-brand-white">
-                {booking.sessionDiscipline || "Small Group"}
+                {booking.sessionDiscipline || "Cours Adulte"}
               </span>
               {booking.sessionLevel && (
                 <span className="text-[10px] text-brand-white/50">
@@ -944,7 +944,7 @@ export default function AdminReservationsView({
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-bold uppercase tracking-wider">
-                Small Group
+                Cours Adulte
               </span>
               {session.level && (
                 <span className="px-2.5 py-0.5 rounded bg-brand-white/10 text-brand-white/80 border border-brand-white/15 text-[10px] font-bold uppercase tracking-wider">
@@ -1269,7 +1269,7 @@ export default function AdminReservationsView({
             )}
           >
             <Users size={16} />
-            <span>Small Group</span>
+            <span>Cours Adulte</span>
           </button>
 
           {/* 3. COURS PRIVÉS */}
@@ -1500,7 +1500,7 @@ export default function AdminReservationsView({
                 ? "Cours d'Essai Prospects"
                 : activeTab === "private"
                 ? "Cours Privés Individuels"
-                : "Séances Small Group"}
+                : "Séances Cours Adulte"}
             </span>
             <span className="text-xs text-brand-white/50">•</span>
             <span className="text-xs font-semibold text-brand-white/70">
@@ -1791,7 +1791,7 @@ export default function AdminReservationsView({
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
               <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
                 <Users size={16} className="text-brand-blue" />
-                Séances Small Group programmées ({smallGroupSessionsForDay.length})
+                Séances Cours Adulte programmées ({smallGroupSessionsForDay.length})
               </h3>
               <span className="text-[11px] text-brand-white/50">
                 Capacité maximale : 12 personnes par séance
@@ -1802,7 +1802,7 @@ export default function AdminReservationsView({
               <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
                 <Calendar size={32} className="mx-auto text-brand-white/30" />
                 <p className="text-sm font-heading font-bold uppercase text-brand-white/70">
-                  Aucune séance Small Group programmée pour le {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}.
+                  Aucune séance Cours Adulte programmée pour le {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}.
                 </p>
                 <p className="text-xs text-brand-white/40 max-w-sm mx-auto">
                   Consultez le planning officiel pour ajouter des séances récurrentes ou exceptionnelles.
@@ -1865,7 +1865,7 @@ export default function AdminReservationsView({
                   {/* Liste des séances du jour ou état vide */}
                   {daySgSessions.length === 0 ? (
                     <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0f172a]/30 rounded-xl border border-brand-white/5">
-                      Aucune séance Small Group programmée pour le {day.dayName} {day.dateNum} {day.monthName}.
+                      Aucune séance Cours Adulte programmée pour le {day.dayName} {day.dateNum} {day.monthName}.
                     </div>
                   ) : (
                     <div className="space-y-4">

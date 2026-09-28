@@ -210,7 +210,7 @@ export default function AdminFormulesView({
       case "small_group":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
-            <Users size={12} /> Small Group
+            <Users size={12} /> Cours Adulte
           </span>
         );
       case "private":
@@ -325,7 +325,7 @@ export default function AdminFormulesView({
         <div className="bg-[#0f172a]/90 border border-brand-blue/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-blue">
-              Small Group
+              Cours Adulte
             </span>
             <div className="w-7 h-7 rounded-lg bg-brand-blue/10 border border-brand-blue/20 flex items-center justify-center text-brand-blue">
               <Users size={14} />
@@ -386,7 +386,7 @@ export default function AdminFormulesView({
                 : "bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20"
             )}
           >
-            <Users size={13} /> Small Group ({stats.smallGroupCount})
+            <Users size={13} /> Cours Adulte ({stats.smallGroupCount})
           </button>
           <button
             onClick={() => setTypeFilter("private")}
@@ -615,7 +615,7 @@ export default function AdminFormulesView({
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   required
-                  placeholder="Ex: Small Group - Mensuel"
+                  placeholder="Ex: Cours Adulte - Mensuel"
                   className="w-full bg-[#020617] border border-brand-white/15 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none transition-colors"
                 />
               </div>

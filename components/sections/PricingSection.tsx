@@ -41,7 +41,7 @@ const basePricingStructure: Record<
       features: [
         "8 séances privées par mois",
         "Suivi technique sur-mesure avec le coach",
-        "Accès illimité aux séances Small Group",
+        "Accès illimité aux séances Cours Adulte",
         "Frais d'adhésion offerts",
       ],
     },
@@ -51,7 +51,7 @@ const basePricingStructure: Record<
       features: [
         "8 séances privées par mois",
         "Suivi technique sur-mesure avec le coach",
-        "Accès illimité aux séances Small Group",
+        "Accès illimité aux séances Cours Adulte",
         "Possibilité d'inviter un(e) ami(e)",
         "Frais d'adhésion offerts",
       ],
@@ -62,7 +62,7 @@ const basePricingStructure: Record<
       subtitle: "Engagement 12 mois",
       commitmentKey: "annual",
       features: [
-        "Accès illimité aux séances Small Group",
+        "Accès illimité aux séances Cours Adulte",
         "Suivi technique personnalisé en groupe réduit (12 max)",
         "Toutes disciplines incluses",
         "Frais d'adhésion : 90€",
@@ -72,7 +72,7 @@ const basePricingStructure: Record<
       subtitle: "Sans engagement",
       commitmentKey: "monthly",
       features: [
-        "Accès illimité aux séances Small Group",
+        "Accès illimité aux séances Cours Adulte",
         "Suivi technique personnalisé en groupe réduit (12 max)",
         "Toutes disciplines incluses",
         "Frais d'adhésion : 90€",
@@ -143,7 +143,7 @@ interface PricingSectionProps {
 }
 
 const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
-  { id: "Small Group", label: "Small Group", icon: Users, badge: "Recommandé" },
+  { id: "Small Group", label: "Cours Adulte", icon: Users, badge: "Recommandé" },
   { id: "Cours Privés", label: "Cours Privés", icon: ShieldCheck, badge: "Sur-mesure" },
 ];
 
@@ -269,7 +269,7 @@ export default function PricingSection({
               <div className="md:col-span-2 space-y-5">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="px-3 py-1 rounded-full bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider">
-                    FORMULE {currentCategory.toUpperCase()}
+                    FORMULE {currentCategory === "Small Group" ? "COURS ADULTE" : currentCategory.toUpperCase()}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase border bg-brand-blue/20 text-brand-blue border-brand-blue/30">
                     {activeCycle === "Annuel" ? "12 Mois" : "Mensuel"}
@@ -281,7 +281,7 @@ export default function PricingSection({
 
                 <div>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                    {currentCategory}
+                    {currentCategory === "Small Group" ? "Cours Adulte" : currentCategory}
                   </h2>
                   <p className="text-xs sm:text-sm text-brand-white/75 mt-1">
                     {currentPlan.subtitle} • Accompagnement pédagogique complet

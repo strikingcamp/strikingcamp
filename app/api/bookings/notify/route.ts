@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Récupération des détails officiels de la séance en base
     let discipline = "Boxe";
-    let sessionType = "Small Group";
+    let sessionType = "Cours Adulte";
     let formattedDate = "Date confirmée";
     let formattedTime = "Horaire confirmé";
 
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         sessionType =
           session.type === "private"
             ? "Cours Privé"
-            : "Small Group";
+            : "Cours Adulte";
 
         if (session.starts_at) {
           const d = new Date(session.starts_at);

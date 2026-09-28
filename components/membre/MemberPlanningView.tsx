@@ -501,7 +501,7 @@ export default function MemberPlanningView() {
       const result = await bookSmallGroup(targetSessionId);
 
       if (!result.success) {
-        setBookingError(result.error || "Impossible de réserver ce cours Small Group.");
+        setBookingError(result.error || "Impossible de réserver ce cours adulte.");
         setIsSubmitting(false);
         return;
       }
@@ -628,7 +628,7 @@ export default function MemberPlanningView() {
               )}
             >
               <Users size={16} />
-              <span>Small Group</span>
+              <span>Cours Adulte</span>
             </button>
           )}
         </div>
@@ -1056,7 +1056,7 @@ export default function MemberPlanningView() {
             <div className="flex items-center gap-2.5">
               <ShieldCheck size={18} className="shrink-0" />
               <span>
-                <strong>Planning Small Group Officiel (23 séances / sem.) :</strong> Capacité limitée à 12 personnes par créneau.
+                <strong>Planning Cours Adulte Officiel (23 séances / sem.) :</strong> Capacité limitée à 12 personnes par créneau.
               </span>
             </div>
             <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-brand-blue text-brand-black shrink-0">
@@ -1161,7 +1161,7 @@ export default function MemberPlanningView() {
             {smallGroupSessionsForSelectedDay.length === 0 ? (
               <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
                 <p className="text-sm font-heading font-bold uppercase text-brand-white">
-                  Aucun cours Small Group programmé pour le {dayDateMap[selectedDayName].fullDateLabel}
+                  Aucun cours Adulte programmé pour le {dayDateMap[selectedDayName].fullDateLabel}
                 </p>
                 <p className="text-xs text-brand-white/50">
                   Sélectionnez un autre jour dans le calendrier ou naviguez avec les flèches pour voir les séances disponibles.

@@ -11,14 +11,14 @@ import {
 export const metadata = {
   title: "Planning des Cours de Boxe et Sports de Combat à Marseille (13010)",
   description:
-    "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Small Group et cours privés du lundi au samedi.",
+    "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Cours Adulte et cours privés du lundi au samedi.",
   alternates: {
     canonical: "https://www.strikingcamp.com/planning",
   },
   openGraph: {
     title: "Planning des Cours de Boxe à Marseille (13010) | Striking Camp",
     description:
-      "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Small Group et cours privés.",
+      "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Cours Adulte et cours privés.",
     url: "https://www.strikingcamp.com/planning",
     siteName: "Striking Camp",
     locale: "fr_FR",
@@ -36,7 +36,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Planning des Cours de Boxe à Marseille (13010) | Striking Camp",
     description:
-      "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Small Group et cours privés.",
+      "Consultez les horaires et le planning des cours au Striking Camp Marseille (13010) : Boxe Anglaise, Kick Boxing, Muay Thaï, Lady Striking, Cours Adulte et cours privés.",
     images: ["https://www.strikingcamp.com/sacSalle.jpg"],
   },
 };

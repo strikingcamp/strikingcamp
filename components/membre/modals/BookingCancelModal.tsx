@@ -191,7 +191,7 @@ export default function BookingCancelModal() {
                           : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
                       )}
                     >
-                      {slotToCancel?.sessionType || "Séance"}
+                      {isPrivate ? "Cours Privé" : "Cours Adulte"}
                     </span>
                   </div>
 
