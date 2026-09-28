@@ -1737,8 +1737,27 @@ export async function updateSubscriptionAdmin(
       }
     }
 
-    const updateData: Record<string, unknown> = {};
-    if (payload.planId !== undefined) updateData.plan_id = payload.planId;
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (payload.planId !== undefined) {
+      updateData.plan_id = payload.planId;
+
+      // Synchronisation déterministe du quota de séances privées selon la formule choisie
+      const { data: targetPlan } = await supabase
+        .from("plans")
+        .select("type, private_sessions_per_period")
+        .eq("id", payload.planId)
+        .maybeSingle();
+
+      if (targetPlan) {
+        if (targetPlan.type === "private") {
+          updateData.private_sessions_quota = targetPlan.private_sessions_per_period || 8;
+        } else {
+          updateData.private_sessions_quota = null;
+        }
+      }
+    }
     if (payload.status !== undefined) {
       updateData.status = payload.status === ("suspended" as string) ? "paused" : payload.status;
     }
@@ -2249,7 +2268,7 @@ export async function createMemberAdmin(
       typeof planData.private_sessions_per_period === "number" &&
       planData.private_sessions_per_period > 0
         ? planData.private_sessions_per_period
-        : null;
+        : (planData.type === "private" ? 8 : null);
 
     const rawSubStatus = payload.subscriptionStatus || "active";
     const dbSubStatus = rawSubStatus === ("suspended" as string) ? "paused" : rawSubStatus;

@@ -51,6 +51,12 @@ export default function AdminSubscriptionsView({
   const [plans] = useState<AdminPlanItem[]>(initialData.plans);
   const [members] = useState<AdminMemberOption[]>(initialData.members);
 
+  // Formules actives filtrées pour nouvelles attributions
+  const activePlans = useMemo(
+    () => plans.filter((p) => p.is_active !== false),
+    [plans]
+  );
+
   // Filtres
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -68,9 +74,19 @@ export default function AdminSubscriptionsView({
     memberName: string;
   } | null>(null);
 
+  // Formules pour la modale d'édition : préserve l'option courante si historique
+  const selectableEditPlans = useMemo(() => {
+    if (!editingSub) return activePlans;
+    const currentPlan = plans.find((p) => p.id === editingSub.planId);
+    if (currentPlan && !currentPlan.is_active && !activePlans.some((p) => p.id === currentPlan.id)) {
+      return [currentPlan, ...activePlans];
+    }
+    return activePlans;
+  }, [editingSub, activePlans, plans]);
+
   // Formulaire Nouvel Abonnement
   const [formUserId, setFormUserId] = useState("");
-  const [formPlanId, setFormPlanId] = useState(plans[0]?.id || "");
+  const [formPlanId, setFormPlanId] = useState(activePlans[0]?.id || plans[0]?.id || "");
   const [formStatus, setFormStatus] = useState<"active" | "paused">("active");
   const [formStartDate, setFormStartDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -889,7 +905,7 @@ export default function AdminSubscriptionsView({
                       className="w-full bg-[#0f172a] border border-brand-white/15 rounded-xl pl-9 pr-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
                     >
                       <option value="">-- Choisir une formule --</option>
-                      {plans.map((p) => (
+                      {activePlans.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} [{p.type === "small_group" ? "Small Group" : "Privé"}]
                         </option>
@@ -1038,9 +1054,9 @@ export default function AdminSubscriptionsView({
                     required
                     className="w-full bg-[#0f172a] border border-brand-white/15 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
                   >
-                    {plans.map((p) => (
+                    {selectableEditPlans.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} [{p.type === "small_group" ? "Small Group" : "Privé"}]
+                        {p.name} [{p.type === "small_group" ? "Small Group" : "Privé"}]{!p.is_active ? " [Historique / Inactif]" : ""}
                       </option>
                     ))}
                   </select>

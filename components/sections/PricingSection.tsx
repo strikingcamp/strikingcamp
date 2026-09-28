@@ -114,6 +114,7 @@ function formatPricingFromPlans(plans: PublicPlan[] = []): Record<PlanCategory, 
   };
 
   for (const p of plans) {
+    if (p.is_active === false) continue;
     const euros = Math.round(p.price_cents / 100);
     const cycle: BillingCycle = p.commitment === "annual" ? "Annuel" : "Mensuel";
 
