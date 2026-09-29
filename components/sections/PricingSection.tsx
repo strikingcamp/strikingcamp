@@ -2,7 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ShieldCheck, Users, ArrowRight } from "lucide-react";
+import {
+  CheckCircle2,
+  ArrowRight,
+  Info,
+} from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { trackPricingView, trackBookingClick } from "@/lib/analytics";
@@ -18,8 +22,36 @@ export interface PublicPlan {
   is_active?: boolean;
 }
 
-type PlanCategory = "Cours Privés" | "Small Group";
+type PlanCategory = "Cours Privés" | "Small Group" | "Lady Striking" | "Kid Boxing";
 type BillingCycle = "Annuel" | "Mensuel";
+type KidAgeGroup = "5-8" | "9-13";
+
+const kidBoxingData: Record<KidAgeGroup, { title: string; subtitle: string; features: string[] }> = {
+  "5-8": {
+    title: "KID BOXING (5–8 ANS)",
+    subtitle:
+      "Un cadre sécurisé et bienveillant pour canaliser l'énergie de votre enfant, développer sa motricité et lui faire découvrir la boxe en s'amusant.",
+    features: [
+      "Accès aux créneaux dédiés 5–8 ans",
+      "Éveil corporel, motricité globale et équilibre",
+      "Découverte ludique de la boxe et jeux éducatifs",
+      "Encadrement pédagogique adapté",
+      "Parking privé inclus",
+    ],
+  },
+  "9-13": {
+    title: "KID BOXING (9–13 ANS)",
+    subtitle:
+      "Un cadre sécurisé et bienveillant pour canaliser l'énergie de votre enfant, développer sa motricité et lui faire découvrir la boxe en s'amusant.",
+    features: [
+      "Accès aux créneaux dédiés 9–13 ans",
+      "Bases techniques pieds-poings et frappe aux paos",
+      "Développement de la coordination, des réflexes et du cardio",
+      "Discipline, respect et confiance en soi",
+      "Parking privé inclus",
+    ],
+  },
+};
 
 type PlanDetails = {
   price: string;
@@ -34,6 +66,78 @@ const basePricingStructure: Record<
   PlanCategory,
   Record<BillingCycle, Omit<PlanDetails, "price" | "priceValue" | "planKey">>
 > = {
+  "Small Group": {
+    Annuel: {
+      subtitle: "Engagement 12 mois",
+      commitmentKey: "annual",
+      features: [
+        "Accès illimité aux séances Cours Adulte",
+        "Suivi technique personnalisé en groupe réduit (12 max)",
+        "Toutes disciplines incluses",
+        "Parking privé inclus",
+        "Frais d'adhésion : 90€",
+      ],
+    },
+    Mensuel: {
+      subtitle: "Sans engagement",
+      commitmentKey: "monthly",
+      features: [
+        "Accès illimité aux séances Cours Adulte",
+        "Suivi technique personnalisé en groupe réduit (12 max)",
+        "Toutes disciplines incluses",
+        "Parking privé inclus",
+        "Frais d'adhésion : 90€",
+      ],
+    },
+  },
+  "Lady Striking": {
+    Annuel: {
+      subtitle: "Cours 100 % féminin",
+      commitmentKey: "monthly",
+      features: [
+        "Accès aux créneaux Lady Striking",
+        "Coaching et suivi personnalisé",
+        "Technique boxe, travail au sac et cardio",
+        "Tous niveaux (débutantes à confirmées)",
+        "Parking privé inclus",
+      ],
+    },
+    Mensuel: {
+      subtitle: "Cours 100 % féminin",
+      commitmentKey: "monthly",
+      features: [
+        "Accès aux créneaux Lady Striking",
+        "Coaching et suivi personnalisé",
+        "Technique boxe, travail au sac et cardio",
+        "Tous niveaux (débutantes à confirmées)",
+        "Parking privé inclus",
+      ],
+    },
+  },
+  "Kid Boxing": {
+    Annuel: {
+      subtitle: "5 à 8 ans",
+      commitmentKey: "annual",
+      features: [
+        "Accès aux créneaux dédiés 5–8 ans",
+        "Éveil corporel, motricité globale et équilibre",
+        "Découverte ludique de la boxe et jeux éducatifs",
+        "Encadrement pédagogique adapté",
+        "Parking privé inclus",
+      ],
+    },
+    Mensuel: {
+      subtitle: "5 à 8 ans",
+      commitmentKey: "annual",
+      features: [
+        "Accès aux créneaux dédiés 5–8 ans",
+        "Éveil corporel, motricité globale et équilibre",
+        "Découverte ludique de la boxe et jeux éducatifs",
+        "Encadrement pédagogique adapté",
+        "Parking privé inclus",
+      ],
+    },
+  },
   "Cours Privés": {
     Annuel: {
       subtitle: "Engagement 12 mois",
@@ -42,6 +146,7 @@ const basePricingStructure: Record<
         "8 séances privées par mois",
         "Suivi technique sur-mesure avec le coach",
         "Accès illimité aux séances Cours Adulte",
+        "Parking privé inclus",
         "Frais d'adhésion offerts",
       ],
     },
@@ -53,29 +158,8 @@ const basePricingStructure: Record<
         "Suivi technique sur-mesure avec le coach",
         "Accès illimité aux séances Cours Adulte",
         "Possibilité d'inviter un(e) ami(e)",
+        "Parking privé inclus",
         "Frais d'adhésion offerts",
-      ],
-    },
-  },
-  "Small Group": {
-    Annuel: {
-      subtitle: "Engagement 12 mois",
-      commitmentKey: "annual",
-      features: [
-        "Accès illimité aux séances Cours Adulte",
-        "Suivi technique personnalisé en groupe réduit (12 max)",
-        "Toutes disciplines incluses",
-        "Frais d'adhésion : 90€",
-      ],
-    },
-    Mensuel: {
-      subtitle: "Sans engagement",
-      commitmentKey: "monthly",
-      features: [
-        "Accès illimité aux séances Cours Adulte",
-        "Suivi technique personnalisé en groupe réduit (12 max)",
-        "Toutes disciplines incluses",
-        "Frais d'adhésion : 90€",
       ],
     },
   },
@@ -83,32 +167,60 @@ const basePricingStructure: Record<
 
 function formatPricingFromPlans(plans: PublicPlan[] = []): Record<PlanCategory, Record<BillingCycle, PlanDetails>> {
   const result: Record<PlanCategory, Record<BillingCycle, PlanDetails>> = {
-    "Cours Privés": {
-      Annuel: {
-        ...basePricingStructure["Cours Privés"]["Annuel"],
-        price: "—€",
-        priceValue: 0,
-        planKey: "private_annual",
-      },
-      Mensuel: {
-        ...basePricingStructure["Cours Privés"]["Mensuel"],
-        price: "—€",
-        priceValue: 0,
-        planKey: "private_monthly",
-      },
-    },
     "Small Group": {
       Annuel: {
         ...basePricingStructure["Small Group"]["Annuel"],
-        price: "—€",
-        priceValue: 0,
+        price: "90€",
+        priceValue: 90,
         planKey: "small_group_annual",
       },
       Mensuel: {
         ...basePricingStructure["Small Group"]["Mensuel"],
-        price: "—€",
-        priceValue: 0,
+        price: "120€",
+        priceValue: 120,
         planKey: "small_group_monthly",
+      },
+    },
+    "Lady Striking": {
+      Annuel: {
+        ...basePricingStructure["Lady Striking"]["Annuel"],
+        price: "50€",
+        priceValue: 50,
+        planKey: "lady_striking_monthly",
+      },
+      Mensuel: {
+        ...basePricingStructure["Lady Striking"]["Mensuel"],
+        price: "50€",
+        priceValue: 50,
+        planKey: "lady_striking_monthly",
+      },
+    },
+    "Kid Boxing": {
+      Annuel: {
+        ...basePricingStructure["Kid Boxing"]["Annuel"],
+        price: "350€",
+        priceValue: 350,
+        planKey: "kid_boxing_season",
+      },
+      Mensuel: {
+        ...basePricingStructure["Kid Boxing"]["Mensuel"],
+        price: "350€",
+        priceValue: 350,
+        planKey: "kid_boxing_season",
+      },
+    },
+    "Cours Privés": {
+      Annuel: {
+        ...basePricingStructure["Cours Privés"]["Annuel"],
+        price: "299€",
+        priceValue: 299,
+        planKey: "private_annual",
+      },
+      Mensuel: {
+        ...basePricingStructure["Cours Privés"]["Mensuel"],
+        price: "399€",
+        priceValue: 399,
+        planKey: "private_monthly",
       },
     },
   };
@@ -136,15 +248,36 @@ function formatPricingFromPlans(plans: PublicPlan[] = []): Record<PlanCategory, 
   return result;
 }
 
+function getCategoryInfoText(category: PlanCategory): string {
+  switch (category) {
+    case "Small Group":
+      return "Cette formule vous donne un accès illimité à tous les créneaux Cours Adulte.";
+    case "Lady Striking":
+      return "Cours 100 % féminin, accès exclusivement aux créneaux Lady Striking.";
+    case "Kid Boxing":
+      return "De septembre à juin (hors vacances scolaires). Les stages organisés pendant les vacances scolaires ne sont pas inclus dans le tarif indiqué.";
+    case "Cours Privés":
+      return "Cette formule vous donne accès à 8 séances privées sur réservation ainsi qu'à un accès illimité aux Cours Adulte.";
+    default:
+      return "";
+  }
+}
+
 interface PricingSectionProps {
   isSmallGroupActive?: boolean;
   isPrivateActive?: boolean;
   initialPlans?: PublicPlan[];
 }
 
-const ALL_CATEGORIES: { id: PlanCategory; label: string; icon: typeof ShieldCheck; badge: string }[] = [
-  { id: "Small Group", label: "Cours Adulte", icon: Users, badge: "Recommandé" },
-  { id: "Cours Privés", label: "Cours Privés", icon: ShieldCheck, badge: "Sur-mesure" },
+const ALL_CATEGORIES: {
+  id: PlanCategory;
+  label: string;
+  badge: string;
+}[] = [
+  { id: "Small Group", label: "Cours Adulte", badge: "Recommandé" },
+  { id: "Lady Striking", label: "Lady Striking", badge: "100% Femmes" },
+  { id: "Kid Boxing", label: "Kid Boxing", badge: "5–13 Ans" },
+  { id: "Cours Privés", label: "Cours Privés", badge: "Sur-mesure" },
 ];
 
 export default function PricingSection({
@@ -165,6 +298,7 @@ export default function PricingSection({
 
   const [activeCategory, setActiveCategory] = useState<PlanCategory>(defaultCategory);
   const [activeCycle, setActiveCycle] = useState<BillingCycle>("Annuel");
+  const [kidAgeGroup, setKidAgeGroup] = useState<KidAgeGroup>("5-8");
 
   const pricingData = useMemo(() => formatPricingFromPlans(initialPlans), [initialPlans]);
 
@@ -176,6 +310,17 @@ export default function PricingSection({
   const currentPlan =
     pricingData[currentCategory]?.[activeCycle] ||
     pricingData["Small Group"][activeCycle];
+
+  const isKidBoxing = currentCategory === "Kid Boxing";
+  const isLadyStriking = currentCategory === "Lady Striking";
+
+  const displayedSubtitle = isKidBoxing
+    ? kidBoxingData[kidAgeGroup].subtitle
+    : currentPlan.subtitle;
+
+  const displayedFeatures = isKidBoxing
+    ? kidBoxingData[kidAgeGroup].features
+    : currentPlan.features;
 
   return (
     <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">
@@ -189,15 +334,14 @@ export default function PricingSection({
           NOS <span className="text-brand-blue">TARIFS</span>
         </h1>
         <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-          Choisissez l’engagement adapté à vos objectifs.
+          Choisissez l’offre et la formule adaptées à vos objectifs ou à ceux de vos enfants.
         </p>
       </div>
 
       {/* Category Tabs (Pills) */}
-      <div className="flex justify-center mb-6">
-        <div role="tablist" aria-label="Catégories d'abonnements" className="flex flex-wrap items-center justify-center gap-2 max-w-2xl w-full">
+      <div className={cn("flex justify-center", isLadyStriking ? "mb-10 sm:mb-12" : "mb-6")}>
+        <div role="tablist" aria-label="Catégories d'abonnements" className="flex flex-wrap items-center justify-center gap-2 max-w-3xl w-full">
           {categories.map((cat) => {
-            const Icon = cat.icon;
             const isActive = currentCategory === cat.id;
 
             return (
@@ -210,13 +354,12 @@ export default function PricingSection({
                   trackPricingView(cat.id);
                 }}
                 className={cn(
-                  "py-3 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+                  "py-3 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
                   isActive
                     ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
                     : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
                 )}
               >
-                <Icon size={16} className={cn("shrink-0", isActive ? "text-brand-black" : "text-brand-blue")} aria-hidden="true" />
                 <span>{cat.label}</span>
               </button>
             );
@@ -224,67 +367,123 @@ export default function PricingSection({
         </div>
       </div>
 
-      {/* Billing Cycle Switcher (Annuel / Mensuel) */}
-      <div className="flex justify-center mb-10 sm:mb-12">
-        <div role="tablist" aria-label="Engagement d'abonnement" className="inline-flex p-1 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg">
-          {(["Annuel", "Mensuel"] as BillingCycle[]).map((cycle) => {
-            const isActive = activeCycle === cycle;
-            return (
-              <button
-                key={cycle}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setActiveCycle(cycle)}
-                className={cn(
-                  "py-2 px-5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                  isActive
-                    ? "bg-brand-blue/20 text-brand-blue border border-brand-blue/30 font-black shadow-sm"
-                    : "text-brand-white/75 hover:text-brand-white"
-                )}
-              >
-                {cycle === "Annuel" ? "Engagement 12 mois" : "Sans engagement"}
-              </button>
-            );
-          })}
+      {/* Age Group / Billing Cycle Switcher */}
+      {!isLadyStriking && (
+        <div className="flex justify-center mb-10 sm:mb-12">
+          {isKidBoxing ? (
+            <div role="tablist" aria-label="Tranche d'âge Kid Boxing" className="inline-flex p-1 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg">
+              {(["5-8", "9-13"] as KidAgeGroup[]).map((age) => {
+                const isActive = kidAgeGroup === age;
+                return (
+                  <button
+                    key={age}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setKidAgeGroup(age)}
+                    className={cn(
+                      "py-2 px-5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+                      isActive
+                        ? "bg-brand-blue/20 text-brand-blue border border-brand-blue/30 font-black shadow-sm"
+                        : "text-brand-white/75 hover:text-brand-white"
+                    )}
+                  >
+                    {age === "5-8" ? "5–8 ANS" : "9–13 ANS"}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div role="tablist" aria-label="Engagement d'abonnement" className="inline-flex p-1 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg">
+              {(["Annuel", "Mensuel"] as BillingCycle[]).map((cycle) => {
+                const isActive = activeCycle === cycle;
+                return (
+                  <button
+                    key={cycle}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setActiveCycle(cycle)}
+                    className={cn(
+                      "py-2 px-5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+                      isActive
+                        ? "bg-brand-blue/20 text-brand-blue border border-brand-blue/30 font-black shadow-sm"
+                        : "text-brand-white/75 hover:text-brand-white"
+                    )}
+                  >
+                    {cycle === "Annuel" ? "Engagement 12 mois" : "Sans engagement"}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Pricing Featured Card (Matching /evenements Hero Card Style) */}
+      {/* Pricing Featured Card */}
       <div className="max-w-3xl mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${currentCategory}-${activeCycle}`}
+            key={`${currentCategory}-${activeCycle}-${isKidBoxing ? kidAgeGroup : ""}`}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25 }}
-            className="relative rounded-2xl bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border border-brand-blue/40 p-6 sm:p-10 shadow-[0_0_50px_rgba(47,174,224,0.15)] overflow-hidden"
+            className={cn(
+              "relative rounded-2xl bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border p-6 sm:p-10 shadow-[0_0_50px_rgba(47,174,224,0.15)] overflow-hidden",
+              isLadyStriking
+                ? "border-pink-500/40 shadow-[0_0_50px_rgba(236,72,153,0.15)]"
+                : "border-brand-blue/40"
+            )}
           >
             {/* Ambient Radial Glow */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-brand-blue/10 rounded-full blur-3xl pointer-events-none" />
+            <div
+              className={cn(
+                "absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none",
+                isLadyStriking ? "bg-pink-500/10" : "bg-brand-blue/10"
+              )}
+            />
 
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
               
               {/* Left & Center: Details & Features */}
               <div className="md:col-span-2 space-y-5">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="px-3 py-1 rounded-full bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider">
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full font-heading font-bold text-xs uppercase tracking-wider",
+                      isLadyStriking
+                        ? "bg-pink-500 text-white"
+                        : "bg-brand-blue text-brand-black"
+                    )}
+                  >
                     FORMULE {currentCategory === "Small Group" ? "COURS ADULTE" : currentCategory.toUpperCase()}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase border bg-brand-blue/20 text-brand-blue border-brand-blue/30">
-                    {activeCycle === "Annuel" ? "12 Mois" : "Mensuel"}
+                  <span
+                    className={cn(
+                      "px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase border",
+                      isLadyStriking
+                        ? "bg-pink-500/20 text-pink-300 border-pink-500/30"
+                        : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
+                    )}
+                  >
+                    {isKidBoxing ? "SAISON" : isLadyStriking ? "ENGAGEMENT 12 MOIS" : activeCycle === "Annuel" ? "12 Mois" : "Mensuel"}
                   </span>
-                  <span className="text-xs text-[#22c55e] font-bold">
-                    • Accès immédiat
-                  </span>
+                  {!isKidBoxing && (
+                    <span className="text-xs text-[#22c55e] font-bold">
+                      • {isLadyStriking ? "100% Féminin" : "Accès immédiat"}
+                    </span>
+                  )}
                 </div>
 
                 <div>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                    {currentCategory === "Small Group" ? "Cours Adulte" : currentCategory}
+                    {isKidBoxing
+                      ? kidBoxingData[kidAgeGroup].title
+                      : currentCategory === "Small Group"
+                      ? "Cours Adulte"
+                      : currentCategory}
                   </h2>
-                  <p className="text-xs sm:text-sm text-brand-white/75 mt-1">
-                    {currentPlan.subtitle} • Accompagnement pédagogique complet
+                  <p className="text-xs sm:text-sm text-brand-white/75 mt-1 leading-relaxed">
+                    {displayedSubtitle}
                   </p>
                 </div>
 
@@ -294,7 +493,7 @@ export default function PricingSection({
                     Inclus dans votre formule :
                   </p>
                   <div className="space-y-2 text-xs sm:text-sm text-brand-white/80">
-                    {currentPlan.features.map((feature, idx) => (
+                    {displayedFeatures.map((feature, idx) => (
                       <div key={idx} className="flex items-start gap-2.5">
                         <CheckCircle2 size={16} className="text-[#22c55e] shrink-0 mt-0.5" aria-hidden="true" />
                         <span className="leading-relaxed">{feature}</span>
@@ -302,43 +501,63 @@ export default function PricingSection({
                     ))}
                   </div>
                 </div>
+
+                {/* Cadre d'information unifié */}
+                <div className="p-3.5 rounded-xl bg-brand-blue/10 border border-brand-blue/20 flex items-start gap-2.5 text-xs text-brand-white/90 leading-relaxed">
+                  <Info size={16} className="text-brand-blue shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>{getCategoryInfoText(currentCategory)}</span>
+                </div>
               </div>
 
               {/* Right: CTA & Price Card */}
               <div className="bg-[#070c16]/80 border border-brand-white/10 rounded-xl p-6 text-center space-y-4">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-brand-white/75">
-                    Tarif d&apos;abonnement
+                    Tarif {isKidBoxing ? "saison" : "d'abonnement"}
                   </p>
                   <div className="flex items-baseline justify-center gap-1 mt-1">
-                    <span className="text-4xl sm:text-5xl font-heading font-black text-brand-blue">
+                    <span
+                      className={cn(
+                        "text-4xl sm:text-5xl font-heading font-black",
+                        isLadyStriking ? "text-pink-400" : "text-brand-blue"
+                      )}
+                    >
                       {currentPlan.price}
                     </span>
                     <span className="text-xs text-brand-white/75 font-medium uppercase tracking-wider">
-                      / mois
+                      {isKidBoxing ? "/ saison" : "/ mois"}
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-2">
+                <div className="space-y-3 pt-2">
                   <Link
-                    href="/connexion"
+                    href={isKidBoxing ? "/contact" : "/connexion"}
                     onClick={() => trackBookingClick("membership", "pricing_card")}
-                    className="w-full py-3.5 px-6 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-blue/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+                    className={cn(
+                      "w-full py-3.5 px-6 font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg focus:outline-none focus-visible:ring-2",
+                      isLadyStriking
+                        ? "bg-pink-500 hover:bg-white text-white hover:text-black shadow-pink-500/30 focus-visible:ring-pink-400"
+                        : "bg-brand-blue hover:bg-brand-white text-brand-black shadow-brand-blue/30 focus-visible:ring-brand-blue"
+                    )}
                   >
-                    SOUSCRIRE EN LIGNE
+                    {isKidBoxing ? "INSCRIRE MON ENFANT" : "SOUSCRIRE EN LIGNE"}
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
-                  <Link
-                    href="/contact"
-                    className="block w-full py-2.5 px-4 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
-                  >
-                    Une question sur les tarifs ?
-                  </Link>
+                  <div className="pt-1 text-center">
+                    <Link
+                      href="/contact"
+                      className="inline-block text-xs text-brand-white/70 hover:text-brand-white transition-colors underline-offset-4 hover:underline py-1"
+                    >
+                      Une question ? Contactez-nous
+                    </Link>
+                  </div>
                 </div>
 
                 <p className="text-[11px] text-brand-white/70 leading-tight">
-                  Paiement sécurisé • Aucun engagement caché.
+                  {isKidBoxing
+                    ? "Inscriptions limitées • Saison"
+                    : "Paiement sécurisé • Aucun engagement caché."}
                 </p>
               </div>
 
@@ -353,7 +572,7 @@ export default function PricingSection({
           Besoin d&apos;un conseil sur la formule adaptée ?
         </h3>
         <p className="text-xs sm:text-sm text-brand-white/75 leading-relaxed max-w-lg mx-auto">
-          Contactez le coach Mahfoud pour échanger sur vos objectifs et déterminer le programme le plus adapté à votre progression.
+          Contactez le coach Mahfoud pour échanger sur vos objectifs ou ceux de vos enfants et déterminer le programme le plus adapté.
         </p>
         <div className="pt-2">
           <Link

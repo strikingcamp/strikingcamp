@@ -61,6 +61,7 @@ export default function JsonLd() {
       "KB Shred",
       "Coaching Privé",
       "Cours Adulte",
+      "Kid Boxing",
     ],
     sameAs: [
       "https://www.instagram.com/strikingcamp/",

@@ -103,19 +103,31 @@ export const allFaqItems: FaqItemDetailed[] = [
     category: "formules",
     question: "Quelles sont les formules d'entraînement proposées ?",
     answer:
-      "Striking Camp propose deux formats d'entraînement : les séances en Cours Adulte (12 participants maximum) pour un encadrement en effectif restreint avec suivi technique personnalisé, et les Cours Privés (coaching individuel 1-on-1) avec le coach Mahfoud.",
+      "Striking Camp propose 4 offres d'entraînement : les séances en Cours Adulte (12 participants maximum), la formule dédiée Lady Striking (50 € / mois, 100% féminin), le Kid Boxing pour enfants de 5 à 13 ans (350 € / saison scolaire), et les Cours Privés (coaching individuel 1-on-1) avec le coach Mahfoud.",
+  },
+  {
+    category: "formules",
+    question: "Quel est le tarif et le fonctionnement de l'offre Lady Striking ?",
+    answer:
+      "La formule Lady Striking est proposée au tarif de 50 € / mois. Elle donne un accès exclusif aux créneaux 100 % féminins du club, encadrés par le coach Mahfoud, combinant apprentissage technique, frappe au sac, renforcement musculaire et cardio-combat.",
+  },
+  {
+    category: "formules",
+    question: "Comment fonctionnent les cours de Kid Boxing pour enfants ?",
+    answer:
+      "Le Kid Boxing accueille les enfants de 5 à 13 ans, répartis en deux groupes d'âge adaptés : 5–8 ans (éveil, motricité et jeux éducatifs) et 9–13 ans (technique, coordination et discipline). L'adhésion est de 350 € pour l'ensemble de la saison scolaire (les stages organisés durant les vacances scolaires ne sont pas inclus dans cette offre).",
   },
   {
     category: "formules",
     question: "Qu'est-ce que le format Cours Adulte ?",
     answer:
-      "Le format Cours Adulte est un entraînement dispensé en effectif réduit. Cette formule permet au coach d'apporter des corrections précises et d'adapter les consignes à chaque élève, tout en profitant de la dynamique collective.",
+      "Le format Cours Adulte est un entraînement dispensé en effectif réduit (12 personnes max). Cette formule permet au coach d'apporter des corrections précises et d'adapter les consignes à chaque élève, tout en profitant de la dynamique collective.",
   },
   {
     category: "formules",
     question: "Les formules sont-elles avec ou sans engagement ?",
     answer:
-      "Nous proposons des abonnements mensuels sans engagement ainsi que des formules avec engagement annuel. Le détail de chaque formule est consultable directement sur la page Tarifs.",
+      "Nous proposons des abonnements mensuels sans engagement ainsi que des formules avec engagement annuel ou pour la saison scolaire. Le détail de chaque formule est consultable directement sur la page Tarifs.",
   },
 
   // 5. Informations pratiques

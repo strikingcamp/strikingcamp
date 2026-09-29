@@ -250,8 +250,8 @@ export default function MethodSection() {
         transition={{ duration: 0.6, delay: 0.5 }}
         className="bg-[#0b172a]/70 border border-brand-white/10 rounded-2xl p-6 sm:p-8 max-w-4xl mx-auto text-center backdrop-blur-sm"
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-brand-white/80 text-xs font-semibold mb-3">
-          💡 Philosophie d&apos;apprentissage
+        <div className="inline-flex items-center px-3 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-brand-white/80 text-xs font-semibold mb-3">
+          Philosophie d&apos;apprentissage
         </div>
         <h4 className="text-base sm:text-lg font-heading font-bold uppercase text-brand-white tracking-wide mb-3">
           L&apos;objectif de la séance, pas une étiquette définitive.

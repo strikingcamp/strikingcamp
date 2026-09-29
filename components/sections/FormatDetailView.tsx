@@ -12,7 +12,6 @@ import {
   Calendar,
   Users,
   MapPin,
-  Sparkles,
   Clock,
   Target
 } from "lucide-react";
@@ -71,9 +70,8 @@ export default function FormatDetailView({ format }: FormatDetailViewProps) {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/30 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-6 shadow-lg shadow-brand-blue/10"
+            className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/30 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-6 shadow-lg shadow-brand-blue/10"
           >
-            <Sparkles size={13} />
             <span>{format.category}</span>
           </motion.div>
 

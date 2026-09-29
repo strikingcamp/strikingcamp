@@ -6,14 +6,14 @@ import PricingSection, { type PublicPlan } from "@/components/sections/PricingSe
 export const metadata: Metadata = {
   title: "Tarifs et Formules de Boxe à Marseille (13010)",
   description:
-    "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte et Cours Privés (8 séances/mois). Sans engagement ou annuel.",
+    "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte, Lady Striking (50 €/mois), Kid Boxing (350 €/saison) et Cours Privés (8 séances/mois).",
   alternates: {
     canonical: "https://www.strikingcamp.com/tarifs",
   },
   openGraph: {
     title: "Tarifs et Formules de Boxe à Marseille (13010) | Striking Camp",
     description:
-      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte et Cours Privés.",
+      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte, Lady Striking, Kid Boxing et Cours Privés.",
     url: "https://www.strikingcamp.com/tarifs",
     siteName: "Striking Camp",
     locale: "fr_FR",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Tarifs et Formules de Boxe à Marseille (13010) | Striking Camp",
     description:
-      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte et Cours Privés.",
+      "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte, Lady Striking, Kid Boxing et Cours Privés.",
     images: ["https://www.strikingcamp.com/sacSalle.jpg"],
   },
 };

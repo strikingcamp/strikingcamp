@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronRight, CheckCircle2, Shield, Calendar, Users, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronRight, CheckCircle2, Shield, Calendar, Users, MapPin } from "lucide-react";
 import { DisciplineDetail, publicDisciplineList } from "@/data/disciplines";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
 import { trackDisciplineView, trackBookingClick } from "@/lib/analytics";
@@ -67,9 +67,8 @@ export default function DisciplineDetailView({ discipline }: DisciplineDetailVie
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/30 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-6 shadow-lg shadow-brand-blue/10"
+            className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/30 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-6 shadow-lg shadow-brand-blue/10"
           >
-            <Sparkles size={13} />
             <span>{discipline.category}</span>
           </motion.div>
 

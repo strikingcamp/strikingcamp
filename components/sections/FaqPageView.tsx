@@ -2,19 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, HelpCircle, Shield, Users, MapPin, Layers, Phone, ArrowRight } from "lucide-react";
+import { ChevronDown, Phone, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { allFaqItems, faqCategories } from "@/data/faq";
-
-const categoryIcons: Record<string, React.ElementType> = {
-  all: HelpCircle,
-  debuter: HelpCircle,
-  disciplines: Shield,
-  lady: Users,
-  formules: Layers,
-  pratique: MapPin,
-};
 
 export default function FaqPageView() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -50,7 +41,6 @@ export default function FaqPageView() {
       {/* Filtres par Catégorie (Pills) */}
       <div role="tablist" aria-label="Catégories FAQ" className="flex flex-wrap justify-center gap-2 mb-10 sm:mb-12">
         {faqCategories.map((cat) => {
-          const Icon = categoryIcons[cat.id] || HelpCircle;
           const isActive = activeCategory === cat.id;
 
           return (
@@ -61,13 +51,12 @@ export default function FaqPageView() {
               aria-selected={isActive}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+                "px-5 py-2.5 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
                 isActive
                   ? "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
                   : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
               )}
             >
-              <Icon size={14} className={isActive ? "text-brand-black" : "text-brand-blue"} aria-hidden="true" />
               <span>{cat.label}</span>
             </button>
           );

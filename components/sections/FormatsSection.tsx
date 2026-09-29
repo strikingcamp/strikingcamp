@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { publicFormatList } from "@/data/formats";
 
@@ -13,9 +13,8 @@ export default function FormatsSection() {
         
         {/* En-tête de section (Design System) */}
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
-            <Sparkles size={12} />
-            <span>Formats d&apos;Entraînement</span>
+          <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
+            Formats d&apos;Entraînement
           </div>
           <h2 className="font-heading text-4xl sm:text-5xl md:text-6xl font-black text-brand-white uppercase tracking-tight">
             NOS <span className="text-brand-blue">COURS</span>
