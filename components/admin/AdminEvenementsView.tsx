@@ -14,7 +14,6 @@ import {
   AlertCircle,
   X,
   ExternalLink,
-  Flame,
   Search,
   Check,
   User,
@@ -301,8 +300,7 @@ export default function AdminEvenementsView({ initialEvents }: AdminEvenementsVi
                       </span>
 
                       {evt.isFeatured && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                          <Flame size={12} />
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
                           En vedette
                         </span>
                       )}
@@ -918,8 +916,7 @@ function EventEditorModal({ event, onClose, onSuccess }: EventEditorModalProps) 
                   className="rounded border-brand-white/20 text-brand-blue focus:ring-brand-blue"
                 />
                 <div className="text-xs">
-                  <span className="font-heading font-bold uppercase text-brand-white flex items-center gap-1.5">
-                    <Flame size={13} className="text-amber-400" />
+                  <span className="font-heading font-bold uppercase text-brand-white block">
                     Mettre en avant
                   </span>
                   <p className="text-[10px] text-brand-white/50">

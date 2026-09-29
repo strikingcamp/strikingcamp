@@ -4,26 +4,16 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar as CalendarIcon,
-  Users,
-  Info,
-  ShieldCheck,
   Check,
   Clock,
   ChevronLeft,
   ChevronRight,
-  Award,
   AlertTriangle,
   X,
   CheckCircle2,
-  Flame,
-  Dumbbell,
-  Target,
-  ShieldAlert,
   MessageCircle,
   Loader2,
   AlertCircle,
-  Lock,
 } from "lucide-react";
 import { useMember, type BookingSlot } from "./MemberContext";
 import type { ClassSession } from "@/lib/supabase/small-group";
@@ -71,11 +61,11 @@ const MONTH_NAMES_FR = [
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 const PRIVATE_DISCIPLINES = [
-  { name: "Boxe Anglaise", desc: "Technique de poings, esquives, combinaisons et précision", icon: Flame },
-  { name: "Kick Boxing", desc: "Pieds-poings, timing, enchaînements et déplacements", icon: Target },
-  { name: "Striking", desc: "Percussion polyvalente, transitions et puissance", icon: Award },
-  { name: "Boxing Bag", desc: "Travail intensif aux sacs de frappe, cardio et frappe lourde", icon: Dumbbell },
-  { name: "KB Shred", desc: "Conditioning martial haute intensité et renforcement", icon: Flame },
+  { name: "Boxe Anglaise", desc: "Technique de poings, esquives, combinaisons et précision" },
+  { name: "Kick Boxing", desc: "Pieds-poings, timing, enchaînements et déplacements" },
+  { name: "Striking", desc: "Percussion polyvalente, transitions et puissance" },
+  { name: "Boxing Bag", desc: "Travail intensif aux sacs de frappe, cardio et frappe lourde" },
+  { name: "KB Shred", desc: "Conditioning martial haute intensité et renforcement" },
 ];
 
 const PRIVATE_LEVELS = [
@@ -627,7 +617,6 @@ export default function MemberPlanningView() {
                   : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
               )}
             >
-              <Users size={16} />
               <span>Cours Adulte</span>
             </button>
           )}
@@ -718,11 +707,8 @@ export default function MemberPlanningView() {
             </div>
 
             {/* Règle des 24h */}
-            <div className="bg-black/40 rounded-xl p-3 text-xs text-[#00d8ff]/90 flex items-center gap-2.5">
-              <Info size={16} className="text-[#00d8ff] shrink-0" />
-              <span>
-                <strong>Règle des 24h :</strong> Modification / annulation libre à ≥ 24h. À moins de 24h, modification directe verrouillée.
-              </span>
+            <div className="bg-black/40 rounded-xl p-3 text-xs text-[#00d8ff]/90">
+              <strong>Règle des 24h :</strong> Modification / annulation libre à ≥ 24h. À moins de 24h, modification directe verrouillée.
             </div>
           </div>
 
@@ -745,7 +731,6 @@ export default function MemberPlanningView() {
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
                 {PRIVATE_DISCIPLINES.map(d => {
                   const isSel = selectedDiscipline === d.name;
-                  const Icon = d.icon;
                   return (
                     <button
                       key={d.name}
@@ -758,13 +743,10 @@ export default function MemberPlanningView() {
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <Icon size={18} className={isSel ? "text-[#00d8ff]" : "text-brand-white/40"} />
+                        <div className="font-heading font-bold text-xs uppercase text-brand-white">{d.name}</div>
                         {isSel && <Check size={14} className="text-[#00d8ff]" />}
                       </div>
-                      <div>
-                        <div className="font-heading font-bold text-xs uppercase text-brand-white">{d.name}</div>
-                        <div className="text-[10px] text-brand-white/40 leading-tight mt-0.5 line-clamp-2">{d.desc}</div>
-                      </div>
+                      <div className="text-[10px] text-brand-white/40 leading-tight mt-0.5 line-clamp-2">{d.desc}</div>
                     </button>
                   );
                 })}
@@ -1000,9 +982,8 @@ export default function MemberPlanningView() {
                         </div>
                         <button
                           onClick={() => setIsPrivatePlanRequiredModalOpen(true)}
-                          className="w-full py-2.5 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 hover:border-zinc-500 font-heading font-bold text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-2.5 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 hover:border-zinc-500 font-heading font-bold text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center"
                         >
-                          <Lock size={14} className="text-zinc-400" />
                           Formule Privée requise
                         </button>
                       </div>
@@ -1053,12 +1034,9 @@ export default function MemberPlanningView() {
       {activeCategory === "Small Group" && (
         <div className="space-y-6">
           <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-brand-blue">
-            <div className="flex items-center gap-2.5">
-              <ShieldCheck size={18} className="shrink-0" />
-              <span>
-                <strong>Planning Cours Adulte Officiel (23 séances / sem.) :</strong> Capacité limitée à 12 personnes par créneau.
-              </span>
-            </div>
+            <span>
+              <strong>Planning Cours Adulte Officiel (23 séances / sem.) :</strong> Capacité limitée à 12 personnes par créneau.
+            </span>
             <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-brand-blue text-brand-black shrink-0">
               12 places max
             </span>
@@ -1403,18 +1381,13 @@ export default function MemberPlanningView() {
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="relative w-full max-w-md bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#00d8ff]/10 border border-[#00d8ff]/20 text-[#00d8ff] flex items-center justify-center shrink-0">
-                  <ShieldCheck size={20} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                    Annulation autorisée (&ge; 24h)
-                  </h3>
-                  <p className="text-xs text-[#00d8ff]">
-                    Cette annulation intervient plus de 24h avant le cours.
-                  </p>
-                </div>
+              <div>
+                <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
+                  Annulation autorisée (&ge; 24h)
+                </h3>
+                <p className="text-xs text-[#00d8ff] mt-0.5">
+                  Cette annulation intervient plus de 24h avant le cours.
+                </p>
               </div>
 
               {/* Error Message */}
@@ -1490,18 +1463,13 @@ export default function MemberPlanningView() {
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="relative w-full max-w-md bg-[#0f172a] border border-red-500/40 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
             >
-              <div className="flex items-center gap-3 pb-3 border-b border-brand-white/10">
-                <div className="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center shrink-0">
-                  <ShieldAlert size={22} />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wider text-brand-white">
-                    Annulation impossible
-                  </h3>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30 inline-block mt-0.5">
-                    Délai inférieur à 24h
-                  </span>
-                </div>
+              <div className="pb-3 border-b border-brand-white/10">
+                <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+                  Annulation impossible
+                </h3>
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30 inline-block mt-0.5">
+                  Délai inférieur à 24h
+                </span>
               </div>
 
               <div className="bg-red-950/30 border border-red-500/30 rounded-xl p-4 space-y-2 text-xs text-red-200/90 leading-relaxed">
@@ -1565,18 +1533,13 @@ export default function MemberPlanningView() {
               exit={{ scale: 0.95, opacity: 0, y: 15 }}
               className="relative w-full max-w-md bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
             >
-              <div className="flex items-center gap-3 pb-3 border-b border-brand-white/10">
-                <div className="w-11 h-11 rounded-xl bg-[#00d8ff]/15 border border-[#00d8ff]/30 text-[#00d8ff] flex items-center justify-center shrink-0">
-                  <Lock size={22} />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wider text-brand-white">
-                    Formule Cours Privé requise
-                  </h3>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30 inline-block mt-0.5">
-                    Accès réservé
-                  </span>
-                </div>
+              <div className="pb-3 border-b border-brand-white/10">
+                <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+                  Formule Cours Privé requise
+                </h3>
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30 inline-block mt-0.5">
+                  Accès réservé
+                </span>
               </div>
 
               <div className="bg-[#0b1b33]/60 border border-[#00d8ff]/20 rounded-xl p-4 space-y-2 text-xs text-brand-white/80 leading-relaxed">

@@ -3,14 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trophy,
   Plus,
   Edit2,
   Trash2,
   CheckCircle,
   X,
-  Flame,
-  Award,
   RefreshCw,
   Video,
   ListOrdered,
@@ -19,9 +16,6 @@ import {
   AlertTriangle,
   Play,
   ExternalLink,
-  Dumbbell,
-  HeartPulse,
-  Apple,
 } from "lucide-react";
 import {
   getAdminChallengesServerAction,
@@ -394,28 +388,24 @@ export default function AdminDefisView() {
       case "Technique":
         return {
           badge: "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30",
-          icon: <Flame size={14} className="text-[#00d8ff]" />,
           border: "hover:border-[#00d8ff]/50",
           glow: "shadow-[#00d8ff]/10",
         };
       case "Physique":
         return {
           badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-          icon: <Dumbbell size={14} className="text-amber-400" />,
           border: "hover:border-amber-500/50",
           glow: "shadow-amber-500/10",
         };
       case "Cardio":
         return {
           badge: "bg-rose-500/15 text-rose-400 border-rose-500/30",
-          icon: <HeartPulse size={14} className="text-rose-400" />,
           border: "hover:border-rose-500/50",
           glow: "shadow-rose-500/10",
         };
       case "Nutrition":
         return {
           badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-          icon: <Apple size={14} className="text-emerald-400" />,
           border: "hover:border-emerald-500/50",
           glow: "shadow-emerald-500/10",
         };
@@ -436,8 +426,7 @@ export default function AdminDefisView() {
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-white/10 pb-6">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#00d8ff]/10 border border-[#00d8ff]/30 rounded-full text-[#00d8ff] text-xs font-semibold uppercase tracking-wider mb-1">
-            <Trophy size={13} />
+          <div className="inline-flex items-center px-3 py-1 bg-[#00d8ff]/10 border border-[#00d8ff]/30 rounded-full text-[#00d8ff] text-xs font-semibold uppercase tracking-wider mb-1">
             <span>Gamification & Progression</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-wider text-brand-white">
@@ -552,7 +541,6 @@ export default function AdminDefisView() {
         </div>
       ) : filteredChallenges.length === 0 ? (
         <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-4">
-          <Trophy size={36} className="mx-auto text-brand-white/30" />
           <h3 className="text-base font-heading font-bold uppercase text-brand-white">Aucun défi trouvé</h3>
           <p className="text-xs text-brand-white/50 max-w-md mx-auto">
             {filterStatus !== "Tous" || filterCategory !== "Toutes"
@@ -586,11 +574,10 @@ export default function AdminDefisView() {
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={cn(
-                        "text-[10px] font-black uppercase px-2.5 py-1 rounded-full border flex items-center gap-1.5",
+                        "text-[10px] font-black uppercase px-2.5 py-1 rounded-full border",
                         theme.badge
                       )}
                     >
-                      {theme.icon}
                       {c.category}
                     </span>
 
@@ -639,21 +626,19 @@ export default function AdminDefisView() {
                   <div className="bg-black/30 border border-brand-white/5 rounded-xl p-3 grid grid-cols-3 gap-2 text-center text-xs">
                     <div>
                       <span className="text-[10px] text-brand-white/50 uppercase font-bold block">Étapes</span>
-                      <span className="font-heading font-black text-brand-white flex items-center justify-center gap-1">
-                        <ListOrdered size={12} className="text-[#00d8ff]" />
+                      <span className="font-heading font-black text-brand-white block">
                         {c.stepsCount}
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px] text-brand-white/50 uppercase font-bold block">Points XP</span>
-                      <span className="font-heading font-black text-[#00d8ff] flex items-center justify-center gap-1">
+                      <span className="font-heading font-black text-[#00d8ff] block">
                         +{c.points_xp}
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px] text-brand-white/50 uppercase font-bold block">Inscrits</span>
-                      <span className="font-heading font-black text-amber-400 flex items-center justify-center gap-1">
-                        <Award size={12} />
+                      <span className="font-heading font-black text-amber-400 block">
                         {c.activeParticipantsCount}
                       </span>
                     </div>
@@ -735,8 +720,7 @@ export default function AdminDefisView() {
               className="relative w-full max-w-2xl bg-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 max-h-[90vh] overflow-y-auto space-y-6"
             >
               <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
-                <div className="flex items-center gap-2.5">
-                  <Trophy size={20} className="text-[#00d8ff]" />
+                <div>
                   <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
                     {editingChallenge ? "Modifier le défi" : "Créer un nouveau défi"}
                   </h3>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle, Calendar, Clock, Award, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
+import { X, CheckCircle, Calendar, Clock, Loader2, AlertCircle } from "lucide-react";
 import { useMember } from "../MemberContext";
 import { cn } from "@/lib/utils";
 
@@ -78,13 +78,12 @@ export default function BookingConfirmModal() {
                 <div className="mb-6">
                   <div
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 border",
+                      "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3 border",
                       isPrivate
                         ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
                         : "bg-brand-blue/10 border-brand-blue/20 text-brand-blue"
                     )}
                   >
-                    <ShieldCheck size={14} />
                     {isPrivate ? "Réservation Cours Privé" : "Réservation Cours Adulte"}
                   </div>
                   <h3 className="text-2xl font-heading font-bold uppercase tracking-wider text-brand-white">
@@ -98,16 +97,13 @@ export default function BookingConfirmModal() {
                 {/* Quota Banner for Private Session */}
                 {isPrivate && (
                   <div className="mb-4 p-3.5 bg-emerald-950/30 border border-emerald-500/30 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold uppercase text-emerald-300">
-                          Quota mensuel Cours Privés
-                        </p>
-                        <p className="text-[11px] text-emerald-400/80">
-                          {quotaRemaining} / {privateQuota?.quotaTotal || 8} séance{quotaRemaining > 1 ? "s" : ""} restante{quotaRemaining > 1 ? "s" : ""} ce cycle
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase text-emerald-300">
+                        Quota mensuel Cours Privés
+                      </p>
+                      <p className="text-[11px] text-emerald-400/80">
+                        {quotaRemaining} / {privateQuota?.quotaTotal || 8} séance{quotaRemaining > 1 ? "s" : ""} restante{quotaRemaining > 1 ? "s" : ""} ce cycle
+                      </p>
                     </div>
                     <span className="text-xs font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                       -1 séance
@@ -160,8 +156,7 @@ export default function BookingConfirmModal() {
 
                   {selectedSlot?.level && (
                     <div className="pt-2 border-t border-brand-white/5 flex items-center justify-between text-xs">
-                      <span className="text-brand-white/40 flex items-center gap-1">
-                        <Award size={13} className={isPrivate ? "text-emerald-400" : "text-brand-blue"} />
+                      <span className="text-brand-white/40">
                         Format
                       </span>
                       <span className="text-brand-white/80 font-medium">

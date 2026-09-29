@@ -9,8 +9,6 @@ import {
   UserPlus,
   Edit2,
   Calendar,
-  Layers,
-  Shield,
   Phone,
   ArrowLeft,
   X,
@@ -19,8 +17,6 @@ import {
   AlertCircle,
   Clock,
   ChevronRight,
-  UserCheck,
-  UserX,
   CreditCard,
   History,
 } from "lucide-react";
@@ -313,8 +309,8 @@ export default function AdminMembersView({
   const renderPlanBadge = (sub?: AdminMemberDetail["activeSubscription"]) => {
     if (!sub) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-brand-white/5 text-brand-white/50 border border-brand-white/10">
-          <UserX size={11} /> Sans abonnement
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-brand-white/5 text-brand-white/50 border border-brand-white/10">
+          Sans abonnement
         </span>
       );
     }
@@ -322,19 +318,19 @@ export default function AdminMembersView({
     switch (sub.planType) {
       case "small_group":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
-            <Users size={11} /> {sub.planName}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
+            {sub.planName}
           </span>
         );
       case "private":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <Shield size={11} /> {sub.planName}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            {sub.planName}
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-white/10 text-brand-white/80">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-white/10 text-brand-white/80">
             {sub.planName}
           </span>
         );
@@ -346,19 +342,12 @@ export default function AdminMembersView({
       {/* HEADER */}
       <div className="border-b border-brand-white/10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-blue/10 border border-brand-blue/30 flex items-center justify-center text-brand-blue">
-              <Users size={22} />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
-                Gestion des <span className="text-brand-blue">Membres</span>
-              </h1>
-              <p className="text-xs text-brand-white/60 mt-0.5">
-                Annuaire des membres, fiches personnelles et suivi des abonnements
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
+            Gestion des <span className="text-brand-blue">Membres</span>
+          </h1>
+          <p className="text-xs text-brand-white/60 mt-0.5">
+            Annuaire des membres, fiches personnelles et suivi des abonnements
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -393,13 +382,10 @@ export default function AdminMembersView({
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* Total Membres */}
         <div className="bg-[#0f172a]/90 border border-brand-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-white/50">
               Total Membres
             </span>
-            <div className="w-7 h-7 rounded-lg bg-brand-white/5 border border-brand-white/10 flex items-center justify-center text-brand-white/70">
-              <Users size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-brand-white">
@@ -413,13 +399,10 @@ export default function AdminMembersView({
 
         {/* Abonnés Actifs */}
         <div className="bg-[#0f172a]/90 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
               Abonnés
             </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <UserCheck size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-400">
@@ -433,13 +416,10 @@ export default function AdminMembersView({
 
         {/* Sans Formule */}
         <div className="bg-[#0f172a]/90 border border-brand-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-white/50">
               Sans Formule
             </span>
-            <div className="w-7 h-7 rounded-lg bg-brand-white/5 border border-brand-white/10 flex items-center justify-center text-brand-white/40">
-              <UserX size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-brand-white/60">
@@ -453,13 +433,10 @@ export default function AdminMembersView({
 
         {/* Small Group */}
         <div className="bg-[#0f172a]/90 border border-brand-blue/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-blue">
               Cours Adulte
             </span>
-            <div className="w-7 h-7 rounded-lg bg-brand-blue/10 border border-brand-blue/20 flex items-center justify-center text-brand-blue">
-              <Users size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-brand-blue">
@@ -473,13 +450,10 @@ export default function AdminMembersView({
 
         {/* Cours Privés */}
         <div className="bg-[#0f172a]/90 border border-amber-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
               Privés
             </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <Shield size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-amber-400">
@@ -527,46 +501,46 @@ export default function AdminMembersView({
           <button
             onClick={() => setFilterCategory("active_sub")}
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
               filterCategory === "active_sub"
                 ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
                 : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
             )}
           >
-            <UserCheck size={13} /> Abonnés actifs ({stats.withActiveSubscription})
+            Abonnés actifs ({stats.withActiveSubscription})
           </button>
           <button
             onClick={() => setFilterCategory("no_sub")}
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
               filterCategory === "no_sub"
                 ? "bg-brand-white/20 text-brand-white shadow-md"
                 : "bg-brand-white/5 text-brand-white/50 hover:bg-brand-white/10"
             )}
           >
-            <UserX size={13} /> Sans formule ({stats.withoutSubscription})
+            Sans formule ({stats.withoutSubscription})
           </button>
           <button
             onClick={() => setFilterCategory("small_group")}
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
               filterCategory === "small_group"
                 ? "bg-brand-blue text-white shadow-md shadow-brand-blue/20"
                 : "bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20"
             )}
           >
-            <Users size={13} /> Cours Adulte ({stats.smallGroupMembers})
+            Cours Adulte ({stats.smallGroupMembers})
           </button>
           <button
             onClick={() => setFilterCategory("private")}
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
               filterCategory === "private"
                 ? "bg-amber-500 text-brand-black shadow-md shadow-amber-500/20 font-black"
                 : "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
             )}
           >
-            <Shield size={13} /> Cours Privés ({stats.privateMembers})
+            Cours Privés ({stats.privateMembers})
           </button>
         </div>
 
@@ -723,18 +697,13 @@ export default function AdminMembersView({
           <div className="bg-[#0f172a] border border-brand-white/15 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl shadow-black/80">
             {/* Header */}
             <div className="px-6 py-5 border-b border-brand-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-brand-blue/15 border border-brand-blue/30 flex items-center justify-center text-brand-blue">
-                  <UserPlus size={16} />
-                </div>
-                <div>
-                  <h3 className="font-heading font-black text-lg uppercase tracking-wider text-brand-white">
-                    Ajouter un Membre
-                  </h3>
-                  <span className="text-xs text-brand-white/50">
-                    Création d&apos;un nouveau profil dans l&apos;annuaire
-                  </span>
-                </div>
+              <div>
+                <h3 className="font-heading font-black text-lg uppercase tracking-wider text-brand-white">
+                  Ajouter un Membre
+                </h3>
+                <span className="text-xs text-brand-white/50">
+                  Création d&apos;un nouveau profil dans l&apos;annuaire
+                </span>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
@@ -755,8 +724,7 @@ export default function AdminMembersView({
 
               {/* SECTION 1 : INFORMATIONS PERSONNELLES */}
               <div className="space-y-3.5">
-                <div className="flex items-center gap-2 pb-1 border-b border-brand-white/10 text-brand-white/70 text-[11px] font-bold uppercase tracking-wider">
-                  <UserPlus size={13} className="text-brand-blue" />
+                <div className="pb-1 border-b border-brand-white/10 text-brand-white/70 text-[11px] font-bold uppercase tracking-wider">
                   <span>1. Informations Personnelles</span>
                 </div>
 
@@ -827,8 +795,7 @@ export default function AdminMembersView({
 
               {/* SECTION 2 : FORMULE & ABONNEMENT */}
               <div className="space-y-3.5 pt-2">
-                <div className="flex items-center gap-2 pb-1 border-b border-brand-white/10 text-brand-white/70 text-[11px] font-bold uppercase tracking-wider">
-                  <CreditCard size={13} className="text-brand-blue" />
+                <div className="pb-1 border-b border-brand-white/10 text-brand-white/70 text-[11px] font-bold uppercase tracking-wider">
                   <span>2. Formule & Abonnement</span>
                 </div>
 
@@ -931,18 +898,13 @@ export default function AdminMembersView({
           <div className="bg-[#0f172a] border border-brand-white/15 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl shadow-black/80">
             {/* Header */}
             <div className="px-6 py-5 border-b border-brand-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-brand-blue/15 border border-brand-blue/30 flex items-center justify-center text-brand-blue">
-                  <Edit2 size={16} />
-                </div>
-                <div>
-                  <h3 className="font-heading font-black text-lg uppercase tracking-wider text-brand-white">
-                    Modifier les Coordonnées
-                  </h3>
-                  <span className="text-xs text-brand-white/50">
-                    ID : {editingMember.id.slice(0, 8)}...
-                  </span>
-                </div>
+              <div>
+                <h3 className="font-heading font-black text-lg uppercase tracking-wider text-brand-white">
+                  Modifier les Coordonnées
+                </h3>
+                <span className="text-xs text-brand-white/50">
+                  ID : {editingMember.id.slice(0, 8)}...
+                </span>
               </div>
               <button
                 onClick={() => setEditingMember(null)}
@@ -1142,8 +1104,8 @@ export default function AdminMembersView({
 
             {/* Historique des Abonnements */}
             <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50 flex items-center gap-1.5">
-                <History size={13} /> Historique des Abonnements ({selectedMember.subscriptions.length})
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
+                Historique des Abonnements ({selectedMember.subscriptions.length})
               </span>
 
               {selectedMember.subscriptions.length === 0 ? (
@@ -1194,8 +1156,8 @@ export default function AdminMembersView({
 
             {/* Historique des Réservations */}
             <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50 flex items-center gap-1.5">
-                <Clock size={13} /> Historique des Réservations ({selectedMember.bookings.length})
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
+                Historique des Réservations ({selectedMember.bookings.length})
               </span>
 
               {selectedMember.bookings.length === 0 ? (

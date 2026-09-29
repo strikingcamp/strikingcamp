@@ -394,7 +394,7 @@ export default function TrialBookingModal({
                 )}
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider">
                   <Users size={13} />
-                  <span>Séance d&apos;Essai Cours Adulte (15 €)</span>
+                  <span>Séance d&apos;Essai Cours Adulte ({getTrialPriceFormatted("small_group")})</span>
                 </div>
               </div>
 
@@ -522,7 +522,7 @@ export default function TrialBookingModal({
                               {d.schedule}
                             </span>
                             <span className="text-2xl font-heading font-black text-brand-blue">
-                              15 €
+                              {getTrialPriceFormatted("small_group")}
                             </span>
                           </div>
 
@@ -571,7 +571,7 @@ export default function TrialBookingModal({
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-brand-white/5 pb-2">
                   <span className="text-xs font-bold uppercase text-brand-white/60">
-                    Discipline : <strong className="text-brand-white">{selectedDiscipline}</strong> • Format : <strong className="text-brand-blue">Cours Adulte (15 €)</strong>
+                    Discipline : <strong className="text-brand-white">{selectedDiscipline}</strong> • Format : <strong className="text-brand-blue">Cours Adulte ({getTrialPriceFormatted("small_group")})</strong>
                   </span>
                   <button
                     type="button"
@@ -622,7 +622,7 @@ export default function TrialBookingModal({
                                 {s.dayName} {s.dateFormatted.split(" ").slice(1).join(" ")}
                               </span>
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
-                                Cours Adulte (15 €)
+                                Cours Adulte ({getTrialPriceFormatted("small_group")})
                               </span>
                             </div>
 
@@ -680,7 +680,7 @@ export default function TrialBookingModal({
                           {selectedSession.discipline} (Cours Adulte)
                         </span>
                         <span className="px-2 py-0.5 rounded text-[10px] font-heading font-black uppercase bg-brand-blue text-brand-black">
-                          15 €
+                          {getTrialPriceFormatted("small_group")}
                         </span>
                       </div>
                       <span className="text-[11px] text-brand-white/60 block mt-0.5">
@@ -811,7 +811,7 @@ export default function TrialBookingModal({
                     type="submit"
                     className="w-full py-3.5 px-6 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-sm uppercase tracking-wider shadow-lg shadow-brand-blue/20 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>Continuer vers le récapitulatif (15 €)</span>
+                    <span>Continuer vers le récapitulatif ({getTrialPriceFormatted("small_group")})</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -842,7 +842,7 @@ export default function TrialBookingModal({
                       </span>
                     </div>
                     <div className="px-3 py-1 rounded-full bg-brand-blue text-brand-black font-heading font-black text-xs uppercase tracking-wider shadow-sm">
-                      15 €
+                      {getTrialPriceFormatted("small_group")}
                     </div>
                   </div>
 
@@ -888,7 +888,7 @@ export default function TrialBookingModal({
                         Tarif
                       </span>
                       <span className="text-xl font-heading font-black text-brand-blue block">
-                        15 €
+                        {getTrialPriceFormatted("small_group")}
                       </span>
                       <span className="text-[11px] text-brand-white/50">
                         Tarif officiel séance d&apos;essai
@@ -923,7 +923,7 @@ export default function TrialBookingModal({
                 <div className="p-3.5 rounded-xl bg-brand-white/5 border border-brand-white/10 text-xs text-brand-white/70 flex items-center gap-2.5">
                   <Shield size={16} className="shrink-0 text-brand-blue" />
                   <span>
-                    Tarif du cours d&apos;essai : <strong>15 €</strong>. Règlement sur place auprès du coach ou via le lien de confirmation.
+                    Tarif du cours d&apos;essai : <strong>{getTrialPriceFormatted("small_group")}</strong>. Règlement sur place auprès du coach ou via le lien de confirmation.
                   </span>
                 </div>
 
@@ -952,7 +952,7 @@ export default function TrialBookingModal({
                     ) : (
                       <>
                         <CheckCircle2 size={18} className="text-brand-black" />
-                        <span>Confirmer mon cours d&apos;essai (15 €)</span>
+                        <span>Confirmer mon cours d&apos;essai ({getTrialPriceFormatted("small_group")})</span>
                       </>
                     )}
                   </button>

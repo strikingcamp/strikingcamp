@@ -19,7 +19,6 @@ import {
   Loader2,
   Calendar,
   History,
-  ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -492,14 +491,9 @@ export default function AdminSubscriptionsView({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Total Abonnements */}
         <div className="bg-[#0f172a]/80 border border-brand-white/10 rounded-xl p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
-              Total Souscriptions
-            </span>
-            <div className="w-9 h-9 rounded-lg bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30">
-              <Layers size={18} />
-            </div>
-          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50 block">
+            Total Souscriptions
+          </span>
           <div className="space-y-1">
             <div className="text-3xl font-heading font-black text-brand-white">
               {stats.total}
@@ -512,14 +506,9 @@ export default function AdminSubscriptionsView({
 
         {/* Actifs Small Group */}
         <div className="bg-[#0f172a]/80 border border-brand-white/10 rounded-xl p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
-              Actifs Cours Adulte
-            </span>
-            <div className="w-9 h-9 rounded-lg bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30">
-              <ShieldCheck size={18} />
-            </div>
-          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50 block">
+            Actifs Cours Adulte
+          </span>
           <div className="space-y-1">
             <div className="text-3xl font-heading font-black text-brand-blue">
               {stats.activeSmallGroup}
@@ -532,14 +521,9 @@ export default function AdminSubscriptionsView({
 
         {/* Actifs Privés */}
         <div className="bg-[#0f172a]/80 border border-brand-white/10 rounded-xl p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
-              Actifs Privés
-            </span>
-            <div className="w-9 h-9 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center border border-purple-500/30">
-              <CreditCard size={18} />
-            </div>
-          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50 block">
+            Actifs Privés
+          </span>
           <div className="space-y-1">
             <div className="text-3xl font-heading font-black text-brand-white">
               {stats.activePrivate}
@@ -552,14 +536,9 @@ export default function AdminSubscriptionsView({
 
         {/* Suspendus & Expirés */}
         <div className="bg-[#0f172a]/80 border border-brand-white/10 rounded-xl p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
-              Suspendus / Expirés
-            </span>
-            <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center border border-amber-500/30">
-              <Clock size={18} />
-            </div>
-          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50 block">
+            Suspendus / Expirés
+          </span>
           <div className="space-y-1">
             <div className="text-3xl font-heading font-black text-amber-400">
               {stats.suspended + stats.expired}
@@ -829,18 +808,13 @@ export default function AdminSubscriptionsView({
               className="relative w-full max-w-lg bg-[#0b1322] border border-brand-white/15 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-brand-white/10 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30">
-                    <Plus size={16} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                      Attribuer un abonnement
-                    </h3>
-                    <p className="text-[11px] text-brand-white/50">
-                      Sélectionnez un membre et sa formule d&apos;adhésion.
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+                    Attribuer un abonnement
+                  </h3>
+                  <p className="text-[11px] text-brand-white/50">
+                    Sélectionnez un membre et sa formule d&apos;adhésion.
+                  </p>
                 </div>
 
                 <button
@@ -864,28 +838,22 @@ export default function AdminSubscriptionsView({
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-white/70">
                     Membre bénéficiaire <span className="text-brand-blue">*</span>
                   </label>
-                  <div className="relative">
-                    <User
-                      size={15}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-white/30"
-                    />
-                    <select
-                      value={formUserId}
-                      onChange={(e) => setFormUserId(e.target.value)}
-                      required
-                      className="w-full bg-[#0f172a] border border-brand-white/15 rounded-xl pl-9 pr-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
-                    >
-                      <option value="">-- Choisir un membre --</option>
-                      {members.map((m) => {
-                        const name = `${m.last_name || ""} ${m.first_name || ""}`.trim() || `Membre #${m.id.slice(0, 6)}`;
-                        return (
-                          <option key={m.id} value={m.id}>
-                            {name} {m.phone ? `(${m.phone})` : ""}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
+                  <select
+                    value={formUserId}
+                    onChange={(e) => setFormUserId(e.target.value)}
+                    required
+                    className="w-full bg-[#0f172a] border border-brand-white/15 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
+                  >
+                    <option value="">-- Choisir un membre --</option>
+                    {members.map((m) => {
+                      const name = `${m.last_name || ""} ${m.first_name || ""}`.trim() || `Membre #${m.id.slice(0, 6)}`;
+                      return (
+                        <option key={m.id} value={m.id}>
+                          {name} {m.phone ? `(${m.phone})` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 {/* Formule */}
@@ -893,25 +861,19 @@ export default function AdminSubscriptionsView({
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-white/70">
                     Formule <span className="text-brand-blue">*</span>
                   </label>
-                  <div className="relative">
-                    <CreditCard
-                      size={15}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-white/30"
-                    />
-                    <select
-                      value={formPlanId}
-                      onChange={(e) => setFormPlanId(e.target.value)}
-                      required
-                      className="w-full bg-[#0f172a] border border-brand-white/15 rounded-xl pl-9 pr-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
-                    >
-                      <option value="">-- Choisir une formule --</option>
-                      {activePlans.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} [{p.type === "small_group" ? "Cours Adulte" : "Privé"}]
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    value={formPlanId}
+                    onChange={(e) => setFormPlanId(e.target.value)}
+                    required
+                    className="w-full bg-[#0f172a] border border-brand-white/15 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
+                  >
+                    <option value="">-- Choisir une formule --</option>
+                    {activePlans.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} [{p.type === "small_group" ? "Cours Adulte" : "Privé"}]
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Statut initial */}
@@ -1013,18 +975,13 @@ export default function AdminSubscriptionsView({
               className="relative w-full max-w-lg bg-[#0b1322] border border-brand-white/15 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-brand-white/10 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30">
-                    <Edit2 size={16} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                      Modifier l&apos;abonnement
-                    </h3>
-                    <p className="text-[11px] text-brand-white/50">
-                      Membre : {editingSub.memberName} ({editingSub.phone})
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+                    Modifier l&apos;abonnement
+                  </h3>
+                  <p className="text-[11px] text-brand-white/50">
+                    Membre : {editingSub.memberName} ({editingSub.phone})
+                  </p>
                 </div>
 
                 <button

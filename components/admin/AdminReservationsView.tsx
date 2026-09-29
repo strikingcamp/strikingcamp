@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
-  Users,
   Printer,
   ArrowLeft,
   Clock,
@@ -16,7 +15,6 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-  Dumbbell,
   CheckCircle,
   Mail,
   ExternalLink,
@@ -982,60 +980,62 @@ export default function AdminReservationsView({
           </div>
 
           {/* Jauge réelle & Statut du cours */}
-          <div className="flex items-center gap-4 bg-[#070d18] border border-brand-white/5 rounded-xl p-3.5 sm:px-5">
-            <div className="min-w-[140px] space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-heading font-bold uppercase">
-                <span className="text-brand-white/60">Inscrits :</span>
-                <span
-                  className={cn(
-                    confirmedCount >= capacity
-                      ? "text-red-400"
-                      : confirmedCount >= 15
-                      ? "text-amber-400"
-                      : "text-[#00d8ff]"
-                  )}
-                >
-                  {confirmedCount} / {capacity}
-                </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-[#070d18] border border-brand-white/5 rounded-xl p-3.5 sm:px-5 w-full lg:w-auto">
+            <div className="flex items-center justify-between gap-4 w-full sm:w-auto">
+              <div className="flex-1 sm:min-w-[140px] space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-heading font-bold uppercase">
+                  <span className="text-brand-white/60">Inscrits :</span>
+                  <span
+                    className={cn(
+                      confirmedCount >= capacity
+                        ? "text-red-400"
+                        : confirmedCount >= 15
+                        ? "text-amber-400"
+                        : "text-[#00d8ff]"
+                    )}
+                  >
+                    {confirmedCount} / {capacity}
+                  </span>
+                </div>
+
+                <div className="w-full bg-brand-white/10 h-2 rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300",
+                      confirmedCount >= capacity
+                        ? "bg-red-500"
+                        : confirmedCount >= 15
+                        ? "bg-amber-400"
+                        : "bg-[#00d8ff]"
+                    )}
+                    style={{
+                      width: `${Math.min(100, (confirmedCount / capacity) * 100)}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="w-full bg-brand-white/10 h-2 rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-300",
-                    confirmedCount >= capacity
-                      ? "bg-red-500"
-                      : confirmedCount >= 15
-                      ? "bg-amber-400"
-                      : "bg-[#00d8ff]"
-                  )}
-                  style={{
-                    width: `${Math.min(100, (confirmedCount / capacity) * 100)}%`,
-                  }}
-                />
+              {/* Statut du cours */}
+              <div className="border-l border-brand-white/10 pl-4 flex items-center shrink-0">
+                {isPast ? (
+                  <span className="px-2.5 py-1 rounded bg-zinc-700/30 text-zinc-400 border border-zinc-600/30 text-[10px] font-bold uppercase tracking-wider">
+                    Terminé
+                  </span>
+                ) : confirmedCount >= capacity ? (
+                  <span className="px-2.5 py-1 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
+                    Complet
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase tracking-wider">
+                    Actif
+                  </span>
+                )}
               </div>
-            </div>
-
-            {/* Statut du cours */}
-            <div className="border-l border-brand-white/10 pl-4 flex items-center">
-              {isPast ? (
-                <span className="px-2.5 py-1 rounded bg-zinc-700/30 text-zinc-400 border border-zinc-600/30 text-[10px] font-bold uppercase tracking-wider">
-                  Terminé
-                </span>
-              ) : confirmedCount >= capacity ? (
-                <span className="px-2.5 py-1 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
-                  Complet
-                </span>
-              ) : (
-                <span className="px-2.5 py-1 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase tracking-wider">
-                  Actif
-                </span>
-              )}
             </div>
 
             <button
               onClick={() => toggleSessionExpand(session.id)}
-              className="px-3 py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white font-heading font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer ml-2"
+              className="w-full sm:w-auto text-center px-3 py-2 sm:py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white font-heading font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer shrink-0"
             >
               {isExpanded ? "Masquer la liste" : `Voir les inscrits (${confirmedCount})`}
             </button>
@@ -1268,7 +1268,6 @@ export default function AdminReservationsView({
                 : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
             )}
           >
-            <Users size={16} />
             <span>Cours Adulte</span>
           </button>
 
@@ -1282,7 +1281,6 @@ export default function AdminReservationsView({
                 : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
             )}
           >
-            <Dumbbell size={16} />
             <span>Cours Privés</span>
           </button>
         </div>
@@ -1717,8 +1715,7 @@ export default function AdminReservationsView({
                   {/* En-tête du jour */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <div className="px-3 py-1.5 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-sm uppercase flex items-center gap-1.5">
-                        <Calendar size={14} />
+                      <div className="px-3 py-1.5 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue font-heading font-black text-sm uppercase">
                         {day.dayName} {day.dateNum} {day.monthName}
                       </div>
 
@@ -1789,8 +1786,7 @@ export default function AdminReservationsView({
           /* 2.A SMALL GROUP — MODE JOUR (Séances du jour sélectionné) */
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
-              <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
-                <Users size={16} className="text-brand-blue" />
+              <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80">
                 Séances Cours Adulte programmées ({smallGroupSessionsForDay.length})
               </h3>
               <span className="text-[11px] text-brand-white/50">
@@ -1892,8 +1888,7 @@ export default function AdminReservationsView({
           /* 3.A COURS PRIVÉS — MODE JOUR (Grille des 6 créneaux officiels de la journée) */
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
-              <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
-                <Clock size={16} className="text-brand-blue" />
+              <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80">
                 Grille des 6 créneaux officiels — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}
               </h3>
               <span className="text-[11px] text-brand-white/50">

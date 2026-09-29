@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
-  Users,
   Plus,
   Edit2,
   Clock,
@@ -452,8 +451,7 @@ export default function AdminPlanningView({
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0b1b33]/40 border border-[#00d8ff]/20 rounded-2xl p-4">
-          <div className="flex items-center gap-2.5 text-xs text-[#00d8ff]">
-            <Users size={18} className="shrink-0" />
+          <div className="text-xs text-[#00d8ff]">
             <span>
               <strong>Planning Cours Adulte (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>12 max</strong>.
             </span>

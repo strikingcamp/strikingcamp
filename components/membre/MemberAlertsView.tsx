@@ -101,12 +101,9 @@ export default function MemberAlertsView() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Bell size={22} className="text-brand-blue" />
-            <h1 className="text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
-              Mes Alertes
-            </h1>
-          </div>
+          <h1 className="text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
+            Mes Alertes
+          </h1>
           <p className="text-xs sm:text-sm text-brand-white/50">
             Notifications de réservations, nouveaux événements, rappels et actualités.
           </p>
@@ -162,9 +159,6 @@ export default function MemberAlertsView() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-xl p-12 text-center space-y-4 my-8"
         >
-          <div className="w-16 h-16 rounded-full bg-brand-white/5 text-brand-white/30 flex items-center justify-center mx-auto">
-            <Bell size={28} />
-          </div>
           <div>
             <h2 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white/80">
               Vous n'avez aucune alerte.
@@ -178,14 +172,12 @@ export default function MemberAlertsView() {
               href="/evenements"
               className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-heading font-bold text-xs uppercase tracking-wider rounded-sm hover:bg-amber-500 hover:text-black transition-colors"
             >
-              <Calendar size={14} />
               Découvrir les événements
             </Link>
             <Link
               href="/membre/planning"
               className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm hover:bg-brand-white transition-colors"
             >
-              <Calendar size={14} />
               Accéder au planning
             </Link>
           </div>

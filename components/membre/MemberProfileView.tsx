@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import {
-  User,
   Mail,
   Phone,
-  Shield,
   LogOut,
   Edit3,
   Lock,
@@ -64,8 +62,7 @@ export default function MemberProfileView({ initialUser }: MemberProfileViewProp
           INFORMATIONS PERSONNELLES
           ━━━━━━━━━━━━━━━━━━━━ */}
       <section className="space-y-4">
-        <h2 className="text-base font-heading font-bold uppercase tracking-wider text-brand-white flex items-center gap-2">
-          <User size={18} className="text-brand-blue" />
+        <h2 className="text-base font-heading font-bold uppercase tracking-wider text-brand-white">
           Informations personnelles
         </h2>
 
@@ -118,8 +115,7 @@ export default function MemberProfileView({ initialUser }: MemberProfileViewProp
           SECTION : MON COMPTE
           ━━━━━━━━━━━━━━━━━━━━ */}
       <section className="space-y-4">
-        <h2 className="text-base font-heading font-bold uppercase tracking-wider text-brand-white flex items-center gap-2">
-          <Shield size={18} className="text-brand-blue" />
+        <h2 className="text-base font-heading font-bold uppercase tracking-wider text-brand-white">
           Mon compte
         </h2>
 

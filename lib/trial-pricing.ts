@@ -2,7 +2,7 @@
  * Configuration centralisée des tarifs des Cours d'Essai Striking Camp.
  * 
  * TARIFS OFFICIELS :
- * - Cours d'essai Small Group : 15 €
+ * - Cours d'essai Small Group : 5 €
  * - Cours d'essai Privé : 25 €
  * 
  * Architecture préparée pour l'intégration ultérieure du paiement HelloAsso.
@@ -25,9 +25,9 @@ export const TRIAL_PRICING: Record<TrialSessionType, TrialPricingItem> = {
     type: "small_group",
     label: "Cours Adulte",
     categoryLabel: "Cours Adulte",
-    price: 15,
-    priceFormatted: "15 €",
-    badge: "Tarif Essai 15 €",
+    price: 5,
+    priceFormatted: "5 €",
+    badge: "Tarif Essai 5 €",
     description: "Séance en petit groupe (12 max) avec suivi technique personnalisé",
   },
   private: {
@@ -50,7 +50,7 @@ export function getTrialPrice(type: string | null | undefined): number {
 }
 
 /**
- * Retourne le prix formaté ("15 €", "25 €") d'un cours d'essai.
+ * Retourne le prix formaté ("5 €", "25 €") d'un cours d'essai.
  */
 export function getTrialPriceFormatted(type: string | null | undefined): string {
   if (type === "private") return TRIAL_PRICING.private.priceFormatted;

@@ -10,8 +10,6 @@ import {
   Clock,
   Loader2,
   AlertCircle,
-  ShieldAlert,
-  ShieldCheck,
 } from "lucide-react";
 import { useMember } from "../MemberContext";
 import { cn } from "@/lib/utils";
@@ -125,7 +123,7 @@ export default function BookingCancelModal() {
                         : "bg-amber-500/10 border-amber-500/20 text-amber-400"
                     )}
                   >
-                    {isLateWarning ? <ShieldAlert size={24} /> : <AlertTriangle size={24} />}
+                    <AlertTriangle size={24} />
                   </div>
                   <h3 className="text-2xl font-heading font-bold uppercase tracking-wider text-brand-white">
                     {isLateWarning ? "Annulation impossible" : "Annuler la réservation ?"}
@@ -146,17 +144,11 @@ export default function BookingCancelModal() {
                       : "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
                   )}
                 >
-                  <div className="flex items-center gap-2 font-bold uppercase tracking-wider">
+                  <div className="font-bold uppercase tracking-wider">
                     {isLateWarning ? (
-                      <>
-                        <ShieldAlert size={16} className="text-red-400 shrink-0" />
-                        <span>Délai de prévenance dépassé (&lt; 24h)</span>
-                      </>
+                      <span>Délai de prévenance dépassé (&lt; 24h)</span>
                     ) : (
-                      <>
-                        <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
-                        <span>Annulation à plus de 24h</span>
-                      </>
+                      <span>Annulation à plus de 24h</span>
                     )}
                   </div>
                   <p className="text-xs leading-relaxed font-medium">

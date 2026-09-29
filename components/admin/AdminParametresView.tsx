@@ -386,8 +386,7 @@ export default function AdminParametresView({ initialData }: AdminParametresView
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/30 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
-            <Shield size={14} />
+          <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/30 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
             Privilèges Admin Actifs
           </span>
         </div>
@@ -424,26 +423,24 @@ export default function AdminParametresView({ initialData }: AdminParametresView
       {/* Navigation par Onglets */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-brand-white/10 scrollbar-thin">
         {[
-          { key: "general", label: "Général", icon: Settings },
-          { key: "services", label: "Services", icon: Sliders },
-          { key: "reservations", label: "Réservations", icon: Calendar },
-          { key: "securite", label: "Sécurité & Audit", icon: Shield },
-          { key: "maintenance", label: "Maintenance", icon: Wrench },
+          { key: "general", label: "Général" },
+          { key: "services", label: "Services" },
+          { key: "reservations", label: "Réservations" },
+          { key: "securite", label: "Sécurité & Audit" },
+          { key: "maintenance", label: "Maintenance" },
         ].map((tab) => {
-          const Icon = tab.icon;
           const isActive = activeTab === tab.key;
           return (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabKey)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all whitespace-nowrap",
+                "flex items-center px-4 py-2.5 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer",
                 isActive
                   ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
                   : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5 border border-transparent"
               )}
             >
-              <Icon size={16} />
               <span>{tab.label}</span>
             </button>
           );
@@ -926,8 +923,7 @@ export default function AdminParametresView({ initialData }: AdminParametresView
           {/* 3. Privilèges Administrateur & Protections Serveur */}
           <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-              <h3 className="text-sm font-heading font-bold uppercase text-brand-white flex items-center gap-2">
-                <ShieldAlert size={16} className="text-brand-blue" />
+              <h3 className="text-sm font-heading font-bold uppercase text-brand-white">
                 Privilèges Administrateur & Protections Serveur
               </h3>
               <span className="px-2.5 py-0.5 rounded bg-brand-white/5 text-brand-white/40 border border-brand-white/10 text-[10px] font-bold uppercase">

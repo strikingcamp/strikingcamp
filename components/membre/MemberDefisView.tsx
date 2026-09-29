@@ -3,19 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trophy,
-  Flame,
-  Target,
-  Award,
   Lock,
   CheckCircle2,
   Play,
   ArrowLeft,
   RefreshCw,
   ExternalLink,
-  Dumbbell,
-  HeartPulse,
-  Apple,
   AlertCircle,
   Check,
 } from "lucide-react";
@@ -179,7 +172,6 @@ export default function MemberDefisView() {
       case "Technique":
         return {
           badge: "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30",
-          icon: <Flame size={14} className="text-[#00d8ff]" />,
           border: "hover:border-[#00d8ff]/50",
           glow: "from-[#0c182c] via-[#0f172a] to-[#131f37]",
           accent: "#00d8ff",
@@ -187,7 +179,6 @@ export default function MemberDefisView() {
       case "Physique":
         return {
           badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-          icon: <Dumbbell size={14} className="text-amber-400" />,
           border: "hover:border-amber-500/50",
           glow: "from-[#22160b] via-[#1a130f] to-[#14100c]",
           accent: "#f59e0b",
@@ -195,7 +186,6 @@ export default function MemberDefisView() {
       case "Cardio":
         return {
           badge: "bg-rose-500/15 text-rose-400 border-rose-500/30",
-          icon: <HeartPulse size={14} className="text-rose-400" />,
           border: "hover:border-rose-500/50",
           glow: "from-[#240c15] via-[#1c0f16] to-[#140b10]",
           accent: "#f43f5e",
@@ -203,7 +193,6 @@ export default function MemberDefisView() {
       case "Nutrition":
         return {
           badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-          icon: <Apple size={14} className="text-emerald-400" />,
           border: "hover:border-emerald-500/50",
           glow: "from-[#0a1e16] via-[#0b1713] to-[#08120e]",
           accent: "#10b981",
@@ -258,11 +247,10 @@ export default function MemberDefisView() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span
                   className={cn(
-                    "text-[10px] font-black uppercase px-2.5 py-1 rounded-full border flex items-center gap-1.5",
+                    "text-[10px] font-black uppercase px-2.5 py-1 rounded-full border",
                     theme.badge
                   )}
                 >
-                  {theme.icon}
                   {challengeDetail.category}
                 </span>
 
@@ -295,8 +283,7 @@ export default function MemberDefisView() {
                 +{challengeDetail.points_xp} XP
               </div>
               {challengeDetail.badge_reward && (
-                <div className="flex items-center gap-1.5 text-amber-400 font-heading font-bold text-xs">
-                  <Award size={14} />
+                <div className="text-amber-400 font-heading font-bold text-xs">
                   {challengeDetail.badge_reward}
                 </div>
               )}
@@ -353,8 +340,7 @@ export default function MemberDefisView() {
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         <div className="space-y-6">
           <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-            <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white flex items-center gap-2">
-              <Target size={18} className="text-[#00d8ff]" />
+            <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
               Programme & Étapes à valider
             </h2>
             <span className="text-xs text-brand-white/50 font-heading uppercase">
@@ -546,14 +532,7 @@ export default function MemberDefisView() {
                 exit={{ scale: 0.9, opacity: 0 }}
                 className="relative w-full max-w-md bg-gradient-to-b from-[#0c1b33] via-[#0f172a] to-[#0a0f1d] border border-[#00d8ff]/40 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 text-center space-y-6 overflow-hidden"
               >
-                {/* Glow d'arrière plan */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#00d8ff]/20 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="w-20 h-20 rounded-3xl bg-[#00d8ff]/20 border border-[#00d8ff]/40 text-[#00d8ff] flex items-center justify-center mx-auto shadow-xl shadow-[#00d8ff]/20 relative">
-                  <Trophy size={42} />
-                </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 pt-4">
                   <span className="text-[11px] font-black uppercase px-3 py-1 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30 tracking-wider">
                     Défi 100 % Accompli
                   </span>
@@ -576,7 +555,7 @@ export default function MemberDefisView() {
                   <div className="space-y-0.5">
                     <span className="text-[10px] uppercase font-bold text-brand-white/50 block">Récompense</span>
                     <span className="text-xs font-heading font-black text-amber-400 flex items-center justify-center gap-1 line-clamp-1">
-                      <Award size={14} /> {challengeDetail.badge_reward || "Badge Striker"}
+                      {challengeDetail.badge_reward || "Badge Striker"}
                     </span>
                   </div>
                 </div>
@@ -649,7 +628,6 @@ export default function MemberDefisView() {
         </div>
       ) : filteredChallenges.length === 0 ? (
         <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-2xl p-12 text-center space-y-3">
-          <Trophy size={40} className="mx-auto text-brand-white/30" />
           <h3 className="text-base font-heading font-bold uppercase text-brand-white">
             Aucun défi disponible pour le moment
           </h3>
@@ -683,11 +661,10 @@ export default function MemberDefisView() {
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={cn(
-                        "text-[10px] font-black uppercase px-2.5 py-1 rounded-full border flex items-center gap-1.5",
+                        "text-[10px] font-black uppercase px-2.5 py-1 rounded-full border",
                         theme.badge
                       )}
                     >
-                      {theme.icon}
                       {c.category}
                     </span>
 
@@ -708,11 +685,10 @@ export default function MemberDefisView() {
 
                   {/* Badges d'information : Étapes & Récompense */}
                   <div className="flex items-center justify-between text-xs pt-1 text-brand-white/70">
-                    <span className="flex items-center gap-1 text-[#00d8ff] font-heading font-bold">
-                      <Target size={13} />
+                    <span className="text-[#00d8ff] font-heading font-bold">
                       {c.stepsCount} {c.stepsCount > 1 ? "étapes" : "étape"}
                     </span>
-                    <span className="flex items-center gap-1 text-amber-400 font-heading font-bold">
+                    <span className="text-amber-400 font-heading font-bold">
                       +{c.points_xp} XP
                     </span>
                   </div>

@@ -5,16 +5,10 @@ import { motion } from "framer-motion";
 import {
   Calendar,
   Clock,
-  Flame,
-  ShieldCheck,
   XCircle,
-  Trophy,
   ArrowRight,
   Play,
   CheckCircle2,
-  Dumbbell,
-  HeartPulse,
-  Apple,
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
@@ -93,19 +87,6 @@ export default function MemberHomeView({
 
   const featuredChallenge = inProgressChallenge || newChallenge || completedChallenge || null;
 
-  const getCategoryIcon = (cat: ChallengeCategory) => {
-    switch (cat) {
-      case "Technique":
-        return <Flame size={14} className="text-[#00d8ff]" />;
-      case "Physique":
-        return <Dumbbell size={14} className="text-amber-400" />;
-      case "Cardio":
-        return <HeartPulse size={14} className="text-rose-400" />;
-      case "Nutrition":
-        return <Apple size={14} className="text-emerald-400" />;
-    }
-  };
-
   const getCategoryBadgeClass = (cat: ChallengeCategory) => {
     switch (cat) {
       case "Technique":
@@ -151,21 +132,16 @@ export default function MemberHomeView({
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-r from-[#172033] to-[#0f172a] border border-brand-blue/30 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-brand-blue/15 text-brand-blue flex items-center justify-center border border-brand-blue/30 shrink-0">
-              <ShieldCheck size={24} />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[10px] font-heading font-black text-brand-blue uppercase tracking-widest px-2.5 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 inline-block">
-                Finaliser votre adhésion
-              </span>
-              <h3 className="text-base font-heading font-black uppercase text-brand-white">
-                Choisissez votre formule d&apos;entraînement
-              </h3>
-              <p className="text-xs text-brand-white/60 max-w-md">
-                Sélectionnez votre formule (Cours Privé ou Cours Adulte) pour activer vos réservations.
-              </p>
-            </div>
+          <div className="space-y-1">
+            <span className="text-[10px] font-heading font-black text-brand-blue uppercase tracking-widest px-2.5 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 inline-block">
+              Finaliser votre adhésion
+            </span>
+            <h3 className="text-base font-heading font-black uppercase text-brand-white">
+              Choisissez votre formule d&apos;entraînement
+            </h3>
+            <p className="text-xs text-brand-white/60 max-w-md">
+              Sélectionnez votre formule (Cours Privé ou Cours Adulte) pour activer vos réservations.
+            </p>
           </div>
 
           <Link
@@ -187,25 +163,20 @@ export default function MemberHomeView({
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-r from-[#0b1b33] to-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#00d8ff]/15 text-[#00d8ff] flex items-center justify-center border border-[#00d8ff]/30 shrink-0">
-              <Flame size={20} />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wider font-bold text-[#00d8ff]">
-                Formule Cours Privés active
-              </p>
-              <h3 className="text-sm font-heading font-black uppercase text-brand-white">
-                Solde mensuel de séances individuelles
-              </h3>
-              <p className="text-xs text-brand-white/60">
-                Il vous reste{" "}
-                <span className="font-bold text-[#00d8ff]">
-                  {quotaRemaining} sur {quotaTotal}
-                </span>{" "}
-                séances privées ce mois-ci.
-              </p>
-            </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider font-bold text-[#00d8ff]">
+              Formule Cours Privés active
+            </p>
+            <h3 className="text-sm font-heading font-black uppercase text-brand-white">
+              Solde mensuel de séances individuelles
+            </h3>
+            <p className="text-xs text-brand-white/60">
+              Il vous reste{" "}
+              <span className="font-bold text-[#00d8ff]">
+                {quotaRemaining} sur {quotaTotal}
+              </span>{" "}
+              séances privées ce mois-ci.
+            </p>
           </div>
 
           <Link
@@ -223,12 +194,9 @@ export default function MemberHomeView({
           ━━━━━━━━━━━━━━━━━━━━ */}
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-          <div className="flex items-center gap-2.5">
-            <Trophy size={22} className="text-[#00d8ff]" />
-            <h2 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
-              Mes Défis
-            </h2>
-          </div>
+          <h2 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+            Mes Défis
+          </h2>
           <Link
             href="/membre/defis"
             className="text-xs font-heading font-bold uppercase tracking-wider text-[#00d8ff] hover:text-brand-white flex items-center gap-1 transition-colors"
@@ -247,7 +215,6 @@ export default function MemberHomeView({
         ) : !featuredChallenge ? (
           /* Aucun défi publié */
           <div className="bg-gradient-to-br from-[#0c182c] via-[#0f172a] to-[#131f37] border border-[#00d8ff]/20 rounded-2xl p-6 shadow-xl relative overflow-hidden space-y-4 text-center">
-            <Trophy size={36} className="mx-auto text-[#00d8ff]/60" />
             <div className="space-y-1">
               <h3 className="text-base font-heading font-black uppercase text-brand-white">
                 Nouveaux défis en préparation
@@ -274,11 +241,10 @@ export default function MemberHomeView({
                 <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={cn(
-                      "text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1.5",
+                      "text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border",
                       getCategoryBadgeClass(featuredChallenge.category)
                     )}
                   >
-                    {getCategoryIcon(featuredChallenge.category)}
                     {featuredChallenge.category}
                   </span>
 
@@ -287,8 +253,7 @@ export default function MemberHomeView({
                   </span>
 
                   {featuredChallenge.progressStatus === "in_progress" ? (
-                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/40 flex items-center gap-1">
-                      <Flame size={12} />
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/40">
                       En cours — {featuredChallenge.progressPercentage}%
                     </span>
                   ) : featuredChallenge.progressStatus === "completed" ? (
@@ -376,12 +341,9 @@ export default function MemberHomeView({
           ━━━━━━━━━━━━━━━━━━━━ */}
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Calendar size={20} className="text-[#00d8ff]" />
-            <h2 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
-              Mes prochaines réservations
-            </h2>
-          </div>
+          <h2 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
+            Mes prochaines réservations
+          </h2>
           {upcomingBookings.length > 0 && (
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30">
               {upcomingBookings.length} {upcomingBookings.length === 1 ? "séance" : "séances"}
@@ -461,8 +423,7 @@ export default function MemberHomeView({
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-brand-white/5">
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-                    <ShieldCheck size={14} />
+                  <div className="text-xs text-emerald-400 font-semibold">
                     <span>Confirmée</span>
                   </div>
 

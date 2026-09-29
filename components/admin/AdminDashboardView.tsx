@@ -7,7 +7,6 @@ import {
   Percent,
   Calendar,
   ArrowRight,
-  ShieldCheck,
   Clock,
   MapPin,
 } from "lucide-react";
@@ -291,8 +290,7 @@ export default function AdminDashboardView({
                         {b.sessionName} · {b.sessionDate} ({b.sessionTime})
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/20">
-                      <ShieldCheck size={10} />
+                    <span className="inline-flex items-center text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/20">
                       {b.status}
                     </span>
                   </div>
@@ -307,7 +305,6 @@ export default function AdminDashboardView({
           <div className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-6 shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-4">
               <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-brand-blue" />
                 <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                   Événements
                 </h2>

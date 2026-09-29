@@ -4,17 +4,12 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  CreditCard,
   Search,
   CheckCircle2,
   Edit2,
   X,
   Loader2,
   ArrowLeft,
-  Users,
-  Shield,
-  Layers,
-  Calendar,
   Euro,
   AlertCircle,
   ToggleLeft,
@@ -209,19 +204,19 @@ export default function AdminFormulesView({
     switch (type) {
       case "small_group":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
-            <Users size={12} /> Cours Adulte
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
+            Cours Adulte
           </span>
         );
       case "private":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <Shield size={12} /> Cours Privé
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            Cours Privé
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-white/10 text-brand-white/70">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-white/10 text-brand-white/70">
             {type}
           </span>
         );
@@ -231,14 +226,14 @@ export default function AdminFormulesView({
   const renderCommitmentBadge = (commitment?: string | null) => {
     if (commitment === "annual") {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
-          <Calendar size={11} /> 12 mois (Annuel)
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
+          12 mois (Annuel)
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">
-        <Calendar size={11} /> 1 mois (Mensuel)
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">
+        1 mois (Mensuel)
       </span>
     );
   };
@@ -248,19 +243,12 @@ export default function AdminFormulesView({
       {/* HEADER */}
       <div className="border-b border-brand-white/10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-blue/10 border border-brand-blue/30 flex items-center justify-center text-brand-blue">
-              <CreditCard size={22} />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
-                Catalogue des <span className="text-brand-blue">Formules</span>
-              </h1>
-              <p className="text-xs text-brand-white/60 mt-0.5">
-                Gestion des tarifs, engagements et séances privées de Striking Camp
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
+            Catalogue des <span className="text-brand-blue">Formules</span>
+          </h1>
+          <p className="text-xs text-brand-white/60 mt-0.5">
+            Gestion des tarifs, engagements et séances privées de Striking Camp
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -272,9 +260,9 @@ export default function AdminFormulesView({
           </Link>
           <Link
             href="/admin/abonnements"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-blue/15 hover:bg-brand-blue/25 text-brand-blue text-xs font-semibold rounded-xl uppercase tracking-wider border border-brand-blue/30 transition-colors"
+            className="inline-flex items-center px-3.5 py-2 bg-brand-blue/15 hover:bg-brand-blue/25 text-brand-blue text-xs font-semibold rounded-xl uppercase tracking-wider border border-brand-blue/30 transition-colors"
           >
-            <Users size={14} /> Abonnements membres
+            Abonnements membres
           </Link>
         </div>
       </div>
@@ -283,13 +271,10 @@ export default function AdminFormulesView({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Total Formules */}
         <div className="bg-[#0f172a]/90 border border-brand-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-white/50">
               Total Formules
             </span>
-            <div className="w-7 h-7 rounded-lg bg-brand-white/5 border border-brand-white/10 flex items-center justify-center text-brand-white/70">
-              <Layers size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-brand-white">
@@ -303,13 +288,10 @@ export default function AdminFormulesView({
 
         {/* Formules Actives */}
         <div className="bg-[#0f172a]/90 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400/80">
               Actives
             </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-emerald-400">
@@ -323,13 +305,10 @@ export default function AdminFormulesView({
 
         {/* Small Group */}
         <div className="bg-[#0f172a]/90 border border-brand-blue/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-blue">
               Cours Adulte
             </span>
-            <div className="w-7 h-7 rounded-lg bg-brand-blue/10 border border-brand-blue/20 flex items-center justify-center text-brand-blue">
-              <Users size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-brand-blue">
@@ -343,13 +322,10 @@ export default function AdminFormulesView({
 
         {/* Cours Privés */}
         <div className="bg-[#0f172a]/90 border border-amber-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div className="flex items-center justify-between">
+          <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
               Cours Privés
             </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <Shield size={14} />
-            </div>
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-amber-400">
@@ -380,24 +356,24 @@ export default function AdminFormulesView({
           <button
             onClick={() => setTypeFilter("small_group")}
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
               typeFilter === "small_group"
                 ? "bg-brand-blue text-white shadow-md shadow-brand-blue/20"
                 : "bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20"
             )}
           >
-            <Users size={13} /> Cours Adulte ({stats.smallGroupCount})
+            Cours Adulte ({stats.smallGroupCount})
           </button>
           <button
             onClick={() => setTypeFilter("private")}
             className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
               typeFilter === "private"
                 ? "bg-amber-500 text-brand-black shadow-md shadow-amber-500/20 font-black"
                 : "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
             )}
           >
-            <Shield size={13} /> Cours Privés ({stats.privateCount})
+            Cours Privés ({stats.privateCount})
           </button>
         </div>
 
@@ -451,7 +427,6 @@ export default function AdminFormulesView({
 
         {filteredPlans.length === 0 ? (
           <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-12 text-center space-y-3">
-            <CreditCard size={32} className="mx-auto text-brand-white/30" />
             <p className="text-sm font-semibold text-brand-white/70">
               Aucune formule ne correspond à vos critères de recherche.
             </p>
@@ -568,18 +543,13 @@ export default function AdminFormulesView({
           <div className="bg-[#0f172a] border border-brand-white/15 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl shadow-black/80">
             {/* Header Modale */}
             <div className="px-6 py-5 border-b border-brand-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-brand-blue/15 border border-brand-blue/30 flex items-center justify-center text-brand-blue">
-                  <Edit2 size={16} />
-                </div>
-                <div>
-                  <h3 className="font-heading font-black text-lg uppercase tracking-wider text-brand-white">
-                    Modifier la formule
-                  </h3>
-                  <span className="text-xs text-brand-white/50">
-                    Code : {editingPlan.code || editingPlan.id}
-                  </span>
-                </div>
+              <div>
+                <h3 className="font-heading font-black text-lg uppercase tracking-wider text-brand-white">
+                  Modifier la formule
+                </h3>
+                <span className="text-xs text-brand-white/50">
+                  Code : {editingPlan.code || editingPlan.id}
+                </span>
               </div>
               <button
                 onClick={() => setEditingPlan(null)}

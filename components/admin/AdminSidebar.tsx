@@ -14,7 +14,6 @@ import {
   Settings,
   ArrowLeft,
   Sliders,
-  Shield,
   Trophy,
   Bell,
   UserCheck,
@@ -131,8 +130,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               <span className="font-heading font-black text-base uppercase tracking-wider text-brand-white">
                 STRIKING <span className="text-brand-blue">CAMP</span>
               </span>
-              <span className="text-[9px] font-bold text-brand-blue uppercase tracking-widest -mt-1 flex items-center gap-1">
-                <Shield size={10} />
+              <span className="text-[9px] font-bold text-brand-blue uppercase tracking-widest -mt-1 block">
                 ESPACE ADMIN
               </span>
             </div>

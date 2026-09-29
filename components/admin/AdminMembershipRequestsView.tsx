@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Users,
   Search,
   CheckCircle2,
   XCircle,
@@ -14,7 +13,6 @@ import {
   Loader2,
   RefreshCw,
   MessageSquare,
-  ShieldCheck,
   Check,
   X,
   Pencil,
@@ -236,8 +234,7 @@ export default function AdminMembershipRequestsView() {
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-brand-white/10">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Users size={24} className="text-[#00d8ff]" />
+          <div className="mb-1">
             <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
               Validation des Adhésions
             </h1>
@@ -559,8 +556,7 @@ export default function AdminMembershipRequestsView() {
               className="relative w-full max-w-lg bg-[#0f172a] border border-[#00d8ff]/30 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6"
             >
               <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck size={22} className="text-[#00d8ff]" />
+                <div>
                   <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
                     Valider l&apos;adhésion
                   </h3>

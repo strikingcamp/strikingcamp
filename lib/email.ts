@@ -411,7 +411,7 @@ export async function sendTrialBookingConfirmationEmail(
   }
 
   const location = data.location || OFFICIAL_VENUE;
-  const trialPrice = data.price || "15 €";
+  const trialPrice = data.price || "5 €";
   const trialType = data.sessionType || "Cours Adulte";
 
   try {
@@ -555,7 +555,7 @@ export async function sendAdminTrialBookingNotification(
             <tr>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase;">Tarif</td>
               <td style="padding: 8px 0; border-bottom: 1px solid #1e293b; color: #00d8ff; font-size: 15px; font-weight: bold;">
-                ${data.price || "15 €"}
+                ${data.price || "5 €"}
               </td>
             </tr>
             <tr>

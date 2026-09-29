@@ -5,16 +5,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
-  Clock,
   AlertCircle,
-  Flame,
-  Users,
-  Award,
   ChevronRight,
   Loader2,
-  Calendar,
-  Lock,
-  ShieldCheck,
   PhoneCall,
   Check,
 } from "lucide-react";
@@ -134,10 +127,6 @@ export default function MembershipOnboardingView() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-gradient-to-br from-[#0c1f38] to-[#0a1120] border border-brand-blue/30 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6 text-center"
         >
-          <div className="w-16 h-16 rounded-2xl bg-brand-blue/20 text-brand-blue border border-brand-blue/40 flex items-center justify-center mx-auto shadow-lg shadow-brand-blue/10">
-            <ShieldCheck size={32} />
-          </div>
-
           <div className="space-y-2">
             <span className="text-[11px] font-heading font-black text-brand-blue uppercase tracking-widest px-3 py-1 bg-brand-blue/10 rounded-full border border-brand-blue/20 inline-block">
               Adhésion Validée & Active
@@ -153,14 +142,13 @@ export default function MembershipOnboardingView() {
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/membre/planning"
-              className="w-full sm:w-auto px-6 py-3.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-brand-blue/20 flex items-center justify-center cursor-pointer"
             >
-              <Calendar size={16} />
               Accéder au planning & Réserver
             </Link>
             <Link
               href="/membre"
-              className="w-full sm:w-auto px-6 py-3.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-heading font-bold uppercase tracking-wider rounded-xl border border-brand-white/10 transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3.5 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-heading font-bold uppercase tracking-wider rounded-xl border border-brand-white/10 transition-colors flex items-center justify-center"
             >
               Retour à l&apos;accueil
             </Link>
@@ -182,18 +170,13 @@ export default function MembershipOnboardingView() {
           className="bg-[#0f172a] border border-amber-500/30 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6"
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-brand-white/10">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
-                <Clock size={24} className="animate-pulse" />
-              </div>
-              <div>
-                <span className="text-[10px] font-heading font-black uppercase tracking-widest text-amber-400 block mb-0.5">
-                  Dossier en cours d&apos;examen
-                </span>
-                <h1 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
-                  Demande d&apos;adhésion en attente
-                </h1>
-              </div>
+            <div>
+              <span className="text-[10px] font-heading font-black uppercase tracking-widest text-amber-400 block mb-0.5">
+                Dossier en cours d&apos;examen
+              </span>
+              <h1 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
+                Demande d&apos;adhésion en attente
+              </h1>
             </div>
 
             <div className="px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-heading font-black uppercase tracking-wider">
@@ -206,8 +189,7 @@ export default function MembershipOnboardingView() {
             <p>
               Votre demande pour la formule <strong className="text-brand-white text-sm">{latestRequest.plan?.name || "Sélectionnée"}</strong> ({latestRequest.commitment_type === "annual" ? "Engagement 12 mois" : "Sans engagement / Mensuel"}) a bien été reçue le <strong>{new Date(latestRequest.created_at).toLocaleDateString("fr-FR")}</strong>.
             </p>
-            <div className="bg-[#0a1120] border border-amber-500/20 rounded-2xl p-4 sm:p-5 flex items-start gap-3">
-              <Lock size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <div className="bg-[#0a1120] border border-amber-500/20 rounded-2xl p-4 sm:p-5">
               <p className="text-amber-300/90 text-xs leading-relaxed">
                 <strong>Important :</strong> Les réservations de cours restent verrouillées jusqu&apos;à l&apos;activation manuelle de votre adhésion par le club. Vous recevrez une confirmation dès que votre dossier sera validé.
               </p>
@@ -346,22 +328,14 @@ export default function MembershipOnboardingView() {
                 )}
 
                 <div className="space-y-4">
-                  {/* Icône & Catégorie */}
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center",
-                      isPriv ? "bg-[#00d8ff]/15 text-[#00d8ff]" : "bg-amber-500/15 text-amber-400"
-                    )}>
-                      {isPriv ? <Flame size={20} /> : <Users size={20} />}
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-heading font-black uppercase tracking-wider text-brand-white/40 block">
-                        {isPriv ? "Formule Premium" : "Formule Cours Adulte"}
-                      </span>
-                      <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                        {plan.name}
-                      </h3>
-                    </div>
+                  {/* Catégorie & Nom */}
+                  <div>
+                    <span className="text-[10px] font-heading font-black uppercase tracking-wider text-brand-white/40 block mb-1">
+                      {isPriv ? "Formule Premium" : "Formule Cours Adulte"}
+                    </span>
+                    <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+                      {plan.name}
+                    </h3>
                   </div>
 
                   {/* Prix */}

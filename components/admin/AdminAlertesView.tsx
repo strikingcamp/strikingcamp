@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import {
-  Bell,
   Plus,
   Trash2,
   Edit2,
   X,
-  Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -143,12 +141,9 @@ export default function AdminAlertesView() {
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-brand-white/10">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Bell size={24} className="text-[#00d8ff]" />
-            <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white">
-              Gestion des Alertes & Notifications
-            </h1>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-black uppercase tracking-wider text-brand-white mb-1">
+            Gestion des Alertes & Notifications
+          </h1>
           <p className="text-xs sm:text-sm text-brand-white/60">
             Diffusez des annonces, rappels et informations importantes sur l&apos;espace membre.
           </p>
@@ -243,8 +238,7 @@ export default function AdminAlertesView() {
                   <span className={cn("text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded border", getCategoryBadge(alerte.category))}>
                     {alerte.category}
                   </span>
-                  <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70 flex items-center gap-1">
-                    <Users size={11} />
+                  <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
                     {alerte.targetAudience}
                   </span>
                   <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded", alerte.isActive ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-neutral-500/15 text-neutral-400 border border-neutral-500/30")}>

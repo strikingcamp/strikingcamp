@@ -3,18 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sliders,
-  Users,
-  User,
   CheckCircle2,
   AlertTriangle,
   Loader2,
   RefreshCw,
   Power,
-  ShieldCheck,
-  Calendar,
-  ArrowRight,
-  Layers,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -88,19 +81,6 @@ export default function AdminServicesView() {
     }, 4000);
   };
 
-  const getServiceIcon = (key: string) => {
-    switch (key) {
-      case "private":
-        return <User size={22} className="text-[#00d8ff]" />;
-      case "small_group":
-        return <Users size={22} className="text-amber-400" />;
-      case "events":
-        return <Calendar size={22} className="text-emerald-400" />;
-      default:
-        return <Sliders size={22} className="text-brand-blue" />;
-    }
-  };
-
   const getServiceColor = (key: string) => {
     switch (key) {
       case "private":
@@ -138,11 +118,10 @@ export default function AdminServicesView() {
     <div className="space-y-8">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           EN-TÊTE PRINCIPAL
-          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="border-b border-brand-white/10 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5 text-xs text-brand-blue uppercase tracking-widest font-heading font-black">
-            <Sliders size={16} />
+          <div className="text-xs text-brand-blue uppercase tracking-widest font-heading font-black">
             <span>Paramétrage Système · Striking Camp</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-wider text-brand-white mt-1">
@@ -205,8 +184,7 @@ export default function AdminServicesView() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           CARTE D'AVERTISSEMENT SÉCURITÉ ARCHITECTURE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="bg-[#0b1b33]/40 border border-[#00d8ff]/20 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 text-xs text-brand-white/80">
-        <ShieldCheck size={20} className="text-[#00d8ff] shrink-0 mt-0.5" />
+      <div className="bg-[#0b1b33]/40 border border-[#00d8ff]/20 rounded-2xl p-4 sm:p-5 text-xs text-brand-white/80">
         <div className="space-y-1">
           <p className="font-bold uppercase tracking-wider text-[#00d8ff]">
             Sécurité Multi-Niveaux & Protection des Données
@@ -239,9 +217,9 @@ export default function AdminServicesView() {
               {/* Top info */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-brand-white/5 border border-brand-white/10 flex items-center justify-center">
-                    {getServiceIcon(service.service_key)}
-                  </div>
+                  <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+                    {service.service_name}
+                  </h3>
 
                   {/* Badge Statut */}
                   <span
@@ -263,9 +241,6 @@ export default function AdminServicesView() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
-                    {service.service_name}
-                  </h3>
                   <p className="text-xs text-brand-white/60 mt-1 leading-relaxed min-h-[36px]">
                     {service.description || "Service Striking Camp"}
                   </p>
@@ -273,8 +248,7 @@ export default function AdminServicesView() {
 
                 {/* Détails du comportement */}
                 <div className="bg-black/30 border border-brand-white/5 rounded-xl p-3 text-[11px] space-y-1.5 text-brand-white/70">
-                  <div className="font-bold text-brand-white/90 uppercase tracking-wider flex items-center gap-1">
-                    <ArrowRight size={12} className="text-[#00d8ff]" />
+                  <div className="font-bold text-brand-white/90 uppercase tracking-wider">
                     Effet immédiat :
                   </div>
 

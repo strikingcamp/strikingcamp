@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Shield, LogOut } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 
 interface AdminHeaderProps {
   onToggleSidebar?: () => void;
@@ -36,8 +36,7 @@ export default function AdminHeader({
       {/* Right: Admin badge & Actions */}
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Admin Tag */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
-          <Shield size={14} />
+        <div className="flex items-center px-3 py-1.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
           <span className="hidden sm:inline">{adminName}</span>
           <span className="sm:hidden">Admin</span>
         </div>

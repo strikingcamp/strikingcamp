@@ -4,8 +4,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar,
-  Clock,
   Plus,
   Edit2,
   X,
@@ -472,12 +470,9 @@ export default function AdminPrivateCoachingView({
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-          <div className="flex items-center gap-2.5">
-            <Calendar size={18} className="text-[#00d8ff]" />
-            <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-              Jours d&apos;ouverture des cours privés
-            </h2>
-          </div>
+          <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+            Jours d&apos;ouverture des cours privés
+          </h2>
           <span className="text-xs text-brand-white/40 font-semibold">Du Lundi au Samedi</span>
         </div>
 
@@ -516,16 +511,13 @@ export default function AdminPrivateCoachingView({
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-3">
-          <div className="flex items-center gap-2.5">
-            <Clock size={18} className="text-[#00d8ff]" />
-            <div>
-              <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                Créneaux horaires standards (6 par jour)
-              </h2>
-              <p className="text-xs text-brand-white/50">
-                Matin : 08h-11h · Après-midi : 14h-17h (50 min par séance · Capacité : 1)
-              </p>
-            </div>
+          <div>
+            <h2 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+              Créneaux horaires standards (6 par jour)
+            </h2>
+            <p className="text-xs text-brand-white/50">
+              Matin : 08h-11h · Après-midi : 14h-17h (50 min par séance · Capacité : 1)
+            </p>
           </div>
 
           <button
