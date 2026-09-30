@@ -353,12 +353,12 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
     ],
     highlights: [
       "100% réservé aux femmes",
-      "Formule dédiée 50 € / mois",
+      "Formule dédiée 499 € / an",
       "Cardio-boxing & Renforcement",
       "Défoulement & Confiance en soi"
     ],
-    metaTitle: "Cours Lady Striking 100% Femmes à Marseille (50 €/mois)",
-    metaDescription: "Cours de boxe et striking 100% femmes à Marseille au Striking Camp (50 €/mois) : technique, cardio, sac de frappe et confiance en soi dans une ambiance bienveillante.",
+    metaTitle: "Cours Lady Striking 100% Femmes à Marseille (499 €/an)",
+    metaDescription: "Cours de boxe et striking 100% femmes à Marseille au Striking Camp (499 €/an) : technique, cardio, sac de frappe et confiance en soi dans une ambiance bienveillante.",
     preselectedDiscipline: "Lady Striking"
   },
 
@@ -370,10 +370,10 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
     category: "Enfants 5–13 ans",
     image: "/kickboxing.jpg",
     alt: "Cours de Kid Boxing pour enfants 5 à 13 ans à Marseille - Striking Camp",
-    shortDescription: "Programme de Kick Boxing adapté aux enfants de 5 à 13 ans, scindé en deux groupes (5–8 ans et 9–13 ans) : motricité, coordination, discipline et respect (350 € / saison scolaire).",
+    shortDescription: "Programme de Kick Boxing adapté aux enfants de 5 à 13 ans, scindé en deux groupes (5–8 ans et 9–13 ans) : motricité, coordination, discipline et respect (349 € / saison - accès aux événements et stages).",
     intro: [
       "Le Kid Boxing est une approche pédagogique du Kick Boxing spécialement pensée et conçue pour les enfants de 5 à 13 ans, organisée en deux groupes d'âge adaptés : 5–8 ans et 9–13 ans.",
-      "Loin de toute notion de combat violent ou de préparation compétitive prématurée, l'objectif fondamental est l'éveil corporel, le développement de la motricité, l'apprentissage de la discipline martiale et le plaisir du jeu sportif dans un cadre sécurisant (formule saison scolaire à 350 €, hors stages vacances scolaires)."
+      "Loin de toute notion de combat violent ou de préparation compétitive prématurée, l'objectif fondamental est l'éveil corporel, le développement de la motricité, l'apprentissage de la discipline martiale et le plaisir du jeu sportif dans un cadre sécurisant (formule saison à 349 €, accès aux événements et stages inclus)."
     ],
     sections: [
       {
@@ -384,7 +384,7 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
           "Kid Boxing 5–8 ans : Éveil corporel, motricité globale, équilibre et initiation par le jeu",
           "Kid Boxing 9–13 ans : Apprentissage des combinaisons techniques pieds-poings, coordination et discipline",
           "Enseignement des valeurs martiales fondamentales : respect, écoute, persévérance et entraide",
-          "Tarif de 350 € pour l'ensemble de la saison scolaire (stages de vacances scolaires non inclus)"
+          "Tarif de 349 € pour l'ensemble de la saison scolaire (accès aux événements et stages inclus)"
         ]
       },
       {
@@ -434,12 +434,12 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
     ],
     highlights: [
       "2 groupes : 5–8 ans & 9–13 ans",
-      "350 € pour la saison scolaire",
+      "349 € pour la saison scolaire",
       "Motricité, jeux & discipline",
-      "Hors stages vacances scolaires"
+      "Accès aux événements (stages)"
     ],
     metaTitle: "Cours de Kid Boxing Enfants (5–13 ans) à Marseille 13010",
-    metaDescription: "Cours de Kid Boxing pour enfants de 5 à 13 ans à Marseille au Striking Camp (350 €/saison scolaire) : 5-8 ans et 9-13 ans, motricité, coordination et respect.",
+    metaDescription: "Cours de Kid Boxing pour enfants de 5 à 13 ans à Marseille au Striking Camp (349 €/saison, accès aux événements et stages inclus) : 5-8 ans et 9-13 ans, motricité, coordination et respect.",
     preselectedDiscipline: "Kick Boxing"
   }
 };

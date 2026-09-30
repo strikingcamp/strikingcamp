@@ -135,7 +135,7 @@ export const formatsData: Record<string, FormatDetail> = {
     title: "COURS ADULTE",
     h1: "Cours Adulte",
     subtitle: "L’équilibre entre accompagnement technique et énergie du groupe.",
-    category: "Groupe Réduit (12 max)",
+    category: "Groupe Réduit",
     image: "/sacSalle.jpg",
     alt: "Entraînement en Cours Adulte au Striking Camp Marseille",
     shortDescription: "Un entraînement en petit groupe pour bénéficier d’un suivi technique tout en profitant de la dynamique du collectif.",
@@ -212,13 +212,13 @@ export const formatsData: Record<string, FormatDetail> = {
       }
     ],
     benefits: [
-      "Effectif réduit (12 places max)",
+      "Effectif restreint et suivi technique",
       "Suivi technique individualisé",
       "Dynamique de groupe motivante",
       "Accès aux disciplines du club"
     ],
     metaTitle: "Cours Adulte de Boxe à Marseille 13010",
-    metaDescription: "Entraînez-vous en Cours Adulte au Striking Camp Marseille : effectif réduit (12 max), suivi personnalisé, drills techniques et émulation collective.",
+    metaDescription: "Entraînez-vous en Cours Adulte au Striking Camp Marseille : effectif optimisé, suivi personnalisé, drills techniques et émulation collective.",
     preselectedType: "small_group"
   }
 };

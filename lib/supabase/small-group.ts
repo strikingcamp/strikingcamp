@@ -5,10 +5,17 @@ export interface MemberPlanAccess {
   hasActiveSubscription: boolean;
   hasSmallGroupAccess: boolean;
   hasPrivateAccess: boolean;
+  isEssential: boolean;
+  isAllAccess: boolean;
+  isLadyStriking: boolean;
+  isKidBoxing: boolean;
+  selectedDiscipline?: string | null;
+  birthDate?: string | null;
   privateSessionsQuota?: number | null;
   planName?: string;
   planType?: string;
   activePlanNames?: string[];
+  activePlanCodes?: string[];
   validSubscriptionsCount?: number;
 }
 
@@ -17,6 +24,8 @@ export interface ClassSession {
   template_id?: string | null;
   discipline: string;
   type?: string | null;
+  category?: string | null;
+  target_age_group?: string | null;
   level?: string | null;
   starts_at: string;
   ends_at?: string | null;
@@ -49,33 +58,80 @@ export async function getMemberPlanAccess(
   supabase: SupabaseClient,
   userId: string
 ): Promise<MemberPlanAccess> {
-  const { data: subscriptionsData, error } = await supabase
-    .from("subscriptions")
-    .select(
-      "id, status, started_at, ends_at, private_sessions_quota, plan:plans(id, name, type, commitment, allows_private, allows_small_group)"
-    )
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .order("started_at", { ascending: false });
+  let subsData: any[] = [];
+  try {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select(
+        "id, status, started_at, ends_at, private_sessions_quota, selected_discipline, plan:plans(id, code, name, type, commitment, allows_private, allows_small_group)"
+      )
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("started_at", { ascending: false });
 
-  if (error) {
-    console.error("Erreur récupération formule membre :", {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-    });
-    return {
-      hasActiveSubscription: false,
-      hasSmallGroupAccess: false,
-      hasPrivateAccess: false,
-      privateSessionsQuota: null,
-      activePlanNames: [],
-      validSubscriptionsCount: 0,
-    };
+    if (error) {
+      if (error.code === "42703") {
+        // Fallback sans selected_discipline si la colonne n'existe pas encore en base
+        const fallback = await supabase
+          .from("subscriptions")
+          .select(
+            "id, status, started_at, ends_at, private_sessions_quota, plan:plans(id, code, name, type, commitment, allows_private, allows_small_group)"
+          )
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .order("started_at", { ascending: false });
+        subsData = fallback.data || [];
+      } else {
+        console.error("Erreur récupération formule membre :", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+      }
+    } else {
+      subsData = data || [];
+    }
+  } catch (err) {
+    console.error("Exception getMemberPlanAccess subscriptions :", err);
   }
 
-  const cumulative: CumulativeMemberAccess = computeCumulativeAccess(subscriptionsData || []);
+  let userBirthDate: string | null = null;
+  try {
+    const { data: profileData, error: profileErr } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profileErr && profileData) {
+      userBirthDate = profileData.birth_date || null;
+    }
+  } catch {
+    // Ignorer si pas de date de naissance
+  }
+
+  const cumulative: CumulativeMemberAccess = computeCumulativeAccess(subsData);
+
+  // Si selectedDiscipline n'est pas sur la table subscriptions, chercher sur membership_requests
+  if (!cumulative.selectedDiscipline) {
+    try {
+      const { data: latestReq } = await supabase
+        .from("membership_requests")
+        .select("selected_discipline")
+        .eq("user_id", userId)
+        .not("selected_discipline", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestReq?.selected_discipline) {
+        cumulative.selectedDiscipline = latestReq.selected_discipline;
+      }
+    } catch {
+      // Pas bloquant
+    }
+  }
 
   const primaryPlanName =
     cumulative.activePlanNames.length > 0
@@ -86,9 +142,16 @@ export async function getMemberPlanAccess(
     hasActiveSubscription: cumulative.hasActiveSubscription,
     hasSmallGroupAccess: cumulative.hasSmallGroupAccess,
     hasPrivateAccess: cumulative.hasPrivateAccess,
+    isEssential: cumulative.isEssential,
+    isAllAccess: cumulative.isAllAccess,
+    isLadyStriking: cumulative.isLadyStriking,
+    isKidBoxing: cumulative.isKidBoxing,
+    selectedDiscipline: cumulative.selectedDiscipline,
+    birthDate: userBirthDate,
     privateSessionsQuota: cumulative.privateSessionsQuota,
     planName: primaryPlanName,
     activePlanNames: cumulative.activePlanNames,
+    activePlanCodes: cumulative.activePlanCodes,
     validSubscriptionsCount: cumulative.validSubscriptionsCount,
   };
 }
@@ -137,7 +200,7 @@ export async function getMemberUpcomingBookings(
   if (sessionIds.length > 0) {
     const { data: sessions, error: sessionsError } = await supabase
       .from("class_sessions")
-      .select("id, template_id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
+      .select("id, template_id, discipline, type, category, target_age_group, level, starts_at, ends_at, max_capacity, is_active")
       .in("id", sessionIds);
 
     if (sessionsError) {
@@ -153,20 +216,12 @@ export async function getMemberUpcomingBookings(
   }
 
   // 3. Formatage pour affichage en fuseau horaire Europe/Paris
-  // RÈGLE STRICTE : Uniquement les réservations futures (class_session.starts_at > maintenant)
-  const nowTime = Date.now();
   const result: SmallGroupBooking[] = [];
 
   for (const b of bookings) {
     const session = b.class_session_id ? sessionsMap.get(b.class_session_id) : undefined;
 
-    // Si la session n'existe pas ou est déjà commencée/passée, on l'exclut de « Mes prochaines réservations »
     if (!session?.starts_at) {
-      continue;
-    }
-
-    const sessionStartTime = new Date(session.starts_at).getTime();
-    if (sessionStartTime <= nowTime) {
       continue;
     }
 
@@ -254,7 +309,7 @@ export async function getActiveClassSessions(
 ): Promise<ClassSession[]> {
   const { data, error } = await supabase
     .from("class_sessions")
-    .select("id, template_id, discipline, type, level, starts_at, ends_at, max_capacity, is_active, created_at")
+    .select("*")
     .order("starts_at", { ascending: true });
 
   if (error) {
@@ -267,7 +322,33 @@ export async function getActiveClassSessions(
     return [];
   }
 
-  return data || [];
+  return (data || []).map((s: any) => {
+    const discipline = s.discipline || "";
+    let category = s.category;
+    if (!category) {
+      if (discipline.toLowerCase().includes("lady")) category = "lady_striking";
+      else if (discipline.toLowerCase().includes("kid")) category = "kid_boxing";
+      else category = "cours_adulte";
+    }
+
+    let target_age_group = s.target_age_group;
+    if (!target_age_group) {
+      if (category === "kid_boxing") {
+        const lvl = s.level || "";
+        if (lvl.includes("5-8") || lvl.includes("5_8")) target_age_group = "5_8";
+        else if (lvl.includes("9-13") || lvl.includes("9_13")) target_age_group = "9_13";
+        else target_age_group = "all";
+      } else {
+        target_age_group = "all";
+      }
+    }
+
+    return {
+      ...s,
+      category,
+      target_age_group,
+    } as ClassSession;
+  });
 }
 
 /**
@@ -344,13 +425,38 @@ export async function bookSmallGroupSession(
  */
 export async function cancelSmallGroupSession(
   supabase: SupabaseClient,
-  bookingId: string
+  bookingIdOrSessionId: string
 ): Promise<{ success: boolean; error?: string }> {
+  let effectiveBookingId = bookingIdOrSessionId;
+
+  // Si l'identifiant passé est un class_session_id au lieu d'un booking_id, trouver le booking_id correspondant
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data: bookingMatch } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("class_session_id", bookingIdOrSessionId)
+        .eq("status", "confirmed")
+        .limit(1)
+        .maybeSingle();
+
+      if (bookingMatch?.id) {
+        effectiveBookingId = bookingMatch.id;
+      }
+    }
+  } catch {
+    // Continuer avec l'ID passé
+  }
+
   // 1. Contrôle temporel strict : vérifier que la séance associée n'est pas terminée (now < ends_at)
   const { data: bookingData, error: bookingError } = await supabase
     .from("bookings")
     .select("id, class_session_id, class_session:class_sessions(id, ends_at, starts_at)")
-    .eq("id", bookingId)
+    .eq("id", effectiveBookingId)
     .single();
 
   if (!bookingError && bookingData) {
@@ -370,7 +476,7 @@ export async function cancelSmallGroupSession(
   }
 
   const { data, error } = await supabase.rpc("cancel_small_group_booking", {
-    p_booking_id: bookingId,
+    p_booking_id: effectiveBookingId,
   });
 
   if (error) {

@@ -6,6 +6,8 @@ import { assertAdminUser } from "@/lib/supabase/auth-admin";
 
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Lundi, 5=Samedi
 export type SessionType = "small_group" | "private";
+export type PlanningCategory = "cours_adulte" | "lady_striking" | "kid_boxing";
+export type TargetAgeGroup = "all" | "5_8" | "9_13";
 
 export interface RecurringTemplateItem {
   id: string;
@@ -13,6 +15,8 @@ export interface RecurringTemplateItem {
   start_time: string;
   end_time: string;
   type: SessionType;
+  category?: PlanningCategory | string;
+  target_age_group?: TargetAgeGroup | string;
   discipline: string;
   level: string;
   max_capacity: number;
@@ -25,6 +29,8 @@ export interface AdminDatedSessionItem {
   id: string;
   template_id?: string | null;
   type: SessionType;
+  category?: PlanningCategory | string;
+  target_age_group?: TargetAgeGroup | string;
   discipline: string;
   level: string;
   starts_at: string;
@@ -205,29 +211,54 @@ async function syncClassSessionsForTemplate(
     const { data: existing } = await query.maybeSingle();
 
     if (existing) {
-      await adminSupabase
+      const sessionPayload: Record<string, any> = {
+        template_id: template.id,
+        discipline: template.discipline,
+        level: template.level,
+        max_capacity: template.max_capacity,
+        is_active: template.is_active,
+      };
+      if (template.category) sessionPayload.category = template.category;
+      if (template.target_age_group) sessionPayload.target_age_group = template.target_age_group;
+
+      const updateRes = await adminSupabase
         .from("class_sessions")
-        .update({
-          template_id: template.id,
-          discipline: template.discipline,
-          level: template.level,
-          max_capacity: template.max_capacity,
-          is_active: template.is_active,
-        })
+        .update(sessionPayload)
         .eq("id", existing.id);
+
+      if (updateRes.error && updateRes.error.code === "42703") {
+        delete sessionPayload.category;
+        delete sessionPayload.target_age_group;
+        await adminSupabase
+          .from("class_sessions")
+          .update(sessionPayload)
+          .eq("id", existing.id);
+      }
     } else if (template.is_active) {
-      await adminSupabase
+      const insertPayload: Record<string, any> = {
+        template_id: template.id,
+        discipline: template.discipline,
+        type: template.type,
+        level: template.level,
+        starts_at,
+        ends_at,
+        max_capacity: template.max_capacity,
+        is_active: true,
+      };
+      if (template.category) insertPayload.category = template.category;
+      if (template.target_age_group) insertPayload.target_age_group = template.target_age_group;
+
+      const insertRes = await adminSupabase
         .from("class_sessions")
-        .insert({
-          template_id: template.id,
-          discipline: template.discipline,
-          type: template.type,
-          level: template.level,
-          starts_at,
-          ends_at,
-          max_capacity: template.max_capacity,
-          is_active: true,
-        });
+        .insert(insertPayload);
+
+      if (insertRes.error && insertRes.error.code === "42703") {
+        delete insertPayload.category;
+        delete insertPayload.target_age_group;
+        await adminSupabase
+          .from("class_sessions")
+          .insert(insertPayload);
+      }
     }
   }
 }
@@ -249,6 +280,8 @@ export async function createRecurringTemplateServerAction(payload: {
   start_time: string;
   end_time: string;
   type: SessionType;
+  category?: PlanningCategory | string;
+  target_age_group?: TargetAgeGroup | string;
   discipline: string;
   level: string;
   max_capacity: number;
@@ -268,22 +301,48 @@ export async function createRecurringTemplateServerAction(payload: {
         ? "Fondamentaux"
         : payload.level;
 
-    // 1. Insertion dans recurring_schedule_templates
-    const { data: newTmpl, error: insertError } = await adminSupabase
+    let computedCategory = payload.category || "cours_adulte";
+    if (effectiveDiscipline.toLowerCase().includes("lady")) computedCategory = "lady_striking";
+    else if (effectiveDiscipline.toLowerCase().includes("kid")) computedCategory = "kid_boxing";
+
+    let computedAgeGroup = payload.target_age_group || "all";
+    if (computedCategory === "kid_boxing" && computedAgeGroup === "all") {
+      if (effectiveLevel.includes("5-8") || effectiveLevel.includes("5_8")) computedAgeGroup = "5_8";
+      else if (effectiveLevel.includes("9-13") || effectiveLevel.includes("9_13")) computedAgeGroup = "9_13";
+    }
+
+    // 1. Insertion dans recurring_schedule_templates (avec repli résilient si colonnes category non migrées)
+    const insertData: Record<string, any> = {
+      day_of_week: payload.day_of_week,
+      start_time: startTimeFormatted,
+      end_time: endTimeFormatted,
+      type: payload.type,
+      category: computedCategory,
+      target_age_group: computedAgeGroup,
+      discipline: effectiveDiscipline,
+      level: effectiveLevel,
+      max_capacity: payload.max_capacity,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    let { data: newTmpl, error: insertError } = await adminSupabase
       .from("recurring_schedule_templates")
-      .insert({
-        day_of_week: payload.day_of_week,
-        start_time: startTimeFormatted,
-        end_time: endTimeFormatted,
-        type: payload.type,
-        discipline: effectiveDiscipline,
-        level: effectiveLevel,
-        max_capacity: payload.max_capacity,
-        is_active: true,
-        updated_at: new Date().toISOString(),
-      })
+      .insert(insertData)
       .select("*")
       .single();
+
+    if (insertError && insertError.code === "42703") {
+      delete insertData.category;
+      delete insertData.target_age_group;
+      const retry = await adminSupabase
+        .from("recurring_schedule_templates")
+        .insert(insertData)
+        .select("*")
+        .single();
+      newTmpl = retry.data;
+      insertError = retry.error;
+    }
 
     if (insertError || !newTmpl) {
       console.error(`[AdminPlanning:Create ERROR] Step: insert_template | Code: ${insertError?.code} | Message: ${insertError?.message}`);
@@ -293,19 +352,32 @@ export async function createRecurringTemplateServerAction(payload: {
       };
     }
 
+    // Normaliser l'objet retourné
+    const normalizedNewTmpl = {
+      ...newTmpl,
+      category: newTmpl.category || computedCategory,
+      target_age_group: newTmpl.target_age_group || computedAgeGroup,
+    };
+
     // 2. Synchronisation directe des 12 semaines
     try {
-      await syncClassSessionsForTemplate(adminSupabase, newTmpl as RecurringTemplateItem);
+      await syncClassSessionsForTemplate(adminSupabase, normalizedNewTmpl as RecurringTemplateItem);
     } catch (syncErr) {
       console.warn("[AdminPlanning:Create] Note synchronisation directe :", syncErr);
     }
 
     // 3. Déclenchement de la génération immédiate sur l'horizon pour instancier les séances
     try {
-      await adminSupabase.rpc("generate_recurring_schedule", {
+      let genRes = await adminSupabase.rpc("generate_recurring_schedule", {
         p_start_date: getCurrentWeekMondayIso(),
         p_weeks_count: 12,
       });
+      if (genRes.error) {
+        await adminSupabase.rpc("generate_recurring_schedule", {
+          p_start_date: getCurrentWeekMondayIso(),
+          p_days_count: 84,
+        });
+      }
     } catch (genErr) {
       console.warn("[AdminPlanning:Create] Note génération immédiate :", genErr);
     }
@@ -338,6 +410,8 @@ export async function updateRecurringTemplateServerAction(
     start_time?: string;
     end_time?: string;
     type?: SessionType;
+    category?: PlanningCategory | string;
+    target_age_group?: TargetAgeGroup | string;
     discipline?: string;
     level?: string;
     max_capacity?: number;
@@ -450,15 +524,30 @@ export async function updateRecurringTemplateServerAction(
     }
 
     // 3. Mise à jour du template
-    const { data: updatedTmpl, error: tmplErr } = await adminSupabase
+    const updatePayload: Record<string, any> = {
+      ...normalizedPayload,
+      updated_at: new Date().toISOString(),
+    };
+
+    let { data: updatedTmpl, error: tmplErr } = await adminSupabase
       .from("recurring_schedule_templates")
-      .update({
-        ...normalizedPayload,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", templateId)
       .select("*")
       .single();
+
+    if (tmplErr && tmplErr.code === "42703") {
+      delete updatePayload.category;
+      delete updatePayload.target_age_group;
+      const retry = await adminSupabase
+        .from("recurring_schedule_templates")
+        .update(updatePayload)
+        .eq("id", templateId)
+        .select("*")
+        .single();
+      updatedTmpl = retry.data;
+      tmplErr = retry.error;
+    }
 
     if (tmplErr) {
       console.error(`[AdminPlanning:Update ERROR] Step: update_template | Code: ${tmplErr.code} | Message: ${tmplErr.message}`);
@@ -677,6 +766,8 @@ export async function updateSingleDatedSessionServerAction(
     ends_at?: string;
     max_capacity?: number;
     is_active?: boolean;
+    category?: PlanningCategory;
+    target_age_group?: TargetAgeGroup;
   }
 ): Promise<MutationResult> {
   if (!isValidUuid(sessionId)) {
@@ -690,19 +781,32 @@ export async function updateSingleDatedSessionServerAction(
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
 
-    const patch = { ...payload };
+    const patch: Record<string, any> = { ...payload };
     if (patch.discipline === "Lady Striking") {
       patch.level = "100% féminin";
     } else if (patch.discipline && patch.discipline !== "Lady Striking" && patch.level === "100% féminin") {
       patch.level = "Fondamentaux";
     }
 
-    const { data: updatedSession, error: updateError } = await adminSupabase
+    let { data: updatedSession, error: updateError } = await adminSupabase
       .from("class_sessions")
       .update(patch)
       .eq("id", sessionId)
       .select("*")
       .single();
+
+    if (updateError && updateError.code === "42703") {
+      delete patch.category;
+      delete patch.target_age_group;
+      const retry = await adminSupabase
+        .from("class_sessions")
+        .update(patch)
+        .eq("id", sessionId)
+        .select("*")
+        .single();
+      updatedSession = retry.data;
+      updateError = retry.error;
+    }
 
     if (updateError) {
       return { success: false, error: updateError.message };
@@ -746,12 +850,26 @@ export async function triggerScheduleGenerationServerAction(): Promise<MutationR
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
 
-    const { data, error } = await adminSupabase.rpc("maintain_schedule_horizon", {
+    let genRes = await adminSupabase.rpc("maintain_schedule_horizon", {
       p_target_weeks_ahead: 12,
     });
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (genRes.error) {
+      // Fallback vers generate_recurring_schedule
+      genRes = await adminSupabase.rpc("generate_recurring_schedule", {
+        p_start_date: getCurrentWeekMondayIso(),
+        p_weeks_count: 12,
+      });
+      if (genRes.error) {
+        genRes = await adminSupabase.rpc("generate_recurring_schedule", {
+          p_start_date: getCurrentWeekMondayIso(),
+          p_days_count: 84,
+        });
+      }
+    }
+
+    if (genRes.error) {
+      return { success: false, error: genRes.error.message };
     }
 
     revalidatePath("/planning");
@@ -761,7 +879,7 @@ export async function triggerScheduleGenerationServerAction(): Promise<MutationR
 
     return {
       success: true,
-      data,
+      data: genRes.data,
       message: "Génération et maintien de l'horizon de 12 semaines terminés avec succès.",
     };
   } catch (err: any) {

@@ -39,11 +39,22 @@ export default function MembershipOnboardingView() {
 
   // Formulaire de sélection
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [commitmentType, setCommitmentType] = useState<CommitmentType>("monthly");
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string>("Kick Boxing");
+  const [birthDate, setBirthDate] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [memberNotes, setMemberNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const ADULT_DISCIPLINES = [
+    "Kick Boxing",
+    "Boxe Thaï",
+    "Boxe anglaise",
+    "Striking",
+    "Boxing Bag",
+    "KB Shred",
+  ];
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -55,14 +66,15 @@ export default function MembershipOnboardingView() {
       setPlans(plansList);
       setLatestRequest(req);
       if (plansList.length > 0 && !selectedPlanId) {
-        setSelectedPlanId(plansList[0].id);
+        const defaultPlan = plansList.find((p) => p.code === "adult_all_access") || plansList[0];
+        setSelectedPlanId(defaultPlan.id);
       }
     } catch (err) {
       console.error("[MembershipOnboardingView] Erreur chargement :", err);
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, selectedPlanId]);
 
   useEffect(() => {
     loadData();
@@ -75,18 +87,30 @@ export default function MembershipOnboardingView() {
       return;
     }
 
+    const currentPlan = plans.find((p) => p.id === selectedPlanId);
+    const commitment: CommitmentType = (currentPlan?.commitment as CommitmentType) || "annual";
+    const isEssential = currentPlan?.code === "adult_essential" || currentPlan?.name?.toLowerCase().includes("essentiel");
+    const isKid = currentPlan?.code === "kid_boxing_season" || currentPlan?.name?.toLowerCase().includes("kid");
+
+    if (isKid && !birthDate) {
+      setErrorMessage("Veuillez renseigner la date de naissance pour l'inscription Kid Boxing.");
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     const res = await submitMembershipRequest(supabase, {
       planId: selectedPlanId,
-      commitmentType,
+      commitmentType: commitment,
+      selectedDiscipline: isEssential ? selectedDiscipline : undefined,
+      birthDate: isKid ? birthDate : undefined,
       memberNotes: memberNotes.trim() || undefined,
     });
 
     if (res.success) {
-      setSuccessMessage(res.message || "Votre demande a été transmise avec succès.");
+      setSuccessMessage(res.message || "Votre demande d'adhésion a été transmise avec succès.");
       await loadData();
       await refreshMemberData();
     } else {
@@ -95,12 +119,22 @@ export default function MembershipOnboardingView() {
     setIsSubmitting(false);
   };
 
-  // Filtrer les formules selon les services actifs et le type d'engagement
+  // Filtrer les formules selon les services actifs et la catégorie sélectionnée
   const filteredPlans = plans.filter((p) => {
     if (p.type === "private" && !isPrivateEnabled) return false;
     if (p.type === "small_group" && !isSmallGroupEnabled) return false;
-    if (p.commitment) {
-      return p.commitment === commitmentType;
+
+    if (categoryFilter === "adult") {
+      return p.code === "adult_essential" || p.code === "adult_all_access" || (p.type === "small_group" && !p.code?.includes("lady") && !p.code?.includes("kid"));
+    }
+    if (categoryFilter === "lady") {
+      return p.code === "lady_striking_annual" || p.name.toLowerCase().includes("lady");
+    }
+    if (categoryFilter === "kid") {
+      return p.code === "kid_boxing_season" || p.name.toLowerCase().includes("kid");
+    }
+    if (categoryFilter === "private") {
+      return p.type === "private";
     }
     return true;
   });
@@ -162,16 +196,17 @@ export default function MembershipOnboardingView() {
   // ÉTAT 2 : DEMANDE EN ATTENTE (PENDING)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if (latestRequest && latestRequest.status === "pending") {
+    const isAnnual = latestRequest.commitment_type === "annual";
     return (
       <div className="max-w-3xl mx-auto space-y-6 pt-4 pb-12">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#0f172a] border border-amber-500/30 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6"
+          className="bg-[#0f172a] border border-brand-blue/30 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6"
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-brand-white/10">
             <div>
-              <span className="text-[10px] font-heading font-black uppercase tracking-widest text-amber-400 block mb-0.5">
+              <span className="text-[10px] font-heading font-black uppercase tracking-widest text-brand-blue block mb-0.5">
                 Dossier en cours d&apos;examen
               </span>
               <h1 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
@@ -179,7 +214,7 @@ export default function MembershipOnboardingView() {
               </h1>
             </div>
 
-            <div className="px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-heading font-black uppercase tracking-wider">
+            <div className="px-3.5 py-1.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-wider">
               En cours de validation
             </div>
           </div>
@@ -187,11 +222,11 @@ export default function MembershipOnboardingView() {
           {/* Corps de l'explication */}
           <div className="space-y-4 text-xs text-brand-white/80 leading-relaxed">
             <p>
-              Votre demande pour la formule <strong className="text-brand-white text-sm">{latestRequest.plan?.name || "Sélectionnée"}</strong> ({latestRequest.commitment_type === "annual" ? "Engagement 12 mois" : "Sans engagement / Mensuel"}) a bien été reçue le <strong>{new Date(latestRequest.created_at).toLocaleDateString("fr-FR")}</strong>.
+              Votre demande pour la formule <strong className="text-brand-white text-sm">{latestRequest.plan?.name || "Sélectionnée"}</strong> ({isAnnual ? "Engagement annuel" : "Formule mensuelle"}) a bien été reçue le <strong>{new Date(latestRequest.created_at).toLocaleDateString("fr-FR")}</strong>.
             </p>
-            <div className="bg-[#0a1120] border border-amber-500/20 rounded-2xl p-4 sm:p-5">
-              <p className="text-amber-300/90 text-xs leading-relaxed">
-                <strong>Important :</strong> Les réservations de cours restent verrouillées jusqu&apos;à l&apos;activation manuelle de votre adhésion par le club. Vous recevrez une confirmation dès que votre dossier sera validé.
+            <div className="bg-[#0a1120] border border-brand-blue/20 rounded-2xl p-4 sm:p-5">
+              <p className="text-brand-blue/90 text-xs leading-relaxed">
+                <strong>Important :</strong> Les réservations de cours restent verrouillées jusqu&apos;à l&apos;activation de votre adhésion par le club. Vous recevrez une confirmation dès que votre dossier sera validé.
               </p>
             </div>
           </div>
@@ -211,7 +246,7 @@ export default function MembershipOnboardingView() {
                 Type d&apos;engagement
               </span>
               <p className="text-sm font-heading font-bold text-brand-white">
-                {latestRequest.commitment_type === "annual" ? "Annuel (12 mois)" : "Mensuel (Sans engagement)"}
+                {isAnnual ? "Annuel" : "Mensuel"}
               </p>
             </div>
           </div>
@@ -241,7 +276,6 @@ export default function MembershipOnboardingView() {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   return (
     <div className="max-w-5xl mx-auto space-y-8 pt-4 pb-16">
-      
       {/* En-tête */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <div className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-heading font-black uppercase tracking-widest">
@@ -251,37 +285,70 @@ export default function MembershipOnboardingView() {
           Choisissez votre <span className="text-brand-blue">Formule</span>
         </h1>
         <p className="text-xs sm:text-sm text-brand-white/60 leading-relaxed">
-          Sélectionnez la formule d&apos;entraînement adaptée à vos objectifs. Après soumission, votre demande sera validée par l&apos;équipe pour activer vos réservations.
+          Sélectionnez la formule d&apos;entraînement adaptée à votre pratique.
         </p>
 
-        {/* Sélecteur d'engagement */}
-        <div className="pt-4 inline-flex items-center p-1.5 bg-[#0f172a] border border-brand-white/10 rounded-2xl">
+        {/* Filtres par catégorie */}
+        <div className="pt-4 flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
-            onClick={() => setCommitmentType("monthly")}
+            onClick={() => setCategoryFilter("all")}
             className={cn(
-              "px-5 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
-              commitmentType === "monthly"
+              "px-4 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
+              categoryFilter === "all"
                 ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
-                : "text-brand-white/60 hover:text-brand-white"
+                : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
             )}
           >
-            Sans engagement (Mensuel)
+            Toutes les formules
           </button>
           <button
             type="button"
-            onClick={() => setCommitmentType("annual")}
+            onClick={() => setCategoryFilter("adult")}
             className={cn(
-              "px-5 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5",
-              commitmentType === "annual"
+              "px-4 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
+              categoryFilter === "adult"
                 ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
-                : "text-brand-white/60 hover:text-brand-white"
+                : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
             )}
           >
-            <span>Engagement 12 mois</span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400 text-black font-black">
-              Meilleur tarif
-            </span>
+            Cours Adultes
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("lady")}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
+              categoryFilter === "lady"
+                ? "bg-pink-500 text-white shadow-md shadow-pink-500/20"
+                : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
+            )}
+          >
+            Lady Striking
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("kid")}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
+              categoryFilter === "kid"
+                ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/20"
+                : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
+            )}
+          >
+            Kid Boxing
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("private")}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
+              categoryFilter === "private"
+                ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/20"
+                : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
+            )}
+          >
+            Cours Privés
           </button>
         </div>
       </div>
@@ -295,8 +362,8 @@ export default function MembershipOnboardingView() {
       )}
 
       {successMessage && (
-        <div className="p-4 bg-emerald-950/80 border border-emerald-500/40 rounded-2xl text-emerald-300 text-xs flex items-center gap-3">
-          <CheckCircle2 size={18} className="shrink-0 text-emerald-400" />
+        <div className="p-4 bg-brand-blue/15 border border-brand-blue/30 rounded-2xl text-brand-blue text-xs flex items-center gap-3">
+          <CheckCircle2 size={18} className="shrink-0 text-brand-blue" />
           <span>{successMessage}</span>
         </div>
       )}
@@ -307,7 +374,21 @@ export default function MembershipOnboardingView() {
           {filteredPlans.map((plan) => {
             const isSelected = selectedPlanId === plan.id;
             const isPriv = plan.allows_private || plan.type === "private";
-            const isSg = plan.allows_small_group || plan.type === "small_group";
+            const isAllAccess = plan.code === "adult_all_access";
+            const isEssential = plan.code === "adult_essential";
+            const isLady = plan.code === "lady_striking_annual" || plan.name.toLowerCase().includes("lady");
+            const isKid = plan.code === "kid_boxing_season" || plan.name.toLowerCase().includes("kid");
+
+            let periodLabel = "/ AN";
+            let commitmentLabel = "ENGAGEMENT ANNUEL";
+
+            if (isPriv) {
+              periodLabel = "/ MOIS";
+              commitmentLabel = plan.commitment === "annual" ? "ENGAGEMENT ANNUEL" : "ENGAGEMENT MENSUEL";
+            } else if (isKid) {
+              periodLabel = "/ SAISON";
+              commitmentLabel = "SAISON";
+            }
 
             return (
               <div
@@ -321,50 +402,143 @@ export default function MembershipOnboardingView() {
                 )}
               >
                 {/* Badge sélectionné */}
-                {isSelected && (
-                  <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-blue text-brand-black flex items-center justify-center font-bold">
-                    <Check size={14} strokeWidth={3} />
-                  </div>
-                )}
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                  {isSelected && (
+                    <div className="w-6 h-6 rounded-full bg-brand-blue text-brand-black flex items-center justify-center font-bold shadow-md shadow-brand-blue/30">
+                      <Check size={14} strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-4">
                   {/* Catégorie & Nom */}
                   <div>
                     <span className="text-[10px] font-heading font-black uppercase tracking-wider text-brand-white/40 block mb-1">
-                      {isPriv ? "Formule Premium" : "Formule Cours Adulte"}
+                      {isPriv
+                        ? "Coaching Individuel Privé"
+                        : isLady
+                        ? "Section 100% Féminine"
+                        : isKid
+                        ? "Enfants (5–13 ans)"
+                        : "Cours Adultes"}
                     </span>
                     <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
                       {plan.name}
                     </h3>
                   </div>
 
-                  {/* Prix */}
-                  <div className="pt-2">
+                  {/* Prix & Engagement */}
+                  <div className="pt-2 flex items-baseline gap-1.5 flex-wrap">
                     <span className="text-3xl font-heading font-black text-brand-white">
-                      {(plan.price_cents / 100).toFixed(0)}€
+                      {(plan.price_cents / 100).toFixed(0)} €
                     </span>
-                    <span className="text-xs text-brand-white/40 font-heading uppercase ml-1">
-                      / mois
+                    <span className="text-xs text-brand-white/75 font-heading uppercase font-bold">
+                      {periodLabel}
+                    </span>
+                    <span className="text-[11px] text-brand-blue font-semibold ml-2 block sm:inline">
+                      • {commitmentLabel}
                     </span>
                   </div>
 
-                  {/* Caractéristiques */}
-                  <div className="space-y-2.5 pt-3 border-t border-brand-white/5 text-xs text-brand-white/70">
+                  {/* Inclusions conformes */}
+                  <div className="space-y-2 pt-3 border-t border-brand-white/5 text-xs text-brand-white/85">
+                    <p className="text-[11px] font-heading font-bold uppercase tracking-wider text-brand-blue mb-1">
+                      INCLUS DANS VOTRE FORMULE :
+                    </p>
+
+                    {isEssential && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Une discipline au choix</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Suivi technique personnalisé en groupe réduit</span>
+                        </div>
+                      </>
+                    )}
+
+                    {isAllAccess && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Accès illimité aux séances Cours Adulte</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Suivi technique personnalisé en groupe réduit</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Toutes disciplines incluses</span>
+                        </div>
+                      </>
+                    )}
+
+                    {isLady && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-pink-400 shrink-0" />
+                          <span>Accès aux créneaux Lady Striking</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-pink-400 shrink-0" />
+                          <span>Coaching et suivi personnalisé</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-pink-400 shrink-0" />
+                          <span>Boxe, kick boxing, boxe thaï — tous niveaux (débutantes à confirmées)</span>
+                        </div>
+                      </>
+                    )}
+
+                    {isKid && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Accès aux créneaux dédiés 5–8 ans ou 9–13 ans</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Motricité, coordination, discipline et respect</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Encadrement pédagogique adapté</span>
+                        </div>
+                      </>
+                    )}
+
                     {isPriv && (
-                      <div className="flex items-center gap-2 text-brand-white font-medium">
-                        <Check size={14} className="text-brand-blue shrink-0" />
-                        <span><strong>8 Cours Privés</strong> personnalisés / mois</span>
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>8 séances privées par mois</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Suivi technique sur-mesure avec le coach</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Accès illimité aux séances Cours Adulte</span>
+                        </div>
+                      </>
                     )}
-                    {(isPriv || isSg) && (
-                      <div className="flex items-center gap-2">
-                        <Check size={14} className="text-brand-blue shrink-0" />
-                        <span>Accès illimité aux <strong>Cours Adultes</strong> (12 max)</span>
-                      </div>
-                    )}
+
+                    {/* Inclusions communes obligatoires */}
                     <div className="flex items-center gap-2">
                       <Check size={14} className="text-brand-blue shrink-0" />
-                      <span>Suivi de progression & Accès aux Défis</span>
+                      <span>Parking privé inclus</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={14} className="text-brand-blue shrink-0" />
+                      <span>Accès aux événements (stages)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={14} className="text-brand-blue shrink-0" />
+                      <span>Frais d&apos;adhésion : 90 €</span>
                     </div>
                   </div>
                 </div>
@@ -375,11 +549,11 @@ export default function MembershipOnboardingView() {
                     className={cn(
                       "w-full py-2.5 rounded-xl text-center text-xs font-heading font-bold uppercase tracking-wider transition-all",
                       isSelected
-                        ? "bg-brand-blue text-brand-black font-black"
-                        : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
+                        ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/20"
+                        : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white hover:bg-brand-white/10"
                     )}
                   >
-                    {isSelected ? "Formule Choisie" : "Sélectionner cette formule"}
+                    {isSelected ? "Formule Sélectionnée" : "Choisir cette formule"}
                   </div>
                 </div>
               </div>
@@ -387,8 +561,86 @@ export default function MembershipOnboardingView() {
           })}
         </div>
 
+        {/* Options spécifiques selon la formule sélectionnée */}
+        {(() => {
+          const activeSelectedPlan = plans.find((p) => p.id === selectedPlanId);
+          const isEssentialSelected = activeSelectedPlan?.code === "adult_essential" || activeSelectedPlan?.name?.toLowerCase().includes("essentiel");
+          const isKidSelected = activeSelectedPlan?.code === "kid_boxing_season" || activeSelectedPlan?.name?.toLowerCase().includes("kid");
+
+          if (isEssentialSelected) {
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-[#11223f] to-[#0a1120] border border-brand-blue/30 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand-blue animate-pulse" />
+                  <h4 className="text-sm font-heading font-black uppercase tracking-wider text-brand-white">
+                    Choisissez votre discipline autorisée (Formule Essentiel)
+                  </h4>
+                </div>
+                <p className="text-xs text-brand-white/70 leading-relaxed">
+                  Votre formule Essentiel vous donne accès à tous les créneaux de la discipline que vous choisissez ci-dessous, dans la limite de 3 séances par semaine.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                  {ADULT_DISCIPLINES.map((disc) => {
+                    const isDiscActive = selectedDiscipline === disc;
+                    return (
+                      <button
+                        key={disc}
+                        type="button"
+                        onClick={() => setSelectedDiscipline(disc)}
+                        className={cn(
+                          "py-3 px-4 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all border text-center cursor-pointer",
+                          isDiscActive
+                            ? "bg-brand-blue text-brand-black border-brand-blue font-black shadow-lg shadow-brand-blue/25"
+                            : "bg-[#0a1120] text-brand-white/80 border-brand-white/10 hover:border-brand-white/30 hover:text-brand-white"
+                        )}
+                      >
+                        {disc}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            );
+          }
+
+          if (isKidSelected) {
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-[#11223f] to-[#0a1120] border border-brand-blue/30 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand-blue animate-pulse" />
+                  <h4 className="text-sm font-heading font-black uppercase tracking-wider text-brand-white">
+                    Date de naissance de l&apos;enfant (Kid Boxing)
+                  </h4>
+                </div>
+                <p className="text-xs text-brand-white/70 leading-relaxed">
+                  Indiquez la date de naissance pour attribuer le groupe d&apos;âge approprié (5–8 ans ou 9–13 ans) et sécuriser les créneaux autorisés.
+                </p>
+                <div className="max-w-xs pt-1">
+                  <input
+                    type="date"
+                    required
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="w-full bg-[#0a1120] border border-brand-white/15 rounded-xl p-3 text-xs text-brand-white focus:border-brand-blue outline-none"
+                  />
+                </div>
+              </motion.div>
+            );
+          }
+
+          return null;
+        })()}
+
         {/* Section Notes Optionnelles & Bouton de Validation */}
-        <div className="bg-[#0f172a] border border-brand-white/10 rounded-3xl p-6 sm:p-8 space-y-5">
+        <div className="bg-[#0f172a] border border-brand-white/10 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl">
           <div>
             <label className="text-xs font-heading font-bold uppercase tracking-wider text-brand-white/70 block mb-2">
               Commentaire ou précision pour l&apos;équipe (optionnel)
@@ -397,8 +649,8 @@ export default function MembershipOnboardingView() {
               rows={2}
               value={memberNotes}
               onChange={(e) => setMemberNotes(e.target.value)}
-              placeholder="Ex: Disponibilités souhaitées, objectifs spécifiques, antécédents sportifs..."
-              className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3.5 text-xs text-brand-white placeholder:text-brand-white/30 focus:border-brand-blue outline-none resize-none"
+              placeholder="Ex: Disponibilités souhaitées, objectifs sportifs, antécédents médicaux..."
+              className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3.5 text-xs text-brand-white placeholder:text-brand-white/30 focus:border-brand-blue outline-none resize-none transition-colors"
             />
           </div>
 
@@ -415,11 +667,11 @@ export default function MembershipOnboardingView() {
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Envoi en cours...
+                  <span>Transmission en cours...</span>
                 </>
               ) : (
                 <>
-                  <span>Envoyer ma demande d&apos;adhésion</span>
+                  <span>Confirmer ma demande d&apos;adhésion</span>
                   <ChevronRight size={16} />
                 </>
               )}

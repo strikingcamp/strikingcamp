@@ -34,6 +34,8 @@ interface DemoSlot {
   classSessionId?: string;
   bookingId?: string;
   category: Category;
+  planningCategory?: "cours_adulte" | "lady_striking" | "kid_boxing";
+  targetAgeGroup?: "all" | "5_8" | "9_13";
   day: DayName;
   dateStr: string;
   startTime: string;
@@ -236,6 +238,8 @@ function generateSlotsFromData(
           classSessionId: s.id,
           bookingId: userBookingMatch?.id,
           category,
+          planningCategory: (s.category as "cours_adulte" | "lady_striking" | "kid_boxing") || (s.discipline === "Lady Striking" ? "lady_striking" : s.discipline === "Kid Boxing" ? "kid_boxing" : "cours_adulte"),
+          targetAgeGroup: (s.target_age_group as "all" | "5_8" | "9_13") || "all",
           day: matchedDay,
           dateStr: dStr,
           startTime,
@@ -267,11 +271,20 @@ export default function MemberPlanningView() {
     allConfirmedBookings,
     privateQuota,
     hasPrivateAccess,
+    hasActiveSubscription,
+    hasSmallGroupAccess,
+    isEssential,
+    isAllAccess,
+    isLadyStriking,
+    isKidBoxing,
+    selectedDiscipline: memberSelectedDiscipline,
+    planName,
     isSmallGroupEnabled,
     isPrivateEnabled,
     bookSmallGroup,
     cancelSmallGroup,
     bookSlot,
+    cancelPrivate,
     removeSynchronizedBooking,
   } = useMember();
 
@@ -355,6 +368,49 @@ export default function MemberPlanningView() {
 
     return map;
   }, [mondayDate]);
+
+  // Quota hebdomadaire pour la formule Adulte Essentiel (3 séances max par semaine calendaire)
+  const currentWeekBookingsCount = useMemo(() => {
+    const mondayStr = dayDateMap["Lundi"]?.dateStr || formatToParisDate(mondayDate);
+    const saturdayStr = dayDateMap["Samedi"]?.dateStr || formatToParisDate(saturdayDate);
+    const bookedSessionIds = new Set<string>();
+
+    // 1. Décompte depuis userBookings
+    for (const b of userBookings) {
+      if (b.status === "cancelled") continue;
+      const sId = b.class_session_id || b.classSessionId || b.id;
+      let dateIso = b.startsAt;
+      if (!dateIso && sId) {
+        const matchS = availableSessions.find((s) => s.id === sId);
+        if (matchS) dateIso = matchS.starts_at;
+      }
+      if (dateIso) {
+        const bDateStr = formatToParisDate(dateIso);
+        if (bDateStr >= mondayStr && (!saturdayStr || bDateStr <= saturdayStr)) {
+          if (sId) bookedSessionIds.add(sId);
+        }
+      }
+    }
+
+    // 2. Décompte depuis allConfirmedBookings pour currentUserId
+    if (currentUserId) {
+      for (const b of allConfirmedBookings) {
+        if (b.user_id === currentUserId && b.class_session_id) {
+          const matchS = availableSessions.find((s) => s.id === b.class_session_id);
+          if (matchS) {
+            const sDateStr = formatToParisDate(matchS.starts_at);
+            if (sDateStr >= mondayStr && (!saturdayStr || sDateStr <= saturdayStr)) {
+              bookedSessionIds.add(b.class_session_id);
+            }
+          }
+        }
+      }
+    }
+
+    return bookedSessionIds.size;
+  }, [userBookings, allConfirmedBookings, availableSessions, currentUserId, dayDateMap, mondayDate, saturdayDate]);
+
+  const isWeeklyLimitReached = isEssential && currentWeekBookingsCount >= 3;
 
   // Génération dynamique des créneaux connectés à la base Supabase (filtrés selon les services activés)
   const slots = useMemo(() => {
@@ -533,24 +589,41 @@ export default function MemberPlanningView() {
     setBookingError(null);
 
     try {
-      const match = userBookings.find(
-        (b) =>
-          (slotForCancel.classSessionId && b.class_session_id === slotForCancel.classSessionId) ||
-          b.id === slotForCancel.id ||
-          (b.day === slotForCancel.day && b.time.startsWith(slotForCancel.startTime))
-      );
+      const isPriv = slotForCancel.category === "Cours privés";
+      const targetSessionId = slotForCancel.classSessionId || slotForCancel.id;
 
-      const bookingIdToCancel = slotForCancel.bookingId || match?.id;
+      let bookingIdToCancel = slotForCancel.bookingId;
+      if (!bookingIdToCancel) {
+        const match = userBookings.find(
+          (b) =>
+            (targetSessionId && (b.class_session_id === targetSessionId || b.classSessionId === targetSessionId || b.id === targetSessionId)) ||
+            (b.day === slotForCancel.day && b.time.startsWith(slotForCancel.startTime))
+        );
+        bookingIdToCancel = match?.id || targetSessionId;
+      }
 
-      if (bookingIdToCancel && bookingIdToCancel.includes("-")) {
-        const res = await cancelSmallGroup(bookingIdToCancel);
-        if (!res.success) {
-          setBookingError(res.error || "Impossible d'annuler cette réservation.");
-          setIsSubmitting(false);
-          return;
+      if (isPriv) {
+        if (bookingIdToCancel && bookingIdToCancel.includes("-")) {
+          const res = await cancelPrivate(bookingIdToCancel);
+          if (!res.success) {
+            setBookingError(res.error || res.message || "Impossible d'annuler cette séance privée.");
+            setIsSubmitting(false);
+            return;
+          }
+        } else if (bookingIdToCancel) {
+          removeSynchronizedBooking(bookingIdToCancel, true);
         }
-      } else if (bookingIdToCancel) {
-        removeSynchronizedBooking(bookingIdToCancel, true);
+      } else {
+        if (bookingIdToCancel && bookingIdToCancel.includes("-")) {
+          const res = await cancelSmallGroup(bookingIdToCancel);
+          if (!res.success) {
+            setBookingError(res.error || "Impossible d'annuler cette réservation.");
+            setIsSubmitting(false);
+            return;
+          }
+        } else if (bookingIdToCancel) {
+          removeSynchronizedBooking(bookingIdToCancel, false);
+        }
       }
 
       setIsSubmitting(false);
@@ -1033,14 +1106,62 @@ export default function MemberPlanningView() {
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {activeCategory === "Small Group" && (
         <div className="space-y-6">
-          <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-brand-blue">
-            <span>
-              <strong>Planning Cours Adulte Officiel (23 séances / sem.) :</strong> Capacité limitée à 12 personnes par créneau.
-            </span>
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-brand-blue text-brand-black shrink-0">
-              12 places max
-            </span>
-          </div>
+          {/* Banner adaptatif selon la formule du membre */}
+          {isEssential ? (
+            <div className="bg-gradient-to-r from-[#11223f] to-[#0a1120] border border-brand-blue/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-heading font-black uppercase px-2 py-0.5 rounded bg-brand-blue text-brand-black">
+                    Formule Essentiel
+                  </span>
+                  <span className="text-xs font-bold text-brand-white">
+                    Discipline choisie : <strong className="text-brand-blue uppercase">{memberSelectedDiscipline || "Kick Boxing"}</strong>
+                  </span>
+                </div>
+                <p className="text-[11px] text-brand-white/60">
+                  Accès libre à tous les créneaux de votre discipline, dans la limite de 3 séances par semaine.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="px-4 py-2 bg-[#0a1120] border border-brand-white/10 rounded-xl text-center">
+                  <span className="text-[9px] text-brand-white/40 block uppercase font-bold">Séances cette semaine</span>
+                  <span className={cn(
+                    "text-sm font-heading font-black",
+                    isWeeklyLimitReached ? "text-amber-400" : "text-brand-blue"
+                  )}>
+                    {currentWeekBookingsCount} / 3 séances
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : isLadyStriking ? (
+            <div className="bg-gradient-to-r from-pink-950/40 to-[#0a1120] border border-pink-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3 text-xs text-pink-300 shadow-xl">
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] font-heading font-black uppercase px-2 py-0.5 rounded bg-pink-500 text-black shrink-0">
+                  Lady Striking
+                </span>
+                <span>Accès exclusif aux créneaux de la section 100% féminine.</span>
+              </div>
+            </div>
+          ) : isKidBoxing ? (
+            <div className="bg-gradient-to-r from-[#11223f] to-[#0a1120] border border-brand-blue/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3 text-xs text-brand-blue shadow-xl">
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] font-heading font-black uppercase px-2 py-0.5 rounded bg-brand-blue text-brand-black shrink-0">
+                  Kid Boxing
+                </span>
+                <span>Accès aux créneaux adaptés à la tranche d&apos;âge (5–8 ans / 9–13 ans).</span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-brand-blue">
+              <span>
+                <strong>Planning Cours Adulte All Access :</strong> Accès illimité à toutes les séances collectives encadrées par le coach Mahfoud.
+              </span>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-brand-blue text-brand-black shrink-0">
+                All Access
+              </span>
+            </div>
+          )}
 
           {/* 1. SÉLECTEUR CALENDRIER DES 6 JOURS DE LA SEMAINE */}
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
@@ -1188,16 +1309,9 @@ export default function MemberPlanningView() {
                           >
                             {session.discipline === "Lady Striking" ? "100% féminin" : session.level}
                           </span>
-                          {!isPast && (
-                            <span
-                              className={cn(
-                                "text-[10px] font-bold uppercase px-2 py-0.5 rounded border",
-                                isFull
-                                  ? "bg-red-500/20 text-red-400 border-red-500/30"
-                                  : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
-                              )}
-                            >
-                              {session.bookedCount} / {session.maxCapacity} places
+                          {!isPast && isFull && (
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-red-500/20 text-red-400 border-red-500/30">
+                              Complet
                             </span>
                           )}
                         </div>
@@ -1244,6 +1358,31 @@ export default function MemberPlanningView() {
                         ) : isFull ? (
                           <div className="px-4 py-2 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-xl text-xs font-semibold uppercase">
                             Complet
+                          </div>
+                        ) : !hasActiveSubscription && !hasSmallGroupAccess ? (
+                          <Link
+                            href="/membre/adhesion"
+                            className="px-4 py-2 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 border border-brand-white/10 rounded-xl text-xs font-heading font-bold uppercase transition-all"
+                          >
+                            Adhésion requise
+                          </Link>
+                        ) : isEssential && memberSelectedDiscipline && !session.discipline.toLowerCase().includes(memberSelectedDiscipline.toLowerCase()) && !memberSelectedDiscipline.toLowerCase().includes(session.discipline.toLowerCase()) ? (
+                          <div
+                            title={`Votre formule Essentiel donne accès à la discipline ${memberSelectedDiscipline}`}
+                            className="px-3 py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-xl text-[11px] font-heading font-semibold uppercase text-center"
+                          >
+                            Hors discipline ({memberSelectedDiscipline})
+                          </div>
+                        ) : isEssential && isWeeklyLimitReached ? (
+                          <div
+                            title="Vous avez atteint le maximum de 3 séances pour cette semaine"
+                            className="px-3.5 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-[11px] font-heading font-bold uppercase text-center"
+                          >
+                            Quota 3/3 atteint
+                          </div>
+                        ) : isLadyStriking && !session.discipline.toLowerCase().includes("lady") && session.planningCategory !== "lady_striking" ? (
+                          <div className="px-3 py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-xl text-[11px] font-heading font-semibold uppercase text-center">
+                            Réservé Cours Adulte
                           </div>
                         ) : (
                           <button

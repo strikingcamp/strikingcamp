@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Users, ArrowRight } from "lucide-react";
+import { Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
@@ -29,16 +29,14 @@ export default function PlanningSection({
   isSmallGroupActive = true,
 }: PlanningSectionProps = {}) {
   const scheduleData = initialScheduleData || defaultScheduleData;
-  const currentCategory: Category = "Small Group";
-
+  const [activeCategory, setActiveCategory] = useState<Category>("Cours Adulte");
   const [activeDay, setActiveDay] = useState<DayFilter>("Tous");
   const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
   const [selectedDisciplineForModal, setSelectedDisciplineForModal] = useState<string | undefined>(undefined);
 
   // Jours ayant au moins un créneau dans la catégorie active
-  const activeDays = days.filter(
-    (day) => scheduleData[currentCategory]?.[day]?.length > 0
-  );
+  const categoryCourses = scheduleData[activeCategory] || {};
+  const activeDays = days.filter((day) => (categoryCourses[day]?.length || 0) > 0);
 
   const daysToRender = activeDay === "Tous" ? activeDays : [activeDay as Day];
 
@@ -54,14 +52,39 @@ export default function PlanningSection({
           PLANNING <span className="text-brand-blue">DES COURS</span>
         </h1>
         <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-          Découvrez nos créneaux en petit comité (12 places max), avec un accès illimité à toutes nos disciplines.
+          Découvrez nos créneaux collectifs encadrés par le coach Mahfoud.
         </p>
 
         {!isSmallGroupActive && (
           <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs font-semibold max-w-md mx-auto">
-            Les créneaux Cours Adulte sont actuellement en pause ou en réorganisation.
+            Les créneaux de cours collectifs sont actuellement en pause ou en réorganisation.
           </div>
         )}
+      </div>
+
+      {/* 3 Onglets Principaux Catégories */}
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+        {(["Cours Adulte", "Lady Striking", "Kid Boxing"] as Category[]).map((cat) => {
+          const isCatActive = activeCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => {
+                setActiveCategory(cat);
+                setActiveDay("Tous");
+                trackScheduleView(cat);
+              }}
+              className={cn(
+                "px-6 py-3 rounded-2xl text-xs font-heading font-black uppercase tracking-wider transition-all border cursor-pointer shadow-lg",
+                isCatActive
+                  ? "bg-brand-blue text-brand-black border-brand-blue shadow-brand-blue/20 scale-105"
+                  : "bg-[#0f172a] text-brand-white/70 border-brand-white/10 hover:border-brand-white/30 hover:text-brand-white"
+              )}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
 
       {/* Days Filter (Pills) */}
@@ -105,7 +128,7 @@ export default function PlanningSection({
       <div className="max-w-4xl mx-auto min-h-[380px]">
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeDay}
+            key={`${activeCategory}-${activeDay}`}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
@@ -113,7 +136,7 @@ export default function PlanningSection({
             className="space-y-10"
           >
             {daysToRender.map((day) => {
-              const courses = scheduleData["Small Group"][day];
+              const courses = categoryCourses[day];
               if (!courses || courses.length === 0) return null;
 
               return (
@@ -163,18 +186,8 @@ export default function PlanningSection({
                           </div>
                         </div>
 
-                        {/* Right: Time & Places */}
-                        <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t border-brand-white/5 sm:border-0">
-                          {course.places ? (
-                            <span className="text-xs font-semibold text-[#22c55e] flex items-center gap-1 bg-[#22c55e]/10 px-2.5 py-1 rounded-full border border-[#22c55e]/20">
-                              <Users size={12} />
-                              {course.places} places max
-                            </span>
-                          ) : (
-                            <span className="text-xs font-semibold text-brand-white/60 bg-brand-white/5 px-2.5 py-1 rounded-full border border-brand-white/10">
-                              Accès libre
-                            </span>
-                          )}
+                        {/* Right: Time */}
+                        <div className="flex items-center justify-end gap-4 pt-2 sm:pt-0 border-t border-brand-white/5 sm:border-0">
                           <div className="text-right">
                             <span className="text-xl sm:text-2xl font-heading font-bold text-brand-blue">
                               {course.time}

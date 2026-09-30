@@ -319,7 +319,7 @@ export default function TrialBookingModal({
           ALREADY_BOOKED_THIS_SESSION: "Tu as déjà réservé un cours d'essai pour ce créneau !",
           ACTIVE_TRIAL_ALREADY_EXISTS:
             "Tu as déjà un cours d'essai actif à venir. Contacte le club pour modifier ton créneau.",
-          SESSION_FULL: "Désolé, ce cours est désormais complet (12 places max). Choisis un autre créneau disponible.",
+          SESSION_FULL: "Désolé, ce cours est désormais complet. Choisis un autre créneau disponible.",
         };
 
         const msg =
@@ -417,7 +417,7 @@ export default function TrialBookingModal({
                 {step === 5 && "Séance d'essai confirmée !"}
               </h2>
               <p className="text-xs sm:text-sm text-brand-white/60 mt-0.5">
-                {step === 1 && "Séances Cours Adulte encadrées par le coach (12 participants max)."}
+                {step === 1 && "Séances Cours Adulte encadrées par le coach Mahfoud."}
                 {step === 2 && "Sélectionne la date de ton choix au club de Marseille."}
                 {step === 3 && "Indique où t'envoyer ta confirmation et tes accès."}
                 {step === 4 && "Vérifie les détails de ta séance avant de valider."}
@@ -540,7 +540,7 @@ export default function TrialBookingModal({
                           <div className="flex items-center gap-2 text-[11px] text-brand-white/60">
                             <span className="inline-flex items-center gap-1">
                               <Users size={13} className="text-brand-blue" />
-                              Cours Adulte (12 max)
+                              Cours Adulte
                             </span>
                             <span>•</span>
                             <span className="inline-flex items-center gap-1">
@@ -864,7 +864,7 @@ export default function TrialBookingModal({
                         Format
                       </span>
                       <span className="text-sm font-heading font-black uppercase text-brand-blue block">
-                        Cours Adulte (12 max)
+                        Cours Adulte
                       </span>
                       <span className="text-[11px] text-brand-white/50">
                         Encadrement personnalisé

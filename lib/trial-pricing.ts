@@ -28,7 +28,7 @@ export const TRIAL_PRICING: Record<TrialSessionType, TrialPricingItem> = {
     price: 5,
     priceFormatted: "5 €",
     badge: "Tarif Essai 5 €",
-    description: "Séance en petit groupe (12 max) avec suivi technique personnalisé",
+    description: "Séance en petit groupe avec suivi technique personnalisé",
   },
   private: {
     type: "private",

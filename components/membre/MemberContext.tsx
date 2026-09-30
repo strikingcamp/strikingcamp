@@ -27,6 +27,7 @@ import {
   DEFAULT_SERVICE_SETTINGS,
 } from "@/lib/supabase/services";
 import { getConfirmedBookingsSummaryAction } from "@/app/(membre)/actions";
+import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
 
 export type BookingSlot = {
   id?: string;
@@ -81,7 +82,7 @@ const DEFAULT_DEMO_BOOKINGS: BookingSlot[] = [
     time: "07:00 → 08:00",
     date: "31 Août 2026",
     level: "Fondamentaux",
-    status: "Inscrit (12 places)",
+    status: "Inscrit",
   },
 ];
 
@@ -109,8 +110,15 @@ interface MemberContextType {
   hasActiveSubscription: boolean;
   hasPrivateAccess: boolean;
   hasSmallGroupAccess: boolean;
+  isEssential: boolean;
+  isAllAccess: boolean;
+  isLadyStriking: boolean;
+  isKidBoxing: boolean;
+  selectedDiscipline: string | null;
+  birthDate: string | null;
   planName: string;
   activePlanNames: string[];
+  activePlanCodes: string[];
   privateSessionsQuota: number | null;
   privateQuota: MemberPrivateQuotaStatus | null;
   isLoadingData: boolean;
@@ -152,45 +160,44 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   const [isBookingCancelOpen, setIsBookingCancelOpen] = useState(false);
   const [slotToCancel, setSlotToCancel] = useState<BookingSlot | null>(null);
 
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(true);
-  const [hasPrivateAccess, setHasPrivateAccess] = useState(true);
-  const [hasSmallGroupAccess, setHasSmallGroupAccess] = useState(true);
-  const [planName, setPlanName] = useState("Formule Complète");
-  const [activePlanNames, setActivePlanNames] = useState<string[]>(["Cours Privé - Mensuel", "Small Group"]);
-  const [privateSessionsQuota, setPrivateSessionsQuota] = useState<number | null>(8);
-  const [privateQuota, setPrivateQuota] = useState<MemberPrivateQuotaStatus | null>({
-    success: true,
-    hasActivePrivatePlan: true,
-    quotaTotal: 8,
-    sessionsConsumed: 2,
-    sessionsRemaining: 6,
-    cycleStart: "2026-08-25T00:00:00Z",
-    cycleEnd: "2026-09-25T23:59:59Z",
-  });
-  const [isLoadingData] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [hasPrivateAccess, setHasPrivateAccess] = useState(false);
+  const [hasSmallGroupAccess, setHasSmallGroupAccess] = useState(false);
+  const [isEssential, setIsEssential] = useState(false);
+  const [isAllAccess, setIsAllAccess] = useState(false);
+  const [isLadyStriking, setIsLadyStriking] = useState(false);
+  const [isKidBoxing, setIsKidBoxing] = useState(false);
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
+  const [planName, setPlanName] = useState("");
+  const [activePlanNames, setActivePlanNames] = useState<string[]>([]);
+  const [activePlanCodes, setActivePlanCodes] = useState<string[]>([]);
+  const [privateSessionsQuota, setPrivateSessionsQuota] = useState<number | null>(null);
+  const [privateQuota, setPrivateQuota] = useState<MemberPrivateQuotaStatus | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [availableSessions, setAvailableSessions] = useState<ClassSession[]>([]);
   const [allConfirmedBookings, setAllConfirmedBookings] = useState<ConfirmedBookingInfo[]>([]);
   const [serviceSettings, setServiceSettings] = useState<Record<string, boolean>>(DEFAULT_SERVICE_SETTINGS);
   
-  // État partagé et synchronisé des réservations (initialisation identique SSR et Client)
-  const [userBookings, setUserBookings] = useState<BookingSlot[]>(DEFAULT_DEMO_BOOKINGS);
+  // État partagé et synchronisé des réservations
+  const [userBookings, setUserBookings] = useState<BookingSlot[]>([]);
 
-  // Synchronisation post-hydratation depuis le localStorage client
+  // Synchronisation post-hydratation pour mode démo si non authentifié
   useEffect(() => {
     try {
       const savedBookings = localStorage.getItem(DEMO_STORAGE_KEY_BOOKINGS);
-      if (savedBookings) {
+      if (savedBookings && !currentUserId) {
         setUserBookings(JSON.parse(savedBookings));
       }
       const savedQuota = localStorage.getItem(DEMO_STORAGE_KEY_QUOTA);
-      if (savedQuota) {
+      if (savedQuota && !currentUserId) {
         setPrivateQuota(JSON.parse(savedQuota));
       }
     } catch {
       // ignore
     }
-  }, []);
+  }, [currentUserId]);
 
   const supabase = createClient();
 
@@ -310,8 +317,15 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         setHasActiveSubscription(access.hasActiveSubscription);
         setHasPrivateAccess(access.hasPrivateAccess);
         setHasSmallGroupAccess(access.hasSmallGroupAccess);
+        setIsEssential(access.isEssential);
+        setIsAllAccess(access.isAllAccess);
+        setIsLadyStriking(access.isLadyStriking);
+        setIsKidBoxing(access.isKidBoxing);
+        setSelectedDiscipline(access.selectedDiscipline || null);
+        setBirthDate(access.birthDate || null);
         setPlanName(access.planName || "Formule Active");
         setActivePlanNames(access.activePlanNames || []);
+        setActivePlanCodes(access.activePlanCodes || []);
         setPrivateSessionsQuota(access.privateSessionsQuota ?? 8);
       }
 
@@ -370,22 +384,74 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: result.error || "Impossible d'effectuer la réservation." };
     }
 
+    // Mise à jour optimiste immédiate : insérer la nouvelle réservation
+    const targetSession = availableSessions.find((s) => s.id === sessionId);
+    const newBookingId = result.bookingId || `booking_${Date.now()}`;
+    const newSlot: BookingSlot = {
+      id: newBookingId,
+      class_session_id: sessionId,
+      classSessionId: sessionId,
+      user_id: currentUserId || undefined,
+      discipline: targetSession?.discipline || "Cours Adulte",
+      sessionType: "Small Group",
+      day: targetSession ? formatToParisDate(targetSession.starts_at) : "",
+      time: targetSession ? formatToParisTime(targetSession.starts_at) : "",
+      startsAt: targetSession?.starts_at,
+      status: "confirmed",
+      class_session: targetSession,
+    };
+
+    setUserBookings((prev) => [newSlot, ...prev.filter((b) => b.class_session_id !== sessionId && b.classSessionId !== sessionId)]);
+    if (currentUserId) {
+      setAllConfirmedBookings((prev) => [
+        ...prev.filter((b) => !(b.class_session_id === sessionId && b.user_id === currentUserId)),
+        { class_session_id: sessionId, user_id: currentUserId },
+      ]);
+    }
+
     await refreshMemberData();
     return { success: true, bookingId: result.bookingId };
   };
 
   // Annulation Small Group réelle via RPC Supabase
-  const cancelSmallGroup = async (bookingId: string) => {
-    if (!bookingId || !bookingId.includes("-")) {
-      const msg = `Identifiant de réservation invalide : ${bookingId}`;
+  const cancelSmallGroup = async (bookingIdOrSessionId: string) => {
+    if (!bookingIdOrSessionId || !bookingIdOrSessionId.includes("-")) {
+      const msg = `Identifiant invalide : ${bookingIdOrSessionId}`;
       console.error("[MemberContext] ERREUR :", msg);
       return { success: false, error: msg };
     }
 
-    const result = await apiCancelSmallGroup(supabase, bookingId);
+    const result = await apiCancelSmallGroup(supabase, bookingIdOrSessionId);
 
     if (!result.success) {
       return { success: false, error: result.error || "Impossible d'annuler cette réservation." };
+    }
+
+    // Mise à jour optimiste immédiate : supprimer la réservation
+    setUserBookings((prev) =>
+      prev.filter(
+        (b) =>
+          b.id !== bookingIdOrSessionId &&
+          b.class_session_id !== bookingIdOrSessionId &&
+          b.classSessionId !== bookingIdOrSessionId
+      )
+    );
+
+    if (currentUserId) {
+      setAllConfirmedBookings((prev) =>
+        prev.filter(
+          (b) =>
+            !(
+              (b.class_session_id === bookingIdOrSessionId || b.user_id === currentUserId) &&
+              (b.class_session_id === bookingIdOrSessionId ||
+                userBookings.some(
+                  (ub) =>
+                    (ub.id === bookingIdOrSessionId || ub.class_session_id === bookingIdOrSessionId) &&
+                    ub.class_session_id === b.class_session_id
+                ))
+            )
+        )
+      );
     }
 
     await refreshMemberData();
@@ -475,8 +541,15 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         hasActiveSubscription,
         hasPrivateAccess,
         hasSmallGroupAccess,
+        isEssential,
+        isAllAccess,
+        isLadyStriking,
+        isKidBoxing,
+        selectedDiscipline,
+        birthDate,
         planName,
         activePlanNames,
+        activePlanCodes,
         privateSessionsQuota,
         privateQuota,
         isLoadingData,

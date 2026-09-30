@@ -9,6 +9,7 @@ export interface MembershipRequestItem {
   plan_id: string;
   status: MembershipRequestStatus;
   commitment_type: CommitmentType;
+  selected_discipline?: string | null;
   member_notes?: string | null;
   admin_notes?: string | null;
   reviewed_by?: string | null;
@@ -19,6 +20,7 @@ export interface MembershipRequestItem {
   plan?: {
     id: string;
     name: string;
+    code?: string | null;
     type: string;
     price_cents: number;
     allows_private: boolean;
@@ -30,6 +32,7 @@ export interface MembershipRequestItem {
     first_name: string;
     last_name: string;
     phone?: string | null;
+    birth_date?: string | null;
   } | null;
 }
 
@@ -51,6 +54,8 @@ export interface MembershipPlanOption {
 export interface SubmitMembershipRequestPayload {
   planId: string;
   commitmentType: CommitmentType;
+  selectedDiscipline?: string;
+  birthDate?: string;
   memberNotes?: string;
 }
 
@@ -75,6 +80,7 @@ export async function getMyLatestMembershipRequest(
         plan_id,
         status,
         commitment_type,
+        selected_discipline,
         member_notes,
         admin_notes,
         reviewed_by,
@@ -84,6 +90,7 @@ export async function getMyLatestMembershipRequest(
         plan:plans (
           id,
           name,
+          code,
           type,
           price_cents,
           allows_private,
@@ -159,10 +166,23 @@ export async function submitMembershipRequest(
   payload: SubmitMembershipRequestPayload
 ): Promise<{ success: boolean; requestId?: string; error?: string; message?: string }> {
   try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user && payload.birthDate) {
+      // Sauvegarder la date de naissance sur le profil
+      await supabase
+        .from("profiles")
+        .update({ birth_date: payload.birthDate })
+        .eq("id", user.id);
+    }
+
     const { data, error } = await supabase.rpc("submit_membership_request", {
       p_plan_id: payload.planId,
       p_commitment_type: payload.commitmentType,
       p_member_notes: payload.memberNotes || null,
+      p_selected_discipline: payload.selectedDiscipline || null,
     });
 
     if (error) {
@@ -175,9 +195,11 @@ export async function submitMembershipRequest(
       return { success: false, error: res.message || res.error };
     }
 
+    const requestId = res?.request_id;
+
     return {
       success: true,
-      requestId: res?.request_id,
+      requestId,
       message: res?.message || "Demande transmise avec succès.",
     };
   } catch (err) {
@@ -201,6 +223,7 @@ export async function getAdminMembershipRequestsList(
         plan_id,
         status,
         commitment_type,
+        selected_discipline,
         member_notes,
         admin_notes,
         reviewed_by,
@@ -216,6 +239,7 @@ export async function getAdminMembershipRequestsList(
         plan:plans (
           id,
           name,
+          code,
           type,
           price_cents,
           allows_private,
@@ -226,7 +250,12 @@ export async function getAdminMembershipRequestsList(
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[getAdminMembershipRequestsList] Erreur :", error);
+      console.error("[getAdminMembershipRequestsList]", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return [];
     }
 

@@ -14,8 +14,9 @@ import {
   AlertCircle,
   ToggleLeft,
   ToggleRight,
+  Clock,
+  Calendar,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import {
   type AdminPlanItem,
   type UpdatePlanPayload,
@@ -34,7 +35,6 @@ export default function AdminFormulesView({
   initialPlans,
 }: AdminFormulesViewProps) {
   const router = useRouter();
-  const supabase = createClient();
 
   const [plans, setPlans] = useState<AdminPlanItem[]>(initialPlans);
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,7 +49,7 @@ export default function AdminFormulesView({
   const [editingPlan, setEditingPlan] = useState<AdminPlanItem | null>(null);
   const [editName, setEditName] = useState("");
   const [editPriceEuros, setEditPriceEuros] = useState<string>("");
-  const [editCommitment, setEditCommitment] = useState<"monthly" | "annual">("monthly");
+  const [editCommitment, setEditCommitment] = useState<"monthly" | "annual">("annual");
   const [editPrivateSessions, setEditPrivateSessions] = useState<number | null>(null);
   const [editIsActive, setEditIsActive] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,7 +103,7 @@ export default function AdminFormulesView({
     setEditingPlan(plan);
     setEditName(plan.name);
     setEditPriceEuros((plan.price_cents / 100).toString());
-    setEditCommitment((plan.commitment as "monthly" | "annual") || "monthly");
+    setEditCommitment((plan.commitment as "monthly" | "annual") || "annual");
     setEditPrivateSessions(
       plan.type === "private"
         ? (plan.private_sessions_per_period || 8)
@@ -200,7 +200,62 @@ export default function AdminFormulesView({
   };
 
   // Helpers de rendu
-  const renderTypeBadge = (type: string) => {
+  const getSlotDetails = (code?: string | null) => {
+    switch (code) {
+      case "adult_essential":
+        return {
+          badge: "3 séances / semaine",
+          slots: ["Mardi 18:00", "Vendredi 18:00", "Samedi 10:00"],
+          configurable: true,
+        };
+      case "adult_all_access":
+        return {
+          badge: "Accès illimité",
+          slots: ["Tous les cours adultes disponibles (Matin, Midi, Soir & Samedi)"],
+          configurable: false,
+        };
+      case "lady_striking_annual":
+        return {
+          badge: "100% Féminin · 3 séances / sem.",
+          slots: ["Mardi 17:00 – 18:00", "Jeudi 17:30 – 18:30", "Samedi 12:30 – 13:30"],
+          configurable: true,
+        };
+      case "kid_boxing_season":
+        return {
+          badge: "5–13 ans · 2 groupes d'âge",
+          slots: [
+            "5–8 ans : Mercredi 11:00–12:00, Vendredi 17:00–18:00",
+            "9–13 ans : Mercredi 10:00–11:00, Samedi 10:00–11:00",
+          ],
+          configurable: true,
+        };
+      case "priv_monthly_8":
+      case "priv_annual_8":
+        return {
+          badge: "8 séances / mois (50 min)",
+          slots: ["Créneaux 1-on-1 sur réservation + Accès complet Cours Adultes"],
+          configurable: false,
+        };
+      default:
+        return null;
+    }
+  };
+
+  const renderTypeBadge = (type: string, code?: string | null) => {
+    if (code === "lady_striking_annual") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-pink-500/15 text-pink-300 border border-pink-500/30">
+          100% Féminin
+        </span>
+      );
+    }
+    if (code === "kid_boxing_season") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          Enfants (5–13 ans)
+        </span>
+      );
+    }
     switch (type) {
       case "small_group":
         return (
@@ -223,17 +278,24 @@ export default function AdminFormulesView({
     }
   };
 
-  const renderCommitmentBadge = (commitment?: string | null) => {
+  const renderCommitmentBadge = (commitment?: string | null, code?: string | null) => {
+    if (code === "kid_boxing_season") {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+          Saison scolaire
+        </span>
+      );
+    }
     if (commitment === "annual") {
       return (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
-          12 mois (Annuel)
+          Annuel
         </span>
       );
     }
     return (
       <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30">
-        1 mois (Mensuel)
+        Mensuel
       </span>
     );
   };
@@ -247,16 +309,22 @@ export default function AdminFormulesView({
             Catalogue des <span className="text-brand-blue">Formules</span>
           </h1>
           <p className="text-xs text-brand-white/60 mt-0.5">
-            Gestion des tarifs, engagements et séances privées de Striking Camp
+            Gestion des tarifs, engagements, créneaux autorisés et formules actives de Striking Camp
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <Link
             href="/admin"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-semibold rounded-xl uppercase tracking-wider border border-brand-white/10 transition-colors"
           >
             <ArrowLeft size={14} /> Dashboard
+          </Link>
+          <Link
+            href="/admin/planning"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-semibold rounded-xl uppercase tracking-wider border border-brand-white/10 transition-colors"
+          >
+            <Calendar size={14} /> Planning Hebdo
           </Link>
           <Link
             href="/admin/abonnements"
@@ -303,11 +371,11 @@ export default function AdminFormulesView({
           </div>
         </div>
 
-        {/* Small Group */}
+        {/* Small Group / Cours Adultes */}
         <div className="bg-[#0f172a]/90 border border-brand-blue/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-blue">
-              Cours Adulte
+              Cours Adultes & Spécifiques
             </span>
           </div>
           <div className="mt-3">
@@ -315,7 +383,7 @@ export default function AdminFormulesView({
               {stats.smallGroupCount}
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              Accès créneaux limités
+              Essentiel, All Access, Lady, Kid
             </span>
           </div>
         </div>
@@ -332,7 +400,7 @@ export default function AdminFormulesView({
               {stats.privateCount}
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              8 séances / mois
+              8 séances / mois (Mensuel & Annuel)
             </span>
           </div>
         </div>
@@ -362,7 +430,7 @@ export default function AdminFormulesView({
                 : "bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20"
             )}
           >
-            Cours Adulte ({stats.smallGroupCount})
+            Cours Adultes & Spécifiques ({stats.smallGroupCount})
           </button>
           <button
             onClick={() => setTypeFilter("private")}
@@ -449,6 +517,11 @@ export default function AdminFormulesView({
                 maximumFractionDigits: 2,
               });
 
+              const isPriv = plan.type === "private";
+              const isKid = plan.code === "kid_boxing_season";
+              const periodSuffix = isPriv ? "/ mois" : isKid ? "/ saison" : "/ an";
+              const slotInfo = getSlotDetails(plan.code);
+
               return (
                 <div
                   key={plan.id}
@@ -497,28 +570,54 @@ export default function AdminFormulesView({
 
                     {/* Badges Type & Engagement */}
                     <div className="flex items-center gap-2 flex-wrap mt-3">
-                      {renderTypeBadge(plan.type)}
-                      {renderCommitmentBadge(plan.commitment)}
+                      {renderTypeBadge(plan.type, plan.code)}
+                      {renderCommitmentBadge(plan.commitment, plan.code)}
                       {plan.type === "private" && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
                           {plan.private_sessions_per_period || 8} séances privées
                         </span>
                       )}
                     </div>
+
+                    {/* Créneaux autorisés & configuration */}
+                    {slotInfo && (
+                      <div className="mt-4 p-3 bg-[#020617] border border-brand-white/10 rounded-xl space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-brand-blue flex items-center gap-1.5">
+                            <Clock size={12} /> {slotInfo.badge}
+                          </span>
+                          {slotInfo.configurable && (
+                            <Link
+                              href="/admin/planning"
+                              className="text-[10px] text-brand-white/50 hover:text-brand-blue underline transition-colors"
+                            >
+                              Gérer au planning
+                            </Link>
+                          )}
+                        </div>
+                        <div className="space-y-0.5">
+                          {slotInfo.slots.map((s, idx) => (
+                            <p key={idx} className="text-xs text-brand-white/70 font-medium">
+                              • {s}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Bottom: Price + Actions */}
                   <div className="pt-4 border-t border-brand-white/10 flex items-center justify-between gap-3">
                     <div>
                       <span className="text-[10px] uppercase font-bold text-brand-white/40 block">
-                        Tarif mensuel
+                        Tarif officiel
                       </span>
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl sm:text-3xl font-heading font-black text-brand-white">
                           {priceEuros} €
                         </span>
                         <span className="text-xs font-semibold text-brand-white/50">
-                          / mois
+                          {periodSuffix}
                         </span>
                       </div>
                     </div>
@@ -585,17 +684,17 @@ export default function AdminFormulesView({
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   required
-                  placeholder="Ex: Cours Adulte - Mensuel"
+                  placeholder="Ex: Essentiel"
                   className="w-full bg-[#020617] border border-brand-white/15 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none transition-colors"
                 />
               </div>
 
               {/* Tarif & Engagement */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Tarif Mensuel */}
+                {/* Tarif */}
                 <div className="space-y-1.5">
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-white/70">
-                    Tarif mensuel (€) <span className="text-brand-blue">*</span>
+                    Tarif (€) <span className="text-brand-blue">*</span>
                   </label>
                   <div className="relative">
                     <Euro
@@ -609,7 +708,7 @@ export default function AdminFormulesView({
                       value={editPriceEuros}
                       onChange={(e) => setEditPriceEuros(e.target.value)}
                       required
-                      placeholder="Ex: 120"
+                      placeholder="Ex: 499"
                       className="w-full bg-[#020617] border border-brand-white/15 rounded-xl pl-9 pr-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none transition-colors"
                     />
                   </div>
@@ -627,8 +726,8 @@ export default function AdminFormulesView({
                     }
                     className="w-full bg-[#020617] border border-brand-white/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
                   >
-                    <option value="monthly">Mensuel (1 mois)</option>
-                    <option value="annual">Annuel (12 mois)</option>
+                    <option value="annual">Annuel / Saison</option>
+                    <option value="monthly">Mensuel (Sans engagement)</option>
                   </select>
                 </div>
               </div>

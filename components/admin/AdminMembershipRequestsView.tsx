@@ -433,6 +433,22 @@ export default function AdminMembershipRequestsView() {
                       {req.plan?.name || "Formule"}
                     </span>
 
+                    {/* Badge Discipline pour Adulte Essentiel */}
+                    {(req.plan?.code === "adult_essential" || req.plan?.name?.toLowerCase().includes("essentiel")) && (
+                      <span
+                        className={cn(
+                          "text-[10px] font-heading font-black uppercase px-2.5 py-0.5 rounded border tracking-wider",
+                          req.selected_discipline
+                            ? "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30"
+                            : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                        )}
+                      >
+                        {req.selected_discipline
+                          ? `Discipline : ${req.selected_discipline}`
+                          : "Discipline non renseignée"}
+                      </span>
+                    )}
+
                     {/* Badge Engagement */}
                     <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
                       {isAnnual ? "Engagement 12 mois" : "Mensuel (Sans engagement)"}
@@ -585,6 +601,14 @@ export default function AdminMembershipRequestsView() {
                     <span className="text-brand-white/50">Formule :</span>
                     <strong className="text-[#00d8ff]">{approvingReq.plan?.name}</strong>
                   </div>
+                  {(approvingReq.plan?.code === "adult_essential" || approvingReq.plan?.name?.toLowerCase().includes("essentiel")) && (
+                    <div className="flex justify-between">
+                      <span className="text-brand-white/50">Discipline choisie :</span>
+                      <strong className="text-[#00d8ff]">
+                        {approvingReq.selected_discipline || "Non renseignée"}
+                      </strong>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-brand-white/50">Engagement :</span>
                     <span className="text-brand-white">

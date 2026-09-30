@@ -55,6 +55,8 @@ interface SmallGroupSessionItem {
   maxCapacity: number;
   isActive: boolean;
   bookedCount?: number;
+  category?: "cours_adulte" | "lady_striking" | "kid_boxing";
+  target_age_group?: "all" | "5_8" | "9_13";
 }
 
 const dayNameToIndex = (d: DayName): number => Math.max(0, DAYS_ORDER.indexOf(d));
@@ -85,6 +87,8 @@ export default function AdminPlanningView({
         level: t.level,
         maxCapacity: t.max_capacity,
         isActive: t.is_active,
+        category: (t.category as "cours_adulte" | "lady_striking" | "kid_boxing") || (t.discipline === "Lady Striking" ? "lady_striking" : t.discipline === "Kid Boxing" ? "kid_boxing" : "cours_adulte"),
+        target_age_group: (t.target_age_group as "all" | "5_8" | "9_13") || "all",
       }));
     }
     return [];
@@ -92,6 +96,7 @@ export default function AdminPlanningView({
 
   // État Small Group (alimenté par Supabase)
   const [smallGroupSessions, setSmallGroupSessions] = useState<SmallGroupSessionItem[]>(initialSgFromDb);
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<"all" | "cours_adulte" | "lady_striking" | "kid_boxing">("all");
 
   useEffect(() => {
     setSmallGroupSessions(initialSgFromDb);
@@ -114,6 +119,8 @@ export default function AdminPlanningView({
 
   // Modal Ajout Small Group
   const [isAddSgModalOpen, setIsAddSgModalOpen] = useState(false);
+  const [sgFormCategory, setSgFormCategory] = useState<"cours_adulte" | "lady_striking" | "kid_boxing">("cours_adulte");
+  const [sgFormTargetAgeGroup, setSgFormTargetAgeGroup] = useState<"all" | "5_8" | "9_13">("all");
   const [sgFormDay, setSgFormDay] = useState<DayName>("Lundi");
   const [sgFormStart, setSgFormStart] = useState("09:00");
   const [sgFormEnd, setSgFormEnd] = useState("09:50");
@@ -195,6 +202,8 @@ export default function AdminPlanningView({
         discipline: sgFormDiscipline,
         level: sgFormLevel,
         max_capacity: sgFormCapacity,
+        category: sgFormCategory,
+        target_age_group: sgFormTargetAgeGroup,
       });
 
       if (res.success && res.data) {
@@ -208,10 +217,12 @@ export default function AdminPlanningView({
           level: sgFormLevel,
           maxCapacity: sgFormCapacity,
           isActive: true,
+          category: sgFormCategory,
+          target_age_group: sgFormTargetAgeGroup,
         };
         setSmallGroupSessions((prev) => [...prev, newSlot]);
         setIsAddSgModalOpen(false);
-        showNotification(`Séance Small Group ${sgFormDiscipline} (${sgFormDay}) ajoutée au planning.`);
+        showNotification(`Séance ${sgFormDiscipline} (${sgFormDay}) ajoutée au planning.`);
         router.refresh();
       } else {
         showNotification(res.error || "Erreur lors de la création de la séance.", "error");
@@ -241,6 +252,8 @@ export default function AdminPlanningView({
             level: editingSgSession.level,
             max_capacity: editingSgSession.maxCapacity,
             is_active: editingSgSession.isActive,
+            category: editingSgSession.category,
+            target_age_group: editingSgSession.target_age_group,
           },
           forceCascade
         );
@@ -278,6 +291,8 @@ export default function AdminPlanningView({
             level: editingSgSession.level,
             max_capacity: editingSgSession.maxCapacity,
             is_active: editingSgSession.isActive,
+            category: editingSgSession.category,
+            target_age_group: editingSgSession.target_age_group,
           });
           if (res.success) {
             setEditingSgSession(null);
@@ -320,9 +335,7 @@ export default function AdminPlanningView({
     }
   };
 
-
-
-  // Groupement Small Group par jour
+  // Groupement Small Group par jour avec filtre de catégorie
   const sgByDay = useMemo(() => {
     const map: Record<DayName, SmallGroupSessionItem[]> = {
       Lundi: [],
@@ -333,13 +346,16 @@ export default function AdminPlanningView({
       Samedi: [],
     };
     smallGroupSessions.forEach((s) => {
+      if (selectedCategoryTab !== "all" && s.category !== selectedCategoryTab) {
+        return;
+      }
       if (map[s.day]) map[s.day].push(s);
     });
     DAYS_ORDER.forEach((d) => {
       map[d].sort((a, b) => a.startTime.localeCompare(b.startTime));
     });
     return map;
-  }, [smallGroupSessions]);
+  }, [smallGroupSessions, selectedCategoryTab]);
 
   return (
     <div className="p-6 sm:p-8 space-y-8 max-w-6xl mx-auto">
@@ -447,121 +463,171 @@ export default function AdminPlanningView({
       </AnimatePresence>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          PLANNING SMALL GROUP (SEMAINE TYPE OFFICIELLE PERSISTÉE)
+          PLANNING (SEMAINE TYPE OFFICIELLE PERSISTÉE)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0b1b33]/40 border border-[#00d8ff]/20 rounded-2xl p-4">
           <div className="text-xs text-[#00d8ff]">
             <span>
-              <strong>Planning Cours Adulte (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>12 max</strong>.
+              <strong>Planning Collectif (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>12 max</strong>.
             </span>
           </div>
 
-            <button
-              onClick={() => setIsAddSgModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#00d8ff]/20 shrink-0 cursor-pointer"
-            >
-              <Plus size={15} />
-              Ajouter une séance Cours Adulte
-            </button>
-          </div>
-
-          {/* Grille des séances par jour */}
-          <div className="space-y-6">
-            {smallGroupSessions.length === 0 && (
-              <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
-                <p className="text-brand-white/80 font-heading font-bold">Aucun créneau Cours Adulte configuré dans Supabase.</p>
-                <p className="text-xs text-brand-white/50">Cliquez sur « Ajouter une séance Cours Adulte » pour créer votre premier créneau récurrent.</p>
-              </div>
-            )}
-            {DAYS_ORDER.map((day) => {
-              const daySessions = sgByDay[day];
-              if (!daySessions || daySessions.length === 0) return null;
-
-              return (
-                <div key={day} className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl">
-                  <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-4 rounded-full bg-[#00d8ff]" />
-                      <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                        {day}
-                      </h3>
-                    </div>
-                    <span className="text-xs text-brand-white/40 font-semibold">
-                      {daySessions.length} séances
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-2.5">
-                    {daySessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className={cn(
-                          "p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all",
-                          session.isActive
-                            ? "bg-black/30 border-brand-white/10 hover:border-brand-white/20"
-                            : "bg-zinc-900/60 border-zinc-800 opacity-60"
-                        )}
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="text-base font-heading font-bold uppercase tracking-wide text-brand-white">
-                              {session.discipline}
-                            </span>
-                            <span className={cn("text-[10px] font-black uppercase px-2.5 py-0.5 rounded border", getLevelBadgeClasses(session.level, session.discipline))}>
-                              {session.discipline === "Lady Striking" ? "100% féminin" : session.level}
-                            </span>
-                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
-                              {session.maxCapacity} places max
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3 text-xs text-brand-white/60">
-                            <span className="flex items-center gap-1 font-bold text-[#00d8ff]">
-                              <Clock size={13} />
-                              {session.startTime} → {session.endTime}
-                            </span>
-                            <span className="text-brand-white/40">• 60 min · Cours Adulte</span>
-                          </div>
-                        </div>
-
-                        {/* Statut & Actions */}
-                        <div className="flex items-center gap-2 justify-end">
-                          <button
-                            onClick={() => {
-                              setEditingSgSession(session);
-                              setEditScope("recurring");
-                            }}
-                            className="p-2 rounded-lg bg-brand-white/5 hover:bg-brand-white/15 text-brand-white/80 hover:text-brand-white border border-brand-white/10 transition-colors cursor-pointer"
-                            title="Modifier cette séance"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-
-                          <button
-                            onClick={() => toggleSgSession(session.id)}
-                            disabled={isSubmitting}
-                            className={cn(
-                              "px-3 py-1.5 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
-                              session.isActive
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
-                                : "bg-zinc-800 text-zinc-500 border border-zinc-700 hover:bg-zinc-700"
-                            )}
-                          >
-                            {session.isActive ? "Actif" : "Désactivé"}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <button
+            onClick={() => {
+              setSgFormCategory("cours_adulte");
+              setSgFormDiscipline("Boxing Bag");
+              setSgFormLevel("Fondamentaux");
+              setSgFormTargetAgeGroup("all");
+              setIsAddSgModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#00d8ff]/20 shrink-0 cursor-pointer"
+          >
+            <Plus size={15} />
+            Ajouter un créneau
+          </button>
         </div>
 
+        {/* Onglets de filtrage par catégorie */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-brand-white/10">
+          {[
+            { id: "all", label: "Toutes les catégories" },
+            { id: "cours_adulte", label: "Cours Adulte" },
+            { id: "lady_striking", label: "Lady Striking" },
+            { id: "kid_boxing", label: "Kid Boxing" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedCategoryTab(tab.id as any)}
+              className={cn(
+                "px-3.5 py-2 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border",
+                selectedCategoryTab === tab.id
+                  ? "bg-[#00d8ff] text-black border-[#00d8ff] shadow-md shadow-[#00d8ff]/20"
+                  : "bg-brand-white/5 text-brand-white/60 border-brand-white/10 hover:bg-brand-white/10 hover:text-brand-white"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Grille des séances par jour */}
+        <div className="space-y-6">
+          {smallGroupSessions.length === 0 && (
+            <div className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
+              <p className="text-brand-white/80 font-heading font-bold">Aucun créneau configuré dans Supabase.</p>
+              <p className="text-xs text-brand-white/50">Cliquez sur « Ajouter un créneau » pour créer votre premier créneau récurrent.</p>
+            </div>
+          )}
+          {DAYS_ORDER.map((day) => {
+            const daySessions = sgByDay[day];
+            if (!daySessions || daySessions.length === 0) return null;
+
+            return (
+              <div key={day} className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full bg-[#00d8ff]" />
+                    <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-brand-white">
+                      {day}
+                    </h3>
+                  </div>
+                  <span className="text-xs text-brand-white/40 font-semibold">
+                    {daySessions.length} séance{daySessions.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {daySessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className={cn(
+                        "p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all",
+                        session.isActive
+                          ? "bg-black/30 border-brand-white/10 hover:border-brand-white/20"
+                          : "bg-zinc-900/60 border-zinc-800 opacity-60"
+                      )}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="text-base font-heading font-bold uppercase tracking-wide text-brand-white">
+                            {session.discipline}
+                          </span>
+
+                          {/* Badge Catégorie */}
+                          <span className={cn(
+                            "text-[10px] font-black uppercase px-2.5 py-0.5 rounded border",
+                            session.category === "lady_striking"
+                              ? "bg-pink-500/10 text-pink-400 border-pink-500/30"
+                              : session.category === "kid_boxing"
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                              : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/30"
+                          )}>
+                            {session.category === "lady_striking" ? "Lady Striking" : session.category === "kid_boxing" ? "Kid Boxing" : "Cours Adulte"}
+                          </span>
+
+                          {/* Badge Tranche d'âge si Kid Boxing */}
+                          {session.category === "kid_boxing" && session.target_age_group && session.target_age_group !== "all" && (
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                              {session.target_age_group === "5_8" ? "5–8 ans" : "9–13 ans"}
+                            </span>
+                          )}
+
+                          <span className={cn("text-[10px] font-black uppercase px-2.5 py-0.5 rounded border", getLevelBadgeClasses(session.level, session.discipline))}>
+                            {session.discipline === "Lady Striking" ? "100% féminin" : session.level}
+                          </span>
+
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
+                            {session.maxCapacity} places max
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-brand-white/60">
+                          <span className="flex items-center gap-1 font-bold text-[#00d8ff]">
+                            <Clock size={13} />
+                            {session.startTime} → {session.endTime}
+                          </span>
+                          <span className="text-brand-white/40">• 60 min</span>
+                        </div>
+                      </div>
+
+                      {/* Statut & Actions */}
+                      <div className="flex items-center gap-2 justify-end">
+                        <button
+                          onClick={() => {
+                            setEditingSgSession(session);
+                            setEditScope("recurring");
+                          }}
+                          className="p-2 rounded-lg bg-brand-white/5 hover:bg-brand-white/15 text-brand-white/80 hover:text-brand-white border border-brand-white/10 transition-colors cursor-pointer"
+                          title="Modifier cette séance"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+
+                        <button
+                          onClick={() => toggleSgSession(session.id)}
+                          disabled={isSubmitting}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
+                            session.isActive
+                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
+                              : "bg-zinc-800 text-zinc-500 border border-zinc-700 hover:bg-zinc-700"
+                          )}
+                        >
+                          {session.isActive ? "Actif" : "Désactivé"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          MODAL : AJOUT SÉANCE SMALL GROUP
+          MODAL : AJOUT SÉANCE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <AnimatePresence>
         {isAddSgModalOpen && (
@@ -582,7 +648,7 @@ export default function AdminPlanningView({
               {/* HEADER */}
               <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
                 <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                  Ajouter une séance Cours Adulte
+                  Ajouter un créneau au planning
                 </h3>
                 <button
                   onClick={() => setIsAddSgModalOpen(false)}
@@ -597,6 +663,79 @@ export default function AdminPlanningView({
                 className="p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-4 text-xs"
                 style={{ WebkitOverflowScrolling: "touch" }}
               >
+                {/* Catégorie */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block">
+                    Catégorie de cours
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "cours_adulte", label: "Cours Adulte" },
+                      { id: "lady_striking", label: "Lady Striking" },
+                      { id: "kid_boxing", label: "Kid Boxing" },
+                    ].map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const c = cat.id as "cours_adulte" | "lady_striking" | "kid_boxing";
+                          setSgFormCategory(c);
+                          if (c === "lady_striking") {
+                            setSgFormDiscipline("Lady Striking");
+                            setSgFormLevel("100% féminin");
+                            setSgFormTargetAgeGroup("all");
+                          } else if (c === "kid_boxing") {
+                            setSgFormDiscipline("Kid Boxing");
+                            setSgFormLevel("Tous niveaux");
+                            setSgFormTargetAgeGroup("5_8");
+                          } else {
+                            setSgFormDiscipline("Boxing Bag");
+                            setSgFormLevel("Fondamentaux");
+                            setSgFormTargetAgeGroup("all");
+                          }
+                        }}
+                        className={cn(
+                          "py-2.5 px-2 rounded-xl text-xs font-heading font-bold uppercase transition-all border text-center cursor-pointer",
+                          sgFormCategory === cat.id
+                            ? "bg-[#00d8ff] text-black border-[#00d8ff] shadow-md shadow-[#00d8ff]/20"
+                            : "bg-brand-white/5 text-brand-white/70 border-brand-white/10 hover:bg-brand-white/10"
+                        )}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tranche d'âge si Kid Boxing */}
+                {sgFormCategory === "kid_boxing" && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] sm:text-xs text-amber-400 uppercase font-bold block">
+                      Tranche d&apos;âge Kid Boxing
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: "5_8", label: "5–8 ans" },
+                        { id: "9_13", label: "9–13 ans" },
+                      ].map((ag) => (
+                        <button
+                          key={ag.id}
+                          type="button"
+                          onClick={() => setSgFormTargetAgeGroup(ag.id as "5_8" | "9_13")}
+                          className={cn(
+                            "py-2 px-3 rounded-xl text-xs font-heading font-bold uppercase transition-all border text-center cursor-pointer",
+                            sgFormTargetAgeGroup === ag.id
+                              ? "bg-amber-400 text-black border-amber-400 shadow-md shadow-amber-400/20"
+                              : "bg-brand-white/5 text-brand-white/70 border-brand-white/10 hover:bg-brand-white/10"
+                          )}
+                        >
+                          {ag.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                   <div>
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
@@ -619,33 +758,40 @@ export default function AdminPlanningView({
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Discipline
                     </label>
-                    <select
-                      value={sgFormDiscipline}
-                      onChange={(e) => {
-                        const newDisc = e.target.value;
-                        setSgFormDiscipline(newDisc);
-                        setSgFormLevel(getStandardLevelForDiscipline(newDisc, sgFormLevel));
-                      }}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    >
-                      {SMALL_GROUP_DISCIPLINES.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
+                    {sgFormCategory === "cours_adulte" ? (
+                      <select
+                        value={sgFormDiscipline}
+                        onChange={(e) => {
+                          const newDisc = e.target.value;
+                          setSgFormDiscipline(newDisc);
+                          setSgFormLevel(getStandardLevelForDiscipline(newDisc, sgFormLevel));
+                        }}
+                        className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                      >
+                        {SMALL_GROUP_DISCIPLINES.filter((d) => d !== "Lady Striking" && d !== "Kid Boxing").map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="w-full bg-[#0a1120]/70 border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm font-semibold">
+                        {sgFormDiscipline}
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Niveau / Type
                     </label>
-                    {sgFormDiscipline === "Lady Striking" ? (
+                    {sgFormCategory === "lady_striking" ? (
                       <div className="w-full bg-[#0a1120]/70 border border-pink-500/30 rounded-xl px-3 py-2.5 sm:py-3 text-pink-400 text-xs sm:text-sm font-semibold flex items-center justify-between">
                         <span>100% féminin</span>
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-pink-500/20 border border-pink-500/40 text-pink-300">
-                          Verrouillé
-                        </span>
+                      </div>
+                    ) : sgFormCategory === "kid_boxing" ? (
+                      <div className="w-full bg-[#0a1120]/70 border border-amber-500/30 rounded-xl px-3 py-2.5 sm:py-3 text-amber-400 text-xs sm:text-sm font-semibold flex items-center justify-between">
+                        <span>Tous niveaux</span>
                       </div>
                     ) : (
                       <select
@@ -726,7 +872,7 @@ export default function AdminPlanningView({
       </AnimatePresence>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          MODAL : MODIFIER SÉANCE SMALL GROUP
+          MODAL : MODIFIER SÉANCE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <AnimatePresence>
         {editingSgSession && (
@@ -747,7 +893,7 @@ export default function AdminPlanningView({
               {/* HEADER */}
               <div className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4.5 border-b border-brand-white/10 bg-[#0f172a] shrink-0">
                 <h3 className="text-base sm:text-lg font-heading font-black uppercase tracking-wider text-brand-white">
-                  Modifier la séance Cours Adulte
+                  Modifier la séance
                 </h3>
                 <button
                   onClick={() => setEditingSgSession(null)}
@@ -795,6 +941,72 @@ export default function AdminPlanningView({
                   </div>
                 </div>
 
+                {/* Catégorie */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block">
+                    Catégorie de cours
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "cours_adulte", label: "Cours Adulte" },
+                      { id: "lady_striking", label: "Lady Striking" },
+                      { id: "kid_boxing", label: "Kid Boxing" },
+                    ].map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const c = cat.id as "cours_adulte" | "lady_striking" | "kid_boxing";
+                          setEditingSgSession({
+                            ...editingSgSession,
+                            category: c,
+                            discipline: c === "lady_striking" ? "Lady Striking" : c === "kid_boxing" ? "Kid Boxing" : editingSgSession.discipline === "Lady Striking" || editingSgSession.discipline === "Kid Boxing" ? "Boxing Bag" : editingSgSession.discipline,
+                            level: c === "lady_striking" ? "100% féminin" : c === "kid_boxing" ? "Tous niveaux" : "Fondamentaux",
+                            target_age_group: c === "kid_boxing" ? (editingSgSession.target_age_group === "9_13" ? "9_13" : "5_8") : "all",
+                          });
+                        }}
+                        className={cn(
+                          "py-2.5 px-2 rounded-xl text-xs font-heading font-bold uppercase transition-all border text-center cursor-pointer",
+                          (editingSgSession.category || "cours_adulte") === cat.id
+                            ? "bg-[#00d8ff] text-black border-[#00d8ff] shadow-md shadow-[#00d8ff]/20"
+                            : "bg-brand-white/5 text-brand-white/70 border-brand-white/10 hover:bg-brand-white/10"
+                        )}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tranche d'âge si Kid Boxing */}
+                {editingSgSession.category === "kid_boxing" && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] sm:text-xs text-amber-400 uppercase font-bold block">
+                      Tranche d&apos;âge Kid Boxing
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: "5_8", label: "5–8 ans" },
+                        { id: "9_13", label: "9–13 ans" },
+                      ].map((ag) => (
+                        <button
+                          key={ag.id}
+                          type="button"
+                          onClick={() => setEditingSgSession({ ...editingSgSession, target_age_group: ag.id as "5_8" | "9_13" })}
+                          className={cn(
+                            "py-2 px-3 rounded-xl text-xs font-heading font-bold uppercase transition-all border text-center cursor-pointer",
+                            editingSgSession.target_age_group === ag.id
+                              ? "bg-amber-400 text-black border-amber-400 shadow-md shadow-amber-400/20"
+                              : "bg-brand-white/5 text-brand-white/70 border-brand-white/10 hover:bg-brand-white/10"
+                          )}
+                        >
+                          {ag.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                   <div>
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
@@ -819,37 +1031,44 @@ export default function AdminPlanningView({
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Discipline
                     </label>
-                    <select
-                      value={editingSgSession.discipline}
-                      onChange={(e) => {
-                        const newDisc = e.target.value;
-                        const newLevel = getStandardLevelForDiscipline(newDisc, editingSgSession.level);
-                        setEditingSgSession({
-                          ...editingSgSession,
-                          discipline: newDisc,
-                          level: newLevel,
-                        });
-                      }}
-                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
-                    >
-                      {SMALL_GROUP_DISCIPLINES.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
+                    {editingSgSession.category === "cours_adulte" ? (
+                      <select
+                        value={editingSgSession.discipline}
+                        onChange={(e) => {
+                          const newDisc = e.target.value;
+                          const newLevel = getStandardLevelForDiscipline(newDisc, editingSgSession.level);
+                          setEditingSgSession({
+                            ...editingSgSession,
+                            discipline: newDisc,
+                            level: newLevel,
+                          });
+                        }}
+                        className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                      >
+                        {SMALL_GROUP_DISCIPLINES.filter((d) => d !== "Lady Striking" && d !== "Kid Boxing").map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="w-full bg-[#0a1120]/70 border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm font-semibold">
+                        {editingSgSession.discipline}
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
                       Niveau / Type
                     </label>
-                    {editingSgSession.discipline === "Lady Striking" ? (
+                    {editingSgSession.category === "lady_striking" ? (
                       <div className="w-full bg-[#0a1120]/70 border border-pink-500/30 rounded-xl px-3 py-2.5 sm:py-3 text-pink-400 text-xs sm:text-sm font-semibold flex items-center justify-between">
                         <span>100% féminin</span>
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-pink-500/20 border border-pink-500/40 text-pink-300">
-                          Verrouillé
-                        </span>
+                      </div>
+                    ) : editingSgSession.category === "kid_boxing" ? (
+                      <div className="w-full bg-[#0a1120]/70 border border-amber-500/30 rounded-xl px-3 py-2.5 sm:py-3 text-amber-400 text-xs sm:text-sm font-semibold flex items-center justify-between">
+                        <span>Tous niveaux</span>
                       </div>
                     ) : (
                       <select

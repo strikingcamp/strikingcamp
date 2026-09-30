@@ -62,7 +62,7 @@ export default async function PlanningPage() {
         .maybeSingle(),
       supabase
         .from("recurring_schedule_templates")
-        .select("day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
+        .select("day_of_week, start_time, end_time, type, category, target_age_group, discipline, level, max_capacity, is_active")
         .eq("is_active", true)
         .eq("type", "small_group")
         .order("day_of_week", { ascending: true })
@@ -76,15 +76,19 @@ export default async function PlanningPage() {
     const { data: templates, error } = templatesRes;
 
     if (!error && templates && templates.length > 0) {
+      const initDays = () => ({
+        Lundi: [],
+        Mardi: [],
+        Mercredi: [],
+        Jeudi: [],
+        Vendredi: [],
+        Samedi: [],
+      });
+
       const dynamicSchedule: Record<PlanningCategory, Record<DayName, ScheduleCourse[]>> = {
-        "Small Group": {
-          Lundi: [],
-          Mardi: [],
-          Mercredi: [],
-          Jeudi: [],
-          Vendredi: [],
-          Samedi: [],
-        },
+        "Cours Adulte": initDays(),
+        "Lady Striking": initDays(),
+        "Kid Boxing": initDays(),
       };
 
       for (const t of templates) {
@@ -95,11 +99,21 @@ export default async function PlanningPage() {
           ? `${t.start_time.slice(0, 5)} → ${t.end_time.slice(0, 5)}`
           : t.start_time.slice(0, 5);
 
-        dynamicSchedule["Small Group"][day].push({
+        const disc = (t.discipline || "").toLowerCase();
+        let cat: PlanningCategory = "Cours Adulte";
+        if (t.category === "lady_striking" || disc.includes("lady")) {
+          cat = "Lady Striking";
+        } else if (t.category === "kid_boxing" || disc.includes("kid")) {
+          cat = "Kid Boxing";
+        }
+
+        dynamicSchedule[cat][day].push({
           name: t.discipline,
           level: t.level,
           time: timeFormatted,
-          places: String(t.max_capacity || 12),
+          places: "",
+          category: t.category,
+          ageGroup: t.target_age_group,
         });
       }
 

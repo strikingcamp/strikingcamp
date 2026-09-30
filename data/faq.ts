@@ -95,7 +95,7 @@ export const allFaqItems: FaqItemDetailed[] = [
     category: "lady",
     question: "Quels sont les créneaux dédiés au Lady Striking dans le planning ?",
     answer:
-      "Le Lady Striking propose plusieurs séances hebdomadaires : le mardi à 18h00 (Fondamentaux), le jeudi à 17h30 (100% féminin) et le samedi à 12h00 (Sparring guidé). Vous pouvez retrouver la grille complète sur la page Planning.",
+      "Le Lady Striking propose 3 séances hebdomadaires : le mardi de 17:00 à 18:00, le jeudi de 17:30 à 18:30 et le samedi de 12:30 à 13:30. Vous pouvez retrouver la grille complète sur la page Planning.",
   },
 
   // 4. Formules & Organisation
@@ -103,31 +103,31 @@ export const allFaqItems: FaqItemDetailed[] = [
     category: "formules",
     question: "Quelles sont les formules d'entraînement proposées ?",
     answer:
-      "Striking Camp propose 4 offres d'entraînement : les séances en Cours Adulte (12 participants maximum), la formule dédiée Lady Striking (50 € / mois, 100% féminin), le Kid Boxing pour enfants de 5 à 13 ans (350 € / saison scolaire), et les Cours Privés (coaching individuel 1-on-1) avec le coach Mahfoud.",
+      "Striking Camp propose plusieurs formules d'adhésion : les Cours Adultes (Essentiel à 499 € / an ou All Access illimité à 890 € / an), la formule dédiée Lady Striking (499 € / an, 100% féminin, 3 séances / sem), le Kid Boxing pour enfants de 5 à 13 ans (349 € / saison, accès aux événements et stages), et les Cours Privés (coaching individuel 1-on-1) avec le coach Mahfoud.",
   },
   {
     category: "formules",
     question: "Quel est le tarif et le fonctionnement de l'offre Lady Striking ?",
     answer:
-      "La formule Lady Striking est proposée au tarif de 50 € / mois. Elle donne un accès exclusif aux créneaux 100 % féminins du club, encadrés par le coach Mahfoud, combinant apprentissage technique, frappe au sac, renforcement musculaire et cardio-combat.",
+      "La formule Lady Striking est proposée au tarif de 499 € / an (frais d'adhésion : 90 €, accès aux événements et stages inclus). Elle donne un accès à 3 séances par semaine sur les créneaux 100 % féminins du club, encadrés par le coach Mahfoud, combinant apprentissage technique, frappe au sac, renforcement musculaire et cardio-combat.",
   },
   {
     category: "formules",
     question: "Comment fonctionnent les cours de Kid Boxing pour enfants ?",
     answer:
-      "Le Kid Boxing accueille les enfants de 5 à 13 ans, répartis en deux groupes d'âge adaptés : 5–8 ans (éveil, motricité et jeux éducatifs) et 9–13 ans (technique, coordination et discipline). L'adhésion est de 350 € pour l'ensemble de la saison scolaire (les stages organisés durant les vacances scolaires ne sont pas inclus dans cette offre).",
+      "Le Kid Boxing accueille les enfants de 5 à 13 ans, répartis en deux groupes d'âge adaptés : 5–8 ans (éveil, motricité et jeux éducatifs) et 9–13 ans (technique, coordination et discipline). L'adhésion est de 349 € pour l'ensemble de la saison (frais d'adhésion : 90 €, accès aux événements et stages inclus).",
   },
   {
     category: "formules",
     question: "Qu'est-ce que le format Cours Adulte ?",
     answer:
-      "Le format Cours Adulte est un entraînement dispensé en effectif réduit (12 personnes max). Cette formule permet au coach d'apporter des corrections précises et d'adapter les consignes à chaque élève, tout en profitant de la dynamique collective.",
+      "Le format Cours Adulte est un entraînement technique et physique de haut niveau dispensé en petit groupe encadré par le coach Mahfoud. Deux formules sont disponibles : Essentiel (3 séances par semaine sur créneaux dédiés) et All Access (accès illimité à tous les créneaux adultes).",
   },
   {
     category: "formules",
     question: "Les formules sont-elles avec ou sans engagement ?",
     answer:
-      "Nous proposons des abonnements mensuels sans engagement ainsi que des formules avec engagement annuel ou pour la saison scolaire. Le détail de chaque formule est consultable directement sur la page Tarifs.",
+      "Les formules Cours Adultes et Lady Striking sont proposées avec engagement annuel, le Kid Boxing pour la saison, et les Cours Privés sont disponibles au choix en formule mensuelle ou annuelle. Le détail complet de chaque offre est consultable sur la page Tarifs.",
   },
 
   // 5. Informations pratiques
