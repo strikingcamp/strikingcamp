@@ -43,7 +43,7 @@ export default function AdminFormulesView({
   >("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
-  >("all");
+  >("active");
 
   // État Modale Édition
   const [editingPlan, setEditingPlan] = useState<AdminPlanItem | null>(null);
@@ -60,14 +60,16 @@ export default function AdminFormulesView({
   const stats = useMemo(() => {
     const total = plans.length;
     const active = plans.filter((p) => p.is_active).length;
-    const smallGroupCount = plans.filter((p) => p.type === "small_group").length;
-    const privateCount = plans.filter((p) => p.type === "private").length;
+    const inactive = plans.filter((p) => !p.is_active).length;
+    const activeSmallGroup = plans.filter((p) => p.is_active && p.type === "small_group").length;
+    const activePrivate = plans.filter((p) => p.is_active && p.type === "private").length;
 
     return {
       total,
       active,
-      smallGroupCount,
-      privateCount,
+      inactive,
+      activeSmallGroup,
+      activePrivate,
     };
   }, [plans]);
 
@@ -337,28 +339,19 @@ export default function AdminFormulesView({
 
       {/* KPI STATS CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        {/* Total Formules */}
-        <div className="bg-[#0f172a]/90 border border-brand-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-white/50">
-              Total Formules
-            </span>
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-heading font-black text-brand-white">
-              {stats.total}
-            </span>
-            <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              Catalogue actif & inactif
-            </span>
-          </div>
-        </div>
-
         {/* Formules Actives */}
-        <div className="bg-[#0f172a]/90 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
+        <div
+          onClick={() => setStatusFilter("active")}
+          className={cn(
+            "bg-[#0f172a]/90 border rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20 cursor-pointer transition-all",
+            statusFilter === "active"
+              ? "border-emerald-500/50 ring-1 ring-emerald-500/30"
+              : "border-emerald-500/20 hover:border-emerald-500/40"
+          )}
+        >
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400/80">
-              Actives
+              Catalogue Actif
             </span>
           </div>
           <div className="mt-3">
@@ -366,12 +359,37 @@ export default function AdminFormulesView({
               {stats.active}
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
-              Proposées aux membres
+              6 formules commercialisées
             </span>
           </div>
         </div>
 
-        {/* Small Group / Cours Adultes */}
+        {/* Formules Archivées */}
+        <div
+          onClick={() => setStatusFilter("inactive")}
+          className={cn(
+            "bg-[#0f172a]/90 border rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20 cursor-pointer transition-all",
+            statusFilter === "inactive"
+              ? "border-brand-white/40 ring-1 ring-brand-white/20"
+              : "border-brand-white/10 hover:border-brand-white/20"
+          )}
+        >
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-white/50">
+              Formules Archivées
+            </span>
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl sm:text-3xl font-heading font-black text-brand-white/70">
+              {stats.inactive}
+            </span>
+            <span className="text-[11px] text-brand-white/50 block mt-0.5">
+              Historique préservé
+            </span>
+          </div>
+        </div>
+
+        {/* Small Group / Cours Adultes Actifs */}
         <div className="bg-[#0f172a]/90 border border-brand-blue/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-blue">
@@ -380,7 +398,7 @@ export default function AdminFormulesView({
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-brand-blue">
-              {stats.smallGroupCount}
+              {stats.activeSmallGroup}
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
               Essentiel, All Access, Lady, Kid
@@ -388,7 +406,7 @@ export default function AdminFormulesView({
           </div>
         </div>
 
-        {/* Cours Privés */}
+        {/* Cours Privés Actifs */}
         <div className="bg-[#0f172a]/90 border border-amber-500/20 rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-black/20">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
@@ -397,7 +415,7 @@ export default function AdminFormulesView({
           </div>
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-heading font-black text-amber-400">
-              {stats.privateCount}
+              {stats.activePrivate}
             </span>
             <span className="text-[11px] text-brand-white/50 block mt-0.5">
               8 séances / mois (Mensuel & Annuel)
@@ -408,46 +426,84 @@ export default function AdminFormulesView({
 
       {/* FILTRES ET RECHERCHE */}
       <div className="bg-[#0f172a]/80 border border-brand-white/10 rounded-2xl p-4 sm:p-5 space-y-4">
-        {/* Catégories Onglets */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setTypeFilter("all")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
-              typeFilter === "all"
-                ? "bg-brand-white text-brand-black shadow-md shadow-brand-white/10"
-                : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white hover:bg-brand-white/10"
-            )}
-          >
-            Toutes ({plans.length})
-          </button>
-          <button
-            onClick={() => setTypeFilter("small_group")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
-              typeFilter === "small_group"
-                ? "bg-brand-blue text-white shadow-md shadow-brand-blue/20"
-                : "bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20"
-            )}
-          >
-            Cours Adultes & Spécifiques ({stats.smallGroupCount})
-          </button>
-          <button
-            onClick={() => setTypeFilter("private")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
-              typeFilter === "private"
-                ? "bg-amber-500 text-brand-black shadow-md shadow-amber-500/20 font-black"
-                : "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
-            )}
-          >
-            Cours Privés ({stats.privateCount})
-          </button>
+        {/* Onglets Statut + Catégories */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setStatusFilter("active")}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
+                statusFilter === "active"
+                  ? "bg-emerald-500 text-brand-black shadow-md shadow-emerald-500/20 font-black"
+                  : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+              )}
+            >
+              Catalogue Actif ({stats.active})
+            </button>
+            <button
+              onClick={() => setStatusFilter("inactive")}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
+                statusFilter === "inactive"
+                  ? "bg-brand-white/30 text-brand-white shadow-md font-black"
+                  : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white hover:bg-brand-white/10"
+              )}
+            >
+              Formules Archivées ({stats.inactive})
+            </button>
+            <button
+              onClick={() => setStatusFilter("all")}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
+                statusFilter === "all"
+                  ? "bg-brand-white text-brand-black shadow-md shadow-brand-white/10 font-black"
+                  : "bg-brand-white/5 text-brand-white/40 hover:text-brand-white hover:bg-brand-white/10"
+              )}
+            >
+              Toutes ({stats.total})
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              onClick={() => setTypeFilter("all")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer",
+                typeFilter === "all"
+                  ? "bg-brand-white/20 text-brand-white"
+                  : "text-brand-white/40 hover:text-brand-white"
+              )}
+            >
+              Tous types
+            </button>
+            <button
+              onClick={() => setTypeFilter("small_group")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer",
+                typeFilter === "small_group"
+                  ? "bg-brand-blue/20 text-brand-blue"
+                  : "text-brand-white/40 hover:text-brand-blue"
+              )}
+            >
+              Adultes & Spécifiques
+            </button>
+            <button
+              onClick={() => setTypeFilter("private")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer",
+                typeFilter === "private"
+                  ? "bg-amber-500/20 text-amber-400"
+                  : "text-brand-white/40 hover:text-amber-400"
+              )}
+            >
+              Privés
+            </button>
+          </div>
         </div>
 
-        {/* Barre de recherche et statut */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-brand-white/5">
-          <div className="relative flex-1">
+        {/* Barre de recherche */}
+        <div className="pt-2 border-t border-brand-white/5">
+          <div className="relative">
             <Search
               size={15}
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-white/40"
@@ -467,20 +523,6 @@ export default function AdminFormulesView({
                 <X size={14} />
               </button>
             )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as "all" | "active" | "inactive")
-              }
-              className="bg-[#020617] border border-brand-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-brand-white focus:border-brand-blue outline-none cursor-pointer"
-            >
-              <option value="all">Tous les statuts</option>
-              <option value="active">Actives uniquement</option>
-              <option value="inactive">Inactives uniquement</option>
-            </select>
           </div>
         </div>
       </div>

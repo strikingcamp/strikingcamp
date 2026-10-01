@@ -12,11 +12,11 @@
 
 BEGIN;
 
--- 1. Désactivation des anciennes formules non privées pour préserver les clés étrangères
+-- 1. Désactivation des anciennes formules pour préserver les clés étrangères et abonnements historiques
 UPDATE public.plans
 SET is_active = FALSE,
     updated_at = NOW()
-WHERE code IN ('sg_monthly', 'sg_annual', 'col_annual')
+WHERE code IN ('sg_monthly', 'sg_annual', 'col_annual', 'priv_monthly_12', 'priv_annual_12')
    OR (type = 'small_group' AND code NOT IN ('adult_essential', 'adult_all_access', 'lady_striking_annual', 'kid_boxing_season'));
 
 -- 2. Suppression de l'ancien plan collectif mensuel s'il n'a aucune subscription rattachée
