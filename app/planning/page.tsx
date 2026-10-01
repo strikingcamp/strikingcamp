@@ -7,6 +7,7 @@ import {
   DAYS_ORDER,
   publicScheduleData,
 } from "@/data/planning";
+import { getDisciplinePlanningCategory, getTargetAgeGroup } from "@/lib/access-control";
 
 export const metadata = {
   title: "Planning des Cours de Boxe et Sports de Combat à Marseille (13010)",
@@ -62,7 +63,7 @@ export default async function PlanningPage() {
         .maybeSingle(),
       supabase
         .from("recurring_schedule_templates")
-        .select("day_of_week, start_time, end_time, type, category, target_age_group, discipline, level, max_capacity, is_active")
+        .select("id, day_of_week, start_time, end_time, type, discipline, level, max_capacity, is_active")
         .eq("is_active", true)
         .eq("type", "small_group")
         .order("day_of_week", { ascending: true })
@@ -99,21 +100,23 @@ export default async function PlanningPage() {
           ? `${t.start_time.slice(0, 5)} → ${t.end_time.slice(0, 5)}`
           : t.start_time.slice(0, 5);
 
-        const disc = (t.discipline || "").toLowerCase();
-        let cat: PlanningCategory = "Cours Adulte";
-        if (t.category === "lady_striking" || disc.includes("lady")) {
-          cat = "Lady Striking";
-        } else if (t.category === "kid_boxing" || disc.includes("kid")) {
-          cat = "Kid Boxing";
-        }
+        const categoryKey = getDisciplinePlanningCategory(t.discipline);
+        const cat: PlanningCategory =
+          categoryKey === "lady_striking"
+            ? "Lady Striking"
+            : categoryKey === "kid_boxing"
+            ? "Kid Boxing"
+            : "Cours Adulte";
+
+        const ageGroup = getTargetAgeGroup(t.level);
 
         dynamicSchedule[cat][day].push({
           name: t.discipline,
           level: t.level,
           time: timeFormatted,
           places: "",
-          category: t.category,
-          ageGroup: t.target_age_group,
+          category: categoryKey,
+          ageGroup,
         });
       }
 

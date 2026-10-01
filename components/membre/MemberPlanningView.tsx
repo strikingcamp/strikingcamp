@@ -19,6 +19,7 @@ import { useMember, type BookingSlot } from "./MemberContext";
 import type { ClassSession } from "@/lib/supabase/small-group";
 import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
 import { getLevelBadgeClasses } from "@/data/planning";
+import { getDisciplinePlanningCategory, getTargetAgeGroup } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -238,8 +239,8 @@ function generateSlotsFromData(
           classSessionId: s.id,
           bookingId: userBookingMatch?.id,
           category,
-          planningCategory: (s.category as "cours_adulte" | "lady_striking" | "kid_boxing") || (s.discipline === "Lady Striking" ? "lady_striking" : s.discipline === "Kid Boxing" ? "kid_boxing" : "cours_adulte"),
-          targetAgeGroup: (s.target_age_group as "all" | "5_8" | "9_13") || "all",
+          planningCategory: getDisciplinePlanningCategory(s.discipline, s.category),
+          targetAgeGroup: getTargetAgeGroup(s.level, s.target_age_group),
           day: matchedDay,
           dateStr: dStr,
           startTime,

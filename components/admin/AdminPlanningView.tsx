@@ -39,6 +39,7 @@ import {
   type SmallGroupLevel,
   type SmallGroupDiscipline,
 } from "@/data/planning";
+import { getDisciplinePlanningCategory, getTargetAgeGroup } from "@/lib/access-control";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TYPES ET DÉFINITIONS
@@ -87,8 +88,8 @@ export default function AdminPlanningView({
         level: t.level,
         maxCapacity: t.max_capacity,
         isActive: t.is_active,
-        category: (t.category as "cours_adulte" | "lady_striking" | "kid_boxing") || (t.discipline === "Lady Striking" ? "lady_striking" : t.discipline === "Kid Boxing" ? "kid_boxing" : "cours_adulte"),
-        target_age_group: (t.target_age_group as "all" | "5_8" | "9_13") || "all",
+        category: getDisciplinePlanningCategory(t.discipline, t.category),
+        target_age_group: getTargetAgeGroup(t.level, t.target_age_group),
       }));
     }
     return [];

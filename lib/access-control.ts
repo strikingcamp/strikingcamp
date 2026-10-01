@@ -15,6 +15,44 @@
 export type PlanningCategory = "cours_adulte" | "lady_striking" | "kid_boxing";
 export type TargetAgeGroup = "all" | "5_8" | "9_13";
 
+/**
+ * Catégorisation unifiée des créneaux dans toute l'application :
+ * - "Lady Striking" -> "lady_striking"
+ * - "Kid Boxing" -> "kid_boxing"
+ * - Autres disciplines -> "cours_adulte"
+ */
+export function getDisciplinePlanningCategory(
+  discipline?: string | null,
+  explicitCategory?: string | null
+): "cours_adulte" | "lady_striking" | "kid_boxing" {
+  if (explicitCategory === "lady_striking" || explicitCategory === "kid_boxing" || explicitCategory === "cours_adulte") {
+    return explicitCategory;
+  }
+  const disc = (discipline || "").toLowerCase().trim();
+  if (disc.includes("lady")) return "lady_striking";
+  if (disc.includes("kid")) return "kid_boxing";
+  return "cours_adulte";
+}
+
+/**
+ * Déduction unifiée du groupe d'âge :
+ * - 5–8 ans -> "5_8"
+ * - 9–13 ans -> "9_13"
+ * - Par défaut -> "all"
+ */
+export function getTargetAgeGroup(
+  level?: string | null,
+  explicitAgeGroup?: string | null
+): "all" | "5_8" | "9_13" {
+  if (explicitAgeGroup === "5_8" || explicitAgeGroup === "9_13" || explicitAgeGroup === "all") {
+    return explicitAgeGroup;
+  }
+  const lvl = (level || "").toLowerCase();
+  if (lvl.includes("5-8") || lvl.includes("5_8") || lvl.includes("5–8")) return "5_8";
+  if (lvl.includes("9-13") || lvl.includes("9_13") || lvl.includes("9–13")) return "9_13";
+  return "all";
+}
+
 export interface PlanAccessRights {
   allowsPrivate: boolean;
   allowsSmallGroup: boolean;
