@@ -469,7 +469,7 @@ export default function AdminPlanningView({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0b1b33]/40 border border-[#00d8ff]/20 rounded-2xl p-4">
           <div className="text-xs text-[#00d8ff]">
             <span>
-              <strong>Planning Collectif (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité par défaut : <strong>12 max</strong>.
+              <strong>Planning Collectif (Semaine type) :</strong> Modèle dynamique stocké dans Supabase · Capacité maximale <strong>configurable par créneau</strong>.
             </span>
           </div>
 
@@ -577,8 +577,8 @@ export default function AdminPlanningView({
                             {session.discipline === "Lady Striking" ? "100% féminin" : session.level}
                           </span>
 
-                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
-                            {session.maxCapacity} places max
+                          <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/80">
+                            Capacité : {session.maxCapacity} places
                           </span>
                         </div>
 
@@ -811,15 +811,20 @@ export default function AdminPlanningView({
 
                   <div>
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Capacité maximale
+                      Capacité maximale (places)
                     </label>
                     <input
                       type="number"
                       min={1}
-                      max={50}
-                      value={sgFormCapacity}
-                      onChange={(e) => setSgFormCapacity(Number(e.target.value))}
+                      max={100}
+                      step={1}
+                      value={sgFormCapacity || ""}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setSgFormCapacity(isNaN(val) ? 1 : Math.max(1, Math.min(100, val)));
+                      }}
                       className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                      required
                     />
                   </div>
 
@@ -1097,20 +1102,23 @@ export default function AdminPlanningView({
 
                   <div>
                     <label className="text-[11px] sm:text-xs text-brand-white/60 uppercase font-bold block mb-1">
-                      Capacité maximale
+                      Capacité maximale (places)
                     </label>
                     <input
                       type="number"
                       min={1}
-                      max={50}
-                      value={editingSgSession.maxCapacity}
-                      onChange={(e) =>
+                      max={100}
+                      step={1}
+                      value={editingSgSession.maxCapacity || ""}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
                         setEditingSgSession({
                           ...editingSgSession,
-                          maxCapacity: Number(e.target.value),
-                        })
-                      }
+                          maxCapacity: isNaN(val) ? 1 : Math.max(1, Math.min(100, val)),
+                        });
+                      }}
                       className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl px-3 py-2.5 sm:py-3 text-brand-white text-xs sm:text-sm focus:border-[#00d8ff]/50 focus:outline-none transition-colors"
+                      required
                     />
                   </div>
 

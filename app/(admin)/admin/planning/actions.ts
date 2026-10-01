@@ -311,6 +311,9 @@ export async function createRecurringTemplateServerAction(payload: {
       else if (effectiveLevel.includes("9-13") || effectiveLevel.includes("9_13")) computedAgeGroup = "9_13";
     }
 
+    const rawCap = Number(payload.max_capacity);
+    const validatedCapacity = (!isNaN(rawCap) && rawCap >= 1 && Number.isInteger(rawCap)) ? rawCap : 12;
+
     // 1. Insertion dans recurring_schedule_templates (avec repli résilient si colonnes category non migrées)
     const insertData: Record<string, any> = {
       day_of_week: payload.day_of_week,
@@ -321,7 +324,7 @@ export async function createRecurringTemplateServerAction(payload: {
       target_age_group: computedAgeGroup,
       discipline: effectiveDiscipline,
       level: effectiveLevel,
-      max_capacity: payload.max_capacity,
+      max_capacity: validatedCapacity,
       is_active: true,
       updated_at: new Date().toISOString(),
     };
@@ -464,6 +467,17 @@ export async function updateRecurringTemplateServerAction(
       )
     );
 
+    if (normalizedPayload.max_capacity !== undefined) {
+      const cap = Number(normalizedPayload.max_capacity);
+      if (isNaN(cap) || cap < 1 || !Number.isInteger(cap)) {
+        return {
+          success: false,
+          error: "La capacité maximale doit être un entier positif supérieur ou égal à 1.",
+        };
+      }
+      normalizedPayload.max_capacity = cap;
+    }
+
     // 2. Vérification des réservations (membres ET cours d'essai) sur les séances de la semaine courante et futures
     const currentWeekMondayIso = `${getCurrentWeekMondayIso()}T00:00:00.000Z`;
     const { data: futureSessions } = await adminSupabase
@@ -474,25 +488,54 @@ export async function updateRecurringTemplateServerAction(
 
     const futureSessionIds = (futureSessions || []).map((s) => s.id);
     let totalBookings = 0;
+    const bookedCountPerSession = new Map<string, number>();
 
     if (futureSessionIds.length > 0) {
-      const { count: memberBookingsCount } = await adminSupabase
+      const { data: memberBookingsData } = await adminSupabase
         .from("bookings")
-        .select("id", { count: "exact", head: true })
+        .select("class_session_id")
         .in("class_session_id", futureSessionIds)
         .eq("status", "confirmed");
 
-      const { count: trialBookingsCount } = await adminSupabase
+      const { data: trialBookingsData } = await adminSupabase
         .from("trial_bookings")
-        .select("id", { count: "exact", head: true })
+        .select("class_session_id")
         .in("class_session_id", futureSessionIds)
         .eq("status", "confirmed");
 
-      totalBookings = (memberBookingsCount || 0) + (trialBookingsCount || 0);
+      for (const b of (memberBookingsData || [])) {
+        if (b.class_session_id) {
+          bookedCountPerSession.set(b.class_session_id, (bookedCountPerSession.get(b.class_session_id) || 0) + 1);
+        }
+      }
+      for (const tb of (trialBookingsData || [])) {
+        if (tb.class_session_id) {
+          bookedCountPerSession.set(tb.class_session_id, (bookedCountPerSession.get(tb.class_session_id) || 0) + 1);
+        }
+      }
+
+      totalBookings = (memberBookingsData?.length || 0) + (trialBookingsData?.length || 0);
     }
 
-    // Si des réservations existent et que l'administrateur n'a pas encore explicitement forcé l'action
-    if (totalBookings > 0 && !forceCascade) {
+    // SÉCURITÉ CAPACITÉ : Refuser si l'admin réduit la capacité sous le nombre de personnes déjà inscrites
+    if (normalizedPayload.max_capacity !== undefined && futureSessionIds.length > 0) {
+      let maxBookedOnAnySession = 0;
+      for (const count of bookedCountPerSession.values()) {
+        if (count > maxBookedOnAnySession) {
+          maxBookedOnAnySession = count;
+        }
+      }
+
+      if (normalizedPayload.max_capacity < maxBookedOnAnySession) {
+        return {
+          success: false,
+          error: `Impossible de réduire la capacité à ${normalizedPayload.max_capacity} places : ${maxBookedOnAnySession} personnes sont déjà inscrites.`,
+        };
+      }
+    }
+
+    // Si des réservations existent et que l'administrateur modifie jour/horaire/discipline sans avoir forcé l'action
+    if (isScheduleOrDisciplineChanged && totalBookings > 0 && !forceCascade) {
       return {
         success: false,
         hasBookings: true,
@@ -504,22 +547,7 @@ export async function updateRecurringTemplateServerAction(
     // Identifier les séances qui ONT des réservations (strictement préservées) et celles NON réservées
     let unbookedSessionIds: string[] = [];
     if (futureSessionIds.length > 0) {
-      const { data: bookedMemberRows } = await adminSupabase
-        .from("bookings")
-        .select("class_session_id")
-        .in("class_session_id", futureSessionIds)
-        .eq("status", "confirmed");
-
-      const { data: bookedTrialRows } = await adminSupabase
-        .from("trial_bookings")
-        .select("class_session_id")
-        .in("class_session_id", futureSessionIds)
-        .eq("status", "confirmed");
-
-      const bookedIdsSet = new Set([
-        ...(bookedMemberRows || []).map((b) => b.class_session_id),
-        ...(bookedTrialRows || []).map((b) => b.class_session_id),
-      ]);
+      const bookedIdsSet = new Set(bookedCountPerSession.keys());
       unbookedSessionIds = futureSessionIds.filter((id) => !bookedIdsSet.has(id));
     }
 
@@ -583,18 +611,18 @@ export async function updateRecurringTemplateServerAction(
       }
     } else {
       // Cas B : Changement simple (niveau, capacité, is_active)
-      // -> Mise à jour in situ des futures séances non réservées
-      if (unbookedSessionIds.length > 0) {
+      // -> Mise à jour de toutes les séances futures (ouvre les nouvelles places ou ajuste le niveau)
+      if (futureSessionIds.length > 0) {
         const sessionPatch: any = {};
         if (normalizedPayload.level) sessionPatch.level = normalizedPayload.level;
-        if (normalizedPayload.max_capacity) sessionPatch.max_capacity = normalizedPayload.max_capacity;
+        if (normalizedPayload.max_capacity !== undefined) sessionPatch.max_capacity = normalizedPayload.max_capacity;
         if (typeof normalizedPayload.is_active === "boolean") sessionPatch.is_active = normalizedPayload.is_active;
 
         if (Object.keys(sessionPatch).length > 0) {
           await adminSupabase
             .from("class_sessions")
             .update(sessionPatch)
-            .in("id", unbookedSessionIds);
+            .in("id", futureSessionIds);
         }
       }
 
@@ -781,7 +809,57 @@ export async function updateSingleDatedSessionServerAction(
     await verifyAdminAuth();
     const adminSupabase = createAdminClient();
 
+    // 1. Récupération de la séance
+    const { data: session, error: fetchErr } = await adminSupabase
+      .from("class_sessions")
+      .select("id, starts_at, ends_at, max_capacity, is_active")
+      .eq("id", sessionId)
+      .single();
+
+    if (fetchErr || !session) {
+      return { success: false, error: "Séance introuvable." };
+    }
+
+    const now = new Date();
+    if (session.ends_at && new Date(session.ends_at) <= now) {
+      return { success: false, error: "Impossible de modifier une séance passée ou terminée." };
+    }
+
     const patch: Record<string, any> = { ...payload };
+
+    if (patch.max_capacity !== undefined) {
+      const cap = Number(patch.max_capacity);
+      if (isNaN(cap) || cap < 1 || !Number.isInteger(cap)) {
+        return {
+          success: false,
+          error: "La capacité maximale doit être un entier positif supérieur ou égal à 1.",
+        };
+      }
+      patch.max_capacity = cap;
+
+      // Décompte des réservations confirmées existantes
+      const { count: memberCount } = await adminSupabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("class_session_id", sessionId)
+        .eq("status", "confirmed");
+
+      const { count: trialCount } = await adminSupabase
+        .from("trial_bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("class_session_id", sessionId)
+        .eq("status", "confirmed");
+
+      const totalBooked = (memberCount || 0) + (trialCount || 0);
+
+      if (cap < totalBooked) {
+        return {
+          success: false,
+          error: `Impossible de réduire la capacité à ${cap} places : ${totalBooked} personne(s) sont déjà inscrite(s).`,
+        };
+      }
+    }
+
     if (patch.discipline === "Lady Striking") {
       patch.level = "100% féminin";
     } else if (patch.discipline && patch.discipline !== "Lady Striking" && patch.level === "100% féminin") {
