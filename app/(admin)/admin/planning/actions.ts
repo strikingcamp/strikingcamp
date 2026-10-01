@@ -218,22 +218,11 @@ async function syncClassSessionsForTemplate(
         max_capacity: template.max_capacity,
         is_active: template.is_active,
       };
-      if (template.category) sessionPayload.category = template.category;
-      if (template.target_age_group) sessionPayload.target_age_group = template.target_age_group;
 
-      const updateRes = await adminSupabase
+      await adminSupabase
         .from("class_sessions")
         .update(sessionPayload)
         .eq("id", existing.id);
-
-      if (updateRes.error && updateRes.error.code === "42703") {
-        delete sessionPayload.category;
-        delete sessionPayload.target_age_group;
-        await adminSupabase
-          .from("class_sessions")
-          .update(sessionPayload)
-          .eq("id", existing.id);
-      }
     } else if (template.is_active) {
       const insertPayload: Record<string, any> = {
         template_id: template.id,
@@ -245,20 +234,10 @@ async function syncClassSessionsForTemplate(
         max_capacity: template.max_capacity,
         is_active: true,
       };
-      if (template.category) insertPayload.category = template.category;
-      if (template.target_age_group) insertPayload.target_age_group = template.target_age_group;
 
-      const insertRes = await adminSupabase
+      await adminSupabase
         .from("class_sessions")
         .insert(insertPayload);
-
-      if (insertRes.error && insertRes.error.code === "42703") {
-        delete insertPayload.category;
-        delete insertPayload.target_age_group;
-        await adminSupabase
-          .from("class_sessions")
-          .insert(insertPayload);
-      }
     }
   }
 }
@@ -314,14 +293,12 @@ export async function createRecurringTemplateServerAction(payload: {
     const rawCap = Number(payload.max_capacity);
     const validatedCapacity = (!isNaN(rawCap) && rawCap >= 1 && Number.isInteger(rawCap)) ? rawCap : 12;
 
-    // 1. Insertion dans recurring_schedule_templates (avec repli résilient si colonnes category non migrées)
+    // 1. Insertion dans recurring_schedule_templates
     const insertData: Record<string, any> = {
       day_of_week: payload.day_of_week,
       start_time: startTimeFormatted,
       end_time: endTimeFormatted,
       type: payload.type,
-      category: computedCategory,
-      target_age_group: computedAgeGroup,
       discipline: effectiveDiscipline,
       level: effectiveLevel,
       max_capacity: validatedCapacity,
@@ -329,23 +306,11 @@ export async function createRecurringTemplateServerAction(payload: {
       updated_at: new Date().toISOString(),
     };
 
-    let { data: newTmpl, error: insertError } = await adminSupabase
+    const { data: newTmpl, error: insertError } = await adminSupabase
       .from("recurring_schedule_templates")
       .insert(insertData)
       .select("*")
       .single();
-
-    if (insertError && insertError.code === "42703") {
-      delete insertData.category;
-      delete insertData.target_age_group;
-      const retry = await adminSupabase
-        .from("recurring_schedule_templates")
-        .insert(insertData)
-        .select("*")
-        .single();
-      newTmpl = retry.data;
-      insertError = retry.error;
-    }
 
     if (insertError || !newTmpl) {
       console.error(`[AdminPlanning:Create ERROR] Step: insert_template | Code: ${insertError?.code} | Message: ${insertError?.message}`);
@@ -553,29 +518,23 @@ export async function updateRecurringTemplateServerAction(
 
     // 3. Mise à jour du template
     const updatePayload: Record<string, any> = {
-      ...normalizedPayload,
       updated_at: new Date().toISOString(),
     };
+    if (normalizedPayload.day_of_week !== undefined) updatePayload.day_of_week = normalizedPayload.day_of_week;
+    if (normalizedPayload.start_time !== undefined) updatePayload.start_time = normalizedPayload.start_time;
+    if (normalizedPayload.end_time !== undefined) updatePayload.end_time = normalizedPayload.end_time;
+    if (normalizedPayload.type !== undefined) updatePayload.type = normalizedPayload.type;
+    if (normalizedPayload.discipline !== undefined) updatePayload.discipline = normalizedPayload.discipline;
+    if (normalizedPayload.level !== undefined) updatePayload.level = normalizedPayload.level;
+    if (normalizedPayload.max_capacity !== undefined) updatePayload.max_capacity = normalizedPayload.max_capacity;
+    if (normalizedPayload.is_active !== undefined) updatePayload.is_active = normalizedPayload.is_active;
 
-    let { data: updatedTmpl, error: tmplErr } = await adminSupabase
+    const { data: updatedTmpl, error: tmplErr } = await adminSupabase
       .from("recurring_schedule_templates")
       .update(updatePayload)
       .eq("id", templateId)
       .select("*")
       .single();
-
-    if (tmplErr && tmplErr.code === "42703") {
-      delete updatePayload.category;
-      delete updatePayload.target_age_group;
-      const retry = await adminSupabase
-        .from("recurring_schedule_templates")
-        .update(updatePayload)
-        .eq("id", templateId)
-        .select("*")
-        .single();
-      updatedTmpl = retry.data;
-      tmplErr = retry.error;
-    }
 
     if (tmplErr) {
       console.error(`[AdminPlanning:Update ERROR] Step: update_template | Code: ${tmplErr.code} | Message: ${tmplErr.message}`);
@@ -825,10 +784,15 @@ export async function updateSingleDatedSessionServerAction(
       return { success: false, error: "Impossible de modifier une séance passée ou terminée." };
     }
 
-    const patch: Record<string, any> = { ...payload };
+    const patch: Record<string, any> = {};
+    if (payload.discipline !== undefined) patch.discipline = payload.discipline;
+    if (payload.level !== undefined) patch.level = payload.level;
+    if (payload.starts_at !== undefined) patch.starts_at = payload.starts_at;
+    if (payload.ends_at !== undefined) patch.ends_at = payload.ends_at;
+    if (payload.is_active !== undefined) patch.is_active = payload.is_active;
 
-    if (patch.max_capacity !== undefined) {
-      const cap = Number(patch.max_capacity);
+    if (payload.max_capacity !== undefined) {
+      const cap = Number(payload.max_capacity);
       if (isNaN(cap) || cap < 1 || !Number.isInteger(cap)) {
         return {
           success: false,
@@ -866,25 +830,12 @@ export async function updateSingleDatedSessionServerAction(
       patch.level = "Fondamentaux";
     }
 
-    let { data: updatedSession, error: updateError } = await adminSupabase
+    const { data: updatedSession, error: updateError } = await adminSupabase
       .from("class_sessions")
       .update(patch)
       .eq("id", sessionId)
       .select("*")
       .single();
-
-    if (updateError && updateError.code === "42703") {
-      delete patch.category;
-      delete patch.target_age_group;
-      const retry = await adminSupabase
-        .from("class_sessions")
-        .update(patch)
-        .eq("id", sessionId)
-        .select("*")
-        .single();
-      updatedSession = retry.data;
-      updateError = retry.error;
-    }
 
     if (updateError) {
       return { success: false, error: updateError.message };

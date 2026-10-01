@@ -200,7 +200,7 @@ export async function getMemberUpcomingBookings(
   if (sessionIds.length > 0) {
     const { data: sessions, error: sessionsError } = await supabase
       .from("class_sessions")
-      .select("id, template_id, discipline, type, category, target_age_group, level, starts_at, ends_at, max_capacity, is_active")
+      .select("id, template_id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
       .in("id", sessionIds);
 
     if (sessionsError) {
@@ -210,7 +210,7 @@ export async function getMemberUpcomingBookings(
       });
     } else if (sessions) {
       for (const s of sessions) {
-        sessionsMap.set(s.id, s);
+        sessionsMap.set(s.id, s as ClassSession);
       }
     }
   }
