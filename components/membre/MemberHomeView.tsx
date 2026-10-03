@@ -90,9 +90,9 @@ export default function MemberHomeView({
   const getCategoryBadgeClass = (cat: ChallengeCategory) => {
     switch (cat) {
       case "Technique":
-        return "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30";
+        return "bg-brand-blue/15 text-brand-blue border-brand-blue/30";
       case "Physique":
-        return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+        return "bg-brand-white/10 text-brand-white border-brand-white/20";
       case "Cardio":
         return "bg-rose-500/15 text-rose-400 border-rose-500/30";
       case "Nutrition":
@@ -130,7 +130,7 @@ export default function MemberHomeView({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-[#172033] to-[#0f172a] border border-brand-blue/30 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
+          className="bg-gradient-to-r from-[#172033] to-[#0c1322] border border-brand-blue/30 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
         >
           <div className="space-y-1">
             <span className="text-[10px] font-heading font-black text-brand-blue uppercase tracking-widest px-2.5 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 inline-block">
@@ -161,10 +161,10 @@ export default function MemberHomeView({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-[#0b1b33] to-[#0f172a] border border-[#00d8ff]/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
+          className="bg-gradient-to-r from-[#0b1b33] to-[#0c1322] border border-brand-blue/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
         >
           <div>
-            <p className="text-xs uppercase tracking-wider font-bold text-[#00d8ff]">
+            <p className="text-xs uppercase tracking-wider font-bold text-brand-blue">
               Formule Cours Privés active
             </p>
             <h3 className="text-sm font-heading font-black uppercase text-brand-white">
@@ -172,7 +172,7 @@ export default function MemberHomeView({
             </h3>
             <p className="text-xs text-brand-white/60">
               Il vous reste{" "}
-              <span className="font-bold text-[#00d8ff]">
+              <span className="font-bold text-brand-blue">
                 {quotaRemaining} sur {quotaTotal}
               </span>{" "}
               séances privées ce mois-ci.
@@ -181,7 +181,7 @@ export default function MemberHomeView({
 
           <Link
             href="/membre/planning"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00d8ff] hover:bg-brand-white text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#00d8ff]/20 shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-brand-blue/20 shrink-0"
           >
             Réserver un cours privé
             <ArrowRight size={14} />
@@ -199,7 +199,7 @@ export default function MemberHomeView({
           </h2>
           <Link
             href="/membre/defis"
-            className="text-xs font-heading font-bold uppercase tracking-wider text-[#00d8ff] hover:text-brand-white flex items-center gap-1 transition-colors"
+            className="text-xs font-heading font-bold uppercase tracking-wider text-brand-blue hover:text-brand-white flex items-center gap-1 transition-colors"
           >
             Voir tous les défis ({challenges.length})
             <ArrowRight size={13} />
@@ -208,13 +208,13 @@ export default function MemberHomeView({
 
         {/* Chargement ou Affichage du Défi mis en avant */}
         {isLoadingChallenges ? (
-          <div className="bg-[#0f172a]/60 border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
-            <RefreshCw size={22} className="mx-auto text-[#00d8ff] animate-spin" />
+          <div className="bg-[#0c1322] border border-brand-white/10 rounded-2xl p-8 text-center space-y-2">
+            <RefreshCw size={22} className="mx-auto text-brand-blue animate-spin" />
             <p className="text-xs font-heading uppercase text-brand-white/50">Chargement de vos défis...</p>
           </div>
         ) : !featuredChallenge ? (
           /* Aucun défi publié */
-          <div className="bg-gradient-to-br from-[#0c182c] via-[#0f172a] to-[#131f37] border border-[#00d8ff]/20 rounded-2xl p-6 shadow-xl relative overflow-hidden space-y-4 text-center">
+          <div className="bg-[#0c1322] border border-brand-blue/20 rounded-2xl p-6 shadow-xl relative overflow-hidden space-y-4 text-center">
             <div className="space-y-1">
               <h3 className="text-base font-heading font-black uppercase text-brand-white">
                 Nouveaux défis en préparation
@@ -225,7 +225,7 @@ export default function MemberHomeView({
             </div>
             <Link
               href="/membre/defis"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#00d8ff]/15 hover:bg-[#00d8ff] text-[#00d8ff] hover:text-black border border-[#00d8ff]/30 rounded-xl text-xs font-heading font-bold uppercase transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue/15 hover:bg-brand-blue text-brand-blue hover:text-brand-black border border-brand-blue/30 rounded-xl text-xs font-heading font-bold uppercase transition-all"
             >
               Accéder à l&apos;arène des défis
               <ArrowRight size={14} />
@@ -233,8 +233,8 @@ export default function MemberHomeView({
           </div>
         ) : (
           /* Carte Défi Principal */
-          <div className="bg-gradient-to-br from-[#0c182c] via-[#0f172a] to-[#131f37] border border-[#00d8ff]/30 rounded-2xl p-6 shadow-xl relative overflow-hidden space-y-5">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#00d8ff]/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="bg-gradient-to-br from-[#0c182c] via-[#0c1322] to-[#131f37] border border-brand-blue/30 rounded-2xl p-6 shadow-xl relative overflow-hidden space-y-5">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue/5 rounded-full blur-3xl pointer-events-none" />
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-2 max-w-xl">
@@ -253,7 +253,7 @@ export default function MemberHomeView({
                   </span>
 
                   {featuredChallenge.progressStatus === "in_progress" ? (
-                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/40">
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-brand-blue/20 text-brand-blue border border-brand-blue/40">
                       En cours — {featuredChallenge.progressPercentage}%
                     </span>
                   ) : featuredChallenge.progressStatus === "completed" ? (
@@ -262,7 +262,7 @@ export default function MemberHomeView({
                       Terminé à 100%
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                    <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
                       Nouveau défi disponible
                     </span>
                   )}
@@ -283,10 +283,10 @@ export default function MemberHomeView({
                   className={cn(
                     "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-heading font-black text-xs uppercase tracking-wider transition-all shadow-lg cursor-pointer shrink-0",
                     featuredChallenge.progressStatus === "in_progress"
-                      ? "bg-[#00d8ff] hover:bg-brand-white text-black shadow-[#00d8ff]/25"
+                      ? "bg-brand-blue hover:bg-brand-white text-brand-black shadow-brand-blue/25"
                       : featuredChallenge.progressStatus === "completed"
-                      ? "bg-brand-white/10 hover:bg-[#00d8ff] text-brand-white hover:text-black border border-brand-white/20"
-                      : "bg-[#00d8ff] hover:bg-brand-white text-black shadow-[#00d8ff]/25"
+                      ? "bg-brand-white/10 hover:bg-brand-blue text-brand-white hover:text-brand-black border border-brand-white/20"
+                      : "bg-brand-blue hover:bg-brand-white text-brand-black shadow-brand-blue/25"
                   )}
                 >
                   {featuredChallenge.progressStatus === "in_progress" ? (
@@ -315,7 +315,7 @@ export default function MemberHomeView({
                 <span className="text-brand-white/60">
                   {featuredChallenge.completedStepsCount} / {featuredChallenge.stepsCount} {featuredChallenge.stepsCount > 1 ? "étapes validées" : "étape validée"}
                 </span>
-                <span className="text-[#00d8ff] font-heading font-bold">
+                <span className="text-brand-blue font-heading font-bold">
                   +{featuredChallenge.points_xp} XP
                 </span>
               </div>
@@ -327,7 +327,7 @@ export default function MemberHomeView({
                     "h-full rounded-full transition-all",
                     featuredChallenge.progressStatus === "completed"
                       ? "bg-emerald-400"
-                      : "bg-gradient-to-r from-[#00d8ff] to-cyan-300"
+                      : "bg-gradient-to-r from-brand-blue to-cyan-300"
                   )}
                 />
               </div>
@@ -345,7 +345,7 @@ export default function MemberHomeView({
             Mes prochaines réservations
           </h2>
           {upcomingBookings.length > 0 && (
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-blue/20 text-brand-blue border border-brand-blue/30">
               {upcomingBookings.length} {upcomingBookings.length === 1 ? "séance" : "séances"}
             </span>
           )}
@@ -356,7 +356,7 @@ export default function MemberHomeView({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-8 text-center space-y-4"
+            className="bg-[#0c1322] border border-brand-white/10 border-dashed rounded-2xl p-8 text-center space-y-4"
           >
             <div className="w-12 h-12 rounded-full bg-brand-white/5 text-brand-white/30 flex items-center justify-center mx-auto">
               <Calendar size={24} />
@@ -371,7 +371,7 @@ export default function MemberHomeView({
             </div>
             <Link
               href="/membre/planning"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#00d8ff] text-black font-heading font-black text-xs uppercase tracking-wider rounded-xl hover:bg-brand-white transition-colors cursor-pointer shadow-lg shadow-[#00d8ff]/20"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-blue text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl hover:bg-brand-white transition-colors cursor-pointer shadow-lg shadow-brand-blue/20"
             >
               Réserver une séance
               <ArrowRight size={14} />
@@ -385,14 +385,14 @@ export default function MemberHomeView({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="bg-[#0f172a] border border-brand-white/10 hover:border-[#00d8ff]/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all shadow-lg"
+                className="bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all shadow-lg"
               >
                 <div className="flex items-start sm:items-center gap-4">
                   <div
                     className={cn(
                       "w-11 h-11 rounded-xl flex items-center justify-center font-heading font-black text-xs uppercase shrink-0 border",
                       slot.sessionType === "Cours Privé"
-                        ? "bg-[#00d8ff]/15 text-[#00d8ff] border-[#00d8ff]/30"
+                        ? "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
                         : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                     )}
                   >
@@ -411,11 +411,11 @@ export default function MemberHomeView({
 
                     <div className="flex items-center gap-3 text-xs text-brand-white/60">
                       <span className="flex items-center gap-1">
-                        <Calendar size={13} className="text-[#00d8ff]" />
+                        <Calendar size={13} className="text-brand-blue" />
                         {slot.day} {slot.date}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Clock size={13} className="text-[#00d8ff]" />
+                        <Clock size={13} className="text-brand-blue" />
                         {slot.time}
                       </span>
                     </div>

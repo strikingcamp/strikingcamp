@@ -72,6 +72,9 @@ export interface PlanLike {
   allows_private?: boolean | null;
   allows_small_group?: boolean | null;
   allows_collective?: boolean | null;
+  is_digital_plan?: boolean | null;
+  tier?: string | null;
+  entitlements?: Record<string, boolean> | null;
 }
 
 export interface SubscriptionLike {
@@ -103,7 +106,7 @@ export interface CumulativeMemberAccess {
  * Calcule les droits d'accès d'une formule individuelle selon le catalogue STRIKING CAMP.
  */
 export function computePlanAccess(plan: PlanLike | null | undefined): PlanAccessRights {
-  if (!plan) {
+  if (!plan || plan.is_digital_plan === true || plan.tier === "premium_digital") {
     return {
       allowsPrivate: false,
       allowsSmallGroup: false,
@@ -568,4 +571,96 @@ export function checkSessionEligibility(
     reason: "Votre formule ne permet pas de réserver cette séance.",
   };
 }
+
+/**
+ * Calcule les entitlements numériques (Programmes V1, Séances digitales, KB SHRED, Nutrition)
+ * d'un membre à partir de ses abonnements actifs selon la règle officielle STRIKING CAMP :
+ *
+ * 1. COURS PRIVÉS (allowsPrivate = true) -> Accès COMPLET aux programmes V1 & digital
+ * 2. ALL ACCESS (isAllAccess = true) -> Accès COMPLET aux programmes V1 & digital
+ * 3. AUTRES PROFILS (Essentiel, Lady Striking, Kid Boxing, sans abo) -> Accès digital désactivé
+ */
+export interface MemberDigitalEntitlementsResult {
+  tier: "free" | "premium_digital" | "premium_club";
+  hasActiveSubscription: boolean;
+  hasPhysicalAccess: boolean;
+  canAccessNutritionEngine: boolean;
+  canLogFoodJournal: boolean;
+  canAccessAllRecipes: boolean;
+  canAccessDigitalPrograms: boolean;
+  canAccessKBShredDigital: boolean;
+  canAccessAdvancedStats: boolean;
+}
+
+export function computeMemberDigitalEntitlements(
+  subscriptions: SubscriptionLike[] | null | undefined
+): MemberDigitalEntitlementsResult {
+  const result: MemberDigitalEntitlementsResult = {
+    tier: "free",
+    hasActiveSubscription: false,
+    hasPhysicalAccess: false,
+    canAccessNutritionEngine: false,
+    canLogFoodJournal: false,
+    canAccessAllRecipes: false,
+    canAccessDigitalPrograms: false,
+    canAccessKBShredDigital: false,
+    canAccessAdvancedStats: false,
+  };
+
+  if (!subscriptions || subscriptions.length === 0) {
+    return result;
+  }
+
+  const activeSubs = subscriptions.filter((s) => s.status === "active" || s.status === "trialing");
+  if (activeSubs.length === 0) {
+    return result;
+  }
+
+  result.hasActiveSubscription = true;
+
+  // Calcul cumulé des droits
+  const cumulative = computeCumulativeAccess(activeSubs);
+
+  // RÈGLE MÉTIER OFFICIELLE :
+  // Cours Privés OU All Access => Accès digital complet
+  const isFullDigitalAuthorized = cumulative.hasPrivateAccess || cumulative.isAllAccess;
+
+  if (isFullDigitalAuthorized) {
+    result.tier = "premium_club";
+    result.hasPhysicalAccess = true;
+    result.canAccessNutritionEngine = true;
+    result.canLogFoodJournal = true;
+    result.canAccessAllRecipes = true;
+    result.canAccessDigitalPrograms = true;
+    result.canAccessKBShredDigital = true;
+    result.canAccessAdvancedStats = true;
+    return result;
+  }
+
+  // Autres profils physiques (Essentiel, Lady Striking, Kid Boxing, etc.)
+  result.hasPhysicalAccess = cumulative.hasSmallGroupAccess || cumulative.isLadyStriking || cumulative.isKidBoxing;
+  result.tier = result.hasPhysicalAccess ? "premium_club" : "free";
+
+  // Pour les autres profils, vérifier si des entitlements spécifiques JSONB explicites existent
+  for (const sub of activeSubs) {
+    const rawPlans = Array.isArray(sub.plan) ? sub.plan : sub.plan ? [sub.plan] : [];
+    for (const plan of rawPlans) {
+      if (!plan) continue;
+      const planTier = (plan.tier || "").toLowerCase();
+      if (planTier === "premium_digital") {
+        result.tier = "premium_digital";
+      }
+      const ent = plan.entitlements || {};
+      if (ent.nutrition === true) result.canAccessNutritionEngine = true;
+      if (ent.food_log === true) result.canLogFoodJournal = true;
+      if (ent.recipes_all === true) result.canAccessAllRecipes = true;
+      if (ent.digital_programs === true) result.canAccessDigitalPrograms = true;
+      if (ent.kb_shred_digital === true) result.canAccessKBShredDigital = true;
+      if (ent.advanced_stats === true) result.canAccessAdvancedStats = true;
+    }
+  }
+
+  return result;
+}
+
 

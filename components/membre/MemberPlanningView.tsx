@@ -1128,7 +1128,7 @@ export default function MemberPlanningView() {
                   <span className="text-[9px] text-brand-white/40 block uppercase font-bold">Séances cette semaine</span>
                   <span className={cn(
                     "text-sm font-heading font-black",
-                    isWeeklyLimitReached ? "text-amber-400" : "text-brand-blue"
+                    isWeeklyLimitReached ? "text-brand-white/80" : "text-brand-blue"
                   )}>
                     {currentWeekBookingsCount} / 3 séances
                   </span>
@@ -1377,7 +1377,7 @@ export default function MemberPlanningView() {
                         ) : isEssential && isWeeklyLimitReached ? (
                           <div
                             title="Vous avez atteint le maximum de 3 séances pour cette semaine"
-                            className="px-3.5 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl text-[11px] font-heading font-bold uppercase text-center"
+                            className="px-3.5 py-2 bg-brand-white/5 border border-brand-white/10 text-brand-white/70 rounded-xl text-[11px] font-heading font-bold uppercase text-center"
                           >
                             Quota 3/3 atteint
                           </div>

@@ -55,7 +55,7 @@ export default async function TarifsPage() {
       supabase.from("service_settings").select("service_key, is_active"),
       supabase
         .from("plans")
-        .select("id, name, code, type, commitment, price_cents, private_sessions_per_period, is_active, display_order")
+        .select("id, name, code, type, tier, commitment, price_cents, private_sessions_per_period, is_active, is_digital_plan, badge_text, features, display_order")
         .eq("is_active", true)
         .order("display_order", { ascending: true })
         .order("name", { ascending: true }),
@@ -74,10 +74,14 @@ export default async function TarifsPage() {
         name: (p.name as string) || "Formule",
         code: (p.code as string) || null,
         type: ((p.type as string) || "").toLowerCase(),
+        tier: (p.tier as string) || null,
         commitment: (p.commitment as "monthly" | "annual" | null) || "monthly",
         price_cents: typeof p.price_cents === "number" ? p.price_cents : 0,
         private_sessions_per_period: typeof p.private_sessions_per_period === "number" ? p.private_sessions_per_period : null,
         is_active: p.is_active !== false,
+        is_digital_plan: Boolean(p.is_digital_plan),
+        badge_text: (p.badge_text as string) || null,
+        features: Array.isArray(p.features) ? p.features : null,
       }));
     }
   } catch (err) {

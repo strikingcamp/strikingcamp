@@ -120,7 +120,7 @@ export default function BookingCancelModal() {
                       "w-12 h-12 rounded-full flex items-center justify-center mb-4 border",
                       isLateWarning
                         ? "bg-red-500/15 border-red-500/30 text-red-400"
-                        : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                        : "bg-brand-blue/15 border-brand-blue/30 text-brand-blue"
                     )}
                   >
                     <AlertTriangle size={24} />

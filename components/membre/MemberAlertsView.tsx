@@ -68,7 +68,7 @@ export default function MemberAlertsView() {
   const getAlertIcon = (type: AlertType) => {
     switch (type) {
       case "nouvel_evenement":
-        return <Calendar size={18} className="text-amber-400" />;
+        return <Calendar size={18} className="text-brand-blue" />;
       case "confirmation":
         return <CheckCircle size={18} className="text-[#22c55e]" />;
       case "annulation":
@@ -83,7 +83,7 @@ export default function MemberAlertsView() {
   const getAlertBadge = (type: AlertType) => {
     switch (type) {
       case "nouvel_evenement":
-        return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+        return "bg-brand-blue/15 text-brand-blue border-brand-blue/30";
       case "confirmation":
         return "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30";
       case "annulation":
@@ -120,9 +120,9 @@ export default function MemberAlertsView() {
 
       {/* Catégories d'alertes prévues */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        <div className="bg-[#0f172a] border border-amber-500/20 rounded-lg p-3 text-center">
-          <Calendar size={16} className="text-amber-400 mx-auto mb-1" />
-          <p className="text-[10px] font-heading font-bold uppercase tracking-wider text-amber-300">
+        <div className="bg-[#0f172a] border border-brand-blue/20 rounded-lg p-3 text-center">
+          <Calendar size={16} className="text-brand-blue mx-auto mb-1" />
+          <p className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-blue">
             Nouvel Événement
           </p>
         </div>
@@ -170,13 +170,13 @@ export default function MemberAlertsView() {
           <div className="pt-2 flex flex-wrap justify-center gap-3">
             <Link
               href="/evenements"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-heading font-bold text-xs uppercase tracking-wider rounded-sm hover:bg-amber-500 hover:text-black transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue/20 text-brand-blue border border-brand-blue/30 font-heading font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-brand-blue hover:text-brand-black transition-colors"
             >
               Découvrir les événements
             </Link>
             <Link
               href="/membre/planning"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm hover:bg-brand-white transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-brand-white transition-colors"
             >
               Accéder au planning
             </Link>
@@ -194,7 +194,7 @@ export default function MemberAlertsView() {
               className={cn(
                 "rounded-xl p-4 sm:p-5 flex items-start gap-4 transition-all border",
                 alert.type === "nouvel_evenement"
-                  ? "bg-gradient-to-r from-[#171f30] to-[#0f172a] border-amber-500/30 shadow-lg shadow-amber-500/5"
+                  ? "bg-gradient-to-r from-[#171f30] to-[#0f172a] border-brand-blue/30 shadow-lg shadow-brand-blue/5"
                   : "bg-[#0f172a] border-brand-white/10 hover:border-brand-blue/30"
               )}
             >
@@ -221,7 +221,7 @@ export default function MemberAlertsView() {
                   <div className="pt-2">
                     <Link
                       href={alert.actionUrl}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/40 rounded-sm text-xs font-heading font-bold uppercase tracking-wider transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-blue/20 hover:bg-brand-blue text-brand-blue hover:text-brand-black border border-brand-blue/40 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-colors"
                     >
                       {alert.actionLabel}
                       <ArrowRight size={13} />

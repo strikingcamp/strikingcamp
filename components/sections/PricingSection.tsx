@@ -16,16 +16,21 @@ export interface PublicPlan {
   name: string;
   code?: string | null;
   type: string;
+  tier?: string | null;
   commitment: "monthly" | "annual" | string | null;
   price_cents: number;
   private_sessions_per_period?: number | null;
   is_active?: boolean;
+  badge_text?: string | null;
+  features?: string[] | null;
+  is_digital_plan?: boolean;
 }
 
-type MainCategory = "adult" | "lady" | "kid" | "private";
+type MainCategory = "adult" | "lady" | "kid" | "private" | "digital";
 type AdultFormula = "essential" | "all_access";
 type KidAgeGroup = "5-8" | "9-13";
 type PrivateCommitment = "annual" | "monthly";
+type DigitalCommitment = "monthly" | "annual";
 
 interface PricingSectionProps {
   isSmallGroupActive?: boolean;
@@ -42,6 +47,7 @@ export default function PricingSection({
   const [adultFormula, setAdultFormula] = useState<AdultFormula>("all_access");
   const [kidAgeGroup, setKidAgeGroup] = useState<KidAgeGroup>("5-8");
   const [privateCommitment, setPrivateCommitment] = useState<PrivateCommitment>("annual");
+  const [digitalCommitment, setDigitalCommitment] = useState<DigitalCommitment>("monthly");
 
   // Extraction dynamique des tarifs depuis Supabase avec fallbacks propres
   const planPrices = useMemo(() => {
@@ -52,25 +58,31 @@ export default function PricingSection({
       kid_boxing: 349,
       private_annual: 299,
       private_monthly: 399,
+      digital_monthly: 19.9,
+      digital_annual: 179,
     };
 
     for (const p of initialPlans) {
       if (p.is_active === false) continue;
-      const euros = Math.round(p.price_cents / 100);
+      const euros = p.price_cents / 100;
       const code = (p.code || "").toLowerCase();
 
       if (code === "adult_essential") {
-        prices.adult_essential = euros;
+        prices.adult_essential = Math.round(euros);
       } else if (code === "adult_all_access") {
-        prices.adult_all_access = euros;
+        prices.adult_all_access = Math.round(euros);
       } else if (code === "lady_striking_annual" || code === "lady_striking") {
-        prices.lady_striking = euros;
+        prices.lady_striking = Math.round(euros);
       } else if (code === "kid_boxing_season" || code === "kid_boxing") {
-        prices.kid_boxing = euros;
+        prices.kid_boxing = Math.round(euros);
       } else if (code === "priv_annual_8" || (p.type === "private" && p.commitment === "annual")) {
-        prices.private_annual = euros;
+        prices.private_annual = Math.round(euros);
       } else if (code === "priv_monthly_8" || (p.type === "private" && p.commitment === "monthly")) {
-        prices.private_monthly = euros;
+        prices.private_monthly = Math.round(euros);
+      } else if (code === "digital_premium_monthly" || (p.is_digital_plan && p.commitment === "monthly")) {
+        prices.digital_monthly = euros > 0 ? euros : 19.9;
+      } else if (code === "digital_premium_annual" || (p.is_digital_plan && p.commitment === "annual")) {
+        prices.digital_annual = euros > 0 ? euros : 179;
       }
     }
 
@@ -82,7 +94,9 @@ export default function PricingSection({
     { id: "lady" as MainCategory, label: "Lady Striking", available: isSmallGroupActive },
     { id: "kid" as MainCategory, label: "Kid Boxing", available: true },
     { id: "private" as MainCategory, label: "Cours Privés", available: isPrivateActive },
+    { id: "digital" as MainCategory, label: "Digital Premium", available: true },
   ].filter((c) => c.available);
+
 
   return (
     <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">
@@ -221,7 +235,43 @@ export default function PricingSection({
             </button>
           </div>
         )}
+
+        {/* DIGITAL PREMIUM : Switcher Mensuel vs Annuel */}
+        {activeCategory === "digital" && (
+          <div role="tablist" aria-label="Engagement Digital Premium" className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg gap-1">
+            <button
+              role="tab"
+              aria-selected={digitalCommitment === "monthly"}
+              onClick={() => setDigitalCommitment("monthly")}
+              className={cn(
+                "py-2.5 px-6 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
+                digitalCommitment === "monthly"
+                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
+                  : "text-brand-white/70 hover:text-brand-white"
+              )}
+            >
+              SANS ENGAGEMENT (MENSUEL)
+            </button>
+            <button
+              role="tab"
+              aria-selected={digitalCommitment === "annual"}
+              onClick={() => setDigitalCommitment("annual")}
+              className={cn(
+                "py-2.5 px-6 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue flex items-center gap-1.5",
+                digitalCommitment === "annual"
+                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
+                  : "text-brand-white/70 hover:text-brand-white"
+              )}
+            >
+              <span>ANNUEL</span>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                -25%
+              </span>
+            </button>
+          </div>
+        )}
       </div>
+
 
       {/* Pricing Featured Card */}
       <div className="max-w-3xl mx-auto">
@@ -269,7 +319,9 @@ export default function PricingSection({
                       ? "FORMULE LADY STRIKING"
                       : activeCategory === "kid"
                       ? "FORMULE KID BOXING"
-                      : "FORMULE COURS PRIVÉS"}
+                      : activeCategory === "private"
+                      ? "FORMULE COURS PRIVÉS"
+                      : "PROGRAMME DIGITAL PREMIUM"}
                   </span>
 
                   <span
@@ -286,6 +338,10 @@ export default function PricingSection({
                       ? privateCommitment === "annual"
                         ? "ENGAGEMENT ANNUEL"
                         : "ENGAGEMENT MENSUEL"
+                      : activeCategory === "digital"
+                      ? digitalCommitment === "annual"
+                        ? "ENGAGEMENT ANNUEL"
+                        : "SANS ENGAGEMENT"
                       : "ENGAGEMENT ANNUEL"}
                   </span>
                 </div>
@@ -305,7 +361,9 @@ export default function PricingSection({
                       ? privateCommitment === "annual"
                         ? "Cours Privés — Engagement Annuel"
                         : "Cours Privés — Engagement Mensuel"
-                      : "Cours Privés"}
+                      : digitalCommitment === "annual"
+                      ? "Striking Digital Premium — Annuel"
+                      : "Striking Digital Premium — Mensuel"}
                   </h2>
 
                   {/* 3. DESCRIPTION */}
@@ -317,8 +375,10 @@ export default function PricingSection({
                       ? "Apprentissage ludique des bases de la boxe, motricité globale et discipline dans un cadre bienveillant."
                       : "Perfectionnement technique pieds-poings, coordination motrice, respect des valeurs et confiance en soi.")}
                     {activeCategory === "private" && "Coaching individuel personnalisé 1-on-1 avec le coach Mahfoud Mohamed (8 séances par mois)."}
+                    {activeCategory === "digital" && "L'accompagnement digital complet Striking Camp : moteur nutritionnel Mifflin-St Jeor, journal alimentaire, bibliothèque de recettes et programmes d'entraînement Maison & Salle."}
                   </p>
                 </div>
+
 
                 {/* 4. INCLUS DANS VOTRE FORMULE */}
                 <div className="space-y-2.5 pt-1">
@@ -511,6 +571,36 @@ export default function PricingSection({
                         </div>
                       </>
                     )}
+
+                    {/* G. Digital Premium (Mensuel & Annuel) */}
+                    {activeCategory === "digital" && (
+                      <>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Moteur nutritionnel personnalisé (Mifflin-St Jeor)</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Journal alimentaire 4 repas & suivi des macros</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Bibliothèque complète de recettes adaptées à votre objectif</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Programmes d'entraînement Maison & Salle</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Protocoles KB SHRED Digital à domicile</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Suivi de progression & courbe de poids interactive</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -523,6 +613,7 @@ export default function PricingSection({
                     {activeCategory === "lady" && "Cours 100 % féminin, accès exclusivement aux créneaux Lady Striking."}
                     {activeCategory === "kid" && "Formule saison de septembre à juin (hors vacances scolaires). Stages organisés inclus dans la formule."}
                     {activeCategory === "private" && "Cette formule vous donne accès à 8 séances privées sur réservation ainsi qu'à un accès illimité aux Cours Adulte."}
+                    {activeCategory === "digital" && "Programme 100% digital accessible partout. L'activation des paiements Stripe en ligne sera disponible très prochainement."}
                   </span>
                 </div>
               </div>
@@ -532,7 +623,15 @@ export default function PricingSection({
                 {/* 5. PRIX */}
                 <div>
                   <p className="text-xs uppercase tracking-wider text-brand-white/75">
-                    {activeCategory === "kid" ? "Tarif saison" : activeCategory === "private" ? "Tarif mensuel" : "Tarif annuel"}
+                    {activeCategory === "kid"
+                      ? "Tarif saison"
+                      : activeCategory === "private"
+                      ? "Tarif mensuel"
+                      : activeCategory === "digital"
+                      ? digitalCommitment === "annual"
+                        ? "Tarif annuel"
+                        : "Tarif mensuel"
+                      : "Tarif annuel"}
                   </p>
                   <div className="flex items-baseline justify-center gap-1.5 mt-2 flex-wrap">
                     <span
@@ -549,12 +648,26 @@ export default function PricingSection({
                         ? `${planPrices.lady_striking} €`
                         : activeCategory === "kid"
                         ? `${planPrices.kid_boxing} €`
-                        : privateCommitment === "annual"
-                        ? `${planPrices.private_annual} €`
-                        : `${planPrices.private_monthly} €`}
+                        : activeCategory === "private"
+                        ? privateCommitment === "annual"
+                          ? `${planPrices.private_annual} €`
+                          : `${planPrices.private_monthly} €`
+                        : activeCategory === "digital"
+                        ? digitalCommitment === "annual"
+                          ? `${planPrices.digital_annual} €`
+                          : `${planPrices.digital_monthly} €`
+                        : ""}
                     </span>
                     <span className="text-xs sm:text-sm text-brand-white/80 font-bold uppercase tracking-wider">
-                      {activeCategory === "kid" ? "/ SAISON" : activeCategory === "private" ? "/ MOIS" : "/ AN"}
+                      {activeCategory === "kid"
+                        ? "/ SAISON"
+                        : activeCategory === "private"
+                        ? "/ MOIS"
+                        : activeCategory === "digital"
+                        ? digitalCommitment === "annual"
+                          ? "/ AN"
+                          : "/ MOIS"
+                        : "/ AN"}
                     </span>
                   </div>
                 </div>
@@ -562,7 +675,13 @@ export default function PricingSection({
                 {/* 6. BOUTON */}
                 <div className="space-y-3 pt-2">
                   <Link
-                    href={activeCategory === "kid" ? "/contact" : "/connexion"}
+                    href={
+                      activeCategory === "kid"
+                        ? "/contact"
+                        : activeCategory === "digital"
+                        ? "/membre/defis"
+                        : "/connexion"
+                    }
                     onClick={() => trackBookingClick("membership", "pricing_card")}
                     className={cn(
                       "w-full py-3.5 px-6 font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg focus:outline-none focus-visible:ring-2",
@@ -571,7 +690,11 @@ export default function PricingSection({
                         : "bg-brand-blue hover:bg-brand-white text-brand-black shadow-brand-blue/30 focus-visible:ring-brand-blue"
                     )}
                   >
-                    {activeCategory === "kid" ? "INSCRIRE MON ENFANT" : "SOUSCRIRE EN LIGNE"}
+                    {activeCategory === "kid"
+                      ? "INSCRIRE MON ENFANT"
+                      : activeCategory === "digital"
+                      ? "DÉCOUVRIR LE PROGRAMME"
+                      : "SOUSCRIRE EN LIGNE"}
                     <ArrowRight size={16} />
                   </Link>
                   <div className="pt-1 text-center">
@@ -583,6 +706,7 @@ export default function PricingSection({
                     </Link>
                   </div>
                 </div>
+
 
                 <p className="text-[11px] text-brand-white/70 leading-tight">
                   {activeCategory === "kid"
