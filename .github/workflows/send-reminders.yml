@@ -1,0 +1,37 @@
+name: Trigger Striking Camp Reminders Cron
+
+on:
+  schedule:
+    # Déclenchement toutes les 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    # Permet un déclenchement manuel depuis l'interface GitHub Actions pour tester
+
+jobs:
+  trigger-reminders:
+    name: Call send-reminders API
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Send Reminders Cron Request
+        run: |
+          echo "Triggering /api/cron/send-reminders on www.strikingcamp.com..."
+          
+          RESPONSE=$(curl -s -S -w "\nHTTP_STATUS:%{http_code}\n" \
+            -X GET "https://www.strikingcamp.com/api/cron/send-reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "User-Agent: GitHub-Actions-Cron/1.0")
+
+          HTTP_BODY=$(echo "$RESPONSE" | sed -e '$d')
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1 | sed -e 's/HTTP_STATUS://')
+
+          echo "Response Body: $HTTP_BODY"
+          echo "HTTP Status Code: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Cron trigger failed with HTTP status $HTTP_STATUS"
+            exit 1
+          fi
+
+          echo "Reminders cron executed successfully."
