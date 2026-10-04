@@ -135,6 +135,7 @@ export async function GET(request: Request) {
           sentPushCount: 0,
           failedPushCount: 0,
           staleSubscriptionsCleaned: 0,
+          inAppLogsCreated: 0,
           skippedAlreadyCompleted: 0,
           skippedOutsideWindow: 0,
           skippedDisabled: 0,
@@ -266,6 +267,7 @@ export async function GET(request: Request) {
       sentPushCount: 0,
       failedPushCount: 0,
       staleSubscriptionsCleaned: 0,
+      inAppLogsCreated: 0,
       skippedAlreadyCompleted: 0,
       skippedOutsideWindow: 0,
       skippedDisabled: 0,
@@ -330,72 +332,72 @@ export async function GET(request: Request) {
           continue;
         }
 
-        // Mode RÉEL : envoi Web Push et insertion dans notification_logs
-        if (!vapidConfigured) {
-          console.warn(`[send-reminders] VAPID non configuré, envoi ignoré pour ${uid}`);
-          continue;
-        }
-
+        // Mode RÉEL :
+        // 1. Tentative d'envoi Web Push (uniquement si VAPID configuré et souscriptions actives)
         const userSubscriptions = pushSubsByUser.get(uid) || [];
         let pushSentSuccessfully = false;
 
-        const payload = JSON.stringify({
-          title: decision.title,
-          body: decision.body,
-          icon: "/logo-sc.png",
-          badge: "/logo-sc.png",
-          action_url: decision.actionUrl,
-        });
+        if (vapidConfigured && userSubscriptions.length > 0) {
+          const payload = JSON.stringify({
+            title: decision.title,
+            body: decision.body,
+            icon: "/logo-sc.png",
+            badge: "/logo-sc.png",
+            action_url: decision.actionUrl,
+          });
 
-        for (const sub of userSubscriptions) {
-          try {
-            await webpush.sendNotification(
-              {
-                endpoint: sub.endpoint,
-                keys: {
-                  p256dh: sub.p256dh_key,
-                  auth: sub.auth_key,
+          for (const sub of userSubscriptions) {
+            try {
+              await webpush.sendNotification(
+                {
+                  endpoint: sub.endpoint,
+                  keys: {
+                    p256dh: sub.p256dh_key,
+                    auth: sub.auth_key,
+                  },
                 },
-              },
-              payload
-            );
-            stats.sentPushCount++;
-            pushSentSuccessfully = true;
-          } catch (pushErr: any) {
-            stats.failedPushCount++;
-            const statusCode = pushErr?.statusCode;
+                payload
+              );
+              stats.sentPushCount++;
+              pushSentSuccessfully = true;
+            } catch (pushErr: any) {
+              stats.failedPushCount++;
+              const statusCode = pushErr?.statusCode;
 
-            // Détection des abonnements expirés (404 Not Found ou 410 Gone)
-            if (statusCode === 404 || statusCode === 410) {
-              console.log(`[send-reminders] Nettoyage souscription expirée : ${sub.id}`);
-              await removePushSubscription(adminSupabase, uid, sub.endpoint);
-              stats.staleSubscriptionsCleaned++;
-            } else {
-              console.error(`[send-reminders] Échec envoi push (status: ${statusCode || "erreur"}) pour l'utilisateur ${uid}`);
+              // Détection des abonnements expirés (404 Not Found ou 410 Gone)
+              if (statusCode === 404 || statusCode === 410) {
+                console.log(`[send-reminders] Nettoyage souscription expirée : ${sub.id}`);
+                await removePushSubscription(adminSupabase, uid, sub.endpoint);
+                stats.staleSubscriptionsCleaned++;
+              } else {
+                console.error(`[send-reminders] Échec envoi push (status: ${statusCode || "erreur"}) pour l'utilisateur ${uid}`);
+              }
             }
           }
+        } else if (!vapidConfigured) {
+          console.warn(`[send-reminders] VAPID non configuré — rappel créé en mode in-app pour ${uid}`);
         }
 
-        // Création du log de notification uniquement si l'envoi a réussi
-        if (pushSentSuccessfully) {
-          try {
-            const createdLog = await createNotificationLogServer(adminSupabase, {
-              user_id: uid,
-              category: decision.category,
-              channel: "web_push",
-              title: decision.title,
-              body: decision.body,
-              action_url: decision.actionUrl,
-              scheduled_date: todayDateStr,
-            });
+        // 2. Enregistrement SYSTÉMATIQUE dans notification_logs (/membre/alertes + anti-doublon)
+        try {
+          const createdLog = await createNotificationLogServer(adminSupabase, {
+            user_id: uid,
+            category: decision.category,
+            channel: pushSentSuccessfully ? "web_push" : "in_app",
+            title: decision.title,
+            body: decision.body,
+            action_url: decision.actionUrl,
+            scheduled_date: todayDateStr,
+          });
 
-            // Mise à jour immédiate de l'historique en mémoire pour la session actuelle
-            const currentLogs = logsByUser.get(uid) || [];
-            currentLogs.push(createdLog);
-            logsByUser.set(uid, currentLogs);
-          } catch (logErr) {
-            console.error(`[send-reminders] Erreur création notification_logs pour ${uid} :`, logErr);
-          }
+          stats.inAppLogsCreated++;
+
+          // Mise à jour immédiate de l'historique en mémoire pour la session actuelle
+          const currentLogs = logsByUser.get(uid) || [];
+          currentLogs.push(createdLog);
+          logsByUser.set(uid, currentLogs);
+        } catch (logErr) {
+          console.error(`[send-reminders] Erreur création notification_logs pour ${uid} :`, logErr);
         }
       }
     }

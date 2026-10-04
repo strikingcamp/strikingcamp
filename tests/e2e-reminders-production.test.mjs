@@ -134,50 +134,48 @@ async function simulateCronExecution({
         continue;
       }
 
-      if (!vapidConfigured) continue;
-
       const userSubs = activeSubscriptions.filter((s) => s.user_id === uid);
       let pushSentSuccessfully = false;
 
-      for (const sub of userSubs) {
-        try {
-          if (!pushService) throw new Error('Push service indisponible');
-          await pushService.send({
-            endpoint: sub.endpoint,
-            title: decision.title,
-            body: decision.body,
-          });
-          stats.sentPushCount++;
-          pushSentSuccessfully = true;
-        } catch (pushErr) {
-          stats.failedPushCount++;
-          if (pushErr.statusCode === 404 || pushErr.statusCode === 410) {
-            // Nettoyage subscription expirée
-            const idx = activeSubscriptions.findIndex((s) => s.endpoint === sub.endpoint);
-            if (idx !== -1) {
-              activeSubscriptions.splice(idx, 1);
-              stats.staleSubscriptionsCleaned++;
+      if (vapidConfigured && userSubs.length > 0) {
+        for (const sub of userSubs) {
+          try {
+            if (!pushService) throw new Error('Push service indisponible');
+            await pushService.send({
+              endpoint: sub.endpoint,
+              title: decision.title,
+              body: decision.body,
+            });
+            stats.sentPushCount++;
+            pushSentSuccessfully = true;
+          } catch (pushErr) {
+            stats.failedPushCount++;
+            if (pushErr.statusCode === 404 || pushErr.statusCode === 410) {
+              // Nettoyage subscription expirée
+              const idx = activeSubscriptions.findIndex((s) => s.endpoint === sub.endpoint);
+              if (idx !== -1) {
+                activeSubscriptions.splice(idx, 1);
+                stats.staleSubscriptionsCleaned++;
+              }
             }
           }
         }
       }
 
-      // Écriture dans les logs uniquement si au moins un push a réussi
-      if (pushSentSuccessfully) {
-        const newLog = {
-          id: `log-${Date.now()}-${Math.random()}`,
-          user_id: uid,
-          category: decision.category,
-          channel: 'web_push',
-          title: decision.title,
-          body: decision.body,
-          action_url: decision.actionUrl,
-          scheduled_date: todayDateStr,
-          sent_at: now.toISOString(),
-        };
-        writtenLogs.push(newLog);
-        stats.writtenLogsCount++;
-      }
+      // Écriture SYSTÉMATIQUE dans les logs (channel: web_push si au moins 1 push a réussi, in_app sinon)
+      const newLog = {
+        id: `log-${Date.now()}-${Math.random()}`,
+        user_id: uid,
+        category: decision.category,
+        channel: pushSentSuccessfully ? 'web_push' : 'in_app',
+        title: decision.title,
+        body: decision.body,
+        action_url: decision.actionUrl,
+        scheduled_date: todayDateStr,
+        sent_at: now.toISOString(),
+      };
+      writtenLogs.push(newLog);
+      stats.writtenLogsCount++;
     }
   }
 
@@ -523,7 +521,8 @@ runScenario(11, 'Subscription push expirée (410 Gone) -> Nettoyage sélectif', 
 
   assert.strictEqual(res.stats.staleSubscriptionsCleaned, 1, 'Doit avoir nettoyé 1 subscription expirée');
   assert.strictEqual(res.stats.failedPushCount, 1);
-  assert.strictEqual(res.stats.writtenLogsCount, 0, 'Aucun log écrit car le push a échoué');
+  assert.strictEqual(res.stats.writtenLogsCount, 1, 'Log in-app écrit pour persister l alerte et bloquer les doublons');
+  assert.strictEqual(res.writtenLogs[0].channel, 'in_app', 'Canal de repli in_app quand le push expire');
   assert.strictEqual(res.activeSubscriptions.length, 0, 'La subscription expirée a été retirée');
 });
 
@@ -676,8 +675,51 @@ runScenario(16, 'Cron appelé en mode DRY-RUN -> Aucune écriture et aucun push 
   assert.strictEqual(res.wouldSend.length, 1, 'Doit retourner la prévisualisation dans wouldSend');
 });
 
+// SCÉNARIO 17 : Utilisateur sans aucun abonnement Web Push -> log in_app créé et bloqué par anti-doublon au cycle suivant
+runScenario(17, 'Utilisateur sans abonnement Web Push -> Enregistré en in_app et anti-doublon actif', async () => {
+  const usersPreferences = [{
+    id: 'p1',
+    user_id: 'u-no-push',
+    enabled_global: true,
+    enabled_meals: true,
+    reminder_lunch_time: '12:30:00',
+  }];
+
+  const dataStore = {
+    currentTime: new Date('2026-10-05T10:35:00Z'),
+    subscriptions: [], // Aucun device push
+  };
+
+  const res1 = await simulateCronExecution({
+    authHeader: 'Bearer valid_production_secret',
+    isDryRun: false,
+    usersPreferences,
+    dataStore,
+  });
+
+  assert.strictEqual(res1.status, 200);
+  assert.strictEqual(res1.stats.eligibleReminders, 1);
+  assert.strictEqual(res1.stats.sentPushCount, 0, 'Aucun push envoyé car aucune subscription');
+  assert.strictEqual(res1.stats.writtenLogsCount, 1, 'Log in-app systématiquement enregistré');
+  assert.strictEqual(res1.writtenLogs[0].channel, 'in_app', 'Canal in_app');
+
+  // Second passage du cron 15 minutes plus tard -> l'anti-doublon doit bloquer
+  dataStore.currentTime = new Date('2026-10-05T10:50:00Z');
+  dataStore.existingLogs = res1.writtenLogs;
+
+  const res2 = await simulateCronExecution({
+    authHeader: 'Bearer valid_production_secret',
+    isDryRun: false,
+    usersPreferences,
+    dataStore,
+  });
+
+  assert.strictEqual(res2.stats.eligibleReminders, 0, 'Anti-doublon bloque le rappel au 2e passage');
+  assert.strictEqual(res2.stats.writtenLogsCount, 0, 'Aucun nouveau log écrit');
+});
+
 // ─────────────────────────────────────────────────────────────────
-// BILAN DES 16 SCÉNARIOS END-TO-END
+// BILAN DES 17 SCÉNARIOS END-TO-END
 // ─────────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(70));
 console.log(`BILAN DES TESTS END-TO-END : ${passedTests} / ${totalTests} scénarios réussis`);

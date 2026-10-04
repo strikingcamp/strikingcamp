@@ -534,6 +534,32 @@ export async function createNotificationLogServer(
       .single();
 
     if (error) {
+      // Protection anti-doublon SQL (Code 23505 : Unique Violation)
+      if (error.code === "23505") {
+        console.warn(
+          `[createNotificationLogServer] Doublon intercepté par la contrainte SQL unique pour ${logInput.user_id} (${logInput.category})`
+        );
+        let query = adminSupabase
+          .from("notification_logs")
+          .select("*")
+          .eq("user_id", logInput.user_id)
+          .eq("scheduled_date", payload.scheduled_date)
+          .eq("category", logInput.category);
+
+        if (logInput.category === "workout_club" && payload.action_url) {
+          query = query.eq("action_url", payload.action_url);
+        }
+
+        const { data: existing } = await query
+          .order("sent_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existing) {
+          return existing as NotificationLog;
+        }
+      }
+
       console.error("[createNotificationLogServer] Erreur :", error.message);
       throw new Error(`Échec création log notification : ${error.message}`);
     }
