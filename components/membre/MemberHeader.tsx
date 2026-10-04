@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 
+import { useMember } from "@/components/membre/MemberContext";
+
 interface MemberHeaderProps {
   firstName?: string;
   lastName?: string;
@@ -10,6 +12,7 @@ interface MemberHeaderProps {
 }
 
 export default function MemberHeader({ firstName, lastName, role = "Membre" }: MemberHeaderProps) {
+  const { unreadNotificationsCount } = useMember();
   const initials = firstName
     ? `${firstName.charAt(0)}${lastName ? lastName.charAt(0) : ""}`.toUpperCase()
     : "M";
@@ -32,10 +35,14 @@ export default function MemberHeader({ firstName, lastName, role = "Membre" }: M
           <Link
             href="/membre/alertes"
             className="w-9 h-9 rounded-full bg-brand-white/5 hover:bg-brand-white/10 border border-brand-white/10 flex items-center justify-center text-brand-white/70 hover:text-brand-white transition-colors relative"
-            aria-label="Alertes"
+            aria-label={unreadNotificationsCount > 0 ? `Alertes (${unreadNotificationsCount} non lues)` : "Alertes"}
           >
             <Bell size={16} />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-blue animate-pulse" />
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-blue text-brand-black text-[10px] font-heading font-black flex items-center justify-center shadow-[0_0_8px_rgba(47,174,224,0.6)]">
+                {unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}
+              </span>
+            )}
           </Link>
 
           <Link

@@ -275,8 +275,10 @@ export default function AdminRecipesTab() {
           >
             <option value="all">Tous Objectifs</option>
             <option value="weight_loss">Perte de poids</option>
-            <option value="muscle_gain">Gain musculaire</option>
-            <option value="both">Hybride / Recomp</option>
+            <option value="muscle_gain">Prise de muscle</option>
+            <option value="recomposition">Recomposition</option>
+            <option value="maintenance">Maintien</option>
+            <option value="both">Hybride (Both)</option>
           </select>
 
           <select
@@ -500,7 +502,10 @@ export default function AdminRecipesTab() {
                     >
                       <option value="weight_loss">Perte de Poids (Déficit)</option>
                       <option value="muscle_gain">Gain Musculaire (Surplus)</option>
-                      <option value="both">Les Deux / Recomposition</option>
+                      <option value="recomposition">Recomposition Corporelle</option>
+                      <option value="maintenance">Maintien & Performance</option>
+                      <option value="both">Hybride (Both)</option>
+                      <option value="all">Tous Objectifs (All)</option>
                     </select>
                   </div>
                 </div>

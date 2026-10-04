@@ -1,0 +1,220 @@
+Create an ultra-realistic professional culinary food photograph for the Striking Camp nutrition application.
+
+RECIPE:
+{{RECIPE_TITLE}}
+
+STRICT INGREDIENTS:
+{{STRICT_INGREDIENTS}}
+
+IMPORTANT INGREDIENT RULE:
+Show ONLY the ingredients explicitly listed above.
+
+Do not add, remove, replace, invent or decorate the dish with any ingredient that is not listed in the recipe.
+
+Do not add herbs, spices, sauces, oils, seeds, fruits, vegetables, toppings, garnishes, condiments or decorative elements unless they are explicitly listed in the ingredients.
+
+The visual must accurately represent the actual recipe.
+
+FOOD PRESENTATION:
+Prepare the exact recipe as one realistic complete serving.
+
+The dish must look like real food prepared by a professional chef for a premium sports nutrition application.
+
+Respect realistic quantities, proportions, textures and cooking methods.
+
+Every ingredient must be visually identifiable whenever possible.
+
+Use realistic serving sizes. Do not create an exaggerated oversized portion.
+
+Do not make the food artificially perfect. Preserve natural variations in the food.
+
+If the recipe is a bowl, use a premium dark charcoal matte ceramic bowl.
+
+If the recipe is plated food, use an elegant dark charcoal matte ceramic plate.
+
+If the recipe is a drink or shaker, present the actual prepared drink appropriately while maintaining the same premium visual identity.
+
+If the recipe is a dessert, breakfast or snack, use suitable dark charcoal matte ceramic tableware while preserving the same visual identity.
+
+STYLE — STRIKING CAMP:
+Premium athletic nutrition editorial photography.
+
+Dark, modern, sophisticated, clean, powerful, minimal and premium.
+
+The entire recipe library must look as if every photograph was taken by the SAME professional food photographer, in the SAME studio, using the SAME photographic setup.
+
+Maintain consistent:
+- camera perspective
+- lighting
+- color temperature
+- depth of field
+- tableware
+- background
+- contrast
+- food scale
+- photographic realism
+
+TABLEWARE:
+Contemporary premium matte dark charcoal / anthracite ceramic tableware.
+
+Preferred colors:
+dark charcoal, anthracite, deep navy, dark slate, mineral grey.
+
+Never use white plates, colorful plates, patterned tableware, plastic containers or cheap commercial packaging.
+
+BACKGROUND:
+Dark anthracite concrete, dark slate, dark mineral stone or subtly textured dark charcoal surface.
+
+Minimal environment.
+
+Clean and sophisticated.
+
+No kitchen clutter.
+
+COMPOSITION:
+Centered premium editorial composition.
+
+The food should occupy approximately 70–80% of the image.
+
+Leave subtle breathing room around the dish.
+
+Strong visual hierarchy.
+
+No excessive props.
+
+No decorative objects unrelated to the recipe.
+
+CAMERA:
+Professional full-frame culinary photography.
+
+Medium close-up.
+
+Natural dining perspective at approximately 45 degrees.
+
+Professional macro-level food detail.
+
+DEPTH OF FIELD:
+Moderate shallow depth of field, approximately f/3.2.
+
+The complete main dish must remain sharp and clearly identifiable.
+
+Background softly blurred.
+
+LIGHTING:
+Soft natural lateral light coming from approximately 45 degrees.
+
+Subtle reflector fill.
+
+Soft sculpted shadows.
+
+Neutral slightly warm color temperature around 5400K.
+
+Preserve realistic natural food colors.
+
+Avoid excessive contrast.
+
+Avoid artificial HDR.
+
+FOOD REALISM:
+Ultra-realistic professional culinary photography.
+
+Realistic food textures.
+
+Realistic moisture.
+
+Realistic browning.
+
+Realistic cooking marks.
+
+Natural food structures.
+
+Natural imperfections.
+
+The result must look like an actual professional photograph of real food.
+
+No CGI.
+
+No 3D render.
+
+No plastic appearance.
+
+No synthetic appearance.
+
+STRICTLY FORBIDDEN:
+No people.
+
+No hands.
+
+No human body parts.
+
+No gym equipment.
+
+No boxing gloves.
+
+No fitness accessories.
+
+No shaker bottle unless the recipe itself is explicitly a shaker/drink and requires one.
+
+No text.
+
+No typography.
+
+No labels.
+
+No packaging.
+
+No watermark.
+
+No logo.
+
+No decorative ingredients not present in the recipe.
+
+No random herbs.
+
+No random seeds.
+
+No random sauces.
+
+No random oils.
+
+No random toppings.
+
+No floating food.
+
+No unrealistic food.
+
+No CGI.
+
+No 3D rendering.
+
+IMAGE FORMAT:
+Landscape 4:3 ratio.
+
+High-detail professional culinary photography.
+
+Target output:
+1200 × 900 pixels.
+
+The image must be suitable for a premium nutrition application recipe card.
+
+CONSISTENCY RULE:
+This image is part of a 74-image Striking Camp recipe library.
+
+It MUST visually match the existing Striking Camp recipe photographs.
+
+Do not change the photographic style between recipes.
+
+Only the actual recipe, ingredients, food arrangement and appropriate tableware may change.
+
+FINAL INSTRUCTION:
+Generate ONLY the actual recipe represented by the ingredients above.
+
+Do not invent ingredients.
+
+Do not add decorative food.
+
+Do not add text.
+
+Do not add logos.
+
+Create a realistic professional food photograph suitable for the Striking Camp nutrition application.

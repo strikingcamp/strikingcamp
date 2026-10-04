@@ -31,8 +31,15 @@ export type AvailableEquipment =
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 export type RecipeCategory = "breakfast" | "lunch" | "dinner" | "snack";
-export type RecipeTargetGoal = "weight_loss" | "muscle_gain" | "both";
+export type RecipeTargetGoal =
+  | "weight_loss"
+  | "muscle_gain"
+  | "maintenance"
+  | "recomposition"
+  | "both"
+  | "all";
 export type RecipeDifficulty = "Facile" | "Moyen" | "Avancé";
+export type PrepTimePreference = "quick" | "standard" | "flexible";
 
 export type ProgramLocation = "home" | "gym" | "club" | "hybrid";
 export type ProgramLevel = "Débutant" | "Intermédiaire" | "Avancé" | "Tous niveaux";
@@ -90,6 +97,7 @@ export interface UserFitnessProfile {
   activity_level: ActivityLevel;
   target_workouts_per_week: number;
   primary_goal: FitnessGoal;
+  prep_time_preference?: PrepTimePreference;
   training_environment: TrainingEnvironment;
   available_equipment: string[];
   custom_target_calories?: number | null;
@@ -108,6 +116,7 @@ export interface UserFitnessProfileInput {
   activity_level: ActivityLevel;
   target_workouts_per_week: number;
   primary_goal: FitnessGoal;
+  prep_time_preference?: PrepTimePreference;
   training_environment: TrainingEnvironment;
   available_equipment: string[];
   custom_target_calories?: number | null;

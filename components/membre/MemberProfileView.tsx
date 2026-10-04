@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { EditProfileModal, ChangePasswordModal } from "./modals/ProfileModals";
 import { useRouter } from "next/navigation";
+import MemberNotificationSettings from "./MemberNotificationSettings";
+import type { NotificationPreferences } from "@/lib/supabase/notifications";
 
 interface MemberProfileViewProps {
   initialUser: {
@@ -22,10 +24,13 @@ interface MemberProfileViewProps {
     role: string;
     createdAt?: string;
   };
+  initialPreferences?: NotificationPreferences | null;
 }
 
-export default function MemberProfileView({ initialUser }: MemberProfileViewProps) {
+
+export default function MemberProfileView({ initialUser, initialPreferences }: MemberProfileViewProps) {
   const userData = initialUser;
+
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isLoggingOut] = useState(false);
@@ -109,6 +114,13 @@ export default function MemberProfileView({ initialUser }: MemberProfileViewProp
             </p>
           </div>
         </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━
+          NOTIFICATIONS & RAPPELS
+          ━━━━━━━━━━━━━━━━━━━━ */}
+      <section className="space-y-4">
+        <MemberNotificationSettings initialPreferences={initialPreferences} />
       </section>
 
       {/* ━━━━━━━━━━━━━━━━━━━━

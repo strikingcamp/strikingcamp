@@ -26,7 +26,7 @@ import {
   getServiceSettingsMap,
   DEFAULT_SERVICE_SETTINGS,
 } from "@/lib/supabase/services";
-import { getConfirmedBookingsSummaryAction } from "@/app/(membre)/actions";
+import { getConfirmedBookingsSummaryAction, getMemberUnreadNotificationsCountAction } from "@/app/(membre)/actions";
 import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
 
 export type BookingSlot = {
@@ -146,6 +146,12 @@ interface MemberContextType {
   cancelPrivate: (bookingId: string) => Promise<{ success: boolean; isLateCancellation?: boolean; message?: string; error?: string }>;
   bookSlot: (slot: BookingSlot) => Promise<{ success: boolean; error?: string; bookingId?: string }>;
   cancelSlot: (bookingId: string) => Promise<{ success: boolean; isLateCancellation?: boolean; message?: string; error?: string }>;
+  // Notifications & Alertes
+  unreadNotificationsCount: number;
+  decrementUnreadCount: () => void;
+  resetUnreadCount: () => void;
+  refreshNotificationsCount: () => Promise<void>;
+
   refreshMemberData: () => Promise<void>;
 }
 
@@ -182,6 +188,26 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   
   // État partagé et synchronisé des réservations
   const [userBookings, setUserBookings] = useState<BookingSlot[]>([]);
+
+  // Notifications non lues
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
+
+  const decrementUnreadCount = useCallback(() => {
+    setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const resetUnreadCount = useCallback(() => {
+    setUnreadNotificationsCount(0);
+  }, []);
+
+  const refreshNotificationsCount = useCallback(async () => {
+    try {
+      const count = await getMemberUnreadNotificationsCountAction();
+      setUnreadNotificationsCount(count);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Synchronisation post-hydratation pour mode démo si non authentifié
   useEffect(() => {
@@ -305,11 +331,12 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
       setCurrentUserId(user.id);
 
-      // 3. Chargement parallèle des droits d'accès, du quota privé et des réservations du membre
-      const [accessRes, quotaStatusRes, realBookingsRes] = await Promise.allSettled([
+      // 3. Chargement parallèle des droits d'accès, du quota privé, des réservations et des alertes du membre
+      const [accessRes, quotaStatusRes, realBookingsRes, unreadRes] = await Promise.allSettled([
         getMemberPlanAccess(supabase, user.id),
         getMemberPrivateQuotaStatus(supabase),
         getMemberUpcomingBookings(supabase, user.id),
+        getMemberUnreadNotificationsCountAction(),
       ]);
 
       if (accessRes.status === "fulfilled") {
@@ -335,6 +362,10 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
       if (realBookingsRes.status === "fulfilled") {
         setUserBookings(realBookingsRes.value);
+      }
+
+      if (unreadRes.status === "fulfilled") {
+        setUnreadNotificationsCount(unreadRes.value);
       }
     } catch (err) {
       console.error("[MemberContext] Erreur lors du chargement des données membre :", err);
@@ -568,6 +599,10 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         cancelPrivate,
         bookSlot,
         cancelSlot,
+        unreadNotificationsCount,
+        decrementUnreadCount,
+        resetUnreadCount,
+        refreshNotificationsCount,
         refreshMemberData,
       }}
     >

@@ -19,6 +19,7 @@ import type {
   ProgramSession,
   Recipe,
   FitnessGoal,
+  PrepTimePreference,
   PlanEntitlements,
   WeightTrajectoryResult,
   WeightTrajectoryStatus,
@@ -476,16 +477,26 @@ export function calculateNutritionAdherence(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 /**
- * Détermine le focus alimentaire et sélectionne des recettes accessibles selon les droits du membre.
- * Ne recommande JAMAIS une recette Premium à un utilisateur Free sans entitlement.
+ * Détermine le focus alimentaire et sélectionne des recettes accessibles selon les droits,
+ * l'objectif, le temps de préparation souhaité, les macros cibles et la variété (historique).
+ *
+ * Règles & Priorités strictes :
+ * Priorité 1 : Entitlements (Ne JAMAIS recommander une recette Premium sans droits).
+ * Priorité 2 : Objectif du membre (weight_loss, muscle_gain, maintenance, recomposition).
+ * Priorité 3 : Temps de préparation souhaité (quick ≤ 10 min, standard ≤ 20 min, flexible).
+ * Priorité 4 : Focus nutritionnel et adéquation macronutritionnelle.
+ * Priorité 5 : Variété & pénalisation des repas récemment consommés (historique food log).
  */
 export function recommendMealFocus(
   focus: MealFocusType,
   availableRecipes: Recipe[] = [],
   entitlements: PlanEntitlements,
-  primaryGoal: FitnessGoal = "weight_loss"
+  primaryGoal: FitnessGoal = "weight_loss",
+  prepTimePreference: PrepTimePreference = "flexible",
+  recentDailyFoodLogs: Array<{ recipe_id?: string | null; food_name?: string; log_date?: string; [key: string]: any }> = [],
+  targetNutrition?: { targetCalories: number; targetProtein: number } | null
 ): RecommendedMealFocus {
-  // Filtrage strict par entitlement
+  // Priorité 1 : Filtrage strict par entitlement et statut actif
   const accessibleRecipes = availableRecipes.filter((r) => {
     if (!r.is_active) return false;
     if (r.is_premium && !entitlements.recipes_all) return false;
@@ -496,34 +507,23 @@ export function recommendMealFocus(
   let description = "Maintiens tes repas structurés avec des apports complets.";
   let actionableTip = "Assure-toi de consommer une portion de légumes et une source de protéines à chaque repas.";
 
-  let matchedRecipes = [...accessibleRecipes];
-
   switch (focus) {
     case "prioritize_protein":
       title = "Renforcer l'Apport en Protéines";
       description = "Ton apport protéique moyen est en dessous de la cible recommandée pour préserver ta masse musculaire.";
-      actionableTip = "Ajoute une source protéique dès le petit-déjeuner (œufs, skyr, whey) et vise 30-40 g par repas principal.";
-      matchedRecipes = accessibleRecipes
-        .filter((r) => (r.tags && r.tags.includes("high_protein")) || r.proteins_g >= 30)
-        .sort((a, b) => b.proteins_g - a.proteins_g);
+      actionableTip = "Ajoute une source protéique dès le petit-déjeuner (fromage blanc, œufs, poulet, saumon) et vise 30-40 g par repas principal.";
       break;
 
     case "calorie_control":
       title = "Contrôle des Apports Caloriques";
       description = "Tes calories moyennes dépassent légèrement la zone de déficit prévue pour la perte de poids.";
-      actionableTip = "Privilégie les aliments à haute satiété et faible densité calorique (légumes verts, volaille, poissons blancs).";
-      matchedRecipes = accessibleRecipes
-        .filter((r) => r.target_goal === "weight_loss" || r.calories <= 450)
-        .sort((a, b) => a.calories - b.calories);
+      actionableTip = "Privilégie les salades/bowls à haute satiété et faible densité calorique (volaille, thon, légumes verts, agrumes).";
       break;
 
     case "muscle_surplus":
       title = "Optimiser le Surplus Calorigène";
       description = "Ton apport calorique est trop faible pour stimuler une prise de masse musculaire optimale.";
-      actionableTip = "Intègre des graisses saines et des féculents digestes (avocat, oléagineux, riz, avoine) pour atteindre tes calories.";
-      matchedRecipes = accessibleRecipes
-        .filter((r) => r.target_goal === "muscle_gain" || r.target_goal === "both" || r.calories >= 550)
-        .sort((a, b) => b.calories - a.calories);
+      actionableTip = "Intègre des graisses saines et des féculents digestes (beurre de cacahuète, avocat, riz complet, pâtes complètes, avoine).";
       break;
 
     case "consistency":
@@ -540,23 +540,145 @@ export function recommendMealFocus(
 
     case "balanced_meals":
     default:
-      title = primaryGoal === "weight_loss" ? "Déficit Contrôlé & Satiété" : "Nutrition Performance";
-      description = "Ta répartition nutritionnelle est harmonieuse. Continue sur cette régularité.";
-      actionableTip = "Varie tes sources de micronutriments et hydrate-toi avec au moins 2L d'eau par jour.";
+      if (primaryGoal === "weight_loss") {
+        title = "Déficit Contrôlé & Satiété";
+        description = "Ta répartition nutritionnelle est harmonieuse. Continue sur cette régularité.";
+        actionableTip = "Varie tes sources de micronutriments et hydrate-toi avec au moins 2L d'eau par jour.";
+      } else if (primaryGoal === "recomposition") {
+        title = "Recomposition Corporelle & Densité Protéique";
+        description = "Maintiens un apport protéique élevé et une dépense énergétique active.";
+        actionableTip = "Privilégie les bowls riches en protéines avec féculents complets à index glycémique modéré.";
+      } else if (primaryGoal === "muscle_gain") {
+        title = "Surplus Propre & Performance";
+        description = "Apports réguliers pour nourrir la synthèse musculaire et l'intensité d'entraînement.";
+        actionableTip = "Répartis tes apports en 3 repas solides et 1 collation post-effort riche en protéines.";
+      } else {
+        title = "Nutrition Performance & Maintien";
+        description = "Équilibre parfait entre glucides, protéines et lipides de haute qualité.";
+        actionableTip = "Conserve ta diversité alimentaire avec légumes de saison et protéines de qualité.";
+      }
       break;
   }
 
-  // Si pas de recettes spécifiques trouvées, repli sur les recettes accessibles disponibles
-  if (matchedRecipes.length === 0) {
-    matchedRecipes = accessibleRecipes;
+  // Historique des recettes consommées récemment pour la pénalisation de redondance (Priorité 5)
+  const recentRecipeIds = new Set<string>();
+  const recentRecipeNames = new Set<string>();
+  for (const log of recentDailyFoodLogs) {
+    if (log.recipe_id) recentRecipeIds.add(log.recipe_id);
+    if (log.food_name) recentRecipeNames.add(log.food_name.toLowerCase().trim());
   }
+
+  // Scoring déterministe de chaque recette accessible
+  const scoredRecipes = accessibleRecipes.map((recipe) => {
+    let score = 0;
+
+    // Priorité 2 : Adéquation avec l'objectif
+    if (recipe.target_goal === primaryGoal) {
+      score += 50;
+    } else if (recipe.target_goal === "both" || recipe.target_goal === "all") {
+      score += 40;
+    } else if (primaryGoal === "recomposition") {
+      if (recipe.target_goal === "weight_loss" || recipe.target_goal === "muscle_gain") {
+        score += 30;
+      }
+    } else if (primaryGoal === "maintenance") {
+      score += 25;
+    } else {
+      score += 10;
+    }
+
+    // Priorité 3 : Temps de préparation souhaité
+    if (prepTimePreference === "quick") {
+      if (recipe.prep_time_minutes <= 10) {
+        score += 60;
+      } else if (recipe.prep_time_minutes <= 15) {
+        score += 15;
+      } else {
+        score -= 40;
+      }
+    } else if (prepTimePreference === "standard") {
+      if (recipe.prep_time_minutes <= 20) {
+        score += 40;
+      } else {
+        score -= 25;
+      }
+    }
+
+    // Priorité 4 : Focus & Macros
+    if (focus === "prioritize_protein" || primaryGoal === "recomposition") {
+      if (recipe.proteins_g >= 30 || (recipe.tags && recipe.tags.includes("high_protein"))) {
+        score += 35;
+      }
+      const proteinCalRatio = (recipe.proteins_g * 4) / Math.max(1, recipe.calories);
+      score += Math.round(proteinCalRatio * 30);
+    } else if (focus === "calorie_control" || primaryGoal === "weight_loss") {
+      if (recipe.calories <= 450 || (recipe.tags && (recipe.tags.includes("satiety") || recipe.tags.includes("low_fat")))) {
+        score += 35;
+      }
+      if (recipe.calories > 580) {
+        score -= 30;
+      }
+    } else if (focus === "muscle_surplus" || primaryGoal === "muscle_gain") {
+      if (recipe.calories >= 450 && recipe.proteins_g >= 25) {
+        score += 40;
+      }
+      if (recipe.tags && (recipe.tags.includes("muscle_gain") || recipe.tags.includes("energy"))) {
+        score += 25;
+      }
+    } else {
+      // balanced_meals / maintenance
+      if (recipe.calories >= 250 && recipe.calories <= 550) {
+        score += 30;
+      }
+      if (recipe.tags && (recipe.tags.includes("balanced") || recipe.tags.includes("clean_eating"))) {
+        score += 20;
+      }
+    }
+
+    // Priorité 5 : Pénalité d'historique récent (anti-répétition)
+    const isRecentlyLogged =
+      recentRecipeIds.has(recipe.id) ||
+      recentRecipeNames.has(recipe.title.toLowerCase().trim());
+    if (isRecentlyLogged) {
+      score -= 75; // Fortement pénalisé pour favoriser la découverte d'autres recettes
+    }
+
+    return { recipe, score };
+  });
+
+  // Tri par score décroissant
+  scoredRecipes.sort((a, b) => b.score - a.score);
+
+  // Sélection variée (Diversification des catégories : petit-déjeuner, bowl/salade, collation)
+  const selected: Recipe[] = [];
+  const usedCategories = new Set<string>();
+
+  // 1ère passe : Sélectionner les meilleures recettes en diversifiant les catégories
+  for (const item of scoredRecipes) {
+    if (selected.length >= 3) break;
+    if (!usedCategories.has(item.recipe.category)) {
+      selected.push(item.recipe);
+      usedCategories.add(item.recipe.category);
+    }
+  }
+
+  // 2ème passe : Compléter si nécessaire jusqu'à 3 recettes avec les meilleurs scores restants
+  for (const item of scoredRecipes) {
+    if (selected.length >= 3) break;
+    if (!selected.some((r) => r.id === item.recipe.id)) {
+      selected.push(item.recipe);
+    }
+  }
+
+  // Repli de sécurité si aucune recette trouvée
+  const finalRecipes = selected.length > 0 ? selected : accessibleRecipes.slice(0, 3);
 
   return {
     focus,
     title,
     description,
     actionableTip,
-    recommendedRecipes: matchedRecipes.slice(0, 3),
+    recommendedRecipes: finalRecipes,
   };
 }
 
@@ -749,12 +871,16 @@ export function buildWeeklyGuidance(context: PersonalizationContext): Personaliz
     referenceDate
   );
 
-  // 4. Focus Nutrition & Recettes
+  // 4. Focus Nutrition & Recettes personnalisées (Objectif, Temps, Macros, Variété)
+  const prepTimePref = profile?.prep_time_preference || "flexible";
   const mealFocus = recommendMealFocus(
     nutritionAdherence.focus,
     availableRecipes,
     entitlements,
-    goal
+    goal,
+    prepTimePref,
+    dailyFoodLogs,
+    targetNutrition
   );
 
   // 5. Recommandation des séances

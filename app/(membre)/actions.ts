@@ -100,3 +100,175 @@ export async function getConfirmedBookingsSummaryAction(): Promise<ConfirmedBook
     return [];
   }
 }
+
+import {
+  getOrCreateNotificationPreferences,
+  updateNotificationPreferences,
+  getNotifications,
+  getUnreadNotificationsCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  type NotificationPreferences,
+  type NotificationPreferencesUpdate,
+  type NotificationLog,
+} from "@/lib/supabase/notifications";
+
+/**
+ * Récupère ou initialise les préférences de notification de l'utilisateur connecté.
+ */
+export async function getMemberNotificationPreferencesAction(): Promise<NotificationPreferences | null> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return null;
+    }
+
+    return await getOrCreateNotificationPreferences(supabase, user.id);
+  } catch (err) {
+    console.error("[getMemberNotificationPreferencesAction] Erreur :", err);
+    return null;
+  }
+}
+
+/**
+ * Met à jour les préférences de notification de l'utilisateur connecté.
+ */
+export async function updateMemberNotificationPreferencesAction(
+  updates: NotificationPreferencesUpdate
+): Promise<{ success: boolean; data?: NotificationPreferences; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return { success: false, error: "Session expirée ou non autorisée" };
+    }
+
+    const updated = await updateNotificationPreferences(supabase, user.id, updates);
+    return { success: true, data: updated };
+  } catch (err: any) {
+    console.error("[updateMemberNotificationPreferencesAction] Erreur :", err);
+    return {
+      success: false,
+      error: err?.message || "Erreur lors de l'enregistrement des préférences",
+    };
+  }
+}
+
+/**
+ * Récupère les notifications du membre connecté avec le décompte des non lues
+ */
+export async function getMemberNotificationsAction(
+  limit: number = 50
+): Promise<{ success: boolean; data?: { notifications: NotificationLog[]; unreadCount: number }; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return { success: false, error: "Session expirée ou non autorisée" };
+    }
+
+    const [notifications, unreadCount] = await Promise.all([
+      getNotifications(supabase, user.id, limit),
+      getUnreadNotificationsCount(supabase, user.id),
+    ]);
+
+    return {
+      success: true,
+      data: { notifications, unreadCount },
+    };
+  } catch (err: any) {
+    console.error("[getMemberNotificationsAction] Erreur :", err);
+    return {
+      success: false,
+      error: err?.message || "Erreur chargement notifications",
+    };
+  }
+}
+
+/**
+ * Récupère le nombre de notifications non lues du membre connecté
+ */
+export async function getMemberUnreadNotificationsCountAction(): Promise<number> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return 0;
+    }
+
+    return await getUnreadNotificationsCount(supabase, user.id);
+  } catch (err) {
+    console.error("[getMemberUnreadNotificationsCountAction] Erreur :", err);
+    return 0;
+  }
+}
+
+/**
+ * Marque une notification spécifique comme lue pour le membre connecté
+ */
+export async function markMemberNotificationAsReadAction(
+  notificationId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!notificationId || typeof notificationId !== "string") {
+      return { success: false, error: "Identifiant invalide" };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return { success: false, error: "Session expirée ou non autorisée" };
+    }
+
+    const ok = await markNotificationAsRead(supabase, user.id, notificationId);
+    return { success: ok };
+  } catch (err: any) {
+    console.error("[markMemberNotificationAsReadAction] Erreur :", err);
+    return { success: false, error: err?.message || "Erreur marquage notification" };
+  }
+}
+
+/**
+ * Marque toutes les notifications non lues du membre connecté comme lues
+ */
+export async function markAllMemberNotificationsAsReadAction(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return { success: false, error: "Session expirée ou non autorisée" };
+    }
+
+    const ok = await markAllNotificationsAsRead(supabase, user.id);
+    return { success: ok };
+  } catch (err: any) {
+    console.error("[markAllMemberNotificationsAsReadAction] Erreur :", err);
+    return { success: false, error: err?.message || "Erreur marquage notifications" };
+  }
+}
+

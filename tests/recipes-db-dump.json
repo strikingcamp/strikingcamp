@@ -1,0 +1,2190 @@
+[
+  {
+    "id": "e1111111-1111-4111-8111-111111111101",
+    "slug": "omelette-striker-epinards-avocat",
+    "title": "Omelette Striker aux Épinards & Avocat",
+    "category": "breakfast",
+    "target_goal": "both",
+    "image_url": "/images/recipes/omelette-hero.jpg",
+    "display_order": 1,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Œufs entiers",
+        "unit": "unité",
+        "quantity": 3
+      },
+      {
+        "name": "Pousses d'épinards frais",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Avocat",
+        "unit": "unité",
+        "quantity": 0.25
+      }
+    ]
+  },
+  {
+    "id": "e1111111-1111-4111-8111-111111111102",
+    "slug": "bowl-poulet-quinoa-legumes",
+    "title": "Bowl Poulet Rôti, Quinoa & Légumes Croquants",
+    "category": "lunch",
+    "target_goal": "both",
+    "image_url": "/images/recipes/chicken-bowl.jpg",
+    "display_order": 2,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Filet de poulet",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Quinoa cru",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Tomates cerises & concombre",
+        "unit": "g",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "id": "e1111111-1111-4111-8111-111111111103",
+    "slug": "saumon-patates-douces-brocolis",
+    "title": "Pavé de Saumon Rôti, Patates Douces & Brocolis",
+    "category": "dinner",
+    "target_goal": "both",
+    "image_url": "/images/recipes/salmon-dinner.jpg",
+    "display_order": 3,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pavé de saumon frais",
+        "unit": "g",
+        "quantity": 140
+      },
+      {
+        "name": "Patate douce",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Brocolis",
+        "unit": "g",
+        "quantity": 120
+      }
+    ]
+  },
+  {
+    "id": "e1111111-1111-4111-8111-111111111104",
+    "slug": "shaker-recup-banane-avoine-cacao",
+    "title": "Shaker Récupération Banane, Avoine & Cacao Pur",
+    "category": "snack",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/protein-shake.jpg",
+    "display_order": 4,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Banane mûre",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Flocons d'avoine",
+        "unit": "g",
+        "quantity": 30
+      },
+      {
+        "name": "Protéine en poudre (Whey / Végétale)",
+        "unit": "g",
+        "quantity": 25
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000001",
+    "slug": "fromage-blanc-fruits-rouges-chia",
+    "title": "Fromage blanc aux fruits rouges & graines de chia",
+    "category": "breakfast",
+    "target_goal": "all",
+    "image_url": "https://azfifhmrmdoyzetcfvli.supabase.co/storage/v1/object/public/recipes/fromage-blanc-fruits-rouges-chia.webp",
+    "display_order": 10,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc 0% ou 3%",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Mélange de fruits rouges frais/surgelés",
+        "unit": "g",
+        "quantity": 100
+      },
+      {
+        "name": "Graines de chia",
+        "unit": "g",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000001",
+    "slug": "salade-thai-boeuf-saisi",
+    "title": "Salade Thaï au Bœuf Saisi & Citronnelle",
+    "category": "lunch",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/thai-beef-salad.jpg",
+    "display_order": 10,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Bavette ou rumsteak de bœuf",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Pousses d'épinards frais",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Concombre & oignon rouge",
+        "unit": "g",
+        "quantity": 100
+      },
+      {
+        "name": "Jus de citron vert & coriandre",
+        "unit": "portion",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000002",
+    "slug": "fromage-blanc-banane-beurre-cacahuete",
+    "title": "Fromage blanc banane & beurre de cacahuète",
+    "category": "breakfast",
+    "target_goal": "muscle_gain",
+    "image_url": "https://azfifhmrmdoyzetcfvli.supabase.co/storage/v1/object/public/recipes/fromage-blanc-banane-beurre-cacahuete.webp",
+    "display_order": 11,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Banane mûre",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Beurre de cacahuète 100% pur",
+        "unit": "g",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000002",
+    "slug": "cabillaud-roti-courgettes",
+    "title": "Pavé de Cabillaud Rôti aux Courgettes & Épices Douces",
+    "category": "dinner",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/cod-zucchini.jpg",
+    "display_order": 11,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Dos de cabillaud frais",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Courgettes moyennes",
+        "unit": "unités",
+        "quantity": 2
+      },
+      {
+        "name": "Huile d'olive & thym frais",
+        "unit": "c.à.s",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000003",
+    "slug": "omelette-blanche-tomates-basilic",
+    "title": "Omelette Blanche aux Blancs d'Œufs, Tomates & Basilic",
+    "category": "breakfast",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/egg-white-omelette.jpg",
+    "display_order": 12,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Blancs d'œufs",
+        "unit": "unités",
+        "quantity": 4
+      },
+      {
+        "name": "Œuf entier",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Tomate fraîche & basilic",
+        "unit": "unité",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000003",
+    "slug": "fromage-blanc-pomme-cannelle",
+    "title": "Fromage blanc pomme croquante & cannelle",
+    "category": "breakfast",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/fb-pomme-cannelle.jpg",
+    "display_order": 12,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc 0%",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Pomme fraîche croquante",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Cannelle moulue",
+        "unit": "pincée",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000004",
+    "slug": "fromage-blanc-kiwi-granola",
+    "title": "Fromage blanc kiwi & granola maison sans sucre",
+    "category": "breakfast",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/fb-kiwi-granola.jpg",
+    "display_order": 13,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Kiwi frais",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Granola avoine non sucré",
+        "unit": "g",
+        "quantity": 25
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000004",
+    "slug": "wraps-protein-thon-crudites",
+    "title": "Wraps Protéinés Thon Nature & Crudités Croquantes",
+    "category": "lunch",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/tuna-wrap.jpg",
+    "display_order": 13,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Thon blanc au naturel égoutté",
+        "unit": "g",
+        "quantity": 140
+      },
+      {
+        "name": "Galette wrap de blé complet",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Fromage blanc 0% & crudités",
+        "unit": "g",
+        "quantity": 50
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000005",
+    "slug": "soupe-poulet-gingembre",
+    "title": "Soupe Brûle-Graisses Striker Poulet & Gingembre",
+    "category": "dinner",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/ginger-chicken-soup.jpg",
+    "display_order": 14,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Escalope de poulet émincée",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Bouillon de volaille dégraissé",
+        "unit": "ml",
+        "quantity": 500
+      },
+      {
+        "name": "Légumes verts émincés & gingembre",
+        "unit": "g",
+        "quantity": 150
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000005",
+    "slug": "fromage-blanc-mangue-coco",
+    "title": "Fromage blanc mangue fraîche & coco râpée",
+    "category": "breakfast",
+    "target_goal": "maintenance",
+    "image_url": "/images/recipes/fb-mangue-coco.jpg",
+    "display_order": 14,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Mangue fraîche en dés",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Noix de coco râpée",
+        "unit": "g",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000006",
+    "slug": "tartare-saumon-avocat",
+    "title": "Tartare de Saumon Frais & Avocat Light",
+    "category": "dinner",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/salmon-tartare.jpg",
+    "display_order": 15,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Saumon frais qualité tartare",
+        "unit": "g",
+        "quantity": 130
+      },
+      {
+        "name": "Avocat mûr",
+        "unit": "unité",
+        "quantity": 0.33
+      },
+      {
+        "name": "Aneth fraîche & citron vert",
+        "unit": "portion",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000006",
+    "slug": "fromage-blanc-cacao-banane",
+    "title": "Fromage blanc cacao pur intense & banane",
+    "category": "breakfast",
+    "target_goal": "all",
+    "image_url": "/images/recipes/fb-cacao-banane.jpg",
+    "display_order": 15,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Cacao pur non sucré",
+        "unit": "g",
+        "quantity": 7
+      },
+      {
+        "name": "Banane mûre",
+        "unit": "unité",
+        "quantity": 0.5
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000007",
+    "slug": "porridge-proteine-banane-cannelle",
+    "title": "Porridge protéiné banane & cannelle",
+    "category": "breakfast",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/porridge-banane.jpg",
+    "display_order": 16,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Flocons d'avoine",
+        "unit": "g",
+        "quantity": 45
+      },
+      {
+        "name": "Lait d'amande ou écrémé",
+        "unit": "ml",
+        "quantity": 180
+      },
+      {
+        "name": "Banane",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Protéine en poudre ou skyr",
+        "unit": "g",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000007",
+    "slug": "emince-dinde-curry-haricots",
+    "title": "Émincé de Dinde au Curry Doux & Haricots Verts",
+    "category": "lunch",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/curry-turkey.jpg",
+    "display_order": 16,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Filet de dinde",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Haricots verts extra-fins",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Lait de coco allégé & curry",
+        "unit": "c.à.s",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000008",
+    "slug": "porridge-fruits-rouges-chia",
+    "title": "Porridge fruits rouges & graines de chia",
+    "category": "breakfast",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/porridge-fruits-rouges.jpg",
+    "display_order": 17,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Flocons d'avoine",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Lait végétal",
+        "unit": "ml",
+        "quantity": 160
+      },
+      {
+        "name": "Graines de chia",
+        "unit": "g",
+        "quantity": 5
+      },
+      {
+        "name": "Fruits rouges variés",
+        "unit": "g",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000008",
+    "slug": "poelee-crevettes-ail-brocolis",
+    "title": "Poêlée de Crevettes à l'Ail & Brocolis Croquants",
+    "category": "dinner",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/garlic-shrimp-broccoli.jpg",
+    "display_order": 17,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Crevettes roses décortiquées",
+        "unit": "g",
+        "quantity": 180
+      },
+      {
+        "name": "Têtes de brocolis frais",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Gousses d'ail écrasées",
+        "unit": "gousses",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000009",
+    "slug": "bowl-fromage-blanc-chia-myrtilles",
+    "title": "Bowl Fromage Blanc 0%, Graines de Chia & Myrtilles",
+    "category": "snack",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/chia-berry-bowl.jpg",
+    "display_order": 18,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc 0%",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Myrtilles fraîches",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Graines de chia",
+        "unit": "c.à.s",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000009",
+    "slug": "porridge-pomme-cannelle",
+    "title": "Porridge pomme fondante à la cannelle",
+    "category": "breakfast",
+    "target_goal": "maintenance",
+    "image_url": "/images/recipes/porridge-pomme.jpg",
+    "display_order": 18,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Flocons d'avoine",
+        "unit": "g",
+        "quantity": 45
+      },
+      {
+        "name": "Lait",
+        "unit": "ml",
+        "quantity": 180
+      },
+      {
+        "name": "Pomme fraîche",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Cannelle moulue",
+        "unit": "c.à.c",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000010",
+    "slug": "porridge-chocolat-banane",
+    "title": "Porridge chocolat noir intense & banane",
+    "category": "breakfast",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/porridge-choco-banane.jpg",
+    "display_order": 19,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Flocons d'avoine",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Lait",
+        "unit": "ml",
+        "quantity": 200
+      },
+      {
+        "name": "Chocolat noir 85%",
+        "unit": "g",
+        "quantity": 10
+      },
+      {
+        "name": "Banane mûre",
+        "unit": "unité",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "c1000000-0000-4000-8000-000000000010",
+    "slug": "carpaccio-boeuf-roquette",
+    "title": "Carpaccio de Bœuf, Roquette & Filet d'Huile d'Olive",
+    "category": "dinner",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/beef-carpaccio.jpg",
+    "display_order": 19,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Tranches fines de bœuf charolais",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Roquette sauvage fraîche",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Copeaux de parmesan AOP & huile d'olive",
+        "unit": "g",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000001",
+    "slug": "steak-patates-douces-roties",
+    "title": "Steak Haché 5% & Patates Douces Rôties au Four",
+    "category": "lunch",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/beef-sweet-potato.jpg",
+    "display_order": 20,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Steak haché pur bœuf 5%",
+        "unit": "g",
+        "quantity": 170
+      },
+      {
+        "name": "Patate douce crue",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Huile d'olive & paprika fumé",
+        "unit": "c.à.s",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000011",
+    "slug": "pancakes-avoine-banane",
+    "title": "Pancakes express avoine & banane (sans sucre ajouté)",
+    "category": "breakfast",
+    "target_goal": "all",
+    "image_url": "/images/recipes/pancakes-avoine.jpg",
+    "display_order": 20,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Banane mûre",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Œufs entiers plein air",
+        "unit": "unité",
+        "quantity": 2
+      },
+      {
+        "name": "Flocons d'avoine mixés",
+        "unit": "g",
+        "quantity": 40
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000012",
+    "slug": "pancakes-fromage-blanc-vanille",
+    "title": "Pancakes moelleux au fromage blanc & vanille",
+    "category": "breakfast",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/pancakes-fb-vanille.jpg",
+    "display_order": 21,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc 0%",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Œuf entier",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Blanc d'œuf",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Farine complète",
+        "unit": "g",
+        "quantity": 30
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000002",
+    "slug": "pates-completes-boeuf-tomate",
+    "title": "Pâtes Complètes au Bœuf Haché & Sauce Tomate Basilic",
+    "category": "dinner",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/pasta-bolognese.jpg",
+    "display_order": 21,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pâtes complètes crues",
+        "unit": "g",
+        "quantity": 90
+      },
+      {
+        "name": "Bœuf haché 5%",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Coulis de tomates concassées & origan",
+        "unit": "g",
+        "quantity": 200
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000003",
+    "slug": "poulet-basquaise-riz-brun",
+    "title": "Poulet Façon Basquaise & Riz Brun Complet",
+    "category": "lunch",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/chicken-basquaise.jpg",
+    "display_order": 22,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Blanc de poulet fermier",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Riz brun complet cru",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Poivrons rouge et vert émincés",
+        "unit": "g",
+        "quantity": 150
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000013",
+    "slug": "pancakes-proteines-myrtilles",
+    "title": "Pancakes protéinés aux myrtilles & coulis rouge",
+    "category": "breakfast",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/pancakes-myrtilles.jpg",
+    "display_order": 22,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Skyr ou fromage blanc",
+        "unit": "g",
+        "quantity": 100
+      },
+      {
+        "name": "Œuf entier",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Farine d'avoine",
+        "unit": "g",
+        "quantity": 35
+      },
+      {
+        "name": "Myrtilles fraîches",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Framboises fraîches (coulis)",
+        "unit": "g",
+        "quantity": 40
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000014",
+    "slug": "tartine-avocat-oeuf-levain",
+    "title": "Tartine avocat crémeux & œuf mollet sur pain au levain",
+    "category": "breakfast",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/tartine-avocat-oeuf.jpg",
+    "display_order": 23,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pain complet au levain",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Avocat mûr",
+        "unit": "unité",
+        "quantity": 0.33
+      },
+      {
+        "name": "Œuf plein air mollet/poché",
+        "unit": "unité",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000004",
+    "slug": "shaker-mass-recovery-avoine-banane",
+    "title": "Shaker Mass & Recovery Avoine, Banane & Whey",
+    "category": "snack",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/mass-shake.jpg",
+    "display_order": 23,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Farine d'avoine instantanée",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Whey protéine isolate",
+        "unit": "g",
+        "quantity": 35
+      },
+      {
+        "name": "Banane mûre",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Lait demi-écrémé ou végétal",
+        "unit": "ml",
+        "quantity": 300
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000005",
+    "slug": "saumon-entier-riz-basmati",
+    "title": "Pavé de Saumon Entier & Riz Basmati Sauvage",
+    "category": "dinner",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/salmon-rice.jpg",
+    "display_order": 24,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pavé de saumon frais",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Riz basmati sauvage cru",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Asperges vertes vapeur",
+        "unit": "g",
+        "quantity": 120
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000015",
+    "slug": "tartine-saumon-fume-fromage-frais",
+    "title": "Tartine nordique saumon fumé & fromage frais aneth",
+    "category": "breakfast",
+    "target_goal": "all",
+    "image_url": "/images/recipes/tartine-saumon.jpg",
+    "display_order": 24,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pain de seigle ou complet",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Fromage frais allégé",
+        "unit": "g",
+        "quantity": 30
+      },
+      {
+        "name": "Saumon fumé de qualité",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Aneth fraîche & jus de citron",
+        "unit": "portion",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000006",
+    "slug": "omelette-avoine-epinards-muscles",
+    "title": "Omelette 4 Œufs, Flocons d'Avoine & Épinards",
+    "category": "breakfast",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/oat-omelette.jpg",
+    "display_order": 25,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Œufs entiers",
+        "unit": "unités",
+        "quantity": 3
+      },
+      {
+        "name": "Blancs d'œufs",
+        "unit": "unités",
+        "quantity": 2
+      },
+      {
+        "name": "Flocons d'avoine",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Pousses d'épinards",
+        "unit": "g",
+        "quantity": 50
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000016",
+    "slug": "tartine-banane-beurre-cacahuete",
+    "title": "Tartine énergétique banane, beurre de cacahuète & graines",
+    "category": "breakfast",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/tartine-peanut-banane.jpg",
+    "display_order": 25,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pain complet aux céréales",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Beurre de cacahuète pur",
+        "unit": "g",
+        "quantity": 20
+      },
+      {
+        "name": "Banane",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Graines de chanvre/courge",
+        "unit": "g",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000017",
+    "slug": "tartine-ricotta-fruits-frais",
+    "title": "Tartine ricotta fraîche, fraises & pointe de miel",
+    "category": "breakfast",
+    "target_goal": "maintenance",
+    "image_url": "/images/recipes/tartine-ricotta-fruits.jpg",
+    "display_order": 26,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pain complet croustillant",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Ricotta fraîche",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Fraises fraîches émincées",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Miel d'acacia",
+        "unit": "g",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000007",
+    "slug": "chili-con-carne-striker",
+    "title": "Chili Con Carne Striker Extra Protéines",
+    "category": "lunch",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/chili-striker.jpg",
+    "display_order": 26,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Bœuf haché 5%",
+        "unit": "g",
+        "quantity": 180
+      },
+      {
+        "name": "Haricots rouges cuits",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Tomates concassées & maïs",
+        "unit": "g",
+        "quantity": 150
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000008",
+    "slug": "risotto-epeautre-poulet-champignons",
+    "title": "Risotto d'Épeautre au Poulet & Champignons Bruns",
+    "category": "dinner",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/spelt-risotto.jpg",
+    "display_order": 27,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Filet de poulet",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Petit épeautre cru",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Champignons de Paris bruns",
+        "unit": "g",
+        "quantity": 150
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000009",
+    "slug": "porridge-beurre-cacahuete-banane",
+    "title": "Bowl Porridge Énergétique Beurre de Cacahuète & Banane",
+    "category": "breakfast",
+    "target_goal": "muscle_gain",
+    "image_url": "https://azfifhmrmdoyzetcfvli.supabase.co/storage/v1/object/public/recipes/porridge-beurre-cacahuete-banane.webp",
+    "display_order": 28,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Flocons d'avoine",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Whey protéine vanille",
+        "unit": "g",
+        "quantity": 20
+      },
+      {
+        "name": "Beurre de cacahuète pur",
+        "unit": "g",
+        "quantity": 20
+      },
+      {
+        "name": "Banane tranchée",
+        "unit": "unité",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "c2000000-0000-4000-8000-000000000010",
+    "slug": "filet-mignon-puree-patates-douces",
+    "title": "Filet Mignon de Porc Rôti & Purée Maison de Patates Douces",
+    "category": "dinner",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/pork-sweet-potato.jpg",
+    "display_order": 29,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Médaillons de filet mignon de porc",
+        "unit": "g",
+        "quantity": 180
+      },
+      {
+        "name": "Patate douce pour purée",
+        "unit": "g",
+        "quantity": 250
+      },
+      {
+        "name": "Romarin frais & muscade",
+        "unit": "portion",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000018",
+    "slug": "bowl-poulet-quinoa-roquette",
+    "title": "Bowl Poulet rôti, Quinoa, Roquette & Tomates cerises",
+    "category": "lunch",
+    "target_goal": "all",
+    "image_url": "https://azfifhmrmdoyzetcfvli.supabase.co/storage/v1/object/public/recipes/bowl-poulet-quinoa-roquette.webp",
+    "display_order": 30,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Filet de poulet",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Quinoa cru",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Pousses de roquette",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Tomates cerises",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Huile d'olive vierge",
+        "unit": "ml",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000001",
+    "slug": "salade-quinoa-poulet-feta",
+    "title": "Salade Complète Quinoa, Poulet Grillé & Féta AOP",
+    "category": "lunch",
+    "target_goal": "both",
+    "image_url": "/images/recipes/quinoa-chicken-feta.jpg",
+    "display_order": 30,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Escalope de poulet grillée",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Quinoa cuit",
+        "unit": "g",
+        "quantity": 120
+      },
+      {
+        "name": "Féta grecque AOP émiettée",
+        "unit": "g",
+        "quantity": 30
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000019",
+    "slug": "bowl-saumon-avocat-riz-feves",
+    "title": "Bowl Saumon frais, Avocat, Riz basmati & Fèves",
+    "category": "lunch",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/bowl-saumon-avocat.jpg",
+    "display_order": 31,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pavé de saumon frais",
+        "unit": "g",
+        "quantity": 130
+      },
+      {
+        "name": "Riz basmati cru",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Avocat",
+        "unit": "unité",
+        "quantity": 0.33
+      },
+      {
+        "name": "Fèves fraîches ou edamame",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Sauce soja & graines de sésame",
+        "unit": "ml",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000002",
+    "slug": "bowl-burrito-healthy-dinde",
+    "title": "Bowl Burrito Healthy Haricots Noirs, Dinde & Guacamole",
+    "category": "lunch",
+    "target_goal": "both",
+    "image_url": "/images/recipes/burrito-bowl.jpg",
+    "display_order": 31,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Blanc de dinde sauté",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Riz basmati cuit & haricots noirs",
+        "unit": "g",
+        "quantity": 130
+      },
+      {
+        "name": "Avocat écrasé minute",
+        "unit": "unité",
+        "quantity": 0.25
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000003",
+    "slug": "poulet-yakitori-legumes-croquants",
+    "title": "Blanc de Poulet Façon Yakitori & Légumes Croquants",
+    "category": "dinner",
+    "target_goal": "both",
+    "image_url": "/images/recipes/chicken-yakitori.jpg",
+    "display_order": 32,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Blanc de poulet en cubes",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Légumes croquants au wok",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Sauce soja & miel d'acacia",
+        "unit": "c.à.s",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000020",
+    "slug": "pasta-bowl-thon-mediterraneen",
+    "title": "Pasta Bowl Thon Méditerranéen, Pâtes complètes & Mâche",
+    "category": "lunch",
+    "target_goal": "maintenance",
+    "image_url": "/images/recipes/pasta-thon-bowl.jpg",
+    "display_order": 32,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pâtes complètes crues",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Thon au naturel égoutté",
+        "unit": "g",
+        "quantity": 130
+      },
+      {
+        "name": "Mâche fraîche",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Concombre en dés",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Olives noires",
+        "unit": "unité",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000004",
+    "slug": "wok-boeuf-legumes-cajou",
+    "title": "Wok de Bœuf Sauté aux Légumes Asiatiques & Noix de Cajou",
+    "category": "dinner",
+    "target_goal": "both",
+    "image_url": "/images/recipes/beef-wok-cashew.jpg",
+    "display_order": 33,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Bœuf maigre émincé",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Poivrons & pousses de soja",
+        "unit": "g",
+        "quantity": 180
+      },
+      {
+        "name": "Noix de cajou concassées",
+        "unit": "g",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000021",
+    "slug": "chicken-pesto-bowl-riz-complet",
+    "title": "Chicken Pesto Bowl, Riz complet, Épinards & Tomates séchées",
+    "category": "dinner",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/chicken-pesto-bowl.jpg",
+    "display_order": 33,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Filet de poulet",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Riz complet cru",
+        "unit": "g",
+        "quantity": 65
+      },
+      {
+        "name": "Pesto vert au basilic",
+        "unit": "g",
+        "quantity": 15
+      },
+      {
+        "name": "Pousses d'épinards frais",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Pétales de tomates séchées",
+        "unit": "unité",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000005",
+    "slug": "smoothie-vert-combat-spiruline",
+    "title": "Smoothie Vert Combat Spiruline, Banane & Protéine",
+    "category": "snack",
+    "target_goal": "both",
+    "image_url": "/images/recipes/green-combat-smoothie.jpg",
+    "display_order": 34,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Jeunes pousses d'épinards frais",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Whey isolate ou végétale",
+        "unit": "g",
+        "quantity": 25
+      },
+      {
+        "name": "Eau de coco naturelle & spiruline",
+        "unit": "ml",
+        "quantity": 200
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000022",
+    "slug": "bowl-thon-riz-complet-concombre",
+    "title": "Bowl Thon mariné, Riz complet, Concombre & Maïs",
+    "category": "lunch",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/bowl-thon-concombre.jpg",
+    "display_order": 34,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Thon au naturel égoutté",
+        "unit": "g",
+        "quantity": 130
+      },
+      {
+        "name": "Riz complet cuit",
+        "unit": "g",
+        "quantity": 130
+      },
+      {
+        "name": "Concombre croquant",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Maïs doux égoutté",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Mesclun croquant",
+        "unit": "g",
+        "quantity": 40
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000006",
+    "slug": "dinde-marinee-citron-riz",
+    "title": "Filet de Dinde Mariné Citron & Riz Basmati Parfumé",
+    "category": "lunch",
+    "target_goal": "both",
+    "image_url": "/images/recipes/lemon-turkey-rice.jpg",
+    "display_order": 35,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Filet de dinde",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Riz basmati cru",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Haricots verts frais & citron",
+        "unit": "g",
+        "quantity": 150
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000023",
+    "slug": "salade-poulet-mache-roquette-pomme",
+    "title": "Salade Poulet grillé, Mâche, Roquette, Pomme & Noix",
+    "category": "dinner",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/salade-poulet-pomme.jpg",
+    "display_order": 35,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Escalope de poulet",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Mélange mâche & roquette",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Pomme acidulée en lamelles",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Cerneaux de noix concassés",
+        "unit": "g",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000007",
+    "slug": "pancakes-proteines-avoine-myrtilles",
+    "title": "Pancakes Protéinés Avoine, Œufs & Myrtilles",
+    "category": "breakfast",
+    "target_goal": "both",
+    "image_url": "/images/recipes/protein-pancakes.jpg",
+    "display_order": 36,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Flocons d'avoine mixés",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Œufs entiers",
+        "unit": "unités",
+        "quantity": 2
+      },
+      {
+        "name": "Blanc d'œuf",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Myrtilles fraîches",
+        "unit": "g",
+        "quantity": 40
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000024",
+    "slug": "bowl-saumon-quinoa-radis-epinards",
+    "title": "Bowl Saumon rôti, Quinoa, Radis & Pousses d'épinards",
+    "category": "dinner",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/bowl-saumon-quinoa-radis.jpg",
+    "display_order": 36,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pavé de saumon frais",
+        "unit": "g",
+        "quantity": 140
+      },
+      {
+        "name": "Quinoa cru",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Pousses d'épinards frais",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Radis croquants",
+        "unit": "unité",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000008",
+    "slug": "thon-mi-cuit-sesame",
+    "title": "Pavé de Thon Mi-Cuit au Sésame & Haricots Plats",
+    "category": "dinner",
+    "target_goal": "both",
+    "image_url": "/images/recipes/seared-tuna.jpg",
+    "display_order": 37,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pavé de thon albacore frais",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Graines de sésame blanc & noir",
+        "unit": "g",
+        "quantity": 15
+      },
+      {
+        "name": "Haricots plats vapeur",
+        "unit": "g",
+        "quantity": 180
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000025",
+    "slug": "bowl-vegetarien-pois-chiches-feta",
+    "title": "Bowl Végétarien Protéiné : Pois chiches rôtis, Feta AOP & Quinoa",
+    "category": "lunch",
+    "target_goal": "maintenance",
+    "image_url": "/images/recipes/bowl-veggie-pois-chiches.jpg",
+    "display_order": 37,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Pois chiches cuits",
+        "unit": "g",
+        "quantity": 120
+      },
+      {
+        "name": "Feta grecque AOP",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Quinoa cru",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Mesclun frais",
+        "unit": "g",
+        "quantity": 40
+      },
+      {
+        "name": "Tomates cerises & concombre",
+        "unit": "g",
+        "quantity": 80
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000026",
+    "slug": "salade-crevettes-avocat-mache-agrumes",
+    "title": "Salade Crevettes sautées à l'ail, Avocat, Mâche & Pamplemousse",
+    "category": "dinner",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/salade-crevettes-avocat.jpg",
+    "display_order": 38,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Crevettes fraîches décortiquées",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Avocat mûr",
+        "unit": "unité",
+        "quantity": 0.33
+      },
+      {
+        "name": "Mâche fraîche",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Pamplemousse rose (suprêmes)",
+        "unit": "unité",
+        "quantity": 0.5
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000009",
+    "slug": "cottage-cheese-noix-pomme",
+    "title": "Cottage Cheese Protéiné aux Noix & Pomme Râpée",
+    "category": "snack",
+    "target_goal": "both",
+    "image_url": "/images/recipes/cottage-cheese-bowl.jpg",
+    "display_order": 38,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Cottage cheese allégé",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Pomme Granny Smith râpée",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Cerneaux de noix & cannelle",
+        "unit": "g",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "id": "c3000000-0000-4000-8000-000000000010",
+    "slug": "curry-pois-chiches-epinards-poulet",
+    "title": "Curry de Pois Chiches, Épinards & Poulet Émincé",
+    "category": "lunch",
+    "target_goal": "both",
+    "image_url": "/images/recipes/chickpea-chicken-curry.jpg",
+    "display_order": 39,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Escalope de poulet émincée",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Pois chiches cuits",
+        "unit": "g",
+        "quantity": 100
+      },
+      {
+        "name": "Pousses d'épinards frais",
+        "unit": "g",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000027",
+    "slug": "bowl-boeuf-riz-courgettes",
+    "title": "Bowl Bœuf émincé mariné, Riz basmati & Courgettes vapeur",
+    "category": "lunch",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/bowl-boeuf-riz.jpg",
+    "display_order": 39,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Bœuf émincé 5% MG",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Riz basmati cru",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Courgette vapeur",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Sauce soja & gingembre frais",
+        "unit": "ml",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000028",
+    "slug": "salade-mozzarella-poulet-roquette",
+    "title": "Salade Mozzarella di Bufala, Poulet grillé, Tomates & Roquette",
+    "category": "dinner",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/salade-mozza-poulet.jpg",
+    "display_order": 40,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Blanc de poulet grillé",
+        "unit": "g",
+        "quantity": 150
+      },
+      {
+        "name": "Mozzarella di Bufala",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Pousses de roquette",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Tomates cerises",
+        "unit": "g",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000029",
+    "slug": "bowl-cabillaud-patate-douce-epinards",
+    "title": "Bowl Cabillaud vapeur, Patate douce rôtie & Épinards frais",
+    "category": "dinner",
+    "target_goal": "all",
+    "image_url": "/images/recipes/bowl-cabillaud-patate-douce.jpg",
+    "display_order": 41,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Dos de cabillaud frais",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Patate douce en cubes",
+        "unit": "g",
+        "quantity": 160
+      },
+      {
+        "name": "Pousses d'épinards frais",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Huile d'olive vierge",
+        "unit": "ml",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000030",
+    "slug": "fromage-blanc-cheesecake-fruits-rouges",
+    "title": "Fromage blanc façon Cheesecake aux fruits rouges",
+    "category": "snack",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/fb-cheesecake.jpg",
+    "display_order": 50,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc 0%",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Framboises fraîches/surgelées",
+        "unit": "g",
+        "quantity": 60
+      },
+      {
+        "name": "Sablé complet ou spéculoos",
+        "unit": "g",
+        "quantity": 12
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000031",
+    "slug": "fromage-blanc-tiramisu-leger",
+    "title": "Fromage blanc façon Tiramisu léger au café & cacao pur",
+    "category": "snack",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/fb-tiramisu.jpg",
+    "display_order": 51,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Expresso serré",
+        "unit": "ml",
+        "quantity": 30
+      },
+      {
+        "name": "Biscuit cuillère",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Cacao pur 100%",
+        "unit": "g",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000032",
+    "slug": "fromage-blanc-pomme-rotie-cannelle",
+    "title": "Fromage blanc pomme rôtie & cannelle caramélisée",
+    "category": "snack",
+    "target_goal": "all",
+    "image_url": "/images/recipes/fb-pomme-rotie.jpg",
+    "display_order": 52,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc 0%",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Pomme en dés",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Cannelle moulue",
+        "unit": "c.à.c",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000033",
+    "slug": "yaourt-grec-kiwi-noix",
+    "title": "Yaourt grec authentique, kiwi & noix de Grenoble",
+    "category": "snack",
+    "target_goal": "maintenance",
+    "image_url": "/images/recipes/yaourt-grec-kiwi-noix.jpg",
+    "display_order": 53,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Yaourt grec authentique",
+        "unit": "g",
+        "quantity": 170
+      },
+      {
+        "name": "Kiwi frais",
+        "unit": "unité",
+        "quantity": 1
+      },
+      {
+        "name": "Noix de Grenoble",
+        "unit": "g",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000034",
+    "slug": "yaourt-grec-mangue-coco",
+    "title": "Yaourt grec onctueux, mangue fraîche & noix de coco",
+    "category": "snack",
+    "target_goal": "all",
+    "image_url": "/images/recipes/yaourt-grec-mangue.jpg",
+    "display_order": 54,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Yaourt grec",
+        "unit": "g",
+        "quantity": 170
+      },
+      {
+        "name": "Mangue fraîche",
+        "unit": "g",
+        "quantity": 70
+      },
+      {
+        "name": "Noix de coco râpée",
+        "unit": "g",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000035",
+    "slug": "chia-pudding-fruits-rouges",
+    "title": "Chia pudding express aux fruits rouges & lait d'amande",
+    "category": "snack",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/chia-pudding-fruits-rouges.jpg",
+    "display_order": 55,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Graines de chia",
+        "unit": "g",
+        "quantity": 20
+      },
+      {
+        "name": "Lait d'amande sans sucre",
+        "unit": "ml",
+        "quantity": 120
+      },
+      {
+        "name": "Fromage blanc 0%",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Fruits rouges frais",
+        "unit": "g",
+        "quantity": 50
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000036",
+    "slug": "chia-pudding-mangue-coco",
+    "title": "Chia pudding mangue & touche de lait de coco",
+    "category": "snack",
+    "target_goal": "maintenance",
+    "image_url": "/images/recipes/chia-pudding-mangue.jpg",
+    "display_order": 56,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Graines de chia",
+        "unit": "g",
+        "quantity": 20
+      },
+      {
+        "name": "Lait de coco léger",
+        "unit": "ml",
+        "quantity": 80
+      },
+      {
+        "name": "Skyr ou fromage blanc",
+        "unit": "g",
+        "quantity": 50
+      },
+      {
+        "name": "Mangue fraîche écrasée",
+        "unit": "g",
+        "quantity": 60
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000037",
+    "slug": "compote-fromage-blanc-vanille",
+    "title": "Compote pomme sans sucre & Fromage blanc vanillé",
+    "category": "snack",
+    "target_goal": "all",
+    "image_url": "/images/recipes/compote-fb.jpg",
+    "display_order": 57,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Fromage blanc 0%",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Compote de pomme sans sucre",
+        "unit": "g",
+        "quantity": 100
+      },
+      {
+        "name": "Extrait de vanille naturelle",
+        "unit": "dose",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000038",
+    "slug": "banane-fromage-blanc-beurre-cacahuete",
+    "title": "Banane écrasée, Fromage blanc onctueux & Beurre de cacahuète",
+    "category": "snack",
+    "target_goal": "muscle_gain",
+    "image_url": "/images/recipes/banane-fb-peanut.jpg",
+    "display_order": 58,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Banane mûre",
+        "unit": "unité",
+        "quantity": 0.5
+      },
+      {
+        "name": "Fromage blanc",
+        "unit": "g",
+        "quantity": 200
+      },
+      {
+        "name": "Beurre de cacahuète pur",
+        "unit": "g",
+        "quantity": 12
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000039",
+    "slug": "shaker-isolate-fruits-rouges-lin",
+    "title": "Shaker Isolate Fruits Rouges & Graines de Lin",
+    "category": "snack",
+    "target_goal": "weight_loss",
+    "image_url": "/images/recipes/shake-fruits-rouges.jpg",
+    "display_order": 59,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Whey Isolate",
+        "unit": "g",
+        "quantity": 30
+      },
+      {
+        "name": "Fruits rouges surgelés",
+        "unit": "g",
+        "quantity": 80
+      },
+      {
+        "name": "Graines de lin moulues",
+        "unit": "g",
+        "quantity": 5
+      },
+      {
+        "name": "Eau fraîche ou lait d'amande",
+        "unit": "ml",
+        "quantity": 250
+      }
+    ]
+  },
+  {
+    "id": "e2000001-0001-4000-8000-000000000040",
+    "slug": "smoothie-recup-cacao-avoine",
+    "title": "Smoothie Récupération Express Cacao, Avoine & Lait d'amande",
+    "category": "snack",
+    "target_goal": "recomposition",
+    "image_url": "/images/recipes/smoothie-cacao-avoine.jpg",
+    "display_order": 60,
+    "is_active": true,
+    "ingredients": [
+      {
+        "name": "Lait d'amande",
+        "unit": "ml",
+        "quantity": 250
+      },
+      {
+        "name": "Farine d'avoine instantanée",
+        "unit": "g",
+        "quantity": 25
+      },
+      {
+        "name": "Protéine en poudre vanille/chocolat",
+        "unit": "g",
+        "quantity": 25
+      },
+      {
+        "name": "Cacao pur non sucré",
+        "unit": "g",
+        "quantity": 5
+      }
+    ]
+  }
+]

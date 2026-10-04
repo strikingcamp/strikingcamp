@@ -15,6 +15,7 @@ import {
   FitnessGoal,
   ActivityLevel,
   TrainingEnvironment,
+  PrepTimePreference,
 } from "@/lib/supabase/defis-platform";
 import { NutritionPlanResult, NutritionPlanSuccess } from "@/lib/nutrition-engine";
 import { saveFitnessProfileAction } from "@/app/(membre)/membre/defis/actions";
@@ -43,6 +44,7 @@ export default function GoalTab({
   const [heightCm, setHeightCm] = useState(initialProfile?.height_cm ? String(initialProfile.height_cm) : "175");
   const [currentWeightKg, setCurrentWeightKg] = useState(initialProfile?.current_weight_kg ? String(initialProfile.current_weight_kg) : "75");
   const [primaryGoal, setPrimaryGoal] = useState<FitnessGoal>(initialProfile?.primary_goal || "weight_loss");
+  const [prepTimePreference, setPrepTimePreference] = useState<PrepTimePreference>(initialProfile?.prep_time_preference || "flexible");
   const [targetWeightKg, setTargetWeightKg] = useState(initialProfile?.target_weight_kg ? String(initialProfile.target_weight_kg) : "70");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(initialProfile?.activity_level || "moderate");
   const [targetWorkoutsPerWeek, setTargetWorkoutsPerWeek] = useState(initialProfile?.target_workouts_per_week || 3);
@@ -90,6 +92,7 @@ export default function GoalTab({
       current_weight_kg: wNum,
       target_weight_kg: twNum,
       primary_goal: primaryGoal,
+      prep_time_preference: prepTimePreference,
       activity_level: activityLevel,
       target_workouts_per_week: targetWorkoutsPerWeek,
       training_environment: trainingEnvironment,
@@ -232,8 +235,22 @@ export default function GoalTab({
             )}
           </div>
 
-          {/* Training Environment & Equipment Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Training Environment & Preferences Details */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-3">
+              <span className="text-brand-blue font-bold text-xs uppercase tracking-wider block">
+                Temps de repas souhaité
+              </span>
+              <p className="text-base font-bold text-brand-white capitalize">
+                {(initialProfile.prep_time_preference === "quick" || prepTimePreference === "quick") && "⚡ Rapide (≤ 10 min)"}
+                {(initialProfile.prep_time_preference === "standard" || prepTimePreference === "standard") && "⏱️ Standard (10–20 min)"}
+                {(!initialProfile.prep_time_preference || initialProfile.prep_time_preference === "flexible") && "🍲 Flexible (Toutes durées)"}
+              </p>
+              <p className="text-xs text-brand-white/50">
+                Utilisé automatiquement pour filtrer vos recommandations de recettes en arrière-plan.
+              </p>
+            </div>
+
             <div className="p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-3">
               <span className="text-brand-blue font-bold text-xs uppercase tracking-wider block">
                 Environnement d'entraînement
@@ -439,6 +456,39 @@ export default function GoalTab({
                   className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
                   placeholder="ex: 72.0"
                 />
+              </div>
+
+              {/* Préférence de temps de préparation */}
+              <div className="space-y-2 pt-3 border-t border-brand-white/10">
+                <label className="block text-xs font-semibold text-brand-white/70 uppercase">
+                  Temps de préparation souhaité pour un repas
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { id: "quick", label: "⚡ Rapide", sub: "≤ 10 min (Express)" },
+                    { id: "standard", label: "⏱️ Standard", sub: "10–20 min (Équilibré)" },
+                    { id: "flexible", label: "🍲 Flexible", sub: "Aucune limite" },
+                  ].map((timeOption) => (
+                    <button
+                      key={timeOption.id}
+                      type="button"
+                      onClick={() => setPrepTimePreference(timeOption.id as PrepTimePreference)}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        prepTimePreference === timeOption.id
+                          ? "bg-brand-blue border-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
+                          : "bg-[#070c16]/80 border-brand-white/10 text-brand-white/60 hover:text-brand-white"
+                      }`}
+                    >
+                      <p className="text-xs font-heading font-bold uppercase">{timeOption.label}</p>
+                      <p className={prepTimePreference === timeOption.id ? "text-[10px] text-brand-black/70" : "text-[10px] text-brand-white/40"}>
+                        {timeOption.sub}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-brand-white/40 italic pt-1">
+                  Ce paramètre est utilisé en arrière-plan par le moteur de personnalisation pour adapter vos suggestions.
+                </p>
               </div>
             </motion.div>
           )}

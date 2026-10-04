@@ -178,6 +178,7 @@ export async function upsertMemberFitnessProfile(
           activity_level: payload.activity_level,
           target_workouts_per_week: payload.target_workouts_per_week,
           primary_goal: payload.primary_goal,
+          prep_time_preference: payload.prep_time_preference || "flexible",
           training_environment: payload.training_environment,
           available_equipment: payload.available_equipment || ["bodyweight"],
           custom_target_calories: payload.custom_target_calories || null,
@@ -567,7 +568,7 @@ export async function getRecipes(
   }
 
   if (filters.goal && filters.goal !== "all") {
-    query = query.or(`target_goal.eq.${filters.goal},target_goal.eq.both`);
+    query = query.or(`target_goal.eq.${filters.goal},target_goal.eq.both,target_goal.eq.all`);
   }
 
   if (filters.onlyHighProtein) {
@@ -575,7 +576,7 @@ export async function getRecipes(
   }
 
   if (filters.onlyQuick) {
-    query = query.lte("prep_time_minutes", 15);
+    query = query.lte("prep_time_minutes", 10);
   }
 
   const { data, error } = await query;

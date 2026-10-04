@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import MemberProfileView from "@/components/membre/MemberProfileView";
 
+import { getOrCreateNotificationPreferences } from "@/lib/supabase/notifications";
+
 export const metadata: Metadata = {
   title: "Mon Profil — Espace Membre Striking Camp",
   robots: { index: false, follow: false },
@@ -11,7 +13,7 @@ export const metadata: Metadata = {
 /**
  * Page Profil de l'espace membre — /membre/profil
  *
- * Affiche les informations de l'utilisateur connecté et permet la déconnexion.
+ * Affiche les informations de l'utilisateur connecté, ses préférences de rappels et permet la déconnexion.
  */
 export default async function MembreProfilPage() {
   const supabase = await createClient();
@@ -30,6 +32,14 @@ export default async function MembreProfilPage() {
   const phone = meta.phone || "";
   const role = meta.role || "Membre";
 
+  // Récupération ou initialisation propre des préférences de notification
+  let initialPreferences = null;
+  try {
+    initialPreferences = await getOrCreateNotificationPreferences(supabase, user.id);
+  } catch (prefErr) {
+    console.warn("[MembreProfilPage] Impossible de charger les préférences de notification :", prefErr);
+  }
+
   return (
     <MemberProfileView
       initialUser={{
@@ -41,6 +51,8 @@ export default async function MembreProfilPage() {
         role,
         createdAt: user.created_at,
       }}
+      initialPreferences={initialPreferences}
     />
   );
 }
+

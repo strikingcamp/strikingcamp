@@ -39,34 +39,48 @@ export const INITIAL_SERVICES_METADATA: Omit<ServiceSetting, "id">[] = [
 
 /**
  * Récupère le dictionnaire des statuts des services { private: boolean, small_group: boolean, events: boolean }
- * Lève une erreur explicite si la lecture échoue afin d'éviter tout écrasement silencieux des états.
+ * Journalise précisément toutes les propriétés d'erreur Supabase (message, code, details, hint)
+ * et retourne les paramètres par défaut en fallback pour garantir la continuité du MemberProvider.
  */
 export async function getServiceSettingsMap(
   supabase: SupabaseClient
 ): Promise<Record<string, boolean>> {
-  const { data, error } = await supabase
-    .from("service_settings")
-    .select("service_key, is_active");
+  try {
+    const { data, error } = await supabase
+      .from("service_settings")
+      .select("service_key, is_active");
 
-  if (error) {
-    console.error("[getServiceSettingsMap] Erreur lecture Supabase service_settings :", {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-    });
-    throw new Error(`[getServiceSettingsMap] ${error.message}`);
-  }
-
-  const map: Record<string, boolean> = {};
-  for (const item of data || []) {
-    if (item.service_key) {
-      map[item.service_key] = Boolean(item.is_active);
+    if (error) {
+      console.error("[getServiceSettingsMap] Erreur lecture Supabase service_settings :", {
+        message: error.message || "Message non disponible",
+        code: error.code || "UNKNOWN_CODE",
+        details: error.details || "Aucun détail",
+        hint: error.hint || "Aucun hint",
+      });
+      return { ...DEFAULT_SERVICE_SETTINGS };
     }
-  }
 
-  return map;
+    if (!data || data.length === 0) {
+      return { ...DEFAULT_SERVICE_SETTINGS };
+    }
+
+    const map: Record<string, boolean> = { ...DEFAULT_SERVICE_SETTINGS };
+    for (const item of data) {
+      if (item.service_key) {
+        map[item.service_key] = Boolean(item.is_active);
+      }
+    }
+
+    return map;
+  } catch (err: unknown) {
+    const errorObj = err instanceof Error 
+      ? { message: err.message, stack: err.stack } 
+      : { raw: String(err) };
+    console.error("[getServiceSettingsMap] Exception inattendue lors de la lecture des paramètres de service :", errorObj);
+    return { ...DEFAULT_SERVICE_SETTINGS };
+  }
 }
+
 
 /**
  * Récupère la liste complète des services avec métadonnées pour l'interface Admin.

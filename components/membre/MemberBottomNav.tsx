@@ -6,8 +6,11 @@ import { Home, Trophy, Plus, Bell, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { useMember } from "@/components/membre/MemberContext";
+
 export default function MemberBottomNav() {
   const pathname = usePathname();
+  const { unreadNotificationsCount } = useMember();
 
   const isRouteActive = (route: string) => {
     if (route === "/membre") {
@@ -97,6 +100,11 @@ export default function MemberBottomNav() {
           >
             <div className="relative">
               <Bell size={20} className="transition-transform group-hover:scale-110" />
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 rounded-full bg-brand-blue text-brand-black text-[9px] font-heading font-black flex items-center justify-center shadow-[0_0_6px_rgba(47,174,224,0.6)]">
+                  {unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}
+                </span>
+              )}
               {isRouteActive("/membre/alertes") && (
                 <motion.div
                   layoutId="activeTabIndicator"
