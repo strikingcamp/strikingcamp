@@ -125,7 +125,7 @@ export default function ChallengesLegacyTab() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* VUE DÉTAIL DÉFI */}
       {activeChallengeId && challengeDetail ? (
         <div className="space-y-6">
@@ -137,17 +137,17 @@ export default function ChallengesLegacyTab() {
               <ArrowLeft size={16} />
               <span>Retour aux défis</span>
             </button>
-            <span className="text-xs text-brand-blue font-bold uppercase tracking-wider">
+            <span className="text-[11px] sm:text-xs text-brand-blue font-bold uppercase tracking-wider">
               {challengeDetail.completedStepsCount} / {challengeDetail.steps.length} étapes
             </span>
           </div>
 
-          <div className="p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4 shadow-xl">
+          <div className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4 shadow-xl">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
+              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 inline-block">
                 {challengeDetail.category} • {challengeDetail.level}
               </span>
-              <h2 className="text-2xl font-heading font-black uppercase text-brand-white tracking-wide">
+              <h2 className="text-xl sm:text-2xl font-heading font-black uppercase text-brand-white tracking-wide">
                 {challengeDetail.title}
               </h2>
               {challengeDetail.description && (
@@ -160,7 +160,7 @@ export default function ChallengesLegacyTab() {
               {challengeDetail.steps.map((step, idx) => (
                 <div
                   key={step.id}
-                  className={`p-4 rounded-xl border space-y-3 transition-all ${
+                  className={`p-3.5 sm:p-4 rounded-xl border space-y-3 transition-all ${
                     step.isCompleted
                       ? "bg-brand-blue/10 border-brand-blue/30"
                       : step.isUnlocked
@@ -168,8 +168,8 @@ export default function ChallengesLegacyTab() {
                       : "bg-[#070c16]/30 border-brand-white/5 opacity-50"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-heading font-bold text-brand-white">
                           Étape {step.step_order || idx + 1}
@@ -190,7 +190,7 @@ export default function ChallengesLegacyTab() {
                       <button
                         onClick={() => handleCompleteStep(step.id)}
                         disabled={validatingStepId === step.id}
-                        className="px-3 py-1.5 rounded-lg bg-brand-blue hover:bg-brand-white text-brand-black text-xs font-heading font-black uppercase tracking-wider shrink-0 transition-all shadow-md shadow-brand-blue/20 disabled:opacity-50 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-brand-blue hover:bg-brand-white text-brand-black text-xs font-heading font-black uppercase tracking-wider shrink-0 transition-all shadow-md shadow-brand-blue/20 disabled:opacity-50 cursor-pointer self-start sm:self-auto"
                       >
                         {validatingStepId === step.id ? "Validation..." : "Valider"}
                       </button>
@@ -204,11 +204,11 @@ export default function ChallengesLegacyTab() {
       ) : (
         /* VUE LISTE DÉFIS V1 */
         <div className="space-y-6">
-          <div className="p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-3 shadow-xl">
+          <div className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-3 shadow-xl">
             <div className="text-brand-blue text-xs font-bold uppercase tracking-wider">
               Défis Techniques & Protocoles Club
             </div>
-            <h3 className="text-xl font-heading font-black uppercase text-brand-white">
+            <h3 className="text-lg sm:text-xl font-heading font-black uppercase text-brand-white">
               Défis d'Évolution
             </h3>
             <p className="text-xs text-brand-white/50">
@@ -216,7 +216,7 @@ export default function ChallengesLegacyTab() {
             </p>
 
             {/* Categories */}
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-brand-white/5">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-2 border-t border-brand-white/5">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.value}
@@ -239,19 +239,19 @@ export default function ChallengesLegacyTab() {
           ) : filteredChallenges.length === 0 ? (
             <div className="p-8 text-center text-brand-white/40 text-xs">Aucun défi dans cette catégorie.</div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
               {filteredChallenges.map((chal) => (
                 <div
                   key={chal.id}
                   onClick={() => handleOpenChallenge(chal.id)}
-                  className="p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 cursor-pointer transition-all space-y-3 group shadow-lg"
+                  className="p-4 sm:p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 cursor-pointer transition-all space-y-3 group shadow-lg"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
+                    <div className="space-y-1 min-w-0">
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 inline-block">
                         {chal.category} • {chal.level}
                       </span>
-                      <h4 className="text-base font-bold text-brand-white group-hover:text-brand-blue transition-colors">
+                      <h4 className="text-sm sm:text-base font-bold text-brand-white group-hover:text-brand-blue transition-colors truncate">
                         {chal.title}
                       </h4>
                     </div>

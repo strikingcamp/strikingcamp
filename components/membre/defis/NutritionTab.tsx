@@ -165,14 +165,15 @@ export default function NutritionTab({
   const currentKcal = dailyFoodLog?.totalCalories || 0;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="w-full space-y-5 sm:space-y-6">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           1. SUB-NAVIGATION : JOURNAL ALIMENTAIRE & RECETTES STRIKING CAMP
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl">
+      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl">
         <button
+          type="button"
           onClick={() => setSubSection("journal")}
-          className={`py-3 px-4 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer text-center truncate ${
             subSection === "journal"
               ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
               : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
@@ -182,14 +183,15 @@ export default function NutritionTab({
         </button>
 
         <button
+          type="button"
           onClick={() => setSubSection("recipes")}
-          className={`py-3 px-4 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer text-center truncate ${
             subSection === "recipes"
               ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
               : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
           }`}
         >
-          Recettes Striking Camp ({recipes.length})
+          Recettes ({recipes.length})
         </button>
       </div>
 
@@ -197,73 +199,83 @@ export default function NutritionTab({
           2. VUE JOURNAL ALIMENTAIRE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {subSection === "journal" && (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           {/* Header & Date Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl">
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={handlePrevDay}
-                className="p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer"
+                aria-label="Jour précédent"
+                className="p-2 sm:p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer shrink-0"
               >
                 <ChevronLeft size={18} />
               </button>
 
-              <div className="px-4 py-2 rounded-xl bg-[#070c16]/80 border border-brand-white/10 flex items-center gap-2 text-xs sm:text-sm font-heading font-bold uppercase text-brand-white">
-                <Calendar size={14} className="text-brand-blue" />
-                <span>
+              <div className="px-3 sm:px-4 py-2 rounded-xl bg-[#070c16]/80 border border-brand-white/10 flex items-center gap-2 text-xs sm:text-sm font-heading font-bold uppercase text-brand-white truncate">
+                <Calendar size={14} className="text-brand-blue shrink-0" />
+                <span className="truncate">
                   {new Date(currentDate).toLocaleDateString("fr-FR", {
-                    weekday: "long",
+                    weekday: "short",
                     day: "numeric",
-                    month: "long",
+                    month: "short",
                   })}
                 </span>
               </div>
 
               <button
+                type="button"
                 onClick={handleNextDay}
-                className="p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer"
+                aria-label="Jour suivant"
+                className="p-2 sm:p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer shrink-0"
               >
                 <ChevronRight size={18} />
               </button>
             </div>
 
             {/* Daily Calorie Summary Badge */}
-            <div className="flex items-center gap-3 self-end sm:self-center">
-              <div className="text-right">
+            <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-0 border-brand-white/5">
+              <div className="text-left sm:text-right">
                 <p className="text-[10px] font-semibold text-brand-white/40 uppercase">Total Calories</p>
                 <p className="text-sm font-heading font-black text-brand-white">
                   {currentKcal} / <span className="text-brand-blue">{targetKcal} kcal</span>
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center font-heading font-black text-xs">
+              <div className="w-10 h-10 rounded-xl bg-brand-blue/15 border border-brand-blue/30 text-brand-blue flex items-center justify-center font-heading font-black text-xs shrink-0">
                 {Math.round((currentKcal / targetKcal) * 100)}%
               </div>
             </div>
           </div>
 
           {/* Macros Recap */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="p-4 rounded-xl bg-[#0c1322] border border-brand-white/10 shadow-lg space-y-1">
-              <p className="text-[10px] font-bold text-brand-blue uppercase">Protéines</p>
-              <p className="text-base font-heading font-black text-brand-white">
-                {dailyFoodLog?.totalProteinsGrams || 0}{" "}
-                <span className="text-xs font-normal text-brand-white/40">/ {successPlan?.macros.proteins.grams || 150}g</span>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="p-3 sm:p-4 rounded-xl bg-[#0c1322] border border-brand-white/10 shadow-lg space-y-1 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs font-bold text-brand-blue uppercase">Protéines</p>
+              <p className="text-sm sm:text-base font-heading font-black text-brand-white">
+                {dailyFoodLog?.totalProteinsGrams || 0}g{" "}
+                <span className="text-[10px] sm:text-xs font-normal text-brand-white/40 block sm:inline">
+                  / {successPlan?.macros.proteins.grams || 150}g
+                </span>
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#0c1322] border border-brand-white/10 shadow-lg space-y-1">
-              <p className="text-[10px] font-bold text-brand-white/80 uppercase">Glucides</p>
-              <p className="text-base font-heading font-black text-brand-white">
-                {dailyFoodLog?.totalCarbsGrams || 0}{" "}
-                <span className="text-xs font-normal text-brand-white/40">/ {successPlan?.macros.carbs.grams || 200}g</span>
+            <div className="p-3 sm:p-4 rounded-xl bg-[#0c1322] border border-brand-white/10 shadow-lg space-y-1 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs font-bold text-brand-white/80 uppercase">Glucides</p>
+              <p className="text-sm sm:text-base font-heading font-black text-brand-white">
+                {dailyFoodLog?.totalCarbsGrams || 0}g{" "}
+                <span className="text-[10px] sm:text-xs font-normal text-brand-white/40 block sm:inline">
+                  / {successPlan?.macros.carbs.grams || 200}g
+                </span>
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#0c1322] border border-brand-white/10 shadow-lg space-y-1">
-              <p className="text-[10px] font-bold text-brand-white/60 uppercase">Lipides</p>
-              <p className="text-base font-heading font-black text-brand-white">
-                {dailyFoodLog?.totalFatsGrams || 0}{" "}
-                <span className="text-xs font-normal text-brand-white/40">/ {successPlan?.macros.fats.grams || 65}g</span>
+            <div className="p-3 sm:p-4 rounded-xl bg-[#0c1322] border border-brand-white/10 shadow-lg space-y-1 text-center sm:text-left">
+              <p className="text-[10px] sm:text-xs font-bold text-brand-white/60 uppercase">Lipides</p>
+              <p className="text-sm sm:text-base font-heading font-black text-brand-white">
+                {dailyFoodLog?.totalFatsGrams || 0}g{" "}
+                <span className="text-[10px] sm:text-xs font-normal text-brand-white/40 block sm:inline">
+                  / {successPlan?.macros.fats.grams || 65}g
+                </span>
               </p>
             </div>
           </div>
@@ -278,11 +290,11 @@ export default function NutritionTab({
               return (
                 <div
                   key={meal.type}
-                  className="p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-4"
+                  className="p-4 sm:p-5 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-3.5 sm:space-y-4"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-brand-white/5 pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-brand-white/5 pb-3">
                     <div>
-                      <h4 className="text-base font-heading font-bold uppercase text-brand-white tracking-wide">
+                      <h4 className="text-sm sm:text-base font-heading font-bold uppercase text-brand-white tracking-wide">
                         {meal.title}
                       </h4>
                       <p className="text-xs text-brand-white/40">
@@ -290,27 +302,29 @@ export default function NutritionTab({
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start sm:self-center">
+                    <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
                       <button
+                        type="button"
                         onClick={() => openAddFoodModal(meal.type)}
-                        className="px-3.5 py-2 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 border border-brand-white/10 text-brand-white text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 border border-brand-white/10 text-brand-white text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <Plus size={14} className="text-brand-blue" />
+                        <Plus size={13} className="text-brand-blue" />
                         <span>Aliment</span>
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => openAddRecipeModal(meal.type)}
-                        className="px-3.5 py-2 rounded-xl bg-brand-blue/15 hover:bg-brand-blue/25 border border-brand-blue/30 text-brand-blue text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-brand-blue/15 hover:bg-brand-blue/25 border border-brand-blue/30 text-brand-blue text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <BookOpen size={14} />
+                        <BookOpen size={13} />
                         <span>Recette</span>
                       </button>
                     </div>
                   </div>
 
                   {items.length === 0 ? (
-                    <p className="text-xs text-brand-white/30 italic py-2">
+                    <p className="text-xs text-brand-white/30 italic py-1">
                       Aucun aliment enregistré pour ce repas.
                     </p>
                   ) : (
@@ -318,23 +332,24 @@ export default function NutritionTab({
                       {items.map((item) => (
                         <div
                           key={item.id}
-                          className="p-3.5 rounded-xl bg-[#070c16]/80 border border-brand-white/5 flex items-center justify-between gap-3 group hover:border-brand-blue/30 transition-all"
+                          className="p-3 sm:p-3.5 rounded-xl bg-[#070c16]/80 border border-brand-white/5 flex items-center justify-between gap-2.5 group hover:border-brand-blue/30 transition-all"
                         >
-                          <div className="space-y-0.5">
-                            <p className="text-sm font-bold text-brand-white leading-tight">
+                          <div className="space-y-0.5 min-w-0 flex-1">
+                            <p className="text-xs sm:text-sm font-bold text-brand-white leading-tight truncate">
                               {item.food_name}
                             </p>
-                            <p className="text-[11px] text-brand-white/40">
+                            <p className="text-[10px] sm:text-[11px] text-brand-white/40 truncate">
                               {item.serving_size || "1 portion"} • {item.proteins_g}g Prot • {item.carbs_g}g Gluc • {item.fats_g}g Lip
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-heading font-black text-brand-blue">
-                              {item.calories} <span className="text-[10px] font-normal text-brand-white/40">kcal</span>
+                          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                            <span className="text-xs sm:text-sm font-heading font-black text-brand-blue">
+                              {item.calories} <span className="text-[9px] sm:text-[10px] font-normal text-brand-white/40">kcal</span>
                             </span>
 
                             <button
+                              type="button"
                               onClick={() => handleDeleteItem(item.id)}
                               className="p-1.5 rounded-lg text-brand-white/30 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                               title="Supprimer"
@@ -369,21 +384,23 @@ export default function NutritionTab({
           MODAL 1 : AJOUT D'ALIMENT MANUEL
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isAddFoodOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#0c1322] border border-brand-white/15 rounded-2xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-              <h3 className="text-lg font-heading font-black uppercase text-brand-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-md max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-[#0c1322] border border-brand-white/15 rounded-2xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="shrink-0 p-4 sm:p-5 flex items-center justify-between border-b border-brand-white/10 bg-[#0c1322]">
+              <h3 className="text-base sm:text-lg font-heading font-black uppercase text-brand-white">
                 Ajouter un aliment
               </h3>
               <button
+                type="button"
                 onClick={() => setIsAddFoodOpen(false)}
-                className="text-brand-white/50 hover:text-brand-white cursor-pointer"
+                aria-label="Fermer"
+                className="p-1 rounded-lg text-brand-white/50 hover:text-brand-white transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCustomFood} className="space-y-3.5">
+            <form onSubmit={handleSaveCustomFood} className="overflow-y-auto p-4 sm:p-6 space-y-3.5">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-brand-white/70 uppercase">Nom de l'aliment</label>
                 <input
@@ -391,7 +408,7 @@ export default function NutritionTab({
                   required
                   value={foodName}
                   onChange={(e) => setFoodName(e.target.value)}
-                  className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
+                  className="w-full p-3 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none transition-colors"
                   placeholder="ex: Flocons d'avoine, Blanc de poulet..."
                 />
               </div>
@@ -402,12 +419,12 @@ export default function NutritionTab({
                   type="text"
                   value={servingSize}
                   onChange={(e) => setServingSize(e.target.value)}
-                  className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
+                  className="w-full p-3 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none transition-colors"
                   placeholder="ex: 100g, 1 bol, 2 tranches"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-brand-white/70 uppercase">Calories (kcal)</label>
                   <input
@@ -416,7 +433,7 @@ export default function NutritionTab({
                     min="0"
                     value={calories}
                     onChange={(e) => setCalories(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
+                    className="w-full p-3 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none transition-colors"
                     placeholder="ex: 350"
                   />
                 </div>
@@ -429,13 +446,13 @@ export default function NutritionTab({
                     min="0"
                     value={proteins}
                     onChange={(e) => setProteins(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
+                    className="w-full p-3 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none transition-colors"
                     placeholder="ex: 25.0"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-brand-white/70 uppercase">Glucides (g)</label>
                   <input
@@ -444,7 +461,7 @@ export default function NutritionTab({
                     min="0"
                     value={carbs}
                     onChange={(e) => setCarbs(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
+                    className="w-full p-3 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none transition-colors"
                     placeholder="ex: 45.0"
                   />
                 </div>
@@ -457,7 +474,7 @@ export default function NutritionTab({
                     min="0"
                     value={fats}
                     onChange={(e) => setFats(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
+                    className="w-full p-3 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none transition-colors"
                     placeholder="ex: 8.0"
                   />
                 </div>
@@ -488,27 +505,29 @@ export default function NutritionTab({
           MODAL 2 : AJOUT D'UNE RECETTE CERTIFIÉE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isAddRecipeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#0c1322] border border-brand-white/15 rounded-2xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-              <h3 className="text-lg font-heading font-black uppercase text-brand-white">
-                Ajouter une recette certifiée
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-md max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-[#0c1322] border border-brand-white/15 rounded-2xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="shrink-0 p-4 sm:p-5 flex items-center justify-between border-b border-brand-white/10 bg-[#0c1322]">
+              <h3 className="text-base sm:text-lg font-heading font-black uppercase text-brand-white">
+                Ajouter une recette
               </h3>
               <button
+                type="button"
                 onClick={() => setIsAddRecipeOpen(false)}
-                className="text-brand-white/50 hover:text-brand-white cursor-pointer"
+                aria-label="Fermer"
+                className="p-1 rounded-lg text-brand-white/50 hover:text-brand-white transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveRecipeFood} className="space-y-4">
+            <form onSubmit={handleSaveRecipeFood} className="overflow-y-auto p-4 sm:p-6 space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-brand-white/70 uppercase">Sélectionnez la recette</label>
                 <select
                   value={selectedRecipeId}
                   onChange={(e) => setSelectedRecipeId(e.target.value)}
-                  className="w-full p-3.5 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-sm focus:border-brand-blue outline-none"
+                  className="w-full p-3 rounded-xl bg-[#070c16] border border-brand-white/10 text-brand-white text-xs sm:text-sm focus:border-brand-blue outline-none transition-colors"
                 >
                   {recipes.map((r) => (
                     <option key={r.id} value={r.id} className="bg-[#070c16] text-brand-white">
@@ -520,19 +539,19 @@ export default function NutritionTab({
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-brand-white/70 uppercase">Nombre de portions</label>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 sm:gap-2">
                   {[1, 1.5, 2, 3].map((p) => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setPortionsCount(p)}
-                      className={`flex-1 py-2.5 rounded-xl border text-xs font-heading font-bold uppercase transition-all cursor-pointer ${
+                      className={`flex-1 py-2 sm:py-2.5 rounded-xl border text-xs font-heading font-bold uppercase transition-all cursor-pointer ${
                         portionsCount === p
                           ? "bg-brand-blue border-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
                           : "bg-[#070c16]/80 border-brand-white/10 text-brand-white/60 hover:text-brand-white"
                       }`}
                     >
-                      {p} {p > 1 ? "portions" : "portion"}
+                      {p}x
                     </button>
                   ))}
                 </div>

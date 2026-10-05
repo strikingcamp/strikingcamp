@@ -196,13 +196,13 @@ export default function TodayTab({
     : 0;
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
+    <div className="w-full space-y-4">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           1. TON OBJECTIF (CARTE COMPACTE & INTERACTIVE)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div
         onClick={() => onNavigateTab("profile")}
-        className="p-5 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 shadow-xl transition-all duration-200 cursor-pointer group space-y-3"
+        className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 shadow-xl transition-all duration-200 cursor-pointer group space-y-3"
       >
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-heading font-black uppercase tracking-widest text-brand-blue">
@@ -214,8 +214,8 @@ export default function TodayTab({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-          <h2 className="text-xl sm:text-2xl font-heading font-black uppercase text-brand-white tracking-wide">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1.5 sm:gap-2">
+          <h2 className="text-xl sm:text-2xl font-heading font-black uppercase text-brand-white tracking-wide break-words">
             {profile?.primary_goal === "weight_loss" && "Perte de Poids"}
             {profile?.primary_goal === "muscle_gain" && "Gain Musculaire"}
             {profile?.primary_goal === "maintenance" && "Maintien Athlétique"}
@@ -223,7 +223,7 @@ export default function TodayTab({
             {!profile && "Configurer mon objectif"}
           </h2>
 
-          <div className="text-sm sm:text-base font-heading font-black text-brand-blue">
+          <div className="text-sm sm:text-base font-heading font-black text-brand-blue shrink-0">
             {currentWeight} kg {targetWeight ? `→ ${targetWeight} kg` : ""}
           </div>
         </div>
@@ -247,24 +247,24 @@ export default function TodayTab({
           2. AUJOURD'HUI (FUSION NUTRITION & ENTRAÎNEMENT COMPACTE)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {(entitlements.canAccessNutritionEngine || entitlements.canAccessDigitalPrograms || hasClubSessionToday) && (
-        <div className="p-5 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-4">
+        <div className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-4">
           <span className="text-[10px] font-heading font-black uppercase tracking-widest text-brand-blue block">
             Aujourd'hui
           </span>
 
-          <div className={`grid grid-cols-1 ${entitlements.canAccessNutritionEngine && (entitlements.canAccessDigitalPrograms || hasClubSessionToday) ? "sm:grid-cols-2" : "sm:grid-cols-1"} gap-3`}>
+          <div className={`grid grid-cols-1 ${entitlements.canAccessNutritionEngine && (entitlements.canAccessDigitalPrograms || hasClubSessionToday) ? "md:grid-cols-2" : "grid-cols-1"} gap-3 sm:gap-4`}>
             {/* Bloc Nutrition */}
             {entitlements.canAccessNutritionEngine && (
               <div
                 onClick={() => onNavigateTab("nutrition")}
                 className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/5 hover:border-brand-blue/40 transition-all cursor-pointer group space-y-3 flex flex-col justify-between"
               >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="text-xs font-heading font-bold uppercase text-brand-white">
                       Nutrition
                     </div>
-                    <span className="text-[11px] font-heading font-black text-brand-blue">
+                    <span className="text-[11px] font-heading font-black text-brand-blue shrink-0">
                       {consumedCalories} / {targetCalories} kcal
                     </span>
                   </div>
@@ -279,25 +279,26 @@ export default function TodayTab({
                     />
                   </div>
 
-                  {/* 3 Macros compactes */}
-                  <div className="flex items-center justify-between text-[11px] text-brand-white/60 pt-0.5">
-                    <span>
-                      <strong className="text-brand-white">{consumedProteins}g</strong> Prot
-                    </span>
-                    <span>•</span>
-                    <span>
-                      <strong className="text-brand-white">{consumedCarbs}g</strong> Gluc
-                    </span>
-                    <span>•</span>
-                    <span>
-                      <strong className="text-brand-white">{consumedFats}g</strong> Lip
-                    </span>
+                  {/* 3 Macros compactes en grille responsive */}
+                  <div className="grid grid-cols-3 gap-1.5 p-2 rounded-lg bg-[#0c1322]/70 text-center text-[10px] sm:text-[11px]">
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-brand-white/40">Prot</p>
+                      <p className="font-heading font-bold text-brand-white">{consumedProteins}g</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-brand-white/40">Gluc</p>
+                      <p className="font-heading font-bold text-brand-white/90">{consumedCarbs}g</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-brand-white/40">Lip</p>
+                      <p className="font-heading font-bold text-brand-white/70">{consumedFats}g</p>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-[10px] font-semibold text-brand-white/40 group-hover:text-brand-white pt-1 border-t border-brand-white/5 transition-colors">
                   <span>{totalMealsLogged} aliment(s) enregistré(s)</span>
-                  <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </div>
               </div>
             )}
@@ -309,11 +310,11 @@ export default function TodayTab({
                 className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/5 hover:border-brand-blue/40 transition-all cursor-pointer group space-y-3 flex flex-col justify-between"
               >
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="text-xs font-heading font-bold uppercase text-brand-white">
                       Entraînement
                     </div>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border shrink-0 ${
                       hasClubSessionToday
                         ? "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
                         : isProgramFullyCompleted
@@ -329,14 +330,14 @@ export default function TodayTab({
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-bold text-brand-white truncate">
+                    <h4 className="text-sm font-bold text-brand-white line-clamp-1">
                       {hasClubSessionToday
                         ? todayClubBookings[0].discipline || "Cours Club"
                         : isProgramFullyCompleted
                         ? `${featuredProgramTitle} (${completedSessionsCount}/${activeSessions.length || 3})`
                         : featuredSession?.title || "Séance Découverte Fondations"}
                     </h4>
-                    <p className="text-[11px] text-brand-white/50 mt-0.5">
+                    <p className="text-[11px] text-brand-white/50 mt-0.5 line-clamp-2">
                       {hasClubSessionToday
                         ? `${todayClubBookings[0].time || "Aujourd'hui"} • Confirmée`
                         : isProgramFullyCompleted
@@ -354,7 +355,7 @@ export default function TodayTab({
                       ? "Voir les programmes"
                       : "Lancer la séance"}
                   </span>
-                  <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </div>
               </div>
             ) : hasClubSessionToday ? (
@@ -363,20 +364,20 @@ export default function TodayTab({
                 className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/5 hover:border-brand-blue/40 transition-all cursor-pointer group space-y-3 flex flex-col justify-between"
               >
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="text-xs font-heading font-bold uppercase text-brand-white">
                       Séance en Club
                     </div>
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-brand-blue/15 text-brand-blue border-brand-blue/30">
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-brand-blue/15 text-brand-blue border-brand-blue/30 shrink-0">
                       Confirmée
                     </span>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-bold text-brand-white truncate">
+                    <h4 className="text-sm font-bold text-brand-white line-clamp-1">
                       {todayClubBookings[0].discipline || "Cours Club"}
                     </h4>
-                    <p className="text-[11px] text-brand-white/50 mt-0.5">
+                    <p className="text-[11px] text-brand-white/50 mt-0.5 line-clamp-2">
                       {todayClubBookings[0].time || "Aujourd'hui"} • Présentiel Striking Camp
                     </p>
                   </div>
@@ -384,7 +385,7 @@ export default function TodayTab({
 
                 <div className="flex items-center justify-between text-[10px] font-semibold text-brand-white/40 group-hover:text-brand-white pt-1 border-t border-brand-white/5 transition-colors">
                   <span>Accéder au planning</span>
-                  <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </div>
               </Link>
             ) : null}
@@ -392,12 +393,13 @@ export default function TodayTab({
         </div>
       )}
 
+
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           3. PROGRESSION (CARTE DE SYNTHÈSE UNIQUE & INTERACTIVE)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div
         onClick={handleOpenProgressionView}
-        className="p-5 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 shadow-xl transition-all duration-200 cursor-pointer group space-y-3"
+        className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 shadow-xl transition-all duration-200 cursor-pointer group space-y-3"
       >
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-heading font-black uppercase tracking-widest text-brand-blue">
@@ -409,9 +411,9 @@ export default function TodayTab({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="text-2xl font-heading font-black text-brand-white">
+            <div className="text-xl sm:text-2xl font-heading font-black text-brand-white">
               {currentWeight} <span className="text-xs font-normal text-brand-white/40">kg</span>
             </div>
             <div className="text-xs text-brand-white/70 mt-0.5">
@@ -424,7 +426,7 @@ export default function TodayTab({
 
           {/* Mini Courbe SVG Sparkline */}
           {points.length >= 2 ? (
-            <div className="w-32 sm:w-48 h-12 overflow-visible">
+            <div className="w-28 sm:w-44 md:w-48 h-12 overflow-visible">
               <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-full overflow-visible">
                 <path
                   d={pathD}
@@ -460,7 +462,7 @@ export default function TodayTab({
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div
         onClick={handleOpenChallengesView}
-        className="p-5 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 shadow-xl transition-all duration-200 cursor-pointer group space-y-3"
+        className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 hover:border-brand-blue/40 shadow-xl transition-all duration-200 cursor-pointer group space-y-3"
       >
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-heading font-black uppercase tracking-widest text-brand-blue">

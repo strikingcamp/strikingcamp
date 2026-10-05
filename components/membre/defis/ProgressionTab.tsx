@@ -97,55 +97,55 @@ export default function ProgressionTab({
     : "";
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           1. STATS OVERVIEW CARDS
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Poids Initial */}
-        <div className="p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
-          <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Poids Initial</p>
-          <p className="text-xl sm:text-2xl font-heading font-black text-brand-white">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Poids Initial</p>
+          <p className="text-lg sm:text-2xl font-heading font-black text-brand-white">
             {initialWeight !== null && initialWeight !== undefined ? `${initialWeight}` : "—"}{" "}
             <span className="text-xs font-normal text-brand-white/40">kg</span>
           </p>
         </div>
 
         {/* Poids Actuel */}
-        <div className="p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
-          <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Poids Actuel</p>
-          <p className="text-xl sm:text-2xl font-heading font-black text-brand-blue">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Poids Actuel</p>
+          <p className="text-lg sm:text-2xl font-heading font-black text-brand-blue">
             {currentWeight !== null && currentWeight !== undefined ? `${currentWeight}` : "—"}{" "}
             <span className="text-xs font-normal text-brand-white/40">kg</span>
           </p>
         </div>
 
         {/* Poids Cible */}
-        <div className="p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
-          <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Objectif Cible</p>
-          <p className="text-xl sm:text-2xl font-heading font-black text-brand-white/90">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Objectif Cible</p>
+          <p className="text-lg sm:text-2xl font-heading font-black text-brand-white/90">
             {targetWeight !== null && targetWeight !== undefined ? `${targetWeight}` : "—"}{" "}
             <span className="text-xs font-normal text-brand-white/40">kg</span>
           </p>
         </div>
 
         {/* Delta & Progression */}
-        <div className="p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
-          <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Évolution Totale</p>
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-1">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Évolution Totale</p>
           <div className="flex items-center gap-1.5">
             {totalDelta !== null && totalDelta !== undefined ? (
               <>
                 {totalDelta <= 0 ? (
-                  <TrendingDown size={18} className="text-brand-blue" />
+                  <TrendingDown size={16} className="text-brand-blue shrink-0" />
                 ) : (
-                  <TrendingUp size={18} className="text-brand-white/80" />
+                  <TrendingUp size={16} className="text-brand-white/80 shrink-0" />
                 )}
-                <span className="text-xl sm:text-2xl font-heading font-black text-brand-white">
+                <span className="text-lg sm:text-2xl font-heading font-black text-brand-white">
                   {totalDelta > 0 ? `+${totalDelta}` : totalDelta} kg
                 </span>
               </>
             ) : (
-              <span className="text-xl font-heading font-bold text-brand-white/40">—</span>
+              <span className="text-lg sm:text-xl font-heading font-bold text-brand-white/40">—</span>
             )}
           </div>
         </div>
@@ -154,13 +154,13 @@ export default function ProgressionTab({
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           2. GRAPHIQUE SVG RESPONSIVE DE PROGRESSION
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
-            <h3 className="text-base font-heading font-bold uppercase text-brand-white tracking-wide">
+            <h3 className="text-sm sm:text-base font-heading font-bold uppercase text-brand-white tracking-wide">
               Courbe d'Évolution du Poids
             </h3>
-            <p className="text-xs text-brand-white/40">Historique chronologique de vos pesées enregistrées</p>
+            <p className="text-[11px] sm:text-xs text-brand-white/40">Historique chronologique de vos pesées enregistrées</p>
           </div>
 
           <button
@@ -252,15 +252,15 @@ export default function ProgressionTab({
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           3. PROGRESSION RÉELLE DES ENTRAÎNEMENTS
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="space-y-0.5">
-            <h3 className="text-base font-heading font-bold uppercase text-brand-white tracking-wide">
+            <h3 className="text-sm sm:text-base font-heading font-bold uppercase text-brand-white tracking-wide">
               Progression des Entraînements
             </h3>
-            <p className="text-xs text-brand-white/40">Suivi des séances validées par programme</p>
+            <p className="text-[11px] sm:text-xs text-brand-white/40">Suivi des séances validées par programme</p>
           </div>
-          <span className="text-xs font-heading font-black text-brand-blue uppercase px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30">
+          <span className="text-[11px] sm:text-xs font-heading font-black text-brand-blue uppercase px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 self-start sm:self-center shrink-0">
             {workoutCompletions.length} séance(s) validée(s)
           </span>
         </div>
@@ -279,10 +279,10 @@ export default function ProgressionTab({
             return (
               <div
                 key={prog.id}
-                className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/5 space-y-2.5"
+                className="p-3.5 sm:p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/5 space-y-2.5"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-heading font-bold uppercase text-brand-white truncate mr-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-heading font-bold uppercase text-brand-white truncate">
                     {prog.title}
                   </span>
                   <span className="text-xs font-heading font-black text-brand-blue shrink-0">
@@ -307,7 +307,7 @@ export default function ProgressionTab({
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           4. HISTORIQUE DES ENTRAÎNEMENTS RÉALISÉS
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
         <h3 className="text-xs font-heading font-bold uppercase text-brand-white/70 tracking-wider">
           Historique des Séances Validées ({workoutCompletions.length})
         </h3>
@@ -321,16 +321,16 @@ export default function ProgressionTab({
             {workoutCompletions.map((comp) => (
               <div
                 key={comp.id}
-                className="p-3.5 rounded-xl bg-[#070c16]/60 border border-brand-white/5 flex items-center justify-between gap-3 group hover:border-brand-blue/30 transition-all"
+                className="p-3 sm:p-3.5 rounded-xl bg-[#070c16]/60 border border-brand-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 group hover:border-brand-blue/30 transition-all"
               >
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 min-w-0">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-[#22c55e] shrink-0" />
-                    <span className="text-xs font-heading font-bold uppercase text-brand-white">
+                    <span className="text-xs font-heading font-bold uppercase text-brand-white truncate">
                       {comp.programTitle} — Jour {comp.dayNumber} : {comp.sessionTitle}
                     </span>
                   </div>
-                  <p className="text-[11px] text-brand-white/40 pl-5">
+                  <p className="text-[10px] sm:text-[11px] text-brand-white/40 pl-5">
                     {new Date(comp.completedAt).toLocaleDateString("fr-FR", {
                       weekday: "short",
                       day: "numeric",
@@ -342,7 +342,7 @@ export default function ProgressionTab({
                   </p>
                 </div>
 
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 text-brand-white/60 border border-brand-white/10 shrink-0">
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 text-brand-white/60 border border-brand-white/10 shrink-0 self-start sm:self-center">
                   Terminée
                 </span>
               </div>
@@ -354,7 +354,7 @@ export default function ProgressionTab({
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           5. HISTORIQUE DÉTAILLÉ DES PESÉES
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-[#0c1322] border border-brand-white/10 space-y-4">
         <h3 className="text-xs font-heading font-bold uppercase text-brand-white/70 tracking-wider">
           Historique des Pesées ({logs.length})
         </h3>
@@ -366,23 +366,23 @@ export default function ProgressionTab({
             {[...logs].reverse().map((log) => (
               <div
                 key={log.id}
-                className="p-3.5 rounded-xl bg-[#070c16]/60 border border-brand-white/5 flex items-center justify-between gap-3 group hover:border-brand-blue/30 transition-all"
+                className="p-3 sm:p-3.5 rounded-xl bg-[#070c16]/60 border border-brand-white/5 flex items-center justify-between gap-3 group hover:border-brand-blue/30 transition-all"
               >
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-heading font-black text-brand-white">
                       {log.weight_kg} kg
                     </span>
-                    <span className="text-xs text-brand-white/40">
+                    <span className="text-[11px] sm:text-xs text-brand-white/40">
                       • {new Date(log.logged_at).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" })}
                     </span>
                   </div>
-                  {log.notes && <p className="text-xs text-brand-white/50">{log.notes}</p>}
+                  {log.notes && <p className="text-xs text-brand-white/50 truncate">{log.notes}</p>}
                 </div>
 
                 <button
                   onClick={() => handleDelete(log.id)}
-                  className="p-2 rounded-lg text-brand-white/30 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  className="p-2 rounded-lg text-brand-white/30 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
                   title="Supprimer la pesée"
                 >
                   <Trash2 size={15} />
@@ -397,19 +397,19 @@ export default function ProgressionTab({
           MODAL D'ENREGISTREMENT DE PESÉE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#0c1322] border border-brand-white/15 rounded-2xl p-6 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-md max-h-[92vh] sm:max-h-[88vh] overflow-y-auto bg-[#0c1322] border border-brand-white/15 rounded-2xl p-4 sm:p-6 space-y-4 shadow-2xl my-auto">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-3">
-              <h3 className="text-lg font-heading font-black uppercase text-brand-white">
+              <h3 className="text-base sm:text-lg font-heading font-black uppercase text-brand-white">
                 Enregistrer une pesée
               </h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-brand-white/50 hover:text-brand-white cursor-pointer">
+              <button onClick={() => setIsAddOpen(false)} className="text-brand-white/50 hover:text-brand-white p-1 cursor-pointer">
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSaveWeight} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-brand-white/70 uppercase">Poids (kg)</label>
                   <input
@@ -440,7 +440,7 @@ export default function ProgressionTab({
               {/* Mensurations V2 ready */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-brand-white/50 uppercase">Tour de taille (cm)</label>
+                  <label className="text-[10px] sm:text-[11px] font-semibold text-brand-white/50 uppercase">Taille (cm)</label>
                   <input
                     type="number"
                     step="0.5"
@@ -451,7 +451,7 @@ export default function ProgressionTab({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-brand-white/50 uppercase">Tour de bras (cm)</label>
+                  <label className="text-[10px] sm:text-[11px] font-semibold text-brand-white/50 uppercase">Bras (cm)</label>
                   <input
                     type="number"
                     step="0.5"

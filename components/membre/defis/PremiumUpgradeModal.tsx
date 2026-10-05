@@ -64,7 +64,7 @@ export default function PremiumUpgradeModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="relative w-full max-w-lg bg-[#0c1322] border border-brand-white/15 rounded-2xl shadow-2xl overflow-hidden z-10 p-6 sm:p-8 space-y-6"
+          className="relative w-full max-w-lg max-h-[92vh] sm:max-h-[88vh] overflow-y-auto bg-[#0c1322] border border-brand-white/15 rounded-2xl shadow-2xl z-10 p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6 my-auto"
         >
           {/* Header & Badge */}
           <div className="flex items-center justify-between">

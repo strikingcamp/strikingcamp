@@ -247,25 +247,26 @@ export default function WorkoutsTab({
   const totalKbCompleted = digitalDone + clubAttended;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="w-full space-y-5 sm:space-y-6">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           1. NAVIGATION PRINCIPALE : LES 2 UNIVERS (MAISON / STRIKING CAMP)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {/* Univers MAISON */}
         <button
+          type="button"
           onClick={() => setSelectedUniverse("home")}
-          className={`p-5 rounded-2xl border text-left space-y-1.5 transition-all cursor-pointer ${
+          className={`p-4 sm:p-5 rounded-2xl border text-left space-y-1.5 transition-all cursor-pointer ${
             selectedUniverse === "home"
               ? "bg-brand-blue border-brand-blue text-brand-black shadow-lg shadow-brand-blue/20"
               : "bg-[#0c1322] border-brand-white/10 hover:border-brand-blue/30"
           }`}
         >
           <div className="flex items-center justify-between">
-            <h4 className={selectedUniverse === "home" ? "text-lg font-heading font-black uppercase text-brand-black" : "text-lg font-heading font-black uppercase text-brand-white"}>
+            <h4 className={selectedUniverse === "home" ? "text-base sm:text-lg font-heading font-black uppercase text-brand-black" : "text-base sm:text-lg font-heading font-black uppercase text-brand-white"}>
               Maison
             </h4>
-            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
               selectedUniverse === "home"
                 ? "bg-brand-black/20 text-brand-black"
                 : "bg-brand-white/10 text-brand-white/60"
@@ -280,23 +281,24 @@ export default function WorkoutsTab({
 
         {/* Univers STRIKING CAMP */}
         <button
+          type="button"
           onClick={() => setSelectedUniverse("striking_camp")}
-          className={`p-5 rounded-2xl border text-left space-y-1.5 transition-all cursor-pointer ${
+          className={`p-4 sm:p-5 rounded-2xl border text-left space-y-1.5 transition-all cursor-pointer ${
             selectedUniverse === "striking_camp"
               ? "bg-brand-blue border-brand-blue text-brand-black shadow-lg shadow-brand-blue/20"
               : "bg-[#0c1322] border-brand-white/10 hover:border-brand-blue/30"
           }`}
         >
           <div className="flex items-center justify-between">
-            <h4 className={selectedUniverse === "striking_camp" ? "text-lg font-heading font-black uppercase text-brand-black" : "text-lg font-heading font-black uppercase text-brand-white"}>
+            <h4 className={selectedUniverse === "striking_camp" ? "text-base sm:text-lg font-heading font-black uppercase text-brand-black" : "text-base sm:text-lg font-heading font-black uppercase text-brand-white"}>
               Striking Camp
             </h4>
-            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
               selectedUniverse === "striking_camp"
                 ? "bg-brand-black/20 text-brand-black"
                 : "bg-brand-blue/20 text-brand-blue border border-brand-blue/30"
             }`}>
-              {kbShredPrograms.length} KB SHRED • Cours adultes
+              {kbShredPrograms.length} KB SHRED • Club
             </span>
           </div>
           <p className={selectedUniverse === "striking_camp" ? "text-xs text-brand-black/70" : "text-xs text-brand-white/50"}>
@@ -597,10 +599,10 @@ export default function WorkoutsTab({
           4. MODAL DU PROGRAMME SÉLECTIONNÉ (MAISON OU KB SHRED)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {selectedProgram && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md">
-          <div className="w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col bg-[#0c1322] border border-brand-white/15 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-[#0c1322] border border-brand-white/15 rounded-2xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
             {/* Header fixe de la modale */}
-            <div className="shrink-0 p-5 sm:p-6 border-b border-brand-white/10 bg-[#0c1322] flex items-start justify-between gap-4">
+            <div className="shrink-0 p-4 sm:p-6 border-b border-brand-white/10 bg-[#0c1322] flex items-start justify-between gap-3 sm:gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
@@ -610,12 +612,13 @@ export default function WorkoutsTab({
                     {selectedProgram.location === "home" ? "Maison" : "Striking Camp"}
                   </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-heading font-black uppercase text-brand-white">
+                <h3 className="text-xl sm:text-2xl font-heading font-black uppercase text-brand-white break-words">
                   {selectedProgram.title}
                 </h3>
                 <p className="text-xs text-brand-white/60 line-clamp-2 sm:line-clamp-none">{selectedProgram.description}</p>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedProgram(null)}
                 aria-label="Fermer"
                 className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors shrink-0 cursor-pointer"
@@ -625,25 +628,26 @@ export default function WorkoutsTab({
             </div>
 
             {/* Corps défilable de la modale */}
-            <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
+            <div className="overflow-y-auto flex-1 p-3.5 sm:p-6 space-y-5 sm:space-y-6">
               {selectedProgram.sessions && selectedProgram.sessions.length > 0 && (
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <h4 className="text-xs font-heading font-bold uppercase text-brand-white/70 tracking-wider">
                     Séances du Programme ({selectedProgram.sessions.length})
                   </h4>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {selectedProgram.sessions.map((sess, idx) => (
                       <button
                         key={sess.id}
+                        type="button"
                         onClick={() => setSelectedSession(sess)}
-                        className={`px-4 py-2 rounded-xl text-xs font-heading font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-heading font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer ${
                           selectedSession?.id === sess.id
                             ? "bg-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
                             : "bg-[#070c16]/80 border border-brand-white/10 text-brand-white/70 hover:text-brand-white"
                         }`}
                       >
-                        {sess.is_completed && <CheckCircle2 size={13} className="text-[#22c55e]" />}
+                        {sess.is_completed && <CheckCircle2 size={13} className="text-[#22c55e] shrink-0" />}
                         <span>Jour {sess.day_number || idx + 1} : {sess.title}</span>
                       </button>
                     ))}

@@ -112,26 +112,26 @@ export default function GoalTab({
   const successPlan = nutritionPlan?.status === "success" ? (nutritionPlan as NutritionPlanSuccess) : null;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           MODE SYNTHÈSE / AFFICHAGE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {!isEditing && initialProfile && (
         <div className="space-y-6">
           {/* Header Card */}
-          <div className="p-6 sm:p-8 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-6 relative overflow-hidden">
+          <div className="p-4 sm:p-6 md:p-8 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-6 relative overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-bold uppercase tracking-wider">
                   Objectif Actif
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-heading font-black uppercase text-brand-white tracking-wide">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-heading font-black uppercase text-brand-white tracking-wide">
                   {initialProfile.primary_goal === "weight_loss" && "Perte de Poids & Affûtage"}
                   {initialProfile.primary_goal === "muscle_gain" && "Gain Musculaire & Puissance"}
                   {initialProfile.primary_goal === "maintenance" && "Maintien & Performance"}
                   {initialProfile.primary_goal === "recomposition" && "Recomposition Corporelle"}
                 </h2>
-                <p className="text-sm text-brand-white/60">
+                <p className="text-xs sm:text-sm text-brand-white/60">
                   Parcours personnalisé digital & physique configuré pour votre profil athlétique.
                 </p>
               </div>
@@ -141,7 +141,7 @@ export default function GoalTab({
                   setStep(1);
                   setIsEditing(true);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 border border-brand-white/10 text-brand-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all self-start sm:self-center cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 border border-brand-white/10 text-brand-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all self-start sm:self-center cursor-pointer shrink-0"
               >
                 <Edit3 size={14} />
                 <span>Modifier le profil</span>
@@ -149,34 +149,34 @@ export default function GoalTab({
             </div>
 
             {/* Metrics Overview Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-              <div className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
-                <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Poids Actuel</p>
-                <p className="text-xl sm:text-2xl font-heading font-black text-brand-white">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Poids Actuel</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-heading font-black text-brand-white">
                   {initialProfile.current_weight_kg} <span className="text-xs font-normal text-brand-white/50">kg</span>
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
-                <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Poids Cible</p>
-                <p className="text-xl sm:text-2xl font-heading font-black text-brand-blue">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Poids Cible</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-heading font-black text-brand-blue">
                   {initialProfile.target_weight_kg ? `${initialProfile.target_weight_kg} kg` : "—"}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
-                <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Cible Énergie</p>
-                <p className="text-xl sm:text-2xl font-heading font-black text-brand-white">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Cible Énergie</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-heading font-black text-brand-white">
                   {successPlan?.targetCalories.value ? `${successPlan.targetCalories.value}` : "—"}{" "}
                   <span className="text-xs font-normal text-brand-white/50">kcal/j</span>
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
-                <p className="text-[11px] font-semibold text-brand-white/40 uppercase">Rythme Entraînement</p>
-                <p className="text-xl sm:text-2xl font-heading font-black text-brand-white">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-brand-white/40 uppercase">Rythme</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-heading font-black text-brand-white">
                   {initialProfile.target_workouts_per_week}{" "}
-                  <span className="text-xs font-normal text-brand-white/50">séances/sem</span>
+                  <span className="text-xs font-normal text-brand-white/50">s/sem</span>
                 </p>
               </div>
             </div>
@@ -184,17 +184,17 @@ export default function GoalTab({
             {/* Nutrition Breakdown from Engine */}
             {successPlan && (
               <div className="space-y-3 pt-4 border-t border-brand-white/10">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-brand-white/80">
                     Répartition des Macronutriments Estimée
                   </h3>
-                  <span className="text-[11px] text-brand-white/40">Moteur déterministe Mifflin-St Jeor</span>
+                  <span className="text-[10px] sm:text-[11px] text-brand-white/40">Moteur déterministe Mifflin-St Jeor</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                   <div className="p-3.5 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
                     <p className="text-[10px] font-bold uppercase text-brand-blue">Protéines</p>
-                    <p className="text-lg font-heading font-black text-brand-white">
+                    <p className="text-base sm:text-lg font-heading font-black text-brand-white">
                       {successPlan.macros.proteins.grams} <span className="text-xs font-normal text-brand-white/50">g</span>
                     </p>
                     <p className="text-[10px] text-brand-white/40">{successPlan.macros.proteins.percentage}% de l'énergie</p>
@@ -202,7 +202,7 @@ export default function GoalTab({
 
                   <div className="p-3.5 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
                     <p className="text-[10px] font-bold uppercase text-brand-white/80">Glucides</p>
-                    <p className="text-lg font-heading font-black text-brand-white">
+                    <p className="text-base sm:text-lg font-heading font-black text-brand-white">
                       {successPlan.macros.carbs.grams} <span className="text-xs font-normal text-brand-white/50">g</span>
                     </p>
                     <p className="text-[10px] text-brand-white/40">{successPlan.macros.carbs.percentage}% de l'énergie</p>
@@ -210,7 +210,7 @@ export default function GoalTab({
 
                   <div className="p-3.5 rounded-xl bg-[#070c16]/80 border border-brand-white/10 space-y-1">
                     <p className="text-[10px] font-bold uppercase text-brand-white/60">Lipides</p>
-                    <p className="text-lg font-heading font-black text-brand-white">
+                    <p className="text-base sm:text-lg font-heading font-black text-brand-white">
                       {successPlan.macros.fats.grams} <span className="text-xs font-normal text-brand-white/50">g</span>
                     </p>
                     <p className="text-[10px] text-brand-white/40">{successPlan.macros.fats.percentage}% de l'énergie</p>
@@ -293,7 +293,7 @@ export default function GoalTab({
           MODE ONBOARDING / WIZARD INTERACTIF (6 ÉTAPES)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isEditing && (
-        <div className="p-6 sm:p-8 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-6">
+        <div className="p-4 sm:p-6 md:p-8 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-6">
           {/* Wizard Header */}
           <div className="flex items-center justify-between border-b border-brand-white/10 pb-4">
             <div className="space-y-1">
@@ -538,13 +538,13 @@ export default function GoalTab({
                 <label className="block text-xs font-semibold text-brand-white/70 uppercase">
                   Nombre de séances souhaitées par semaine
                 </label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                   {[2, 3, 4, 5, 6].map((num) => (
                     <button
                       key={num}
                       type="button"
                       onClick={() => setTargetWorkoutsPerWeek(num)}
-                      className={`flex-1 py-3 rounded-xl border font-heading font-bold text-sm transition-all cursor-pointer ${
+                      className={`py-2.5 sm:py-3 rounded-xl border font-heading font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         targetWorkoutsPerWeek === num
                           ? "bg-brand-blue border-brand-blue text-brand-black shadow-md shadow-brand-blue/20"
                           : "bg-[#070c16]/80 border-brand-white/10 text-brand-white/60 hover:text-brand-white"
