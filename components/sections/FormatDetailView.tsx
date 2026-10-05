@@ -12,8 +12,6 @@ import {
   Calendar,
   Users,
   MapPin,
-  Clock,
-  Target
 } from "lucide-react";
 import { FormatDetail, publicFormatList } from "@/data/formats";
 import TrialBookingModal from "@/components/modals/TrialBookingModal";
@@ -185,8 +183,7 @@ export default function FormatDetailView({ format }: FormatDetailViewProps) {
       {/* 4. Section Pour quel public ? */}
       <section className="py-8 sm:py-12 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="p-8 sm:p-10 rounded-2xl bg-[#0c1322] border border-brand-white/10 shadow-xl space-y-6">
-          <div className="flex items-center gap-3">
-            <Target className="text-brand-blue shrink-0" size={24} />
+          <div>
             <h2 className="font-heading text-2xl sm:text-3xl font-black text-brand-white uppercase tracking-wider">
               {format.targetAudience.title}
             </h2>
@@ -213,9 +210,8 @@ export default function FormatDetailView({ format }: FormatDetailViewProps) {
       {/* 5. Section Comment se déroule une séance ? */}
       <section className="py-12 sm:py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-3">
-            <Clock size={12} />
-            <span>Structure de l&apos;Entraînement</span>
+          <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-3">
+            Structure de l&apos;Entraînement
           </div>
           <h2 className="font-heading text-3xl sm:text-4xl font-black text-brand-white uppercase tracking-tight">
             {format.sessionFlow.title}

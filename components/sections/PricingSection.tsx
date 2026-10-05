@@ -419,15 +419,27 @@ export default function PricingSection({
                       <>
                         <div className="flex items-start gap-2.5">
                           <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès illimité aux séances Cours Adulte</span>
+                          <span>Accès illimité aux Cours Adulte</span>
                         </div>
                         <div className="flex items-start gap-2.5">
                           <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Suivi technique personnalisé en groupe réduit</span>
+                          <span>Suivi technique personnalisé</span>
                         </div>
                         <div className="flex items-start gap-2.5">
                           <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Toutes disciplines incluses</span>
+                          <span>Toutes les disciplines incluses</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès aux Défis Striking Camp</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès à l’Espace Nutrition</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès aux programmes physiques</span>
                         </div>
                         <div className="flex items-start gap-2.5">
                           <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
@@ -435,7 +447,7 @@ export default function PricingSection({
                         </div>
                         <div className="flex items-start gap-2.5">
                           <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux événements (stages)</span>
+                          <span>Accès aux événements et stages</span>
                         </div>
                         <div className="flex items-start gap-2.5">
                           <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
@@ -542,8 +554,48 @@ export default function PricingSection({
                       </>
                     )}
 
-                    {/* F. Cours Privés (Annuel & Mensuel) */}
-                    {activeCategory === "private" && (
+                    {/* F. Cours Privés — Annuel & Mensuel */}
+                    {activeCategory === "private" && privateCommitment === "annual" && (
+                      <>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>8 séances privées par mois</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Suivi technique sur mesure</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès illimité aux Cours Adulte</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès aux Défis Striking Camp</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès à l’Espace Nutrition</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès aux programmes physiques</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Parking privé</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Accès aux événements et stages</span>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
+                          <span>Frais d&apos;adhésion : 90 €</span>
+                        </div>
+                      </>
+                    )}
+                    {activeCategory === "private" && privateCommitment === "monthly" && (
                       <>
                         <div className="flex items-start gap-2.5">
                           <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />

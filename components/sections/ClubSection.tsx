@@ -3,26 +3,38 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Target, HeartHandshake } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+
+const memberFeatures = [
+  {
+    title: "DÉFIS STRIKING CAMP",
+    desc: "Relevez régulièrement de nouveaux défis pour développer votre régularité, votre condition physique et votre mental.",
+  },
+  {
+    title: "ESPACE NUTRITION",
+    desc: "Accédez à un espace dédié à la nutrition avec des recettes et des ressources pensées pour accompagner vos objectifs et votre pratique sportive.",
+  },
+  {
+    title: "PROGRAMMES PHYSIQUES",
+    desc: "Complétez vos séances au club avec des programmes physiques à réaliser à la maison ou en salle : renforcement, conditionnement et développement physique.",
+  },
+];
 
 const pillars = [
   {
     title: "L'INTENSITÉ COMME MOTEUR",
     desc: "Nous croyons que la véritable croissance se trouve hors de la zone de confort. Nos entraînements sont conçus pour vous pousser à votre maximum, forgeant non seulement un corps plus fort mais aussi un mental d'acier.",
     image: "/kickboxing.jpg",
-    icon: Target
   },
   {
     title: "LA TECHNIQUE COMME FONDATION",
     desc: "La puissance sans la maîtrise est vaine. Chaque coup, chaque mouvement est enseigné avec une attention méticuleuse au détail. Nous construisons des combattants intelligents, pas seulement des cogneurs.",
     image: "/muaythai.jpg",
-    icon: ShieldCheck
   },
   {
     title: "LE RESPECT COMME CODE",
     desc: "L'ego reste à la porte. Striking Camp est une communauté soudée par la passion et l'entraide. Nous nous élevons ensemble, dans le respect de nos partenaires, de nos coachs et de l'art que nous pratiquons.",
     image: "/striking.jpg",
-    icon: HeartHandshake
   }
 ];
 
@@ -236,6 +248,65 @@ export default function ClubSection() {
 
           </div>
 
+          {/* L'EXPÉRIENCE MEMBRE — UN ACCOMPAGNEMENT QUI VA AU-DELÀ DES COURS */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="bg-[#0c1322] border border-brand-white/10 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6"
+          >
+            <div>
+              <div className="inline-flex items-center px-3 py-1 bg-brand-blue/10 border border-brand-blue/25 rounded-full text-brand-blue text-[10px] sm:text-xs font-heading font-bold uppercase tracking-widest mb-3">
+                <span>INCLUS DANS LES FORMULES ALL ACCESS & COURS PRIVÉS ANNUELS</span>
+              </div>
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-brand-white uppercase tracking-wider">
+                L’EXPÉRIENCE <span className="text-brand-blue">MEMBRE</span>
+              </h2>
+              <p className="text-xs sm:text-sm font-heading font-semibold uppercase tracking-wider text-brand-blue mt-1">
+                UN ACCOMPAGNEMENT QUI VA AU-DELÀ DES COURS
+              </p>
+            </div>
+
+            <div className="space-y-3 text-brand-white/80 font-light text-xs sm:text-sm leading-relaxed">
+              <p>
+                Au Striking Camp, l’entraînement ne s’arrête pas lorsque vous quittez la salle.
+              </p>
+              <p>
+                Les formules All Access et Cours Privés — Engagement annuel donnent accès à un écosystème pensé pour accompagner votre progression au quotidien : entraînement, défis, nutrition et préparation physique.
+              </p>
+            </div>
+
+            {/* Grille 3 cartes compactes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+              {memberFeatures.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="bg-[#080d1a] border border-brand-white/10 rounded-xl p-5 hover:border-brand-blue/40 transition-all duration-300 group flex flex-col justify-between shadow-md hover:-translate-y-0.5"
+                >
+                  <div>
+                    <h3 className="font-heading text-sm sm:text-base font-bold text-brand-white uppercase tracking-wider group-hover:text-brand-blue transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="text-brand-white/70 font-light leading-relaxed text-xs mt-2">
+                      {feature.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Bloc de conclusion */}
+            <div className="pt-4 border-t border-brand-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+              <p className="text-xs sm:text-sm text-brand-white/90 font-medium italic">
+                « Un seul objectif : vous donner les outils nécessaires pour progresser, à la salle comme en dehors. »
+              </p>
+              <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-blue bg-brand-blue/10 px-2.5 py-1 rounded-md border border-brand-blue/20 shrink-0">
+                ESPACE MEMBRE DÉDIÉ
+              </span>
+            </div>
+          </motion.div>
+
           {/* Citation mise en valeur (Featured Box) */}
           <div className="p-6 sm:p-8 bg-gradient-to-r from-[#0c1626] to-[#070c16] border border-brand-blue/30 rounded-2xl shadow-[0_0_30px_rgba(47,174,224,0.1)]">
             <p className="text-brand-white text-base sm:text-lg font-medium italic leading-relaxed text-center">
@@ -255,53 +326,55 @@ export default function ClubSection() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {pillars.map((pillar, index) => {
-                const Icon = pillar.icon;
-                return (
-                  <motion.div
-                    key={pillar.title}
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                    className="bg-[#0c1322] border border-brand-white/10 rounded-2xl overflow-hidden hover:border-brand-blue/40 transition-all duration-300 group flex flex-col justify-between shadow-xl hover:-translate-y-0.5"
-                  >
-                    <div className="relative h-36 w-full overflow-hidden">
-                      <Image
-                        src={pillar.image}
-                        alt={pillar.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0c1322] via-[#0c1322]/40 to-transparent" />
+              {pillars.map((pillar, index) => (
+                <motion.div
+                  key={pillar.title}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="bg-[#0c1322] border border-brand-white/10 rounded-2xl overflow-hidden hover:border-brand-blue/40 transition-all duration-300 group flex flex-col justify-between shadow-xl hover:-translate-y-0.5"
+                >
+                  <div className="relative h-36 w-full overflow-hidden">
+                    <Image
+                      src={pillar.image}
+                      alt={pillar.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0c1322] via-[#0c1322]/40 to-transparent" />
+                  </div>
+                  
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-2">
+                    <div className="mb-1">
+                      <h3 className="font-heading text-base font-bold text-brand-white uppercase tracking-wider group-hover:text-brand-blue transition-colors">
+                        {pillar.title}
+                      </h3>
                     </div>
-                    
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon size={16} className="text-brand-blue shrink-0" />
-                        <h3 className="font-heading text-base font-bold text-brand-white uppercase tracking-wider group-hover:text-brand-blue transition-colors">
-                          {pillar.title}
-                        </h3>
-                      </div>
-                      <p className="text-brand-white/70 font-light leading-relaxed text-xs">
-                        {pillar.desc}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    <p className="text-brand-white/70 font-light leading-relaxed text-xs">
+                      {pillar.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
 
           {/* Bottom Action */}
-          <div className="pt-4 text-center sm:text-left">
+          <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+            <Link 
+              href="/tarifs"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white transition-all duration-300 rounded-sm shadow-lg shadow-brand-blue/20 text-center"
+            >
+              DÉCOUVRIR NOS TARIFS & FORMULES
+              <ArrowRight size={15} />
+            </Link>
             <Link 
               href="/planning"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white transition-all duration-300 rounded-sm shadow-lg shadow-brand-blue/20"
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 bg-brand-white/5 text-brand-white font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white/10 hover:text-brand-white transition-all duration-300 rounded-sm border border-brand-white/10 text-center"
             >
-              DÉCOUVRIR LES COURS & LE PLANNING
-              <ArrowRight size={15} />
+              CONSULTER LE PLANNING
             </Link>
           </div>
 

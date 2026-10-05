@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldCheck, Target, Zap, Flame, HeartPulse, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,6 @@ const MAIN_LEVELS = [
       number: "text-emerald-400/30 group-hover:text-emerald-400/60",
       accent: "text-emerald-400",
     },
-    icon: ShieldCheck,
   },
   {
     step: "02",
@@ -34,7 +33,6 @@ const MAIN_LEVELS = [
       number: "text-[#00d8ff]/30 group-hover:text-[#00d8ff]/60",
       accent: "text-[#00d8ff]",
     },
-    icon: Target,
   },
   {
     step: "03",
@@ -49,7 +47,6 @@ const MAIN_LEVELS = [
       number: "text-amber-400/30 group-hover:text-amber-400/60",
       accent: "text-amber-400",
     },
-    icon: Zap,
   },
   {
     step: "04",
@@ -64,7 +61,6 @@ const MAIN_LEVELS = [
       number: "text-red-400/30 group-hover:text-red-400/60",
       accent: "text-red-400",
     },
-    icon: Flame,
   },
 ];
 
@@ -81,7 +77,6 @@ const SPECIAL_CATEGORIES = [
       glow: "group-hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]",
       accent: "text-purple-400",
     },
-    icon: HeartPulse,
   },
   {
     name: "LADY STRIKING",
@@ -95,7 +90,6 @@ const SPECIAL_CATEGORIES = [
       glow: "group-hover:shadow-[0_0_25px_rgba(236,72,153,0.15)]",
       accent: "text-pink-400",
     },
-    icon: Sparkles,
   },
 ];
 
@@ -137,109 +131,87 @@ export default function MethodSection() {
 
       {/* 4 Piliers de progression */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 mb-10">
-        {MAIN_LEVELS.map((lvl, idx) => {
-          const IconComponent = lvl.icon;
-          return (
-            <motion.div
-              key={lvl.name}
-              initial={{ opacity: 0, y: 25 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={cn(
-                "group relative bg-[#0c1322] border rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300",
-                lvl.colorClasses.border,
-                lvl.colorClasses.glow
-              )}
-            >
-              <div>
-                {/* Header Card : Step + Icon */}
-                <div className="flex items-center justify-between mb-4">
-                  <span
-                    className={cn(
-                      "font-heading font-black text-2xl sm:text-3xl tracking-tight transition-colors",
-                      lvl.colorClasses.number
-                    )}
-                  >
-                    {lvl.step}
-                  </span>
-                  <div
-                    className={cn(
-                      "w-10 h-10 rounded-xl border flex items-center justify-center transition-transform group-hover:scale-110",
-                      lvl.colorClasses.badge
-                    )}
-                  >
-                    <IconComponent size={20} />
-                  </div>
-                </div>
-
-                {/* Nom + Badge */}
-                <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wide text-brand-white mb-1.5">
-                  {lvl.name}
-                </h3>
-                <p className={cn("text-xs font-semibold uppercase tracking-wider mb-4", lvl.colorClasses.accent)}>
-                  {lvl.tagline}
-                </p>
-
-                {/* Description */}
-                <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed font-light">
-                  {lvl.description}
-                </p>
+        {MAIN_LEVELS.map((lvl, idx) => (
+          <motion.div
+            key={lvl.name}
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: idx * 0.1 }}
+            className={cn(
+              "group relative bg-[#0c1322] border rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300",
+              lvl.colorClasses.border,
+              lvl.colorClasses.glow
+            )}
+          >
+            <div>
+              {/* Header Card : Step */}
+              <div className="mb-4">
+                <span
+                  className={cn(
+                    "font-heading font-black text-2xl sm:text-3xl tracking-tight transition-colors",
+                    lvl.colorClasses.number
+                  )}
+                >
+                  {lvl.step}
+                </span>
               </div>
-            </motion.div>
-          );
-        })}
+
+              {/* Nom + Badge */}
+              <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wide text-brand-white mb-1.5">
+                {lvl.name}
+              </h3>
+              <p className={cn("text-xs font-semibold uppercase tracking-wider mb-4", lvl.colorClasses.accent)}>
+                {lvl.tagline}
+              </p>
+
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed font-light">
+                {lvl.description}
+              </p>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Catégories Spécifiques : Cardio & Lady Striking */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 mb-12 sm:mb-16">
-        {SPECIAL_CATEGORIES.map((cat, idx) => {
-          const IconComponent = cat.icon;
-          return (
-            <motion.div
-              key={cat.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.4 + idx * 0.1 }}
-              className={cn(
-                "group relative bg-[#0c1322] border rounded-2xl p-6 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center gap-5 transition-all duration-300",
-                cat.colorClasses.border,
-                cat.colorClasses.glow
-              )}
-            >
-              <div
-                className={cn(
-                  "w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 transition-transform group-hover:scale-110",
-                  cat.colorClasses.badge
-                )}
-              >
-                <IconComponent size={24} />
+        {SPECIAL_CATEGORIES.map((cat, idx) => (
+          <motion.div
+            key={cat.name}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 + idx * 0.1 }}
+            className={cn(
+              "group relative bg-[#0c1322] border rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300",
+              cat.colorClasses.border,
+              cat.colorClasses.glow
+            )}
+          >
+            <div>
+              <div className="flex items-center gap-3 flex-wrap mb-1">
+                <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wide text-brand-white">
+                  {cat.name}
+                </h3>
+                <span
+                  className={cn(
+                    "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+                    cat.colorClasses.badge
+                  )}
+                >
+                  {cat.badge}
+                </span>
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 flex-wrap mb-1">
-                  <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wide text-brand-white">
-                    {cat.name}
-                  </h3>
-                  <span
-                    className={cn(
-                      "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                      cat.colorClasses.badge
-                    )}
-                  >
-                    {cat.badge}
-                  </span>
-                </div>
-                <p className={cn("text-xs font-semibold uppercase tracking-wider mb-2", cat.colorClasses.accent)}>
-                  {cat.tagline}
-                </p>
-                <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed font-light">
-                  {cat.description}
-                </p>
-              </div>
-            </motion.div>
-          );
-        })}
+              <p className={cn("text-xs font-semibold uppercase tracking-wider mb-2", cat.colorClasses.accent)}>
+                {cat.tagline}
+              </p>
+              <p className="text-xs sm:text-sm text-brand-white/70 leading-relaxed font-light">
+                {cat.description}
+              </p>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Note Pédagogique et Réassurance (Non Scolaire) */}

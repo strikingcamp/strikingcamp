@@ -85,7 +85,13 @@ export async function processAndUploadImage(inputFilePath, slug) {
     throw new Error(`Erreur mise à jour base (${slug}) : ${dbErr.message}`);
   }
 
-  console.log(`SUCCÈS : ${slug} uploadé et synchronisé -> ${publicUrl}`);
+  // Copie dans le dossier local recipes/
+  try {
+    if (!fs.existsSync('recipes')) fs.mkdirSync('recipes');
+    fs.copyFileSync(outputWebpPath, path.join('recipes', `${slug}.webp`));
+  } catch (err) {
+    console.warn(`Avertissement copie locale recipes/: ${err.message}`);
+  }
 
   // Nettoyage temporaire local
   try {
