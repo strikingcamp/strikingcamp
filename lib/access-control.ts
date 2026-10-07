@@ -125,7 +125,16 @@ export function computePlanAccess(plan: PlanLike | null | undefined): PlanAccess
   const rawName = (plan.name || "").toLowerCase().trim();
 
   const isEssential = code === "adult_essential" || rawName.includes("essentiel");
-  const isAllAccess = code === "adult_all_access" || code === "col_annual" || code === "sg_annual" || rawName.includes("all access");
+  const isAllAccess =
+    code === "adult_all_access" ||
+    code === "discovery_monthly" ||
+    code === "decouverte_1_mois" ||
+    code === "col_annual" ||
+    code === "sg_annual" ||
+    rawName.includes("all access") ||
+    rawName.includes("1 mois découverte") ||
+    rawName.includes("1 mois decouverte") ||
+    plan.tier === "discovery_pass";
   const isLadyStriking = code === "lady_striking_annual" || rawName.includes("lady");
   const isKidBoxing = code === "kid_boxing_season" || rawName.includes("kid");
 

@@ -181,7 +181,70 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // 4. Cas standard : Abonnement récurrent (appel de la RPC PostgreSQL SECURITY DEFINER)
+    // 3.B. Cas particulier : 1 Mois Découverte (Accès illimité 30 jours non récurrent)
+    if (plan?.code === "discovery_monthly" || plan?.tier === "discovery_pass") {
+      const startsAt = new Date();
+      const expiresAt = new Date(startsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      // Restriction stricte : vérification d'utilisation antérieure
+      const { data: existingSubs } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", req.user_id)
+        .eq("plan_id", req.plan_id);
+
+      if (existingSubs && existingSubs.length > 0) {
+        return {
+          success: false,
+          error: `Ce membre a déjà bénéficié de l'offre ${plan.name}. Cette offre découverte est strictement limitée à 1 fois par membre à vie.`,
+        };
+      }
+
+      // Création de l'accès actif de 30 jours dans public.subscriptions
+      const { data: newSub, error: subErr } = await supabase
+        .from("subscriptions")
+        .insert({
+          user_id: req.user_id,
+          plan_id: req.plan_id,
+          status: "active",
+          started_at: startsAt.toISOString(),
+          ends_at: expiresAt.toISOString(),
+        })
+        .select("id")
+        .single();
+
+      if (subErr || !newSub) {
+        console.error("[approveMembershipRequestServerAction] Erreur création subscription 30 jours :", subErr);
+        return { success: false, error: "Erreur lors de l'activation du pass 30 jours." };
+      }
+
+      // Mise à jour de la demande en approved
+      await supabase
+        .from("membership_requests")
+        .update({
+          status: "approved",
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString(),
+          admin_notes: cleanNotes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+
+      revalidatePath("/admin/adhesions");
+      revalidatePath("/admin/abonnements");
+      revalidatePath("/admin/membres");
+      revalidatePath("/admin");
+      revalidatePath("/membre/planning");
+      revalidatePath("/membre");
+
+      return {
+        success: true,
+        subscriptionId: newSub.id,
+        message: "Demande validée avec succès. L'accès illimité de 30 jours du membre a été activé.",
+      };
+    }
+
+    // 4. Cas standard : Abonnement annuel/mensuel régulier (appel de la RPC PostgreSQL)
     const { data: rpcData, error: rpcError } = await supabase.rpc("admin_approve_membership_request", {
       p_request_id: requestId,
       p_admin_notes: cleanNotes,
@@ -286,8 +349,8 @@ export async function rejectMembershipRequestServerAction(
 
     const plan = Array.isArray(req.plan) ? req.plan[0] : req.plan;
 
-    // 3. Cas particulier : Offre de type Pack de Crédits
-    if (plan?.tier === "credit_pack") {
+    // 3. Cas particulier : Offre de type Pack de Crédits ou Pass Découverte
+    if (plan?.tier === "credit_pack" || plan?.tier === "discovery_pass" || plan?.code === "discovery_monthly") {
       await supabase
         .from("membership_requests")
         .update({
@@ -304,7 +367,7 @@ export async function rejectMembershipRequestServerAction(
 
       return {
         success: true,
-        message: "La demande de pack a été refusée.",
+        message: "La demande d'offre découverte / pack a été refusée.",
       };
     }
 

@@ -473,8 +473,12 @@ export default function AdminMembershipRequestsView() {
                       {req.status === "pending" ? "En attente" : req.status === "approved" ? "Validée" : "Refusée"}
                     </span>
 
-                    {/* Badge Formule / Pack */}
-                    {req.plan?.tier === "credit_pack" ? (
+                    {/* Badge Formule / Pack / Pass */}
+                    {req.plan?.tier === "discovery_pass" || req.plan?.code === "discovery_monthly" ? (
+                      <span className="text-[10px] font-heading font-black uppercase px-2.5 py-0.5 rounded border tracking-wider bg-brand-blue/20 text-brand-blue border-brand-blue/40">
+                        {req.plan?.name || "1 Mois Découverte"}
+                      </span>
+                    ) : req.plan?.tier === "credit_pack" ? (
                       <span className="text-[10px] font-heading font-black uppercase px-2.5 py-0.5 rounded border tracking-wider bg-amber-400/15 text-amber-300 border-amber-400/30">
                         {req.plan?.name || "Pack de Séances"}
                       </span>
@@ -506,7 +510,11 @@ export default function AdminMembershipRequestsView() {
                     )}
 
                     {/* Badge Type d'engagement ou Validité */}
-                    {req.plan?.tier === "credit_pack" ? (
+                    {req.plan?.tier === "discovery_pass" || req.plan?.code === "discovery_monthly" ? (
+                      <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 text-brand-blue">
+                        Accès illimité • Validité 30 jours
+                      </span>
+                    ) : req.plan?.tier === "credit_pack" ? (
                       <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-amber-400/10 border border-amber-400/20 text-amber-300">
                         {req.plan?.code === "pack_10_small_group"
                           ? "10 crédits • Validité 3 mois"
@@ -665,11 +673,24 @@ export default function AdminMembershipRequestsView() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-brand-white/50">Offre :</span>
-                    <strong className={cn(approvingReq.plan?.tier === "credit_pack" ? "text-amber-300" : "text-[#00d8ff]")}>
+                    <strong className={cn(
+                      approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly"
+                        ? "text-brand-blue"
+                        : approvingReq.plan?.tier === "credit_pack"
+                        ? "text-amber-300"
+                        : "text-[#00d8ff]"
+                    )}>
                       {approvingReq.plan?.name}
                     </strong>
                   </div>
-                  {approvingReq.plan?.tier === "credit_pack" ? (
+                  {approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly" ? (
+                    <div className="flex justify-between">
+                      <span className="text-brand-white/50">Type :</span>
+                      <span className="text-brand-blue font-bold">
+                        1 Mois Découverte (Accès illimité 30 jours)
+                      </span>
+                    </div>
+                  ) : approvingReq.plan?.tier === "credit_pack" ? (
                     <div className="flex justify-between">
                       <span className="text-brand-white/50">Type :</span>
                       <span className="text-amber-300 font-bold">
@@ -686,7 +707,13 @@ export default function AdminMembershipRequestsView() {
                   )}
                 </div>
 
-                {approvingReq.plan?.tier === "credit_pack" ? (
+                {approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly" ? (
+                  <div className="p-3.5 bg-brand-blue/10 border border-brand-blue/30 rounded-xl text-brand-blue text-[11px] leading-relaxed">
+                    ✓ Un pass découverte avec <strong>accès illimité aux cours adultes pendant 30 jours</strong> sera activé immédiatement.
+                    <br />
+                    ✓ Le membre aura accès au planning pour réserver ses séances sans débit de crédits.
+                  </div>
+                ) : approvingReq.plan?.tier === "credit_pack" ? (
                   <div className="p-3.5 bg-amber-950/40 border border-amber-500/30 rounded-xl text-amber-300 text-[11px] leading-relaxed">
                     ✓ Le pack de séances sera créé et activé immédiatement.
                     <br />

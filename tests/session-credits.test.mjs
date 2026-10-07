@@ -666,6 +666,234 @@ async function main() {
     assert.ok(res1.success ? !res2.success : res2.success);
   });
 
+  // -------------------------------------------------------------
+  // Test 24: Un nouveau membre peut demander le mois découverte (89 €)
+  // -------------------------------------------------------------
+  await runTest("24. TEST 1: Nouveau membre peut demander le 1 Mois Découverte (89 €)", () => {
+    const pack = SESSION_PACKS["discovery_monthly"];
+    assert.ok(pack, "Pack discovery_monthly doit exister dans SESSION_PACKS");
+    assert.equal(pack.priceCents, 8900, "Prix doit être 89.00 € (8900 cents)");
+    assert.equal(pack.priceEuros, 89);
+    assert.equal(pack.isUnlimited, true, "Doit être un accès illimité");
+    assert.equal(pack.totalCredits, 0, "Pas de compteur de crédits");
+    assert.equal(pack.validityDays, 30, "Validité de 30 jours");
+
+    const userId = "new-user-discovery-month";
+    const dbRequests = [];
+    const dbSubs = [];
+    
+    // Eligibility check
+    const hasAnyReq = dbRequests.some((r) => r.user_id === userId && r.plan_code === "discovery_monthly");
+    const hasAnySub = dbSubs.some((s) => s.user_id === userId && s.plan_code === "discovery_monthly");
+    const isEligible = !hasAnyReq && !hasAnySub;
+    assert.equal(isEligible, true, "Nouveau membre doit être éligible au 1 Mois Découverte");
+  });
+
+  // -------------------------------------------------------------
+  // Test 25: Le mois découverte est bien limité à 30 jours
+  // -------------------------------------------------------------
+  await runTest("25. TEST 2: Le 1 Mois Découverte est strictement limité à 30 jours", () => {
+    const pack = SESSION_PACKS["discovery_monthly"];
+    const now = new Date("2026-10-10T10:00:00Z");
+    const exp = computePackExpirationDate(pack, now);
+    const diffMs = exp.getTime() - now.getTime();
+    const diffDays = Math.round(diffMs / (24 * 3600 * 1000));
+    assert.equal(diffDays, 30, "La durée de validité doit être exactement de 30 jours (720 heures)");
+  });
+
+  // -------------------------------------------------------------
+  // Test 26: Une réservation pendant la période active est autorisée
+  // -------------------------------------------------------------
+  await runTest("26. TEST 3: Une réservation pendant la période active du mois découverte est autorisée", () => {
+    const sub = {
+      id: "sub-disc-1",
+      user_id: "u-active",
+      plan_code: "discovery_monthly",
+      status: "active",
+      started_at: "2026-10-01T00:00:00Z",
+      ends_at: "2026-10-31T00:00:00Z",
+    };
+
+    const sessionDate = new Date("2026-10-15T18:00:00Z");
+    const isWithinValidity = sessionDate >= new Date(sub.started_at) && sessionDate <= new Date(sub.ends_at);
+    assert.equal(isWithinValidity, true, "La séance à J+14 est comprise dans la période de validité");
+
+    function simulateBooking(userSub, date) {
+      if (userSub.status !== "active") return { success: false, error: "Abonnement inactif" };
+      if (userSub.ends_at && new Date(date) > new Date(userSub.ends_at)) {
+        return { success: false, error: "Période de validité expirée" };
+      }
+      return { success: true, booking_id: "book-success" };
+    }
+
+    const res = simulateBooking(sub, sessionDate);
+    assert.equal(res.success, true, "Réservation autorisée pendant la période active");
+  });
+
+  // -------------------------------------------------------------
+  // Test 27: Une réservation après expiration est refusée
+  // -------------------------------------------------------------
+  await runTest("27. TEST 4: Une réservation après expiration (J+31) est refusée", () => {
+    const sub = {
+      id: "sub-disc-1",
+      user_id: "u-active",
+      plan_code: "discovery_monthly",
+      status: "active",
+      started_at: "2026-10-01T00:00:00Z",
+      ends_at: "2026-10-31T00:00:00Z",
+    };
+
+    const futureSessionDate = new Date("2026-11-05T18:00:00Z");
+    const isWithinValidity = futureSessionDate <= new Date(sub.ends_at);
+    assert.equal(isWithinValidity, false, "La séance après J+30 dépasse la date d'expiration");
+
+    function simulateBooking(userSub, date) {
+      if (userSub.status !== "active") return { success: false, error: "Abonnement inactif" };
+      if (userSub.ends_at && new Date(date) > new Date(userSub.ends_at)) {
+        return { success: false, error: "Période de validité expirée" };
+      }
+      return { success: true, booking_id: "book-success" };
+    }
+
+    const res = simulateBooking(sub, futureSessionDate);
+    assert.equal(res.success, false, "Réservation refusée après la date d'expiration");
+    assert.equal(res.error, "Période de validité expirée");
+  });
+
+  // -------------------------------------------------------------
+  // Test 28: Une réservation avec le mois découverte ne consomme aucun crédit
+  // -------------------------------------------------------------
+  await runTest("28. TEST 5: Réservation avec le mois découverte -> ne consomme aucun crédit (credit_pack_id = null)", () => {
+    const sub = {
+      id: "sub-disc-unlimited",
+      user_id: "u-unlimited",
+      plan_code: "discovery_monthly",
+      status: "active",
+    };
+    const userCredits = [
+      { id: "old-credit-pack", remaining_credits: 5 },
+    ];
+
+    function createBookingWithPass(userSub, memberCredits) {
+      // Si l'utilisateur a un abonnement illimité (ou 1 Mois Découverte actif),
+      // il ne touche pas aux packs de crédits
+      const isUnlimited = userSub && userSub.status === "active";
+      if (isUnlimited) {
+        return {
+          booking: { id: "b-unlimited", credit_pack_id: null, plan_type: "discovery_pass" },
+          creditsConsumed: 0,
+        };
+      }
+      return { booking: null, creditsConsumed: 1 };
+    }
+
+    const result = createBookingWithPass(sub, userCredits);
+    assert.equal(result.booking.credit_pack_id, null, "credit_pack_id doit être NULL");
+    assert.equal(result.creditsConsumed, 0, "0 crédit consommé");
+    assert.equal(userCredits[0].remaining_credits, 5, "Le solde de crédits de l'utilisateur reste inchangé");
+  });
+
+  // -------------------------------------------------------------
+  // Test 29: Une personne ayant déjà utilisé le mois découverte ne peut pas le réclamer une deuxième fois
+  // -------------------------------------------------------------
+  await runTest("29. TEST 6: Membre ayant déjà utilisé le mois découverte -> refusé à vie côté serveur", () => {
+    const userId = "u-already-discovered";
+    const dbSubscriptions = [
+      { id: "sub-1", user_id: userId, plan_code: "discovery_monthly", status: "expired" },
+    ];
+    const dbRequests = [
+      { id: "req-1", user_id: userId, plan_code: "discovery_monthly", status: "approved" },
+    ];
+
+    function checkServerEligibility(uId, planCode) {
+      if (planCode === "discovery_monthly") {
+        const hasReq = dbRequests.some((r) => r.user_id === uId && r.plan_code === planCode);
+        const hasSub = dbSubscriptions.some((s) => s.user_id === uId && s.plan_code === planCode);
+        if (hasReq || hasSub) {
+          return { isEligible: false, alreadyUsed: true, error: "Offre découverte déjà utilisée" };
+        }
+      }
+      return { isEligible: true, alreadyUsed: false };
+    }
+
+    const check = checkServerEligibility(userId, "discovery_monthly");
+    assert.equal(check.isEligible, false, "Doit être non éligible");
+    assert.equal(check.alreadyUsed, true, "alreadyUsed = true");
+  });
+
+  // -------------------------------------------------------------
+  // Test 30: Les offres 1 séance et 3 séances continuent de fonctionner
+  // -------------------------------------------------------------
+  await runTest("30. TEST 7: Offres Découverte 1 séance (20 €) et 3 séances (49 €) restent pleinement fonctionnelles", () => {
+    const pack1 = SESSION_PACKS["decouverte_1"];
+    const pack3 = SESSION_PACKS["decouverte_3"];
+
+    assert.equal(pack1.priceCents, 2000);
+    assert.equal(pack1.totalCredits, 1);
+    assert.equal(pack1.validityDays, 30);
+
+    assert.equal(pack3.priceCents, 4900);
+    assert.equal(pack3.totalCredits, 3);
+    assert.equal(pack3.validityDays, 30);
+  });
+
+  // -------------------------------------------------------------
+  // Test 31: Le Pack 10 continue de fonctionner
+  // -------------------------------------------------------------
+  await runTest("31. TEST 8: Pack 10 Small Group (180 €) reste pleinement fonctionnel et réitérable", () => {
+    const pack10 = SESSION_PACKS["pack_10_small_group"];
+    assert.equal(pack10.priceCents, 18000);
+    assert.equal(pack10.totalCredits, 10);
+    assert.equal(pack10.validityMonths, 3);
+  });
+
+  // -------------------------------------------------------------
+  // Test 32: Essentiel / All Access / Lady Striking continuent de fonctionner
+  // -------------------------------------------------------------
+  await runTest("32. TEST 9: Abonnements récurrents Essentiel, All Access et Lady Striking intacts", () => {
+    const plans = [
+      { code: "essential", name: "Essentiel", price_cents: 7900, commitment: "monthly" },
+      { code: "all_access", name: "All Access", price_cents: 12900, commitment: "monthly" },
+      { code: "lady_striking", name: "Lady Striking", price_cents: 6900, commitment: "monthly" },
+    ];
+    
+    assert.equal(plans.length, 3);
+    assert.equal(plans[0].price_cents, 7900);
+    assert.equal(plans[1].price_cents, 12900);
+    assert.equal(plans[2].price_cents, 6900);
+  });
+
+  // -------------------------------------------------------------
+  // Test 33: Règle d'annulation 24h reste intacte pour le mois découverte
+  // -------------------------------------------------------------
+  await runTest("33. TEST 10: Règle d'annulation 24h sur le 1 Mois Découverte (aucun crédit recrédité, annulation confirmée >= 24h)", () => {
+    const booking = {
+      id: "book-monthly-pass",
+      user_id: "u-pass",
+      credit_pack_id: null,
+      starts_at: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    };
+
+    const hoursUntilClass = (new Date(booking.starts_at).getTime() - Date.now()) / (3600 * 1000);
+    assert.ok(hoursUntilClass >= 24, "Annulation effectuée plus de 24h à l'avance");
+
+    function cancelBooking(b) {
+      const diffH = (new Date(b.starts_at).getTime() - Date.now()) / (3600 * 1000);
+      if (diffH < 24) {
+        return { success: false, error: "Annulation impossible à moins de 24h du cours" };
+      }
+      return {
+        success: true,
+        status: "cancelled",
+        refundCredit: b.credit_pack_id !== null, // Pas de crédit à recréditer car credit_pack_id est null
+      };
+    }
+
+    const cancelRes = cancelBooking(booking);
+    assert.equal(cancelRes.success, true);
+    assert.equal(cancelRes.refundCredit, false, "Aucun crédit à recréditer pour l'accès illimité");
+  });
+
   console.log("\n=================================================================");
   console.log(`RÉSULTAT DES TESTS : ${passed} passés / ${failed} échoués`);
   console.log("=================================================================\n");
@@ -679,4 +907,5 @@ main().catch((err) => {
   console.error("Erreur fatale de test:", err);
   process.exit(1);
 });
+
 

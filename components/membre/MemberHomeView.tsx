@@ -43,7 +43,13 @@ export default function MemberHomeView({
     privateQuota,
     memberCreditPacks,
     pendingPackRequest,
+    activePlanCodes,
+    activePlanNames,
   } = useMember();
+
+  const isDiscoveryMonthlyActive =
+    activePlanCodes?.includes("discovery_monthly") ||
+    activePlanNames?.some((n) => n.toLowerCase().includes("1 mois"));
 
   const [challenges, setChallenges] = useState<MemberChallengeCardData[]>([]);
   const [isLoadingChallenges, setIsLoadingChallenges] = useState(true);
@@ -189,6 +195,44 @@ export default function MemberHomeView({
             Réserver un cours privé
             <ArrowRight size={14} />
           </Link>
+        </motion.div>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━
+          BANDEAU 1 MOIS DÉCOUVERTE ACTIF
+          ━━━━━━━━━━━━━━━━━━━━ */}
+      {isDiscoveryMonthlyActive && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl bg-gradient-to-r from-[#101d36] via-[#0c1628] to-[#070c16] border border-brand-blue/40 p-5 sm:p-6 shadow-[0_0_30px_rgba(47,174,224,0.12)] space-y-3"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-white/10 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-heading font-black text-brand-blue uppercase tracking-widest px-2.5 py-0.5 rounded bg-brand-blue/15 border border-brand-blue/30 inline-block">
+                  ACCÈS ILLIMITÉ
+                </span>
+                <span className="text-xs text-emerald-400 font-semibold">
+                  Actif
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wide text-brand-white">
+                1 MOIS DÉCOUVERTE
+              </h3>
+              <p className="text-xs text-brand-white/70">
+                Accès illimité à tous les cours adultes pendant 30 jours.
+              </p>
+            </div>
+
+            <Link
+              href="/membre/planning"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-brand-blue/20 shrink-0"
+            >
+              <span>Accéder au planning</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
         </motion.div>
       )}
 

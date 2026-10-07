@@ -101,16 +101,13 @@ export default function HeroSection() {
           transition={{ duration: 0.7, delay: 0.55 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-7 sm:mt-9 w-full sm:w-auto"
         >
-          <button
-            type="button"
-            onClick={() => {
-              trackBookingClick("trial_modal", "hero_main");
-              setIsTrialModalOpen(true);
-            }}
-            className="w-[290px] max-w-[calc(100vw-48px)] sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md text-center shadow-lg shadow-brand-blue/20 cursor-pointer"
+          <a
+            href="/cours-decouverte"
+            onClick={() => trackBookingClick("trial_modal", "hero_main")}
+            className="w-[290px] max-w-[calc(100vw-48px)] sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-brand-blue text-brand-black font-heading font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-brand-white transition-colors duration-300 rounded-md text-center shadow-lg shadow-brand-blue/20 cursor-pointer inline-flex items-center justify-center"
           >
-            RÉSERVER UN COURS D’ESSAI
-          </button>
+            COURS DÉCOUVERTE
+          </a>
           <a
             href="/connexion"
             onClick={() => trackCtaClick("Espace Membre", "hero_secondary")}
@@ -121,7 +118,7 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* Modale de Réservation de Cours d'Essai */}
+      {/* Modale de Réservation de Cours d'Essai (conservée si appelée ailleurs) */}
       <TrialBookingModal
         isOpen={isTrialModalOpen}
         onClose={() => setIsTrialModalOpen(false)}

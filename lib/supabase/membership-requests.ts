@@ -174,10 +174,15 @@ export async function getMyPendingPackRequest(
 
     if (!data || data.length === 0) return null;
 
-    // Trouver une demande dont le plan est un pack de crédits
+    // Trouver une demande dont le plan est un pack de crédits ou une offre découverte
     const packReq = data.find((r) => {
       const p = Array.isArray(r.plan) ? r.plan[0] : r.plan;
-      return p?.tier === "credit_pack";
+      return (
+        p?.tier === "credit_pack" ||
+        p?.tier === "discovery_pass" ||
+        p?.code === "discovery_monthly" ||
+        p?.code?.startsWith("decouverte")
+      );
     });
 
     if (!packReq) return null;
@@ -303,7 +308,11 @@ export async function checkMemberPackEligibility(
   userId: string,
   planCode: string
 ): Promise<PackEligibilityResult> {
-  const isDiscovery = planCode === "decouverte_1" || planCode === "decouverte_3";
+  const isDiscovery =
+    planCode === "decouverte_1" ||
+    planCode === "decouverte_3" ||
+    planCode === "discovery_monthly" ||
+    planCode === "decouverte_1_mois";
 
   // Récupérer la formule correspondante
   const { data: plan, error: planErr } = await supabase
@@ -315,7 +324,7 @@ export async function checkMemberPackEligibility(
   if (planErr || !plan) {
     return {
       isEligible: false,
-      reason: "Offre de pack introuvable.",
+      reason: "Offre découverte introuvable.",
       alreadyUsed: false,
       hasPending: false,
       isDiscovery,
@@ -331,7 +340,16 @@ export async function checkMemberPackEligibility(
 
   const hasCreditsRecord = Boolean(existingCredits && existingCredits.length > 0);
 
-  // 2. Vérifier les demandes existantes dans membership_requests pour cet utilisateur et ce plan
+  // 2. Vérifier si un enregistrement existe dans subscriptions pour cet utilisateur et ce plan
+  const { data: existingSubs } = await supabase
+    .from("subscriptions")
+    .select("id, status")
+    .eq("user_id", userId)
+    .eq("plan_id", plan.id);
+
+  const hasSubsRecord = Boolean(existingSubs && existingSubs.length > 0);
+
+  // 3. Vérifier les demandes existantes dans membership_requests pour cet utilisateur et ce plan
   const { data: existingRequests } = await supabase
     .from("membership_requests")
     .select("id, status")
@@ -343,8 +361,8 @@ export async function checkMemberPackEligibility(
   const hasAnyRequest = requests.length > 0;
 
   if (isDiscovery) {
-    // Si le membre a déjà une demande (pending, approved, rejected, etc.) OU a déjà eu un pack de crédits (actif, expiré, épuisé)
-    if (hasCreditsRecord || hasAnyRequest) {
+    // Si le membre a déjà une demande (pending, approved, rejected, etc.) OU a déjà eu un pack de crédits ou un pass actif/expiré
+    if (hasCreditsRecord || hasSubsRecord || hasAnyRequest) {
       return {
         isEligible: false,
         reason: "Offre découverte déjà utilisée",
@@ -382,13 +400,14 @@ export async function checkMemberPackEligibility(
 }
 
 /**
- * Récupère le statut d'éligibilité pour l'ensemble des packs disponibles pour le membre connecté
+ * Récupère le statut d'éligibilité pour l'ensemble des offres découverte & packs disponibles
  */
 export async function getMemberPacksEligibilityMap(
   supabase: SupabaseClient
 ): Promise<Record<string, PackEligibilityResult>> {
   const result: Record<string, PackEligibilityResult> = {
     decouverte_1: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
+    discovery_monthly: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
     decouverte_3: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
     pack_10_small_group: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: false },
   };
@@ -400,13 +419,15 @@ export async function getMemberPacksEligibilityMap(
 
     if (!user) return result;
 
-    const [e1, e3, e10] = await Promise.all([
+    const [e1, eMonthly, e3, e10] = await Promise.all([
       checkMemberPackEligibility(supabase, user.id, "decouverte_1"),
+      checkMemberPackEligibility(supabase, user.id, "discovery_monthly"),
       checkMemberPackEligibility(supabase, user.id, "decouverte_3"),
       checkMemberPackEligibility(supabase, user.id, "pack_10_small_group"),
     ]);
 
     result.decouverte_1 = e1;
+    result.discovery_monthly = eMonthly;
     result.decouverte_3 = e3;
     result.pack_10_small_group = e10;
   } catch (err) {
@@ -422,8 +443,8 @@ export interface SubmitPackRequestPayload {
 }
 
 /**
- * Soumet une demande de pack de séances Small Group (mode confirmation sans Stripe)
- * avec validation serveur stricte d'éligibilité unique à vie pour les packs découverte.
+ * Soumet une demande d'offre découverte ou de pack Small Group (mode confirmation sans Stripe)
+ * avec validation serveur stricte d'éligibilité unique à vie pour les offres découverte.
  */
 export async function submitPackRequest(
   supabase: SupabaseClient,
@@ -437,11 +458,11 @@ export async function submitPackRequest(
     if (!user) {
       return {
         success: false,
-        error: "Veuillez vous connecter pour faire une demande de pack de séances.",
+        error: "Veuillez vous connecter pour faire une demande d'offre découverte.",
       };
     }
 
-    // Récupération de la formule du pack
+    // Récupération de la formule
     const { data: plan, error: planErr } = await supabase
       .from("plans")
       .select("id, name, code, tier, price_cents")
@@ -449,7 +470,7 @@ export async function submitPackRequest(
       .single();
 
     if (planErr || !plan) {
-      return { success: false, error: "Offre de pack introuvable." };
+      return { success: false, error: "Offre découverte introuvable." };
     }
 
     // Vérification de l'éligibilité stricte côté serveur
@@ -485,10 +506,15 @@ export async function submitPackRequest(
       return { success: false, error: reqErr?.message || "Erreur lors de l'enregistrement de la demande." };
     }
 
+    const isMonthlyUnlimited = payload.planCode === "discovery_monthly" || plan.tier === "discovery_pass";
+    const successMsg = isMonthlyUnlimited
+      ? `Votre demande pour le ${plan.name} a été transmise avec succès. Dès validation par l'équipe, votre accès illimité de 30 jours sera activé.`
+      : `Votre demande pour le ${plan.name} a été transmise avec succès. Dès validation par l'équipe, vos crédits seront disponibles.`;
+
     return {
       success: true,
       requestId: newReq.id,
-      message: `Votre demande pour le ${plan.name} a été transmise avec succès. Dès validation par l'équipe, vos crédits seront disponibles.`,
+      message: successMsg,
     };
   } catch (err) {
     console.error("[submitPackRequest] Exception :", err);

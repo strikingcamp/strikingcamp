@@ -37,12 +37,13 @@ export const stripe = new Proxy({} as Stripe, {
  * Source unique de vérité côté backend (le frontend n'envoie jamais de montant arbitraire).
  */
 export interface SessionPackDefinition {
-  id: "decouverte_1" | "decouverte_3" | "pack_10_small_group";
+  id: "decouverte_1" | "decouverte_3" | "pack_10_small_group" | "discovery_monthly";
   planCode: string;
   name: string;
   priceCents: number; // en centimes (ex: 2000 = 20 €)
   priceEuros: number;
-  totalCredits: number;
+  totalCredits: number; // 0 pour accès illimité
+  isUnlimited?: boolean;
   validityDays?: number; // 30 jours
   validityMonths?: number; // 3 mois
   description: string;
@@ -60,6 +61,18 @@ export const SESSION_PACKS: Record<string, SessionPackDefinition> = {
     validityDays: 30,
     description: "1 séance Small Group sans engagement, valable 30 jours.",
     badgeText: "Achat unique",
+  },
+  discovery_monthly: {
+    id: "discovery_monthly",
+    planCode: "discovery_monthly",
+    name: "1 Mois Découverte",
+    priceCents: 8900,
+    priceEuros: 89,
+    totalCredits: 0,
+    isUnlimited: true,
+    validityDays: 30,
+    description: "Accès illimité aux cours adultes pendant 30 jours.",
+    badgeText: "Accès illimité",
   },
   decouverte_3: {
     id: "decouverte_3",

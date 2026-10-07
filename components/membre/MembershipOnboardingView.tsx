@@ -63,7 +63,13 @@ export default function MembershipOnboardingView() {
         getAvailablePlansForMembership(supabase),
         getMyLatestMembershipRequest(supabase),
       ]);
-      const classicPlans = plansList.filter((p) => p.tier !== "credit_pack");
+      const classicPlans = plansList.filter(
+        (p) =>
+          p.tier !== "credit_pack" &&
+          p.tier !== "discovery_pass" &&
+          p.code !== "discovery_monthly" &&
+          !p.code?.startsWith("decouverte")
+      );
       setPlans(classicPlans);
       setLatestRequest(req);
       if (classicPlans.length > 0 && !selectedPlanId) {
