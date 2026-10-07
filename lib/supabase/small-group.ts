@@ -17,6 +17,8 @@ export interface MemberPlanAccess {
   activePlanNames?: string[];
   activePlanCodes?: string[];
   validSubscriptionsCount?: number;
+  availableCredits?: number;
+  hasCreditAccess?: boolean;
 }
 
 export interface ClassSession {
@@ -133,9 +135,30 @@ export async function getMemberPlanAccess(
     }
   }
 
+  // Récupération non bloquante des packs de crédits actifs
+  let availableCredits = 0;
+  try {
+    const nowIso = new Date().toISOString();
+    const { data: creditPacks } = await supabase
+      .from("member_session_credits")
+      .select("remaining_credits, expires_at, status")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .gt("remaining_credits", 0)
+      .gte("expires_at", nowIso);
+
+    if (creditPacks && creditPacks.length > 0) {
+      availableCredits = creditPacks.reduce((acc, p) => acc + (p.remaining_credits || 0), 0);
+    }
+  } catch {
+    // Non bloquant si la table n'est pas encore initialisée
+  }
+
   const primaryPlanName =
     cumulative.activePlanNames.length > 0
       ? cumulative.activePlanNames.join(" + ")
+      : availableCredits > 0
+      ? `Pack de séances (${availableCredits} crédit${availableCredits > 1 ? "s" : ""})`
       : undefined;
 
   return {
@@ -153,6 +176,8 @@ export async function getMemberPlanAccess(
     activePlanNames: cumulative.activePlanNames,
     activePlanCodes: cumulative.activePlanCodes,
     validSubscriptionsCount: cumulative.validSubscriptionsCount,
+    availableCredits,
+    hasCreditAccess: availableCredits > 0,
   };
 }
 
@@ -357,7 +382,15 @@ export async function getActiveClassSessions(
 export async function bookSmallGroupSession(
   supabase: SupabaseClient,
   classSessionId: string
-): Promise<{ success: boolean; error?: string; bookingId?: string }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  bookingId?: string;
+  usedCredit?: boolean;
+  remainingCredits?: number;
+  creditPackId?: string;
+  message?: string;
+}> {
   // 1. Contrôle temporel strict : vérifier que la séance n'est pas terminée (now < ends_at)
   const { data: sessionData, error: sessionError } = await supabase
     .from("class_sessions")
@@ -411,6 +444,10 @@ export async function bookSmallGroupSession(
     return {
       success: true,
       bookingId: (res.booking_id as string) || undefined,
+      usedCredit: Boolean(res.used_credit),
+      remainingCredits: typeof res.remaining_credits === "number" ? res.remaining_credits : undefined,
+      creditPackId: (res.credit_pack_id as string) || undefined,
+      message: (res.message as string) || undefined,
     };
   }
 
@@ -426,7 +463,7 @@ export async function bookSmallGroupSession(
 export async function cancelSmallGroupSession(
   supabase: SupabaseClient,
   bookingIdOrSessionId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; restoredCredit?: boolean; message?: string }> {
   let effectiveBookingId = bookingIdOrSessionId;
 
   // Si l'identifiant passé est un class_session_id au lieu d'un booking_id, trouver le booking_id correspondant
@@ -503,6 +540,8 @@ export async function cancelSmallGroupSession(
 
     return {
       success: true,
+      restoredCredit: Boolean(res.restored_credit),
+      message: (res.message as string) || undefined,
     };
   }
 

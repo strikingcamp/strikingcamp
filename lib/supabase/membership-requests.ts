@@ -22,6 +22,7 @@ export interface MembershipRequestItem {
     name: string;
     code?: string | null;
     type: string;
+    tier?: string | null;
     price_cents: number;
     allows_private: boolean;
     allows_small_group: boolean;
@@ -41,6 +42,7 @@ export interface MembershipPlanOption {
   name: string;
   code?: string | null;
   type: "private" | "small_group" | string;
+  tier?: string | null;
   commitment?: "monthly" | "annual" | string | null;
   price_cents: number;
   private_sessions_per_period?: number | null;
@@ -92,6 +94,7 @@ export async function getMyLatestMembershipRequest(
           name,
           code,
           type,
+          tier,
           price_cents,
           allows_private,
           allows_small_group,
@@ -121,6 +124,75 @@ export async function getMyLatestMembershipRequest(
 }
 
 /**
+ * Récupère la demande de pack en attente (pending) du membre connecté s'il y en a une
+ */
+export async function getMyPendingPackRequest(
+  supabase: SupabaseClient
+): Promise<MembershipRequestItem | null> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from("membership_requests")
+      .select(`
+        id,
+        user_id,
+        plan_id,
+        status,
+        commitment_type,
+        selected_discipline,
+        member_notes,
+        admin_notes,
+        reviewed_by,
+        reviewed_at,
+        created_at,
+        updated_at,
+        plan:plans (
+          id,
+          name,
+          code,
+          type,
+          tier,
+          price_cents,
+          allows_private,
+          allows_small_group,
+          allows_collective
+        )
+      `)
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("[getMyPendingPackRequest] Erreur :", error);
+      return null;
+    }
+
+    if (!data || data.length === 0) return null;
+
+    // Trouver une demande dont le plan est un pack de crédits
+    const packReq = data.find((r) => {
+      const p = Array.isArray(r.plan) ? r.plan[0] : r.plan;
+      return p?.tier === "credit_pack";
+    });
+
+    if (!packReq) return null;
+
+    return {
+      ...packReq,
+      plan: Array.isArray(packReq.plan) ? packReq.plan[0] : packReq.plan,
+    } as MembershipRequestItem;
+  } catch (err) {
+    console.error("[getMyPendingPackRequest] Exception :", err);
+    return null;
+  }
+}
+
+/**
  * Récupère la liste des formules actives disponibles à l'adhésion
  */
 export async function getAvailablePlansForMembership(
@@ -134,6 +206,7 @@ export async function getAvailablePlansForMembership(
         name,
         code,
         type,
+        tier,
         commitment,
         price_cents,
         private_sessions_per_period,
@@ -208,6 +281,221 @@ export async function submitMembershipRequest(
   }
 }
 
+export interface PackEligibilityResult {
+  isEligible: boolean;
+  reason?: string;
+  alreadyUsed: boolean;
+  hasPending: boolean;
+  isDiscovery: boolean;
+}
+
+/**
+ * Vérifie l'éligibilité d'un membre pour l'achat ou la demande d'un pack de séances.
+ * Règles métier strictes :
+ * - decouverte_1 : achetable 1 seule fois par membre à vie.
+ * - decouverte_3 : achetable 1 seule fois par membre à vie.
+ *   (Droit consommé dès qu'une demande existe ou a existé, ou si un member_session_credits existe)
+ *   (Un pack découverte expiré ou épuisé ne redevient jamais éligible)
+ * - pack_10_small_group : achetable plusieurs fois sans restriction à vie.
+ */
+export async function checkMemberPackEligibility(
+  supabase: SupabaseClient,
+  userId: string,
+  planCode: string
+): Promise<PackEligibilityResult> {
+  const isDiscovery = planCode === "decouverte_1" || planCode === "decouverte_3";
+
+  // Récupérer la formule correspondante
+  const { data: plan, error: planErr } = await supabase
+    .from("plans")
+    .select("id, name, code, tier")
+    .eq("code", planCode)
+    .single();
+
+  if (planErr || !plan) {
+    return {
+      isEligible: false,
+      reason: "Offre de pack introuvable.",
+      alreadyUsed: false,
+      hasPending: false,
+      isDiscovery,
+    };
+  }
+
+  // 1. Vérifier si un enregistrement existe dans member_session_credits pour cet utilisateur et ce plan
+  const { data: existingCredits } = await supabase
+    .from("member_session_credits")
+    .select("id, status")
+    .eq("user_id", userId)
+    .eq("plan_id", plan.id);
+
+  const hasCreditsRecord = Boolean(existingCredits && existingCredits.length > 0);
+
+  // 2. Vérifier les demandes existantes dans membership_requests pour cet utilisateur et ce plan
+  const { data: existingRequests } = await supabase
+    .from("membership_requests")
+    .select("id, status")
+    .eq("user_id", userId)
+    .eq("plan_id", plan.id);
+
+  const requests = existingRequests || [];
+  const hasPending = requests.some((r) => r.status === "pending");
+  const hasAnyRequest = requests.length > 0;
+
+  if (isDiscovery) {
+    // Si le membre a déjà une demande (pending, approved, rejected, etc.) OU a déjà eu un pack de crédits (actif, expiré, épuisé)
+    if (hasCreditsRecord || hasAnyRequest) {
+      return {
+        isEligible: false,
+        reason: "Offre découverte déjà utilisée",
+        alreadyUsed: true,
+        hasPending,
+        isDiscovery: true,
+      };
+    }
+
+    return {
+      isEligible: true,
+      alreadyUsed: false,
+      hasPending: false,
+      isDiscovery: true,
+    };
+  }
+
+  // Pour pack_10_small_group (répétable) :
+  if (hasPending) {
+    return {
+      isEligible: false,
+      reason: "Une demande pour ce pack est déjà en cours de validation.",
+      alreadyUsed: false,
+      hasPending: true,
+      isDiscovery: false,
+    };
+  }
+
+  return {
+    isEligible: true,
+    alreadyUsed: false,
+    hasPending: false,
+    isDiscovery: false,
+  };
+}
+
+/**
+ * Récupère le statut d'éligibilité pour l'ensemble des packs disponibles pour le membre connecté
+ */
+export async function getMemberPacksEligibilityMap(
+  supabase: SupabaseClient
+): Promise<Record<string, PackEligibilityResult>> {
+  const result: Record<string, PackEligibilityResult> = {
+    decouverte_1: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
+    decouverte_3: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
+    pack_10_small_group: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: false },
+  };
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return result;
+
+    const [e1, e3, e10] = await Promise.all([
+      checkMemberPackEligibility(supabase, user.id, "decouverte_1"),
+      checkMemberPackEligibility(supabase, user.id, "decouverte_3"),
+      checkMemberPackEligibility(supabase, user.id, "pack_10_small_group"),
+    ]);
+
+    result.decouverte_1 = e1;
+    result.decouverte_3 = e3;
+    result.pack_10_small_group = e10;
+  } catch (err) {
+    console.error("[getMemberPacksEligibilityMap] Exception :", err);
+  }
+
+  return result;
+}
+
+export interface SubmitPackRequestPayload {
+  planCode: string;
+  memberNotes?: string;
+}
+
+/**
+ * Soumet une demande de pack de séances Small Group (mode confirmation sans Stripe)
+ * avec validation serveur stricte d'éligibilité unique à vie pour les packs découverte.
+ */
+export async function submitPackRequest(
+  supabase: SupabaseClient,
+  payload: SubmitPackRequestPayload
+): Promise<{ success: boolean; requestId?: string; error?: string; message?: string }> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: "Veuillez vous connecter pour faire une demande de pack de séances.",
+      };
+    }
+
+    // Récupération de la formule du pack
+    const { data: plan, error: planErr } = await supabase
+      .from("plans")
+      .select("id, name, code, tier, price_cents")
+      .eq("code", payload.planCode)
+      .single();
+
+    if (planErr || !plan) {
+      return { success: false, error: "Offre de pack introuvable." };
+    }
+
+    // Vérification de l'éligibilité stricte côté serveur
+    const eligibility = await checkMemberPackEligibility(supabase, user.id, payload.planCode);
+    if (!eligibility.isEligible) {
+      if (eligibility.alreadyUsed) {
+        return {
+          success: false,
+          error: `Offre découverte déjà utilisée : vous avez déjà souscrit ou demandé le ${plan.name}. Les offres découverte sont strictement limitées à une seule fois par membre à vie.`,
+        };
+      }
+      return {
+        success: false,
+        error: eligibility.reason || "Vous n'êtes pas éligible à cette offre.",
+      };
+    }
+
+    // Insertion directe de la demande dans public.membership_requests
+    const { data: newReq, error: reqErr } = await supabase
+      .from("membership_requests")
+      .insert({
+        user_id: user.id,
+        plan_id: plan.id,
+        commitment_type: "monthly",
+        status: "pending",
+        member_notes: payload.memberNotes?.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (reqErr || !newReq) {
+      console.error("[submitPackRequest] Erreur insertion :", reqErr);
+      return { success: false, error: reqErr?.message || "Erreur lors de l'enregistrement de la demande." };
+    }
+
+    return {
+      success: true,
+      requestId: newReq.id,
+      message: `Votre demande pour le ${plan.name} a été transmise avec succès. Dès validation par l'équipe, vos crédits seront disponibles.`,
+    };
+  } catch (err) {
+    console.error("[submitPackRequest] Exception :", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
 /**
  * Récupère l'ensemble des demandes d'adhésion pour la vue d'administration
  */
@@ -241,6 +529,7 @@ export async function getAdminMembershipRequestsList(
           name,
           code,
           type,
+          tier,
           price_cents,
           allows_private,
           allows_small_group,

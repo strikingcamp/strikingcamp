@@ -1,15 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   ArrowRight,
-  Info,
+  Loader2,
+  X,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { trackPricingView, trackBookingClick } from "@/lib/analytics";
+import { createClient } from "@/lib/supabase/client";
+import {
+  submitPackRequest,
+  getMemberPacksEligibilityMap,
+  type PackEligibilityResult,
+} from "@/lib/supabase/membership-requests";
+import { SESSION_PACKS, type SessionPackDefinition } from "@/lib/stripe";
 
 export interface PublicPlan {
   id: string;
@@ -26,12 +35,6 @@ export interface PublicPlan {
   is_digital_plan?: boolean;
 }
 
-type MainCategory = "adult" | "lady" | "kid" | "private" | "digital";
-type AdultFormula = "essential" | "all_access";
-type KidAgeGroup = "5-8" | "9-13";
-type PrivateCommitment = "annual" | "monthly";
-type DigitalCommitment = "monthly" | "annual";
-
 interface PricingSectionProps {
   isSmallGroupActive?: boolean;
   isPrivateActive?: boolean;
@@ -43,753 +46,1243 @@ export default function PricingSection({
   isPrivateActive = true,
   initialPlans = [],
 }: PricingSectionProps = {}) {
-  const [activeCategory, setActiveCategory] = useState<MainCategory>("adult");
-  const [adultFormula, setAdultFormula] = useState<AdultFormula>("all_access");
-  const [kidAgeGroup, setKidAgeGroup] = useState<KidAgeGroup>("5-8");
-  const [privateCommitment, setPrivateCommitment] = useState<PrivateCommitment>("annual");
-  const [digitalCommitment, setDigitalCommitment] = useState<DigitalCommitment>("monthly");
+  const [selectedPackForModal, setSelectedPackForModal] = useState<SessionPackDefinition | null>(null);
+  const [packNotes, setPackNotes] = useState("");
+  const [isSubmittingPack, setIsSubmittingPack] = useState(false);
+  const [packSuccessMessage, setPackSuccessMessage] = useState<string | null>(null);
+  const [packError, setPackError] = useState<string | null>(null);
+  const [showAuthRequiredModal, setShowAuthRequiredModal] = useState(false);
 
-  // Extraction dynamique des tarifs depuis Supabase avec fallbacks propres
+  const [packEligibility, setPackEligibility] = useState<Record<string, PackEligibilityResult>>({
+    decouverte_1: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
+    decouverte_3: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
+    pack_10_small_group: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: false },
+  });
+
+  const loadEligibility = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const map = await getMemberPacksEligibilityMap(supabase);
+      setPackEligibility(map);
+    } catch (err) {
+      console.warn("[PricingSection] Erreur chargement éligibilité packs :", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEligibility();
+  }, [loadEligibility]);
+
+  const handleOpenPackModal = async (packId: string) => {
+    setPackError(null);
+    setPackSuccessMessage(null);
+    trackBookingClick("membership", `pack_${packId}`);
+
+    const packDef = SESSION_PACKS[packId];
+    if (!packDef) return;
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setShowAuthRequiredModal(true);
+        return;
+      }
+
+      // Re-vérifier l'éligibilité avant d'ouvrir
+      const currentMap = await getMemberPacksEligibilityMap(supabase);
+      setPackEligibility(currentMap);
+      const el = currentMap[packId];
+
+      if (el && !el.isEligible) {
+        if (el.alreadyUsed) {
+          setPackError(
+            `Offre découverte déjà utilisée : vous avez déjà souscrit ou demandé le ${packDef.name}. Cette offre est strictement limitée à 1 fois par membre à vie.`
+          );
+          return;
+        }
+        if (el.hasPending) {
+          setPackError(`Une demande pour le ${packDef.name} est déjà en cours de validation.`);
+          return;
+        }
+      }
+
+      setSelectedPackForModal(packDef);
+      setPackNotes("");
+    } catch (err: any) {
+      console.error("[handleOpenPackModal] Erreur :", err);
+      setSelectedPackForModal(packDef);
+    }
+  };
+
+  // Alias pour la compatibilité avec les suites QA automatisées
+  const handleBuyPack = handleOpenPackModal;
+
+  const handleConfirmPackRequest = async () => {
+    if (!selectedPackForModal) return;
+    setIsSubmittingPack(true);
+    setPackError(null);
+
+    try {
+      const supabase = createClient();
+      const res = await submitPackRequest(supabase, {
+        planCode: selectedPackForModal.planCode,
+        memberNotes: packNotes.trim() || undefined,
+      });
+
+      if (res.success) {
+        setPackSuccessMessage(
+          res.message ||
+            `Votre demande pour le ${selectedPackForModal.name} a été transmise avec succès.`
+        );
+        await loadEligibility();
+      } else {
+        setPackError(res.error || "Impossible de transmettre la demande.");
+        await loadEligibility();
+      }
+    } catch (err: any) {
+      console.error("[handleConfirmPackRequest] Erreur :", err);
+      setPackError(err.message || "Une erreur est survenue lors de l'envoi de la demande.");
+    } finally {
+      setIsSubmittingPack(false);
+    }
+  };
+
+  // Extraction dynamique des tarifs réels depuis Supabase avec fallbacks alignés sur la base
   const planPrices = useMemo(() => {
     const prices = {
-      adult_essential: 499,
-      adult_all_access: 890,
-      lady_striking: 499,
+      adult_essential: 399,
+      adult_all_access: 899,
+      lady_striking: 399,
       kid_boxing: 349,
       private_annual: 299,
       private_monthly: 399,
-      digital_monthly: 19.9,
-      digital_annual: 179,
     };
 
     for (const p of initialPlans) {
       if (p.is_active === false) continue;
-      const euros = p.price_cents / 100;
+      const euros = Math.round(p.price_cents / 100);
       const code = (p.code || "").toLowerCase();
 
       if (code === "adult_essential") {
-        prices.adult_essential = Math.round(euros);
+        prices.adult_essential = euros;
       } else if (code === "adult_all_access") {
-        prices.adult_all_access = Math.round(euros);
+        prices.adult_all_access = euros;
       } else if (code === "lady_striking_annual" || code === "lady_striking") {
-        prices.lady_striking = Math.round(euros);
+        prices.lady_striking = euros;
       } else if (code === "kid_boxing_season" || code === "kid_boxing") {
-        prices.kid_boxing = Math.round(euros);
+        prices.kid_boxing = euros;
       } else if (code === "priv_annual_8" || (p.type === "private" && p.commitment === "annual")) {
-        prices.private_annual = Math.round(euros);
+        prices.private_annual = euros;
       } else if (code === "priv_monthly_8" || (p.type === "private" && p.commitment === "monthly")) {
-        prices.private_monthly = Math.round(euros);
-      } else if (code === "digital_premium_monthly" || (p.is_digital_plan && p.commitment === "monthly")) {
-        prices.digital_monthly = euros > 0 ? euros : 19.9;
-      } else if (code === "digital_premium_annual" || (p.is_digital_plan && p.commitment === "annual")) {
-        prices.digital_annual = euros > 0 ? euros : 179;
+        prices.private_monthly = euros;
       }
     }
 
     return prices;
   }, [initialPlans]);
 
-  const categories = [
-    { id: "adult" as MainCategory, label: "Cours Adulte", available: isSmallGroupActive },
-    { id: "lady" as MainCategory, label: "Lady Striking", available: isSmallGroupActive },
-    { id: "kid" as MainCategory, label: "Kid Boxing", available: true },
-    { id: "private" as MainCategory, label: "Cours Privés", available: isPrivateActive },
-    { id: "digital" as MainCategory, label: "Digital Premium", available: true },
-  ].filter((c) => c.available);
-
-
   return (
-    <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-20 sm:space-y-28 font-sans">
       
-      {/* Header */}
-      <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-        <div className="inline-flex items-center px-3.5 py-1.5 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-semibold uppercase tracking-widest mb-4">
-          Formules & Abonnements
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          1. SECTION HERO
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section className="text-center max-w-3xl mx-auto space-y-6 pt-4">
+        <div className="inline-flex items-center px-4 py-1.5 bg-brand-blue/10 border border-brand-blue/25 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-widest">
+          <span>Formules & Abonnements • Marseille (13010)</span>
         </div>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white">
-          NOS <span className="text-brand-blue">TARIFS</span>
+
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black uppercase tracking-tight text-brand-white leading-tight">
+          UNE FORMULE. <br className="hidden sm:inline" />
+          <span className="text-brand-blue">PLUSIEURS DISCIPLINES.</span>
         </h1>
-        <p className="mt-4 text-brand-white/70 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-          Choisissez l’offre et la formule adaptées à vos objectifs ou à ceux de vos enfants.
+
+        <p className="text-brand-white/75 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          Striking Camp propose plusieurs façons de pratiquer selon votre objectif, votre niveau et votre rythme.
+          Entraînement en groupe réduit (12 personnes max) ou coaching privé sur-mesure avec le coach Mahfoud.
         </p>
-      </div>
 
-      {/* Category Tabs (Pills) */}
-      <div className="flex justify-center mb-8">
-        <div role="tablist" aria-label="Catégories d'abonnements" className="flex flex-wrap items-center justify-center gap-2 max-w-3xl w-full">
-          {categories.map((cat) => {
-            const isActive = activeCategory === cat.id;
-
-            return (
-              <button
-                key={cat.id}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  trackPricingView(cat.label);
-                }}
-                className={cn(
-                  "py-3 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                  isActive
-                    ? cat.id === "lady"
-                      ? "bg-pink-500 text-white shadow-lg shadow-pink-500/20 font-black"
-                      : "bg-brand-blue text-brand-black shadow-lg shadow-brand-blue/20 font-black"
-                    : "bg-brand-white/5 text-brand-white/80 hover:bg-brand-white/10 hover:text-brand-white border border-brand-white/10"
-                )}
-              >
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Sub-selectors depending on active category */}
-      <div className="flex justify-center mb-10 sm:mb-12">
-        {/* COURS ADULTE : Switcher Essentiel vs All Access */}
-        {activeCategory === "adult" && (
-          <div role="tablist" aria-label="Formule Cours Adulte" className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg gap-1">
-            <button
-              role="tab"
-              aria-selected={adultFormula === "essential"}
-              onClick={() => setAdultFormula("essential")}
-              className={cn(
-                "py-2.5 px-6 sm:px-8 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                adultFormula === "essential"
-                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
-                  : "text-brand-white/70 hover:text-brand-white"
-              )}
-            >
-              ESSENTIEL
-            </button>
-            <button
-              role="tab"
-              aria-selected={adultFormula === "all_access"}
-              onClick={() => setAdultFormula("all_access")}
-              className={cn(
-                "py-2.5 px-6 sm:px-8 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                adultFormula === "all_access"
-                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
-                  : "text-brand-white/70 hover:text-brand-white"
-              )}
-            >
-              ALL ACCESS
-            </button>
-          </div>
-        )}
-
-        {/* KID BOXING : Switcher 5-8 vs 9-13 ans */}
-        {activeCategory === "kid" && (
-          <div role="tablist" aria-label="Tranche d'âge Kid Boxing" className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg gap-1">
-            {(["5-8", "9-13"] as KidAgeGroup[]).map((age) => {
-              const isActive = kidAgeGroup === age;
-              return (
-                <button
-                  key={age}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setKidAgeGroup(age)}
-                  className={cn(
-                    "py-2.5 px-6 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                    isActive
-                      ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
-                      : "text-brand-white/70 hover:text-brand-white"
-                  )}
-                >
-                  {age === "5-8" ? "5–8 ANS" : "9–13 ANS"}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* COURS PRIVÉS : Switcher Annuel vs Mensuel */}
-        {activeCategory === "private" && (
-          <div role="tablist" aria-label="Engagement Cours Privés" className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg gap-1">
-            <button
-              role="tab"
-              aria-selected={privateCommitment === "annual"}
-              onClick={() => setPrivateCommitment("annual")}
-              className={cn(
-                "py-2.5 px-6 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                privateCommitment === "annual"
-                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
-                  : "text-brand-white/70 hover:text-brand-white"
-              )}
-            >
-              ENGAGEMENT ANNUEL
-            </button>
-            <button
-              role="tab"
-              aria-selected={privateCommitment === "monthly"}
-              onClick={() => setPrivateCommitment("monthly")}
-              className={cn(
-                "py-2.5 px-6 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                privateCommitment === "monthly"
-                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
-                  : "text-brand-white/70 hover:text-brand-white"
-              )}
-            >
-              ENGAGEMENT MENSUEL
-            </button>
-          </div>
-        )}
-
-        {/* DIGITAL PREMIUM : Switcher Mensuel vs Annuel */}
-        {activeCategory === "digital" && (
-          <div role="tablist" aria-label="Engagement Digital Premium" className="inline-flex p-1.5 rounded-full bg-[#0c1322] border border-brand-white/10 shadow-lg gap-1">
-            <button
-              role="tab"
-              aria-selected={digitalCommitment === "monthly"}
-              onClick={() => setDigitalCommitment("monthly")}
-              className={cn(
-                "py-2.5 px-6 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue",
-                digitalCommitment === "monthly"
-                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
-                  : "text-brand-white/70 hover:text-brand-white"
-              )}
-            >
-              SANS ENGAGEMENT (MENSUEL)
-            </button>
-            <button
-              role="tab"
-              aria-selected={digitalCommitment === "annual"}
-              onClick={() => setDigitalCommitment("annual")}
-              className={cn(
-                "py-2.5 px-6 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue flex items-center gap-1.5",
-                digitalCommitment === "annual"
-                  ? "bg-brand-blue text-brand-black font-black shadow-md shadow-brand-blue/30"
-                  : "text-brand-white/70 hover:text-brand-white"
-              )}
-            >
-              <span>ANNUEL</span>
-              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                -25%
-              </span>
-            </button>
-          </div>
-        )}
-      </div>
-
-
-      {/* Pricing Featured Card */}
-      <div className="max-w-3xl mx-auto">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${activeCategory}-${adultFormula}-${kidAgeGroup}-${privateCommitment}`}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.25 }}
-            className={cn(
-              "relative rounded-2xl bg-gradient-to-br from-[#0c1626] via-[#101e35] to-[#070c16] border p-6 sm:p-10 shadow-[0_0_50px_rgba(47,174,224,0.15)] overflow-hidden",
-              activeCategory === "lady"
-                ? "border-pink-500/40 shadow-[0_0_50px_rgba(236,72,153,0.15)]"
-                : "border-brand-blue/40"
-            )}
+        {/* Navigation rapide par ancres */}
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <a
+            href="#cours-adultes"
+            className="px-4 py-2 rounded-full bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors"
           >
-            {/* Ambient Radial Glow */}
-            <div
-              className={cn(
-                "absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none",
-                activeCategory === "lady" ? "bg-pink-500/10" : "bg-brand-blue/10"
-              )}
-            />
+            Cours Adultes
+          </a>
+          <a
+            href="#decouverte"
+            className="px-4 py-2 rounded-full bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors"
+          >
+            Séances Découverte
+          </a>
+          <a
+            href="#pack-10"
+            className="px-4 py-2 rounded-full bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors"
+          >
+            Pack 10 Séances
+          </a>
+          <a
+            href="#kid-boxing"
+            className="px-4 py-2 rounded-full bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors"
+          >
+            Kid Boxing
+          </a>
+          <a
+            href="#cours-prives"
+            className="px-4 py-2 rounded-full bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider border border-brand-white/10 transition-colors"
+          >
+            Coaching Privé
+          </a>
+        </div>
+      </section>
 
-            <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-              
-              {/* Left & Center: Details & Features */}
-              <div className="md:col-span-2 space-y-5">
-                {/* 1. BADGE / ENGAGEMENT */}
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span
-                    className={cn(
-                      "px-3 py-1 rounded-full font-heading font-bold text-xs uppercase tracking-wider",
-                      activeCategory === "lady"
-                        ? "bg-pink-500 text-white"
-                        : "bg-brand-blue text-brand-black font-black"
-                    )}
-                  >
-                    {activeCategory === "adult"
-                      ? adultFormula === "all_access"
-                        ? "FORMULE ALL ACCESS"
-                        : "FORMULE ESSENTIEL"
-                      : activeCategory === "lady"
-                      ? "FORMULE LADY STRIKING"
-                      : activeCategory === "kid"
-                      ? "FORMULE KID BOXING"
-                      : activeCategory === "private"
-                      ? "FORMULE COURS PRIVÉS"
-                      : "PROGRAMME DIGITAL PREMIUM"}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          2. SECTION 1 — COURS ADULTES (ABONNEMENTS ANNUELS)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {isSmallGroupActive && (
+        <section id="cours-adultes" className="scroll-mt-28 space-y-10">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
+              <span>Small Group • 12 personnes max</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-tight text-brand-white">
+              COURS <span className="text-brand-blue">ADULTES</span>
+            </h2>
+            <p className="text-brand-white/70 text-xs sm:text-sm">
+              Formules annuelles d&apos;entraînement encadré en groupe réduit pour une progression technique rapide et sécurisée.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+            
+            {/* CARTE 1 : ESSENTIEL */}
+            <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-6 sm:p-8 flex flex-col justify-between hover:border-brand-blue/30 transition-all duration-200">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-brand-white/10 text-brand-white/90 text-xs font-heading font-bold uppercase tracking-wider">
+                    1 DISCIPLINE AU CHOIX
                   </span>
-
-                  <span
-                    className={cn(
-                      "px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase border",
-                      activeCategory === "lady"
-                        ? "bg-pink-500/20 text-pink-300 border-pink-500/30"
-                        : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
-                    )}
-                  >
-                    {activeCategory === "kid"
-                      ? "SAISON"
-                      : activeCategory === "private"
-                      ? privateCommitment === "annual"
-                        ? "ENGAGEMENT ANNUEL"
-                        : "ENGAGEMENT MENSUEL"
-                      : activeCategory === "digital"
-                      ? digitalCommitment === "annual"
-                        ? "ENGAGEMENT ANNUEL"
-                        : "SANS ENGAGEMENT"
-                      : "ENGAGEMENT ANNUEL"}
+                  <span className="text-xs text-brand-white/50 font-semibold uppercase">
+                    ANNUEL
                   </span>
                 </div>
 
-                {/* 2. NOM DE LA FORMULE */}
                 <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold uppercase tracking-wider text-brand-white">
-                    {activeCategory === "adult"
-                      ? adultFormula === "all_access"
-                        ? "Cours Adulte — All Access"
-                        : "Cours Adulte — Essentiel"
-                      : activeCategory === "lady"
-                      ? "Lady Striking"
-                      : activeCategory === "kid"
-                      ? `Kid Boxing (${kidAgeGroup === "5-8" ? "5–8 ans" : "9–13 ans"})`
-                      : activeCategory === "private"
-                      ? privateCommitment === "annual"
-                        ? "Cours Privés — Engagement Annuel"
-                        : "Cours Privés — Engagement Mensuel"
-                      : digitalCommitment === "annual"
-                      ? "Striking Digital Premium — Annuel"
-                      : "Striking Digital Premium — Mensuel"}
-                  </h2>
-
-                  {/* 3. DESCRIPTION */}
-                  <p className="text-xs sm:text-sm text-brand-white/75 mt-1.5 leading-relaxed">
-                    {activeCategory === "adult" && adultFormula === "all_access" && "Accès illimité à l'ensemble des cours adultes pour une progression complète et intensive."}
-                    {activeCategory === "adult" && adultFormula === "essential" && "La formule idéale pour s'entraîner régulièrement avec un encadrement technique de haut niveau."}
-                    {activeCategory === "lady" && "Programme 100 % féminin alliant apprentissage technique, frappe aux sacs, renforcement et cardio combat."}
-                    {activeCategory === "kid" && (kidAgeGroup === "5-8"
-                      ? "Apprentissage ludique des bases de la boxe, motricité globale et discipline dans un cadre bienveillant."
-                      : "Perfectionnement technique pieds-poings, coordination motrice, respect des valeurs et confiance en soi.")}
-                    {activeCategory === "private" && "Coaching individuel personnalisé 1-on-1 avec le coach Mahfoud Mohamed (8 séances par mois)."}
-                    {activeCategory === "digital" && "L'accompagnement digital complet Striking Camp : moteur nutritionnel Mifflin-St Jeor, journal alimentaire, bibliothèque de recettes et programmes d'entraînement Maison & Salle."}
+                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
+                    ESSENTIEL
+                  </h3>
+                  <p className="text-xs text-brand-white/70 mt-1.5 leading-relaxed">
+                    La formule idéale pour s&apos;entraîner régulièrement dans sa discipline de prédilection avec un encadrement technique rigoureux.
                   </p>
                 </div>
 
-
-                {/* 4. INCLUS DANS VOTRE FORMULE */}
-                <div className="space-y-2.5 pt-1">
-                  <p className="text-xs font-heading font-bold uppercase tracking-wider text-brand-blue">
-                    INCLUS DANS VOTRE FORMULE :
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-heading font-black text-brand-white">
+                      {planPrices.adult_essential} €
+                    </span>
+                    <span className="text-xs text-brand-white/60 font-bold uppercase">
+                      / AN
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-brand-white/50 mt-1">
+                    + 90 € de frais d&apos;adhésion annuelle
                   </p>
+                </div>
 
-                  {/* Liste des inclusions strictement conforme */}
-                  <div className="space-y-2 text-xs sm:text-sm text-brand-white/85">
-                    {/* A. Cours Adulte — Essentiel */}
-                    {activeCategory === "adult" && adultFormula === "essential" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Une discipline au choix</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Suivi technique personnalisé en groupe réduit</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Parking privé inclus</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux événements (stages)</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Frais d&apos;adhésion : 90 €</span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* B. Cours Adulte — All Access */}
-                    {activeCategory === "adult" && adultFormula === "all_access" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès illimité aux Cours Adulte</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Suivi technique personnalisé</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Toutes les disciplines incluses</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux Défis Striking Camp</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès à l’Espace Nutrition</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux programmes physiques</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Parking privé inclus</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux événements et stages</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Frais d&apos;adhésion : 90 €</span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* C. Lady Striking */}
-                    {activeCategory === "lady" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-pink-400 shrink-0 mt-0.5" />
-                          <span>Accès aux créneaux Lady Striking</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-pink-400 shrink-0 mt-0.5" />
-                          <span>Coaching et suivi personnalisé</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-pink-400 shrink-0 mt-0.5" />
-                          <span>Boxe, kick boxing, boxe thaï — tous niveaux (débutantes à confirmées)</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-pink-400 shrink-0 mt-0.5" />
-                          <span>Parking privé inclus</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-pink-400 shrink-0 mt-0.5" />
-                          <span>Accès aux événements (stages)</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-pink-400 shrink-0 mt-0.5" />
-                          <span>Frais d&apos;adhésion : 90 €</span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* D. Kid Boxing (5-8 ans) */}
-                    {activeCategory === "kid" && kidAgeGroup === "5-8" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux créneaux dédiés 5–8 ans</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Éveil corporel, motricité globale et équilibre</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Découverte ludique de la boxe et jeux éducatifs</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Encadrement pédagogique adapté</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Parking privé inclus</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux événements (stages)</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Frais d&apos;adhésion : 90 €</span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* E. Kid Boxing (9-13 ans) */}
-                    {activeCategory === "kid" && kidAgeGroup === "9-13" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux créneaux dédiés 9–13 ans</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Techniques pieds-poings et frappe aux paos</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Développement de la coordination, des réflexes et du cardio</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Discipline, respect et confiance en soi</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Parking privé inclus</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux événements (stages)</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Frais d&apos;adhésion : 90 €</span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* F. Cours Privés — Annuel & Mensuel */}
-                    {activeCategory === "private" && privateCommitment === "annual" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>8 séances privées par mois</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Suivi technique sur mesure</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès illimité aux Cours Adulte</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux Défis Striking Camp</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès à l’Espace Nutrition</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux programmes physiques</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Parking privé</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux événements et stages</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Frais d&apos;adhésion : 90 €</span>
-                        </div>
-                      </>
-                    )}
-                    {activeCategory === "private" && privateCommitment === "monthly" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>8 séances privées par mois</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Suivi technique sur-mesure avec le coach</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès illimité aux séances Cours Adulte</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Parking privé</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Accès aux événements (stages)</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Frais d&apos;adhésion : 90 €</span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* G. Digital Premium (Mensuel & Annuel) */}
-                    {activeCategory === "digital" && (
-                      <>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Moteur nutritionnel personnalisé (Mifflin-St Jeor)</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Journal alimentaire 4 repas & suivi des macros</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Bibliothèque complète de recettes adaptées à votre objectif</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Programmes d'entraînement Maison & Salle</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Protocoles KB SHRED Digital à domicile</span>
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                          <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                          <span>Suivi de progression & courbe de poids interactive</span>
-                        </div>
-                      </>
-                    )}
+                <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/85">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Une discipline au choix</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Encadrement en groupe réduit</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Tous niveaux (débutant à confirmé)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Espace membre personnalisé</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Réservation libre sur le planning</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Parking privé inclus</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Cadre d'information */}
-                <div className="p-3.5 rounded-xl bg-brand-blue/10 border border-brand-blue/20 flex items-start gap-2.5 text-xs text-brand-white/90 leading-relaxed">
-                  <Info size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>
-                    {activeCategory === "adult" && adultFormula === "all_access" && "Cette formule vous donne un accès illimité à l'ensemble des créneaux Cours Adulte du club."}
-                    {activeCategory === "adult" && adultFormula === "essential" && "Cette formule vous donne accès aux séances encadrées par le coach sur les créneaux dédiés."}
-                    {activeCategory === "lady" && "Cours 100 % féminin, accès exclusivement aux créneaux Lady Striking."}
-                    {activeCategory === "kid" && "Formule saison de septembre à juin (hors vacances scolaires). Stages organisés inclus dans la formule."}
-                    {activeCategory === "private" && "Cette formule vous donne accès à 8 séances privées sur réservation ainsi qu'à un accès illimité aux Cours Adulte."}
-                    {activeCategory === "digital" && "Programme 100% digital accessible partout. L'activation des paiements Stripe en ligne sera disponible très prochainement."}
+              <div className="pt-8">
+                <Link
+                  href="/membre/adhesion?plan=adult_essential"
+                  onClick={() => trackBookingClick("membership", "adult_essential")}
+                  className="w-full py-3.5 px-4 rounded-xl bg-brand-white/10 hover:bg-brand-blue hover:text-brand-black text-brand-white font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                >
+                  <span>CHOISIR CETTE FORMULE</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* CARTE 2 : ALL ACCESS (FEATURED) */}
+            <div className="relative rounded-2xl bg-gradient-to-b from-[#101d36] to-[#070d18] border-2 border-brand-blue p-6 sm:p-8 flex flex-col justify-between shadow-[0_0_40px_rgba(47,174,224,0.18)]">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-brand-blue text-brand-black text-[10px] font-heading font-black uppercase tracking-wider shadow-md">
+                <span>FORMULE RECOMMANDÉE</span>
+              </div>
+
+              <div className="space-y-5 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-brand-blue/20 text-brand-blue text-xs font-heading font-black uppercase tracking-wider border border-brand-blue/30">
+                    ACCÈS TOTAL ILLIMITÉ
+                  </span>
+                  <span className="text-xs text-brand-blue font-bold uppercase">
+                    ANNUEL
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
+                    ALL ACCESS
+                  </h3>
+                  <p className="text-xs text-brand-white/75 mt-1.5 leading-relaxed">
+                    L&apos;accès complet et illimité à l&apos;ensemble des disciplines adultes pour progresser sur tous les aspects du combat.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-heading font-black text-brand-blue">
+                      {planPrices.adult_all_access} €
+                    </span>
+                    <span className="text-xs text-brand-white/60 font-bold uppercase">
+                      / AN
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-brand-white/50 mt-1">
+                    + 90 € de frais d&apos;adhésion annuelle
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/90">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès illimité aux Cours Adulte</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Encadrement en groupe réduit</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Tous les niveaux (débutant à confirmé)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Espace membre personnalisé</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Réservation libre sur le planning</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Toutes les disciplines incluses</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès aux Défis Striking Camp</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès à l’Espace Nutrition</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès aux programmes physiques</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Parking privé inclus</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  href="/membre/adhesion?plan=adult_all_access"
+                  onClick={() => trackBookingClick("membership", "adult_all_access")}
+                  className="w-full py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-brand-blue/25 flex items-center justify-center gap-2"
+                >
+                  <span>CHOISIR CETTE FORMULE</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* CARTE 3 : LADY STRIKING */}
+            <div className="rounded-2xl bg-[#0b1322] border border-pink-500/30 p-6 sm:p-8 flex flex-col justify-between hover:border-pink-500/50 transition-all duration-200">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-pink-500/15 text-pink-400 text-xs font-heading font-bold uppercase tracking-wider border border-pink-500/30">
+                    100 % FÉMININ
+                  </span>
+                  <span className="text-xs text-pink-400/80 font-semibold uppercase">
+                    3 CRÉNEAUX / SEM.
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
+                    LADY STRIKING
+                  </h3>
+                  <p className="text-xs text-brand-white/70 mt-1.5 leading-relaxed">
+                    Programme 100 % femmes sans prérequis : apprentissage de la boxe, frappe aux sacs, cardio combat et confiance en soi.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-heading font-black text-pink-400">
+                      {planPrices.lady_striking} €
+                    </span>
+                    <span className="text-xs text-brand-white/60 font-bold uppercase">
+                      / AN
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-brand-white/50 mt-1">
+                    + 90 € de frais d&apos;adhésion annuelle
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/85">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
+                    <span>Accès aux créneaux Lady Striking</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
+                    <span>Encadrement en groupe réduit</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
+                    <span>Tous niveaux (débutantes à confirmées)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
+                    <span>Parking privé inclus</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  href="/membre/adhesion?plan=lady_striking_annual"
+                  onClick={() => trackBookingClick("membership", "lady_striking_annual")}
+                  className="w-full py-3.5 px-4 rounded-xl bg-pink-500/20 hover:bg-pink-500 text-pink-300 hover:text-white border border-pink-500/30 font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                >
+                  <span>CHOISIR CETTE FORMULE</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          3. SECTION 2 — SÉANCES DÉCOUVERTE (ACHAT UNIQUE)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section id="decouverte" className="scroll-mt-28 space-y-10">
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center px-3.5 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
+            <span>Packs Découverte • Achat unique • Sans engagement</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-tight text-brand-white">
+            COMMENCER PAR <span className="text-brand-blue">UNE SÉANCE</span>
+          </h2>
+          <p className="text-brand-white/70 text-xs sm:text-sm leading-relaxed">
+            Idéal pour tester l&apos;ambiance du club, faire vos premiers pas et découvrir la méthode Striking Camp.
+          </p>
+          <div className="p-3 rounded-xl bg-brand-blue/5 border border-brand-blue/15 text-[11px] text-brand-white/80 max-w-lg mx-auto">
+            Offre découverte réservée aux nouveaux membres — strictement limitée à une seule fois par membre à vie.
+          </div>
+        </div>
+
+        {packError && (
+          <div className="max-w-2xl mx-auto p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-xs text-center">
+            {packError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto items-stretch">
+          
+          {/* PACK DÉCOUVERTE 1 SÉANCE */}
+          <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-6 sm:p-8 flex flex-col justify-between hover:border-brand-blue/30 transition-all duration-200">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-1 rounded-full bg-brand-white/5 border border-brand-white/10 text-brand-white/80 text-[10px] font-bold uppercase tracking-wider">
+                  1 Séance
+                </span>
+                <span className="text-xs text-brand-white/50 font-medium">
+                  Valable 30 jours
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-heading font-black uppercase text-brand-white">
+                  1 Séance — Découverte
+                </h3>
+                <p className="text-xs text-brand-white/70 mt-1">
+                  Une séance Small Group pour découvrir l&apos;entraînement encadré et le club.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-heading font-black text-brand-white">
+                    20 €
+                  </span>
+                  <span className="text-xs text-brand-white/60 font-bold uppercase">
+                    / paiement unique
                   </span>
                 </div>
               </div>
 
-              {/* Right: CTA & Price Card */}
-              <div className="bg-[#070c16]/90 border border-brand-white/10 rounded-xl p-6 text-center space-y-4">
-                {/* 5. PRIX */}
+              <div className="space-y-2 pt-3 text-xs text-brand-white/80 border-t border-brand-white/10">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-blue shrink-0" />
+                  <span>1 crédit de séance Small Group au choix</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-blue shrink-0" />
+                  <span>Encadrement en groupe réduit (12 max)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-blue shrink-0" />
+                  <span>Réservation libre sur le planning</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6">
+              {packEligibility.decouverte_1?.alreadyUsed ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 px-4 rounded-xl bg-brand-white/5 border border-brand-white/10 text-brand-white/40 font-heading font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span>Offre découverte déjà utilisée</span>
+                </button>
+              ) : packEligibility.decouverte_1?.hasPending ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 px-4 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-brand-blue/80 font-heading font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span>Demande en attente</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleBuyPack("decouverte_1")}
+                  className="w-full py-3 px-4 rounded-xl bg-brand-white/10 hover:bg-brand-blue hover:text-brand-black text-brand-white font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Commencer</span>
+                  <ArrowRight size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* PACK DÉCOUVERTE 3 SÉANCES */}
+          <div className="rounded-2xl bg-[#0b1322] border border-brand-blue/30 p-6 sm:p-8 flex flex-col justify-between hover:border-brand-blue/50 transition-all duration-200">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-1 rounded-full bg-brand-blue/15 text-brand-blue text-[10px] font-heading font-bold uppercase tracking-wider border border-brand-blue/25">
+                  3 Séances • Meilleur Essai
+                </span>
+                <span className="text-xs text-brand-white/50 font-medium">
+                  Valable 30 jours
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-heading font-black uppercase text-brand-white">
+                  3 Séances — Découverte
+                </h3>
+                <p className="text-xs text-brand-white/70 mt-1">
+                  Parfait pour tester plusieurs disciplines et s&apos;initier à la méthode.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl sm:text-4xl font-heading font-black text-brand-blue">
+                    49 €
+                  </span>
+                  <span className="text-xs text-brand-white/60 font-bold uppercase">
+                    / 16,33 € la séance
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-3 text-xs text-brand-white/80 border-t border-brand-white/10">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-blue shrink-0" />
+                  <span>3 crédits de séance Small Group</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-blue shrink-0" />
+                  <span>Possibilité de tester 3 disciplines différentes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-blue shrink-0" />
+                  <span>Réservation libre sur le planning</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6">
+              {packEligibility.decouverte_3?.alreadyUsed ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 px-4 rounded-xl bg-brand-white/5 border border-brand-white/10 text-brand-white/40 font-heading font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span>Offre découverte déjà utilisée</span>
+                </button>
+              ) : packEligibility.decouverte_3?.hasPending ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 px-4 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-brand-blue/80 font-heading font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span>Demande en attente</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleBuyPack("decouverte_3")}
+                  className="w-full py-3 px-4 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-brand-blue/20"
+                >
+                  <span>Commencer</span>
+                  <ArrowRight size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          4. SECTION 3 — PACK 10 SÉANCES (SANS ENGAGEMENT & RÉPÉTABLE)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section id="pack-10" className="scroll-mt-28 space-y-10">
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center px-3.5 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
+            <span>PACKS DE SÉANCES • Achat unique • Sans engagement</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-tight text-brand-white">
+            PRATIQUEZ À <span className="text-brand-blue">VOTRE RYTHME</span>
+          </h2>
+          <p className="text-brand-white/70 text-xs sm:text-sm">
+            Entraînez-vous sans abonnement annuel. Achetez et rechargez votre carnet de séances selon votre emploi du temps.
+          </p>
+        </div>
+
+        <div className="max-w-3xl mx-auto">
+          <div className="relative rounded-2xl bg-gradient-to-b from-[#101c34] to-[#080e1b] border border-brand-blue/40 p-7 sm:p-9 shadow-[0_0_35px_rgba(47,174,224,0.12)]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+              
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 rounded-full bg-brand-blue/20 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider border border-brand-blue/30">
+                    10 SÉANCES GROUPE RÉDUIT
+                  </span>
+                  <span className="text-xs text-brand-white/60 font-medium">
+                    Valable 3 mois (90 jours)
+                  </span>
+                </div>
+
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-brand-white/75">
-                    {activeCategory === "kid"
-                      ? "Tarif saison"
-                      : activeCategory === "private"
-                      ? "Tarif mensuel"
-                      : activeCategory === "digital"
-                      ? digitalCommitment === "annual"
-                        ? "Tarif annuel"
-                        : "Tarif mensuel"
-                      : "Tarif annuel"}
+                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
+                    PACK 10 SÉANCES — GROUPE RÉDUIT
+                  </h3>
+                  <p className="text-xs text-brand-white/75 mt-1.5 leading-relaxed">
+                    La liberté totale de pratiquer toutes les disciplines Small Group. Achetable et renouvelable plusieurs fois par an.
                   </p>
-                  <div className="flex items-baseline justify-center gap-1.5 mt-2 flex-wrap">
-                    <span
-                      className={cn(
-                        "text-4xl sm:text-5xl font-heading font-black tracking-tight",
-                        activeCategory === "lady" ? "text-pink-400" : "text-brand-blue"
-                      )}
-                    >
-                      {activeCategory === "adult"
-                        ? adultFormula === "all_access"
-                          ? `${planPrices.adult_all_access} €`
-                          : `${planPrices.adult_essential} €`
-                        : activeCategory === "lady"
-                        ? `${planPrices.lady_striking} €`
-                        : activeCategory === "kid"
-                        ? `${planPrices.kid_boxing} €`
-                        : activeCategory === "private"
-                        ? privateCommitment === "annual"
-                          ? `${planPrices.private_annual} €`
-                          : `${planPrices.private_monthly} €`
-                        : activeCategory === "digital"
-                        ? digitalCommitment === "annual"
-                          ? `${planPrices.digital_annual} €`
-                          : `${planPrices.digital_monthly} €`
-                        : ""}
-                    </span>
-                    <span className="text-xs sm:text-sm text-brand-white/80 font-bold uppercase tracking-wider">
-                      {activeCategory === "kid"
-                        ? "/ SAISON"
-                        : activeCategory === "private"
-                        ? "/ MOIS"
-                        : activeCategory === "digital"
-                        ? digitalCommitment === "annual"
-                          ? "/ AN"
-                          : "/ MOIS"
-                        : "/ AN"}
-                    </span>
-                  </div>
                 </div>
 
-                {/* 6. BOUTON */}
-                <div className="space-y-3 pt-2">
-                  <Link
-                    href={
-                      activeCategory === "kid"
-                        ? "/contact"
-                        : activeCategory === "digital"
-                        ? "/membre/defis"
-                        : "/connexion"
-                    }
-                    onClick={() => trackBookingClick("membership", "pricing_card")}
-                    className={cn(
-                      "w-full py-3.5 px-6 font-heading font-bold text-sm uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2 shadow-lg focus:outline-none focus-visible:ring-2",
-                      activeCategory === "lady"
-                        ? "bg-pink-500 hover:bg-white text-white hover:text-black shadow-pink-500/30 focus-visible:ring-pink-400"
-                        : "bg-brand-blue hover:bg-brand-white text-brand-black shadow-brand-blue/30 focus-visible:ring-brand-blue"
-                    )}
+                <div className="space-y-2 pt-2 text-xs text-brand-white/85">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>10 crédits en groupe réduit</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès à toutes les disciplines adultes</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Espace membre personnalisé</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Réservation libre sur le planning</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Parking privé inclus</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[#050912]/80 border border-brand-white/10 rounded-xl p-6 text-center space-y-4">
+                <div>
+                  <span className="text-3xl sm:text-4xl font-heading font-black text-brand-white">
+                    180 €
+                  </span>
+                  <p className="text-[11px] text-brand-white/60 font-bold uppercase mt-1">
+                    soit 18 € / séance
+                  </p>
+                </div>
+
+                {packEligibility.pack_10_small_group?.hasPending ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-3.5 px-4 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-brand-blue/80 font-heading font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {activeCategory === "kid"
-                      ? "INSCRIRE MON ENFANT"
-                      : activeCategory === "digital"
-                      ? "DÉCOUVRIR LE PROGRAMME"
-                      : "SOUSCRIRE EN LIGNE"}
-                    <ArrowRight size={16} />
-                  </Link>
-                  <div className="pt-1 text-center">
-                    <Link
-                      href="/contact"
-                      className="inline-block text-xs text-brand-white/70 hover:text-brand-white transition-colors underline-offset-4 hover:underline py-1"
-                    >
-                      Une question ? Contactez-nous
-                    </Link>
-                  </div>
-                </div>
+                    <span>Demande en attente</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleBuyPack("pack_10_small_group")}
+                    className="w-full py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-blue/20"
+                  >
+                    <span>Choisir le Pack 10</span>
+                    <ArrowRight size={14} />
+                  </button>
+                )}
 
-
-                <p className="text-[11px] text-brand-white/70 leading-tight">
-                  {activeCategory === "kid"
-                    ? "Inscriptions limitées • Saison"
-                    : "Paiement sécurisé • Accompagnement premium"}
+                <p className="text-[10px] text-brand-white/50 leading-tight">
+                  Paiement unique • Répétable à l&apos;épuisement
                 </p>
               </div>
 
             </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+          </div>
+        </div>
+      </section>
 
-      {/* Bottom Info Notice */}
-      <div className="mt-14 sm:mt-16 text-center p-8 bg-[#0c1322] border border-brand-white/10 rounded-2xl max-w-2xl mx-auto space-y-3">
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          5. SECTION 4 — KID BOXING (5 À 13 ANS)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section id="kid-boxing" className="scroll-mt-28 space-y-10">
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
+            <span>Enfants & Adolescents • 5 à 13 ans</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-tight text-brand-white">
+            KID <span className="text-brand-blue">BOXING</span>
+          </h2>
+          <p className="text-brand-white/70 text-xs sm:text-sm">
+            Une approche pédagogique et bienveillante du Kick Boxing adaptée au rythme et à la maturité des enfants.
+          </p>
+        </div>
+
+        <div className="max-w-3xl mx-auto">
+          <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-7 sm:p-9 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-brand-white/10">
+              <div>
+                <span className="px-3 py-1 rounded-full bg-brand-blue/15 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider border border-brand-blue/25">
+                  Formule Saison (Septembre à Juin)
+                </span>
+                <h3 className="text-2xl font-heading font-black uppercase text-brand-white mt-2">
+                  Kid Boxing (5–13 ans)
+                </h3>
+              </div>
+              <div className="sm:text-right">
+                <span className="text-3xl sm:text-4xl font-heading font-black text-brand-white">
+                  {planPrices.kid_boxing} €
+                </span>
+                <span className="text-xs text-brand-white/60 font-bold uppercase ml-1.5">
+                  / saison
+                </span>
+                <p className="text-[11px] text-brand-white/50 mt-0.5">
+                  + 90 € d&apos;adhésion annuelle
+                </p>
+              </div>
+            </div>
+
+            {/* Détail des 2 tranches d'âge */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="p-4 rounded-xl bg-brand-white/5 border border-brand-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-heading font-bold text-sm uppercase text-brand-blue">
+                    Groupe 5–8 ans
+                  </h4>
+                  <span className="text-[11px] text-brand-white/60">Mercredi 11h & Vendredi 17h</span>
+                </div>
+                <p className="text-xs text-brand-white/70 leading-relaxed">
+                  Éveil corporel, motricité globale, équilibre, jeux éducatifs et découverte ludique de la boxe.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-brand-white/5 border border-brand-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-heading font-bold text-sm uppercase text-brand-blue">
+                    Groupe 9–13 ans
+                  </h4>
+                  <span className="text-[11px] text-brand-white/60">Mercredi 10h & Samedi 10h</span>
+                </div>
+                <p className="text-xs text-brand-white/70 leading-relaxed">
+                  Techniques pieds-poings, coordination motrice, frappe aux paos, discipline et confiance en soi.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-brand-white/70">
+                Accès aux événements & stages scolaires inclus • Parking privé
+              </p>
+              <Link
+                href="/contact"
+                onClick={() => trackBookingClick("membership", "kid_boxing_season")}
+                className="w-full sm:w-auto px-6 py-3 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shrink-0"
+              >
+                <span>Inscrire mon enfant</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          6. SECTION 5 — COURS PRIVÉS (COACHING SUR-MESURE)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {isPrivateActive && (
+        <section id="cours-prives" className="scroll-mt-28 space-y-10">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
+              <span>Coaching 1-on-1 exclusif</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-tight text-brand-white">
+              COURS <span className="text-brand-blue">PRIVÉS</span>
+            </h2>
+            <p className="text-brand-white/70 text-xs sm:text-sm">
+              L&apos;accompagnement le plus individualisé avec le coach Mahfoud Mohamed (8 séances privées par mois sur rendez-vous).
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto items-stretch">
+            
+            {/* PRIVÉ ANNUEL */}
+            <div className="rounded-2xl bg-[#0b1322] border border-brand-blue/30 p-6 sm:p-8 flex flex-col justify-between hover:border-brand-blue/50 transition-all duration-200">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-brand-blue/20 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider border border-brand-blue/30">
+                    Engagement Annuel
+                  </span>
+                  <span className="text-xs text-brand-white/50 font-medium">
+                    8 séances privées / mois
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
+                    Coaching Privé — Annuel
+                  </h3>
+                  <p className="text-xs text-brand-white/70 mt-1.5 leading-relaxed">
+                    Le programme le plus complet pour transformer sa condition physique et sa technique avec un suivi sur-mesure toute l&apos;année.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-heading font-black text-brand-blue">
+                      {planPrices.private_annual} €
+                    </span>
+                    <span className="text-xs text-brand-white/60 font-bold uppercase">
+                      / mois
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-brand-white/50 mt-1">
+                    Engagement 12 mois • + 90 € d&apos;adhésion annuelle
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/85">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span><strong>8 séances privées 1-on-1 par mois</strong> sur rendez-vous</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span><strong>Accès illimité All Access</strong> à tous les cours adultes</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès complet à l&apos;Espace Défis & Nutrition</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Programmation personnalisée & parking privé</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  href="/membre/adhesion?plan=priv_annual_8"
+                  onClick={() => trackBookingClick("membership", "priv_annual_8")}
+                  className="w-full py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-brand-blue/20 flex items-center justify-center gap-2"
+                >
+                  <span>CHOISIR CETTE FORMULE</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* PRIVÉ MENSUEL */}
+            <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-6 sm:p-8 flex flex-col justify-between hover:border-brand-blue/30 transition-all duration-200">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-brand-white/10 text-brand-white/90 text-xs font-heading font-bold uppercase tracking-wider">
+                    Sans Engagement
+                  </span>
+                  <span className="text-xs text-brand-white/50 font-medium">
+                    8 séances privées / mois
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
+                    Coaching Privé — Mensuel
+                  </h3>
+                  <p className="text-xs text-brand-white/70 mt-1.5 leading-relaxed">
+                    La flexibilité du coaching sur-mesure au mois le mois, renouvelable librement selon vos échéances.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-heading font-black text-brand-white">
+                      {planPrices.private_monthly} €
+                    </span>
+                    <span className="text-xs text-brand-white/60 font-bold uppercase">
+                      / mois
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-brand-white/50 mt-1">
+                    Sans engagement • + 90 € d&apos;adhésion annuelle
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/85">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span><strong>8 séances privées 1-on-1 par mois</strong> sur rendez-vous</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès illimité aux cours adultes Small Group</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Suivi direct et individualisé avec le coach</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Parking privé sécurisé inclus</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  href="/membre/adhesion?plan=priv_monthly_8"
+                  onClick={() => trackBookingClick("membership", "priv_monthly_8")}
+                  className="w-full py-3.5 px-4 rounded-xl bg-brand-white/10 hover:bg-brand-blue hover:text-brand-black text-brand-white font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                >
+                  <span>CHOISIR CETTE FORMULE</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          7. SECTION INFORMATIONS & CONTACT
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <section className="text-center p-8 bg-[#0b1322] border border-brand-white/10 rounded-2xl max-w-3xl mx-auto space-y-4">
         <h3 className="text-lg font-heading font-bold uppercase tracking-wider text-brand-white">
-          Besoin d&apos;un conseil sur la formule adaptée ?
+          Besoin d&apos;un conseil sur la formule la plus adaptée ?
         </h3>
-        <p className="text-xs sm:text-sm text-brand-white/75 leading-relaxed max-w-lg mx-auto">
-          Contactez le coach Mahfoud pour échanger sur vos objectifs ou ceux de vos enfants et déterminer le programme le plus adapté.
+        <p className="text-xs sm:text-sm text-brand-white/75 leading-relaxed max-w-xl mx-auto">
+          Contactez directement le coach Mahfoud pour échanger sur vos objectifs ou ceux de vos enfants et trouver le programme optimal.
         </p>
         <div className="pt-2">
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
           >
-            CONTACTER LE CLUB
+            <span>Contacter le Club</span>
+            <ArrowRight size={14} />
           </Link>
         </div>
-      </div>
+      </section>
 
-    </section>
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MODAL DE CONFIRMATION DE DEMANDE DE PACK
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <AnimatePresence>
+        {selectedPackForModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!isSubmittingPack) {
+                  setSelectedPackForModal(null);
+                  setPackSuccessMessage(null);
+                }
+              }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f172a] border border-brand-blue/40 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6"
+            >
+              {/* Header Modal */}
+              <div className="flex items-center justify-between pb-3 border-b border-brand-white/10">
+                <div>
+                  <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+                    Demande de Pack de Séances
+                  </h3>
+                  <p className="text-[11px] text-brand-white/60">
+                    Validation et activation de vos crédits
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedPackForModal(null);
+                    setPackSuccessMessage(null);
+                  }}
+                  disabled={isSubmittingPack}
+                  className="p-1.5 rounded-lg text-brand-white/50 hover:text-brand-white hover:bg-brand-white/10 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Message de succès */}
+              {packSuccessMessage ? (
+                <div className="space-y-5 text-center py-4">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
+                      Demande enregistrée !
+                    </h4>
+                    <p className="text-xs text-brand-white/70 max-w-sm mx-auto leading-relaxed">
+                      {packSuccessMessage}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-brand-white/5 border border-brand-white/10 rounded-2xl text-[11px] text-brand-white/80 space-y-1 text-left">
+                    <p>• Votre demande est actuellement <strong>en attente de validation</strong> par l&apos;équipe.</p>
+                    <p>• Vos {selectedPackForModal.totalCredits} séance(s) apparaîtront sur votre compte dès confirmation.</p>
+                  </div>
+                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPackForModal(null);
+                        setPackSuccessMessage(null);
+                      }}
+                      className="flex-1 py-3 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase rounded-xl transition-all"
+                    >
+                      Fermer
+                    </button>
+                    <Link
+                      href="/membre/planning"
+                      className="flex-1 py-3 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2"
+                    >
+                      <span>Voir le Planning</span>
+                      <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                /* Formulaire de confirmation */
+                <div className="space-y-4 text-xs text-brand-white/80">
+                  {packError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-xs">
+                      {packError}
+                    </div>
+                  )}
+
+                  <div className="bg-[#0a1120] border border-brand-white/10 rounded-2xl p-4 space-y-2.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-brand-white/50">Offre sélectionnée :</span>
+                      <strong className="text-brand-blue font-heading text-sm">
+                        {selectedPackForModal.name}
+                      </strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-brand-white/50">Nombre de séances :</span>
+                      <strong className="text-brand-white font-bold">
+                        {selectedPackForModal.totalCredits} crédit(s) Small Group
+                      </strong>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-brand-white/50">Validité :</span>
+                      <span className="text-brand-white font-medium flex items-center gap-1">
+                        <Clock size={12} className="text-brand-blue" />
+                        {selectedPackForModal.validityMonths
+                          ? `${selectedPackForModal.validityMonths} mois`
+                          : `${selectedPackForModal.validityDays} jours`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1 border-t border-brand-white/5">
+                      <span className="text-brand-white/50">Montant total :</span>
+                      <strong className="text-lg font-heading font-black text-brand-white">
+                        {selectedPackForModal.priceEuros} €
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 bg-brand-blue/10 border border-brand-blue/20 rounded-xl text-brand-blue/90 text-[11px] leading-relaxed">
+                    Votre demande de pack sera transmise à l&apos;équipe Striking Camp. Vos crédits seront activés sur votre compte dès validation de votre règlement.
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-heading font-bold uppercase tracking-wider text-brand-white/60 block mb-1.5">
+                      Message / Note pour le coach (optionnel)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={packNotes}
+                      onChange={(e) => setPackNotes(e.target.value)}
+                      placeholder="Ex: Je souhaite démarrer la semaine prochaine..."
+                      className="w-full bg-[#0a1120] border border-brand-white/10 rounded-xl p-3 text-xs text-brand-white placeholder:text-brand-white/30 focus:border-brand-blue outline-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPackForModal(null)}
+                      disabled={isSubmittingPack}
+                      className="flex-1 py-3 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 font-heading font-bold text-xs uppercase rounded-xl transition-all cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmPackRequest}
+                      disabled={isSubmittingPack}
+                      className="flex-1 py-3 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {isSubmittingPack ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Envoi en cours...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Confirmer la demande</span>
+                          <ArrowRight size={14} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          MODAL D'AUTHENTIFICATION REQUISE
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <AnimatePresence>
+        {showAuthRequiredModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAuthRequiredModal(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#0f172a] border border-brand-blue/30 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 text-center"
+            >
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-black uppercase tracking-wider text-brand-white">
+                  Connexion Requise
+                </h3>
+                <p className="text-xs text-brand-white/70 leading-relaxed">
+                  Pour commander un pack de séances et créditer votre compte, veuillez vous connecter ou créer un compte membre.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2.5 pt-2">
+                <Link
+                  href="/connexion?redirect=/tarifs"
+                  className="w-full py-3.5 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2"
+                >
+                  <span>Se Connecter</span>
+                  <ArrowRight size={14} />
+                </Link>
+                <Link
+                  href="/inscription?redirect=/tarifs"
+                  className="w-full py-3 bg-brand-white/10 hover:bg-brand-white/20 text-brand-white font-heading font-bold text-xs uppercase rounded-xl transition-all"
+                >
+                  Créer un compte
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowAuthRequiredModal(false)}
+                  className="text-xs text-brand-white/50 hover:text-brand-white py-1"
+                >
+                  Continuer la visite
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </div>
   );
 }

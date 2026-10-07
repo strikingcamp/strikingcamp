@@ -6,7 +6,7 @@ import PricingSection, { type PublicPlan } from "@/components/sections/PricingSe
 export const metadata: Metadata = {
   title: "Tarifs et Formules de Boxe à Marseille (13010)",
   description:
-    "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte (Essentiel 499 €/an, All Access 890 €/an), Lady Striking (499 €/an), Kid Boxing (349 €/saison) et Cours Privés (8 séances/mois).",
+    "Découvrez les tarifs et formules d'abonnement au Striking Camp Marseille (13010) : Cours Adulte (Essentiel 399 €/an, All Access 899 €/an), Lady Striking (399 €/an), Kid Boxing (349 €/saison) et Cours Privés (8 séances/mois).",
   alternates: {
     canonical: "https://www.strikingcamp.com/tarifs",
   },

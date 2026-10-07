@@ -19,6 +19,7 @@ import {
   ChevronRight,
   CreditCard,
   History,
+  Package,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -28,6 +29,7 @@ import {
   type UpdateMemberPayload,
   updateMemberAdmin,
 } from "@/lib/supabase/admin";
+import { adminAdjustCredits } from "@/lib/supabase/session-credits";
 import { createMemberServerAction } from "@/app/(admin)/admin/membres/actions";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +85,82 @@ export default function AdminMembersView({
 
   // Fiche Membre Détaillée (Drawer / Modale)
   const [selectedMember, setSelectedMember] = useState<AdminMemberDetail | null>(null);
+
+  // Modale Ajustement Manuel de Crédits
+  const [adjustPack, setAdjustPack] = useState<{
+    id: string;
+    planName: string;
+    remainingCredits: number;
+    totalCredits: number;
+  } | null>(null);
+  const [adjustDelta, setAdjustDelta] = useState<number>(1);
+  const [adjustReason, setAdjustReason] = useState<string>("");
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+  const [isAdjustSubmitting, setIsAdjustSubmitting] = useState(false);
+
+  const handleAdjustSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustPack) return;
+    if (!adjustReason.trim()) {
+      setAdjustError("Le motif d'ajustement est obligatoire pour l'audit.");
+      return;
+    }
+    if (adjustDelta === 0) {
+      setAdjustError("Le delta doit être différent de 0.");
+      return;
+    }
+
+    setIsAdjustSubmitting(true);
+    setAdjustError(null);
+
+    const res = await adminAdjustCredits(adjustPack.id, adjustDelta, adjustReason.trim());
+
+    if (!res.success) {
+      setAdjustError(res.error || "Erreur lors de l'ajustement des crédits.");
+      setIsAdjustSubmitting(false);
+      return;
+    }
+
+    // Mettre à jour localement les données du membre
+    if (selectedMember) {
+      const updatedPacks = (selectedMember.creditPacks || []).map((p) => {
+        if (p.id === adjustPack.id) {
+          const newRemaining = res.data?.remaining_credits ?? Math.max(0, p.remainingCredits + adjustDelta);
+          return {
+            ...p,
+            remainingCredits: newRemaining,
+            status: newRemaining === 0 ? "exhausted" : "active",
+          };
+        }
+        return p;
+      });
+
+      const newTx = {
+        id: `tx-temp-${Date.now()}`,
+        credit_pack_id: adjustPack.id,
+        delta: adjustDelta,
+        transaction_type: "admin_adjustment",
+        reason: adjustReason.trim(),
+        created_at: new Date().toISOString(),
+      };
+
+      const updatedTx = [newTx, ...(selectedMember.creditTransactions || [])];
+
+      const updatedMember: AdminMemberDetail = {
+        ...selectedMember,
+        creditPacks: updatedPacks,
+        creditTransactions: updatedTx,
+      };
+
+      setSelectedMember(updatedMember);
+      setMembers((prev) => prev.map((m) => (m.id === updatedMember.id ? updatedMember : m)));
+    }
+
+    setIsAdjustSubmitting(false);
+    setAdjustPack(null);
+    setAdjustReason("");
+    setAdjustDelta(1);
+  };
 
   // KPIs
   const stats = useMemo(() => {
@@ -1154,6 +1232,139 @@ export default function AdminMembersView({
               )}
             </div>
 
+            {/* Packs de Séances Small Group */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
+                  Packs de Séances Small Group ({(selectedMember.creditPacks || []).length})
+                </span>
+              </div>
+
+              {(!selectedMember.creditPacks || selectedMember.creditPacks.length === 0) ? (
+                <p className="text-xs text-brand-white/40 italic">
+                  Aucun pack de séances pour ce membre.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {selectedMember.creditPacks.map((pack) => {
+                    const isExp = pack.status === "expired" || new Date(pack.expires_at).getTime() < Date.now();
+                    return (
+                      <div
+                        key={pack.id}
+                        className="bg-[#020617] border border-brand-white/10 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-heading font-black text-sm text-brand-white uppercase">
+                              {pack.planName}
+                            </span>
+                            <span
+                              className={cn(
+                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                                pack.status === "active" && !isExp && "bg-[#00d8ff]/15 text-[#00d8ff] border border-[#00d8ff]/30",
+                                pack.status === "exhausted" && "bg-zinc-800 text-zinc-400",
+                                isExp && "bg-red-500/15 text-red-400 border border-red-500/30",
+                                pack.status === "refunded" && "bg-amber-500/15 text-amber-400"
+                              )}
+                            >
+                              {isExp ? "Expiré" : pack.status === "active" ? "Actif" : pack.status === "exhausted" ? "Épuisé" : pack.status}
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-brand-white/60 space-y-0.5">
+                            <div>
+                              Crédits : <strong className="text-brand-white">{pack.remainingCredits}</strong> / {pack.totalCredits} restantes
+                            </div>
+                            <div>
+                              Acheté le : {new Date(pack.created_at).toLocaleDateString("fr-FR")} · Expire le : {new Date(pack.expires_at).toLocaleDateString("fr-FR")}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setAdjustError(null);
+                            setAdjustReason("");
+                            setAdjustDelta(1);
+                            setAdjustPack({
+                              id: pack.id,
+                              planName: pack.planName,
+                              remainingCredits: pack.remainingCredits,
+                              totalCredits: pack.totalCredits,
+                            });
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-brand-white/5 hover:bg-[#00d8ff]/15 text-brand-white/80 hover:text-[#00d8ff] border border-brand-white/10 hover:border-[#00d8ff]/30 text-xs font-bold uppercase tracking-wider transition-all self-start sm:self-auto cursor-pointer"
+                        >
+                          Ajuster crédits
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Historique des Transactions de Crédits */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
+                Historique Transactions Crédits ({(selectedMember.creditTransactions || []).length})
+              </span>
+
+              {(!selectedMember.creditTransactions || selectedMember.creditTransactions.length === 0) ? (
+                <p className="text-xs text-brand-white/40 italic">
+                  Aucune transaction enregistrée.
+                </p>
+              ) : (
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {selectedMember.creditTransactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="bg-[#020617]/60 border border-brand-white/5 rounded-xl p-2.5 flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "font-bold font-mono text-xs px-1.5 py-0.5 rounded",
+                              tx.delta > 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+                            )}
+                          >
+                            {tx.delta > 0 ? `+${tx.delta}` : tx.delta}
+                          </span>
+                          <span className="font-semibold text-brand-white">
+                            {tx.transaction_type === "purchase"
+                              ? "Achat de pack"
+                              : tx.transaction_type === "booking_debit"
+                              ? "Débit réservation"
+                              : tx.transaction_type === "cancellation_refund"
+                              ? "Remboursement annulation"
+                              : tx.transaction_type === "admin_adjustment"
+                              ? "Ajustement manuel admin"
+                              : tx.transaction_type === "expiration"
+                              ? "Expiration pack"
+                              : tx.transaction_type}
+                          </span>
+                        </div>
+                        {tx.reason && (
+                          <div className="text-[11px] text-brand-white/50 italic">
+                            Motif : {tx.reason}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-brand-white/40">
+                        {new Date(tx.created_at).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Historique des Réservations */}
             <div className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-brand-white/50">
@@ -1203,6 +1414,113 @@ export default function AdminMembersView({
                 Fermer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE D'AJUSTEMENT MANUEL DE CRÉDITS */}
+      {adjustPack && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-brand-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0f172a] border border-brand-white/15 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl shadow-black/90">
+            <div className="px-6 py-5 border-b border-brand-white/10 flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-black text-lg uppercase tracking-wider text-brand-white">
+                  Ajuster les crédits
+                </h3>
+                <span className="text-xs text-brand-white/50">
+                  {adjustPack.planName} · Solde actuel : {adjustPack.remainingCredits} / {adjustPack.totalCredits}
+                </span>
+              </div>
+              <button
+                onClick={() => setAdjustPack(null)}
+                className="text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdjustSubmit} className="p-6 space-y-4">
+              {adjustError && (
+                <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle size={15} className="shrink-0" />
+                  <span>{adjustError}</span>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-white/70">
+                  Variation de crédits (Delta) <span className="text-brand-blue">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAdjustDelta((d) => d - 1)}
+                    className="px-3 py-2 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white font-black text-sm border border-brand-white/10"
+                  >
+                    -1
+                  </button>
+                  <input
+                    type="number"
+                    value={adjustDelta}
+                    onChange={(e) => setAdjustDelta(parseInt(e.target.value, 10) || 0)}
+                    required
+                    className="flex-1 bg-[#020617] border border-brand-white/15 rounded-xl px-3.5 py-2.5 text-center text-sm font-bold text-brand-white focus:border-brand-blue outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAdjustDelta((d) => d + 1)}
+                    className="px-3 py-2 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white font-black text-sm border border-brand-white/10"
+                  >
+                    +1
+                  </button>
+                </div>
+                <span className="text-[11px] text-brand-white/40 block">
+                  Nouveau solde estimé : {Math.max(0, adjustPack.remainingCredits + adjustDelta)} crédits
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-brand-white/70">
+                  Motif obligatoire de l&apos;ajustement <span className="text-brand-blue">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={adjustReason}
+                  onChange={(e) => setAdjustReason(e.target.value)}
+                  placeholder="Ex: Geste commercial, report météo, régularisation"
+                  required
+                  className="w-full bg-[#020617] border border-brand-white/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-medium text-brand-white focus:border-brand-blue outline-none"
+                />
+                <span className="text-[10px] text-brand-white/40 block">
+                  Une transaction d&apos;audit non effaçable sera créée avec ce motif.
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-brand-white/10">
+                <button
+                  type="button"
+                  onClick={() => setAdjustPack(null)}
+                  disabled={isAdjustSubmitting}
+                  className="px-4 py-2.5 rounded-xl border border-brand-white/10 text-brand-white/70 hover:text-brand-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAdjustSubmitting}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00d8ff] hover:bg-brand-white text-black text-xs font-black uppercase tracking-wider transition-colors cursor-pointer shadow-lg shadow-[#00d8ff]/20 disabled:opacity-50"
+                >
+                  {isAdjustSubmitting ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Ajustement...</span>
+                    </>
+                  ) : (
+                    <span>Valider l&apos;ajustement</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

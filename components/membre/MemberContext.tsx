@@ -26,6 +26,15 @@ import {
   getServiceSettingsMap,
   DEFAULT_SERVICE_SETTINGS,
 } from "@/lib/supabase/services";
+import {
+  getMemberCreditPacks,
+  getMemberCreditsBalance,
+  type MemberSessionCreditPack,
+} from "@/lib/supabase/session-credits";
+import {
+  getMyPendingPackRequest,
+  type MembershipRequestItem,
+} from "@/lib/supabase/membership-requests";
 import { getConfirmedBookingsSummaryAction, getMemberUnreadNotificationsCountAction } from "@/app/(membre)/actions";
 import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
 
@@ -127,6 +136,13 @@ interface MemberContextType {
   availableSessions: ClassSession[];
   allConfirmedBookings: ConfirmedBookingInfo[];
 
+  // Session Credits (Packs de séances)
+  memberCreditPacks: import("@/lib/supabase/session-credits").MemberSessionCreditPack[];
+  availableCredits: number;
+  hasCreditAccess: boolean;
+  pendingPackRequest: MembershipRequestItem | null;
+  refreshCredits: () => Promise<void>;
+
   // Service Feature Flags (Gestion des services)
   serviceSettings: Record<string, boolean>;
   isSmallGroupEnabled: boolean;
@@ -140,8 +156,8 @@ interface MemberContextType {
   addSynchronizedBooking: (slot: BookingSlot) => void;
   removeSynchronizedBooking: (bookingId: string, shouldRestituteQuota?: boolean) => void;
 
-  bookSmallGroup: (slotOrId: BookingSlot | string) => Promise<{ success: boolean; error?: string; bookingId?: string }>;
-  cancelSmallGroup: (bookingId: string) => Promise<{ success: boolean; error?: string }>;
+  bookSmallGroup: (slotOrId: BookingSlot | string) => Promise<{ success: boolean; error?: string; bookingId?: string; usedCredit?: boolean; remainingCredits?: number }>;
+  cancelSmallGroup: (bookingId: string) => Promise<{ success: boolean; error?: string; restoredCredit?: boolean; message?: string }>;
   bookPrivate: (slot: BookingSlot) => Promise<{ success: boolean; error?: string; remainingSessions?: number; bookingId?: string }>;
   cancelPrivate: (bookingId: string) => Promise<{ success: boolean; isLateCancellation?: boolean; message?: string; error?: string }>;
   bookSlot: (slot: BookingSlot) => Promise<{ success: boolean; error?: string; bookingId?: string }>;
@@ -181,6 +197,12 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   const [privateSessionsQuota, setPrivateSessionsQuota] = useState<number | null>(null);
   const [privateQuota, setPrivateQuota] = useState<MemberPrivateQuotaStatus | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Session Credits State
+  const [memberCreditPacks, setMemberCreditPacks] = useState<import("@/lib/supabase/session-credits").MemberSessionCreditPack[]>([]);
+  const [availableCredits, setAvailableCredits] = useState(0);
+  const [hasCreditAccess, setHasCreditAccess] = useState(false);
+  const [pendingPackRequest, setPendingPackRequest] = useState<MembershipRequestItem | null>(null);
 
   const [availableSessions, setAvailableSessions] = useState<ClassSession[]>([]);
   const [allConfirmedBookings, setAllConfirmedBookings] = useState<ConfirmedBookingInfo[]>([]);
@@ -331,12 +353,14 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
 
       setCurrentUserId(user.id);
 
-      // 3. Chargement parallèle des droits d'accès, du quota privé, des réservations et des alertes du membre
-      const [accessRes, quotaStatusRes, realBookingsRes, unreadRes] = await Promise.allSettled([
+      // 3. Chargement parallèle des droits d'accès, du quota privé, des réservations, des crédits, des demandes de packs et des alertes
+      const [accessRes, quotaStatusRes, realBookingsRes, unreadRes, creditsRes, pendingPackRes] = await Promise.allSettled([
         getMemberPlanAccess(supabase, user.id),
         getMemberPrivateQuotaStatus(supabase),
         getMemberUpcomingBookings(supabase, user.id),
         getMemberUnreadNotificationsCountAction(),
+        getMemberCreditsBalance(supabase, user.id),
+        getMyPendingPackRequest(supabase),
       ]);
 
       if (accessRes.status === "fulfilled") {
@@ -356,6 +380,16 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         setPrivateSessionsQuota(access.privateSessionsQuota ?? 8);
       }
 
+      if (creditsRes.status === "fulfilled") {
+        setMemberCreditPacks(creditsRes.value.packs);
+        setAvailableCredits(creditsRes.value.totalAvailableCredits);
+        setHasCreditAccess(creditsRes.value.hasUsableCredits);
+      }
+
+      if (pendingPackRes.status === "fulfilled") {
+        setPendingPackRequest(pendingPackRes.value);
+      }
+
       if (quotaStatusRes.status === "fulfilled" && quotaStatusRes.value.success) {
         setPrivateQuota(quotaStatusRes.value);
       }
@@ -371,6 +405,22 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
       console.error("[MemberContext] Erreur lors du chargement des données membre :", err);
     }
   }, [supabase]);
+
+  const refreshCredits = useCallback(async () => {
+    if (!currentUserId) return;
+    try {
+      const [balance, pendingPack] = await Promise.all([
+        getMemberCreditsBalance(supabase, currentUserId),
+        getMyPendingPackRequest(supabase),
+      ]);
+      setMemberCreditPacks(balance.packs);
+      setAvailableCredits(balance.totalAvailableCredits);
+      setHasCreditAccess(balance.hasUsableCredits);
+      setPendingPackRequest(pendingPack);
+    } catch (err) {
+      console.error("[MemberContext] Erreur refreshCredits :", err);
+    }
+  }, [supabase, currentUserId]);
 
   useEffect(() => {
     refreshMemberData();
@@ -591,6 +641,11 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
         isPrivateEnabled,
         isEventsEnabled,
         userBookings,
+        memberCreditPacks,
+        availableCredits,
+        hasCreditAccess,
+        pendingPackRequest,
+        refreshCredits,
         addSynchronizedBooking,
         removeSynchronizedBooking,
         bookSmallGroup,

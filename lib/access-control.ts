@@ -100,6 +100,8 @@ export interface CumulativeMemberAccess {
   activePlanNames: string[];
   activePlanCodes: string[];
   validSubscriptionsCount: number;
+  availableCredits?: number;
+  hasCreditAccess?: boolean;
 }
 
 /**
@@ -439,10 +441,11 @@ export function computeWeeklySessionCount(
 export interface SessionEligibilityResult {
   isEligible: boolean;
   reason?: string;
+  isUsingCredit?: boolean;
 }
 
 /**
- * Valide si un membre peut réserver une séance collective selon sa formule.
+ * Valide si un membre peut réserver une séance collective selon sa formule ou ses crédits disponibles.
  */
 export function checkSessionEligibility(
   access: CumulativeMemberAccess,
@@ -455,120 +458,124 @@ export function checkSessionEligibility(
   userBirthDate?: string | null,
   weeklyBookings: { starts_at?: string | null; status?: string | null }[] = []
 ): SessionEligibilityResult {
-  if (!access.hasActiveSubscription) {
-    return {
-      isEligible: false,
-      reason: "Aucun abonnement actif trouvé. Veuillez souscrire à une formule pour réserver.",
-    };
-  }
+  // 1. Priorité absolue aux abonnements actifs
+  if (access.hasActiveSubscription) {
+    const category = (session.category || "").toLowerCase();
+    const disc = session.discipline.toLowerCase().trim();
 
-  const category = (session.category || "").toLowerCase();
-  const disc = session.discipline.toLowerCase().trim();
+    // Formule Adulte Essentiel
+    if (access.isEssential) {
+      if (category && category !== "cours_adulte" && category !== "small_group") {
+        return {
+          isEligible: false,
+          reason: "Votre formule Essentiel ne donne pas accès à cette catégorie.",
+        };
+      }
+      const chosen = (access.selectedDiscipline || "").toLowerCase().trim();
+      if (!chosen) {
+        return {
+          isEligible: false,
+          reason: "Veuillez sélectionner votre discipline dans votre espace adhésion.",
+        };
+      }
+      if (disc !== chosen && !disc.includes(chosen) && !chosen.includes(disc)) {
+        return {
+          isEligible: false,
+          reason: `Votre formule Essentiel est restreinte à la discipline ${access.selectedDiscipline}.`,
+        };
+      }
 
-  // 1. Formule Adulte Essentiel
-  if (access.isEssential) {
-    if (category && category !== "cours_adulte" && category !== "small_group") {
-      return {
-        isEligible: false,
-        reason: "Votre formule Essentiel ne donne pas accès à cette catégorie.",
-      };
-    }
-    const chosen = (access.selectedDiscipline || "").toLowerCase().trim();
-    if (!chosen) {
-      return {
-        isEligible: false,
-        reason: "Veuillez sélectionner votre discipline dans votre espace adhésion.",
-      };
-    }
-    if (disc !== chosen && !disc.includes(chosen) && !chosen.includes(disc)) {
-      return {
-        isEligible: false,
-        reason: `Votre formule Essentiel est restreinte à la discipline ${access.selectedDiscipline}.`,
-      };
-    }
+      const weekly = computeWeeklySessionCount(weeklyBookings, session.starts_at);
+      if (weekly.isLimitReached) {
+        return {
+          isEligible: false,
+          reason: "Limite de 3 séances par semaine atteinte pour votre formule Essentiel.",
+        };
+      }
 
-    const weekly = computeWeeklySessionCount(weeklyBookings, session.starts_at);
-    if (weekly.isLimitReached) {
-      return {
-        isEligible: false,
-        reason: "Limite de 3 séances par semaine atteinte pour votre formule Essentiel.",
-      };
+      return { isEligible: true, isUsingCredit: false };
     }
 
-    return { isEligible: true };
-  }
+    // Formule Adulte All Access (ou formules privées avec small group)
+    if (access.isAllAccess || access.hasPrivateAccess) {
+      if (category === "lady_striking" || disc.includes("lady")) {
+        return {
+          isEligible: false,
+          reason: "Votre formule ne donne pas accès aux cours Lady Striking.",
+        };
+      }
+      if (category === "kid_boxing" || disc.includes("kid")) {
+        return {
+          isEligible: false,
+          reason: "Votre formule ne donne pas accès aux cours Kid Boxing.",
+        };
+      }
+      return { isEligible: true, isUsingCredit: false };
+    }
 
-  // 2. Formule Adulte All Access (ou formules privées avec small group)
-  if (access.isAllAccess || access.hasPrivateAccess) {
-    if (category === "lady_striking" || disc.includes("lady")) {
+    // Formule Lady Striking
+    if (access.isLadyStriking) {
+      if (category === "lady_striking" || disc.includes("lady")) {
+        return { isEligible: true, isUsingCredit: false };
+      }
       return {
         isEligible: false,
-        reason: "Votre formule ne donne pas accès aux cours Lady Striking.",
+        reason: "Votre formule Lady Striking donne accès exclusivement aux cours Lady Striking.",
       };
     }
-    if (category === "kid_boxing" || disc.includes("kid")) {
-      return {
-        isEligible: false,
-        reason: "Votre formule ne donne pas accès aux cours Kid Boxing.",
-      };
-    }
-    return { isEligible: true };
-  }
 
-  // 3. Formule Lady Striking
-  if (access.isLadyStriking) {
-    if (category === "lady_striking" || disc.includes("lady")) {
-      return { isEligible: true };
-    }
-    return {
-      isEligible: false,
-      reason: "Votre formule Lady Striking donne accès exclusivement aux cours Lady Striking.",
-    };
-  }
-
-  // 4. Formule Kid Boxing
-  if (access.isKidBoxing) {
-    if (category !== "kid_boxing" && !disc.includes("kid")) {
-      return {
-        isEligible: false,
-        reason: "Votre formule Kid Boxing donne accès exclusivement aux cours Kid Boxing.",
-      };
-    }
-    if (userBirthDate) {
-      const birth = new Date(userBirthDate);
-      const sessionDate = new Date(session.starts_at);
-      if (!isNaN(birth.getTime()) && !isNaN(sessionDate.getTime())) {
-        let age = sessionDate.getFullYear() - birth.getFullYear();
-        const m = sessionDate.getMonth() - birth.getMonth();
-        if (m < 0 || (m === 0 && sessionDate.getDate() < birth.getDate())) {
-          age--;
-        }
-        const ageGroup = session.target_age_group;
-        if (ageGroup === "5_8" && (age < 5 || age > 8)) {
-          return {
-            isEligible: false,
-            reason: `Ce créneau est réservé aux enfants de 5 à 8 ans (âge actuel : ${age} ans).`,
-          };
-        }
-        if (ageGroup === "9_13" && (age < 9 || age > 13)) {
-          return {
-            isEligible: false,
-            reason: `Ce créneau est réservé aux enfants de 9 à 13 ans (âge actuel : ${age} ans).`,
-          };
+    // Formule Kid Boxing
+    if (access.isKidBoxing) {
+      if (category !== "kid_boxing" && !disc.includes("kid")) {
+        return {
+          isEligible: false,
+          reason: "Votre formule Kid Boxing donne accès exclusivement aux cours Kid Boxing.",
+        };
+      }
+      if (userBirthDate) {
+        const birth = new Date(userBirthDate);
+        const sessionDate = new Date(session.starts_at);
+        if (!isNaN(birth.getTime()) && !isNaN(sessionDate.getTime())) {
+          let age = sessionDate.getFullYear() - birth.getFullYear();
+          const m = sessionDate.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && sessionDate.getDate() < birth.getDate())) {
+            age--;
+          }
+          const ageGroup = session.target_age_group;
+          if (ageGroup === "5_8" && (age < 5 || age > 8)) {
+            return {
+              isEligible: false,
+              reason: `Ce créneau est réservé aux enfants de 5 à 8 ans (âge actuel : ${age} ans).`,
+            };
+          }
+          if (ageGroup === "9_13" && (age < 9 || age > 13)) {
+            return {
+              isEligible: false,
+              reason: `Ce créneau est réservé aux enfants de 9 à 13 ans (âge actuel : ${age} ans).`,
+            };
+          }
         }
       }
+      return { isEligible: true, isUsingCredit: false };
     }
-    return { isEligible: true };
+
+    // Par défaut avec accès Small Group
+    if (access.hasSmallGroupAccess) {
+      return { isEligible: true, isUsingCredit: false };
+    }
   }
 
-  // Par défaut
-  if (access.hasSmallGroupAccess) {
-    return { isEligible: true };
+  // 2. Si aucun abonnement couvrant, vérification des packs de crédits
+  if (typeof access.availableCredits === "number" && access.availableCredits > 0) {
+    return {
+      isEligible: true,
+      isUsingCredit: true,
+    };
   }
 
   return {
     isEligible: false,
-    reason: "Votre formule ne permet pas de réserver cette séance.",
+    reason: "Aucun abonnement actif ni crédit disponible. Veuillez souscrire à une formule ou acheter un pack de séances.",
   };
 }
 

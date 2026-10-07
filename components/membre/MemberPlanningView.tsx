@@ -287,6 +287,10 @@ export default function MemberPlanningView() {
     bookSlot,
     cancelPrivate,
     removeSynchronizedBooking,
+    availableCredits,
+    hasCreditAccess,
+    pendingPackRequest,
+    refreshCredits,
   } = useMember();
 
   // Catégories autorisées
@@ -552,6 +556,8 @@ export default function MemberPlanningView() {
         setIsSubmitting(false);
         return;
       }
+      // Rafraîchir les crédits au cas où un crédit pack a été consommé
+      await refreshCredits();
     } else {
       // 2. Réservation Cours Privé
       const sessionId = selectedSlotForBooking.classSessionId || selectedSlotForBooking.id;
@@ -622,6 +628,8 @@ export default function MemberPlanningView() {
             setIsSubmitting(false);
             return;
           }
+          // Rafraîchir les crédits au cas où un crédit pack a été restitué
+          await refreshCredits();
         } else if (bookingIdToCancel) {
           removeSynchronizedBooking(bookingIdToCancel, false);
         }
@@ -1153,6 +1161,51 @@ export default function MemberPlanningView() {
                 <span>Accès aux créneaux adaptés à la tranche d&apos;âge (5–8 ans / 9–13 ans).</span>
               </div>
             </div>
+          ) : !hasActiveSubscription && !hasSmallGroupAccess && hasCreditAccess ? (
+            <div className="bg-gradient-to-r from-[#0b1b33] to-[#0a1120] border border-[#00d8ff]/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-heading font-black uppercase px-2 py-0.5 rounded bg-[#00d8ff] text-black">
+                    Packs de séances
+                  </span>
+                  <span className="text-xs font-bold text-brand-white">
+                    {availableCredits} séance{availableCredits > 1 ? "s" : ""} disponible{availableCredits > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <p className="text-[11px] text-brand-white/60">
+                  Vous pouvez réserver n&apos;importe quel créneau Small Group avec vos crédits disponibles.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <Link
+                  href="/tarifs"
+                  className="px-3.5 py-1.5 bg-[#00d8ff]/15 hover:bg-[#00d8ff]/25 text-[#00d8ff] border border-[#00d8ff]/30 rounded-xl text-xs font-heading font-bold uppercase transition-all"
+                >
+                  Recharger
+                </Link>
+              </div>
+            </div>
+          ) : !hasActiveSubscription && !hasSmallGroupAccess && pendingPackRequest ? (
+            <div className="bg-gradient-to-r from-[#172033] to-[#0c182c] border border-amber-400/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-heading font-black uppercase px-2 py-0.5 rounded bg-amber-400 text-black">
+                    Demande en attente
+                  </span>
+                  <span className="text-xs font-bold text-brand-white">
+                    {pendingPackRequest.plan?.name || "Pack Small Group"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-brand-white/70">
+                  Votre demande est en cours de validation par l&apos;équipe Striking Camp. Vos crédits seront utilisables dès confirmation.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="px-3 py-1 bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-heading font-bold uppercase rounded-xl">
+                  Validation en cours
+                </span>
+              </div>
+            </div>
           ) : (
             <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-brand-blue">
               <span>
@@ -1361,12 +1414,32 @@ export default function MemberPlanningView() {
                             Complet
                           </div>
                         ) : !hasActiveSubscription && !hasSmallGroupAccess ? (
-                          <Link
-                            href="/membre/adhesion"
-                            className="px-4 py-2 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 border border-brand-white/10 rounded-xl text-xs font-heading font-bold uppercase transition-all"
-                          >
-                            Adhésion requise
-                          </Link>
+                          hasCreditAccess ? (
+                            <button
+                              onClick={() => {
+                                setBookingError(null);
+                                setSelectedSlotForBooking(session);
+                              }}
+                              className="px-4 py-2.5 rounded-xl font-heading font-black text-xs uppercase tracking-wider bg-[#00d8ff] hover:bg-brand-white text-black transition-all cursor-pointer shadow-md shadow-[#00d8ff]/20 flex items-center gap-1.5"
+                            >
+                              <span>RÉSERVER</span>
+                              <span className="px-1.5 py-0.5 rounded bg-black/20 text-[10px] font-bold">1 CRÉDIT</span>
+                            </button>
+                          ) : pendingPackRequest ? (
+                            <div
+                              title="Votre demande de pack de séances est en cours de validation par Striking Camp."
+                              className="px-3.5 py-2 bg-amber-400/10 border border-amber-400/20 text-amber-300 rounded-xl text-[11px] font-heading font-bold uppercase text-center"
+                            >
+                              Pack en validation
+                            </div>
+                          ) : (
+                            <Link
+                              href="/tarifs"
+                              className="px-4 py-2 bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 border border-brand-white/10 rounded-xl text-xs font-heading font-bold uppercase transition-all"
+                            >
+                              Adhésion / Pack requis
+                            </Link>
+                          )
                         ) : isEssential && memberSelectedDiscipline && !session.discipline.toLowerCase().includes(memberSelectedDiscipline.toLowerCase()) && !memberSelectedDiscipline.toLowerCase().includes(session.discipline.toLowerCase()) ? (
                           <div
                             title={`Votre formule Essentiel donne accès à la discipline ${memberSelectedDiscipline}`}
@@ -1438,6 +1511,18 @@ export default function MemberPlanningView() {
                   </div>
                   <span className="text-xs font-black px-2 py-0.5 rounded bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30">
                     -1 séance
+                  </span>
+                </div>
+              )}
+
+              {selectedSlotForBooking.category === "Small Group" && !hasActiveSubscription && !hasSmallGroupAccess && hasCreditAccess && (
+                <div className="p-3.5 bg-[#0b1b33] border border-[#00d8ff]/30 rounded-xl flex items-center justify-between">
+                  <div className="text-xs">
+                    <span className="font-bold text-[#00d8ff] block uppercase">Décompte Pack de séances</span>
+                    <span className="text-brand-white/70">1 séance sera débitée. Solde restant : {Math.max(0, availableCredits - 1)} / {availableCredits}</span>
+                  </div>
+                  <span className="text-xs font-black px-2 py-0.5 rounded bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30">
+                    -1 crédit
                   </span>
                 </div>
               )}
@@ -1546,6 +1631,18 @@ export default function MemberPlanningView() {
                   </div>
                   <p className="text-brand-white/80 text-[11px]">
                     La séance sera immédiatement restituée à votre quota (nouveau solde : {Math.min(totalQuota, remainingQuota + 1)} / {totalQuota}).
+                  </p>
+                </div>
+              )}
+
+              {slotForCancel.category === "Small Group" && (
+                <div className="p-3.5 bg-[#0b1b33] border border-[#00d8ff]/30 rounded-xl text-xs space-y-1">
+                  <div className="font-bold uppercase text-[#00d8ff] flex items-center gap-1.5">
+                    <CheckCircle2 size={14} className="text-[#00d8ff]" />
+                    <span>Annulation sans frais (&ge; 24h)</span>
+                  </div>
+                  <p className="text-brand-white/80 text-[11px]">
+                    Si cette réservation a utilisé un crédit de séance, 1 crédit sera immédiatement restitué à votre pack.
                   </p>
                 </div>
               )}

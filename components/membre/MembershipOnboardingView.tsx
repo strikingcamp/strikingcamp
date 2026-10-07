@@ -63,10 +63,11 @@ export default function MembershipOnboardingView() {
         getAvailablePlansForMembership(supabase),
         getMyLatestMembershipRequest(supabase),
       ]);
-      setPlans(plansList);
+      const classicPlans = plansList.filter((p) => p.tier !== "credit_pack");
+      setPlans(classicPlans);
       setLatestRequest(req);
-      if (plansList.length > 0 && !selectedPlanId) {
-        const defaultPlan = plansList.find((p) => p.code === "adult_all_access") || plansList[0];
+      if (classicPlans.length > 0 && !selectedPlanId) {
+        const defaultPlan = classicPlans.find((p) => p.code === "adult_all_access") || classicPlans[0];
         setSelectedPlanId(defaultPlan.id);
       }
     } catch (err) {
@@ -121,6 +122,7 @@ export default function MembershipOnboardingView() {
 
   // Filtrer les formules selon les services actifs et la catégorie sélectionnée
   const filteredPlans = plans.filter((p) => {
+    if (p.tier === "credit_pack") return false;
     if (p.type === "private" && !isPrivateEnabled) return false;
     if (p.type === "small_group" && !isSmallGroupEnabled) return false;
 

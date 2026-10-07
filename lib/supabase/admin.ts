@@ -199,6 +199,24 @@ export interface AdminMemberDetail {
     created_at: string;
   }>;
   bookingsCount: number;
+  creditPacks?: Array<{
+    id: string;
+    planName: string;
+    totalCredits: number;
+    remainingCredits: number;
+    status: string;
+    starts_at: string;
+    expires_at: string;
+    created_at: string;
+  }>;
+  creditTransactions?: Array<{
+    id: string;
+    credit_pack_id: string;
+    delta: number;
+    transaction_type: string;
+    reason?: string | null;
+    created_at: string;
+  }>;
 }
 
 export interface AdminMembersPageData {
@@ -1940,8 +1958,8 @@ export async function getAdminMembersData(
   supabase: SupabaseClient
 ): Promise<AdminMembersPageData> {
   try {
-    // 1. & 2. & 3. & 4. Récupération parallèle des profils, abonnements, réservations et formules
-    const [profilesRes, subscriptionsRes, bookingsRes, plansRes] = await Promise.all([
+    // 1. & 2. & 3. & 4. & 5. & 6. Récupération parallèle des profils, abonnements, réservations, formules, packs de crédits et transactions
+    const [profilesRes, subscriptionsRes, bookingsRes, plansRes, creditPacksRes, creditTxRes] = await Promise.all([
       supabase
         .from("profiles")
         .select("id, first_name, last_name, phone, created_at, updated_at")
@@ -1961,6 +1979,14 @@ export async function getAdminMembersData(
         .from("plans")
         .select("id, name, code, type, commitment, price_cents, private_sessions_per_period, allows_private, allows_small_group, allows_collective, is_active, display_order")
         .order("display_order", { ascending: true }),
+      supabase
+        .from("member_session_credits")
+        .select("id, user_id, plan_id, total_credits, remaining_credits, status, starts_at, expires_at, created_at, plan:plans(name)")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("session_credit_transactions")
+        .select("id, credit_pack_id, user_id, delta, transaction_type, reason, created_at")
+        .order("created_at", { ascending: false }),
     ]);
 
     const profilesData = profilesRes.data;
@@ -1982,6 +2008,9 @@ export async function getAdminMembersData(
     if (plansRes.error) {
       console.error("Erreur getAdminMembersData (plans) :", plansRes.error);
     }
+
+    const creditPacksData = creditPacksRes.data || [];
+    const creditTxData = creditTxRes.data || [];
 
     const plans: AdminPlanItem[] = (plansData || []).map((p: Record<string, unknown>) => ({
       id: (p.id as string) || "",
@@ -2057,6 +2086,47 @@ export async function getAdminMembersData(
       bookingsByUser[uId].push(bItem);
     }
 
+    // Indexer les packs de crédits par user_id
+    const creditPacksByUser: Record<string, NonNullable<AdminMemberDetail["creditPacks"]>> = {};
+    for (const pack of creditPacksData) {
+      const uId = pack.user_id;
+      if (!uId) continue;
+      const rawPlan = Array.isArray(pack.plan) ? pack.plan[0] : pack.plan;
+      const packItem = {
+        id: pack.id,
+        planName: rawPlan?.name || "Pack de séances",
+        totalCredits: pack.total_credits || 0,
+        remainingCredits: pack.remaining_credits || 0,
+        status: pack.status || "active",
+        starts_at: pack.starts_at,
+        expires_at: pack.expires_at,
+        created_at: pack.created_at,
+      };
+      if (!creditPacksByUser[uId]) {
+        creditPacksByUser[uId] = [];
+      }
+      creditPacksByUser[uId].push(packItem);
+    }
+
+    // Indexer les transactions de crédits par user_id
+    const creditTxByUser: Record<string, NonNullable<AdminMemberDetail["creditTransactions"]>> = {};
+    for (const tx of creditTxData) {
+      const uId = tx.user_id;
+      if (!uId) continue;
+      const txItem = {
+        id: tx.id,
+        credit_pack_id: tx.credit_pack_id,
+        delta: tx.delta,
+        transaction_type: tx.transaction_type,
+        reason: tx.reason,
+        created_at: tx.created_at,
+      };
+      if (!creditTxByUser[uId]) {
+        creditTxByUser[uId] = [];
+      }
+      creditTxByUser[uId].push(txItem);
+    }
+
     // Assembler la liste des membres
     const members: AdminMemberDetail[] = (profilesData || []).map((p) => {
       const fName = (p.first_name || "").trim();
@@ -2069,6 +2139,8 @@ export async function getAdminMembersData(
       const userSubs = subsByUser[p.id] || [];
       const activeSub = activeSubByUser[p.id] || null;
       const userBookings = bookingsByUser[p.id] || [];
+      const userCreditPacks = creditPacksByUser[p.id] || [];
+      const userCreditTx = creditTxByUser[p.id] || [];
 
       return {
         id: p.id,
@@ -2082,6 +2154,8 @@ export async function getAdminMembersData(
         subscriptions: userSubs,
         bookings: userBookings,
         bookingsCount: userBookings.length,
+        creditPacks: userCreditPacks,
+        creditTransactions: userCreditTx,
       };
     });
 

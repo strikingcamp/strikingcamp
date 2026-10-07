@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMember } from "./MemberContext";
+import MemberCreditsCard from "./MemberCreditsCard";
 import { createClient } from "@/lib/supabase/client";
 import {
   getMemberChallenges,
@@ -40,6 +41,8 @@ export default function MemberHomeView({
     hasPrivateAccess,
     isPrivateEnabled,
     privateQuota,
+    memberCreditPacks,
+    pendingPackRequest,
   } = useMember();
 
   const [challenges, setChallenges] = useState<MemberChallengeCardData[]>([]);
@@ -187,6 +190,13 @@ export default function MemberHomeView({
             <ArrowRight size={14} />
           </Link>
         </motion.div>
+      )}
+
+      {/* ━━━━━━━━━━━━━━━━━━━━
+          BANDEAU PACKS DE SÉANCES ACTIFS OU EN ATTENTE
+          ━━━━━━━━━━━━━━━━━━━━ */}
+      {((memberCreditPacks && memberCreditPacks.length > 0) || pendingPackRequest) && (
+        <MemberCreditsCard packs={memberCreditPacks} pendingRequest={pendingPackRequest} />
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━

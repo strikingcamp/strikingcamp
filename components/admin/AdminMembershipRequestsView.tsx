@@ -37,6 +37,7 @@ export default function AdminMembershipRequestsView() {
   const [availablePlans, setAvailablePlans] = useState<MembershipPlanOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [filterCategory, setFilterCategory] = useState<"all" | "plans" | "packs">("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modales d'action
@@ -193,6 +194,11 @@ export default function AdminMembershipRequestsView() {
         return false;
       }
 
+      // Filtre catégorie (Formules vs Packs)
+      const isPack = r.plan?.tier === "credit_pack";
+      if (filterCategory === "plans" && isPack) return false;
+      if (filterCategory === "packs" && !isPack) return false;
+
       // Recherche texte
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
@@ -205,14 +211,16 @@ export default function AdminMembershipRequestsView() {
 
       return true;
     });
-  }, [requests, filterStatus, searchTerm]);
+  }, [requests, filterStatus, filterCategory, searchTerm]);
 
   // Statistiques rapides
   const stats = useMemo(() => {
     const pendingCount = requests.filter((r) => r.status === "pending").length;
     const approvedCount = requests.filter((r) => r.status === "approved").length;
     const rejectedCount = requests.filter((r) => r.status === "rejected").length;
-    return { pendingCount, approvedCount, rejectedCount, total: requests.length };
+    const packsCount = requests.filter((r) => r.plan?.tier === "credit_pack").length;
+    const plansCount = requests.filter((r) => r.plan?.tier !== "credit_pack").length;
+    return { pendingCount, approvedCount, rejectedCount, packsCount, plansCount, total: requests.length };
   }, [requests]);
 
   const getPlanBadgeClasses = (type?: string) => {
@@ -336,42 +344,84 @@ export default function AdminMembershipRequestsView() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           BARRE D'OUTILS : FILTRES & RECHERCHE
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Onglets statut */}
-        <div className="flex flex-wrap gap-2">
-          {(
-            [
-              { id: "pending", label: `En attente (${stats.pendingCount})` },
-              { id: "all", label: "Toutes les demandes" },
-              { id: "approved", label: `Validées (${stats.approvedCount})` },
-              { id: "rejected", label: `Refusées (${stats.rejectedCount})` },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setFilterStatus(t.id)}
-              className={cn(
-                "px-4 py-2 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all border cursor-pointer",
-                filterStatus === t.id
-                  ? "bg-brand-blue text-brand-black border-brand-blue shadow-md shadow-brand-blue/20"
-                  : "bg-[#0f172a] text-brand-white/60 border-brand-white/10 hover:border-brand-white/20 hover:text-brand-white"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+      <div className="space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          {/* Onglets statut */}
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: "pending", label: `En attente (${stats.pendingCount})` },
+                { id: "all", label: "Toutes les demandes" },
+                { id: "approved", label: `Validées (${stats.approvedCount})` },
+                { id: "rejected", label: `Refusées (${stats.rejectedCount})` },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setFilterStatus(t.id)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-heading font-bold uppercase tracking-wider transition-all border cursor-pointer",
+                  filterStatus === t.id
+                    ? "bg-brand-blue text-brand-black border-brand-blue shadow-md shadow-brand-blue/20"
+                    : "bg-[#0f172a] text-brand-white/60 border-brand-white/10 hover:border-brand-white/20 hover:text-brand-white"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Barre de recherche */}
+          <div className="relative w-full md:w-72">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-white/40" />
+            <input
+              type="text"
+              placeholder="Nom, formule, téléphone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#0f172a] border border-brand-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-brand-white placeholder:text-brand-white/30 focus:border-brand-blue outline-none"
+            />
+          </div>
         </div>
 
-        {/* Barre de recherche */}
-        <div className="relative w-full md:w-72">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-white/40" />
-          <input
-            type="text"
-            placeholder="Nom, formule, téléphone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0f172a] border border-brand-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-brand-white placeholder:text-brand-white/30 focus:border-brand-blue outline-none"
-          />
+        {/* Sous-filtre Type d'offre */}
+        <div className="flex items-center gap-2 pt-1 border-t border-brand-white/5">
+          <span className="text-[11px] text-brand-white/40 uppercase font-heading font-semibold mr-1">
+            Type d&apos;offre :
+          </span>
+          <button
+            onClick={() => setFilterCategory("all")}
+            className={cn(
+              "px-3 py-1 rounded-lg text-[11px] font-heading font-bold uppercase transition-all",
+              filterCategory === "all"
+                ? "bg-brand-white/15 text-brand-white"
+                : "text-brand-white/50 hover:text-brand-white"
+            )}
+          >
+            Tous ({stats.total})
+          </button>
+          <button
+            onClick={() => setFilterCategory("plans")}
+            className={cn(
+              "px-3 py-1 rounded-lg text-[11px] font-heading font-bold uppercase transition-all",
+              filterCategory === "plans"
+                ? "bg-[#00d8ff]/20 text-[#00d8ff]"
+                : "text-brand-white/50 hover:text-brand-white"
+            )}
+          >
+            Formules d&apos;adhésion ({stats.plansCount})
+          </button>
+          <button
+            onClick={() => setFilterCategory("packs")}
+            className={cn(
+              "px-3 py-1 rounded-lg text-[11px] font-heading font-bold uppercase transition-all",
+              filterCategory === "packs"
+                ? "bg-amber-400/20 text-amber-300"
+                : "text-brand-white/50 hover:text-brand-white"
+            )}
+          >
+            Packs de séances ({stats.packsCount})
+          </button>
         </div>
       </div>
 
@@ -423,15 +473,21 @@ export default function AdminMembershipRequestsView() {
                       {req.status === "pending" ? "En attente" : req.status === "approved" ? "Validée" : "Refusée"}
                     </span>
 
-                    {/* Badge Formule */}
-                    <span
-                      className={cn(
-                        "text-[10px] font-heading font-bold uppercase px-2.5 py-0.5 rounded border tracking-wider",
-                        getPlanBadgeClasses(req.plan?.type)
-                      )}
-                    >
-                      {req.plan?.name || "Formule"}
-                    </span>
+                    {/* Badge Formule / Pack */}
+                    {req.plan?.tier === "credit_pack" ? (
+                      <span className="text-[10px] font-heading font-black uppercase px-2.5 py-0.5 rounded border tracking-wider bg-amber-400/15 text-amber-300 border-amber-400/30">
+                        {req.plan?.name || "Pack de Séances"}
+                      </span>
+                    ) : (
+                      <span
+                        className={cn(
+                          "text-[10px] font-heading font-bold uppercase px-2.5 py-0.5 rounded border tracking-wider",
+                          getPlanBadgeClasses(req.plan?.type)
+                        )}
+                      >
+                        {req.plan?.name || "Formule"}
+                      </span>
+                    )}
 
                     {/* Badge Discipline pour Adulte Essentiel */}
                     {(req.plan?.code === "adult_essential" || req.plan?.name?.toLowerCase().includes("essentiel")) && (
@@ -449,10 +505,20 @@ export default function AdminMembershipRequestsView() {
                       </span>
                     )}
 
-                    {/* Badge Engagement */}
-                    <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
-                      {isAnnual ? "Engagement 12 mois" : "Mensuel (Sans engagement)"}
-                    </span>
+                    {/* Badge Type d'engagement ou Validité */}
+                    {req.plan?.tier === "credit_pack" ? (
+                      <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-amber-400/10 border border-amber-400/20 text-amber-300">
+                        {req.plan?.code === "pack_10_small_group"
+                          ? "10 crédits • Validité 3 mois"
+                          : req.plan?.code === "decouverte_3"
+                          ? "3 crédits • Validité 30 jours"
+                          : "1 crédit • Validité 30 jours"}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 border border-brand-white/10 text-brand-white/70">
+                        {isAnnual ? "Engagement 12 mois" : "Mensuel (Sans engagement)"}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-baseline gap-3">
@@ -598,30 +664,41 @@ export default function AdminMembershipRequestsView() {
                     </strong>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-brand-white/50">Formule :</span>
-                    <strong className="text-[#00d8ff]">{approvingReq.plan?.name}</strong>
+                    <span className="text-brand-white/50">Offre :</span>
+                    <strong className={cn(approvingReq.plan?.tier === "credit_pack" ? "text-amber-300" : "text-[#00d8ff]")}>
+                      {approvingReq.plan?.name}
+                    </strong>
                   </div>
-                  {(approvingReq.plan?.code === "adult_essential" || approvingReq.plan?.name?.toLowerCase().includes("essentiel")) && (
+                  {approvingReq.plan?.tier === "credit_pack" ? (
                     <div className="flex justify-between">
-                      <span className="text-brand-white/50">Discipline choisie :</span>
-                      <strong className="text-[#00d8ff]">
-                        {approvingReq.selected_discipline || "Non renseignée"}
-                      </strong>
+                      <span className="text-brand-white/50">Type :</span>
+                      <span className="text-amber-300 font-bold">
+                        Pack de séances (Achat unique)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="text-brand-white/50">Engagement :</span>
+                      <span className="text-brand-white">
+                        {approvingReq.commitment_type === "annual" ? "12 mois" : "Mensuel (Sans engagement)"}
+                      </span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span className="text-brand-white/50">Engagement :</span>
-                    <span className="text-brand-white">
-                      {approvingReq.commitment_type === "annual" ? "12 mois" : "Mensuel (Sans engagement)"}
-                    </span>
-                  </div>
                 </div>
 
-                <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-emerald-300 text-[11px] leading-relaxed">
-                  ✓ Un abonnement en statut <strong className="uppercase">actif</strong> sera immédiatement créé dans la base de données.
-                  <br />
-                  ✓ Le membre aura accès direct à ses créneaux de réservation.
-                </div>
+                {approvingReq.plan?.tier === "credit_pack" ? (
+                  <div className="p-3.5 bg-amber-950/40 border border-amber-500/30 rounded-xl text-amber-300 text-[11px] leading-relaxed">
+                    ✓ Le pack de séances sera créé et activé immédiatement.
+                    <br />
+                    ✓ Les crédits seront disponibles dès maintenant pour réserver sur le planning.
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-emerald-300 text-[11px] leading-relaxed">
+                    ✓ Un abonnement en statut <strong className="uppercase">actif</strong> sera immédiatement créé dans la base de données.
+                    <br />
+                    ✓ Le membre aura accès direct à ses créneaux de réservation.
+                  </div>
+                )}
 
                 <div>
                   <label className="text-[11px] font-heading font-bold uppercase tracking-wider text-brand-white/60 block mb-1.5">
