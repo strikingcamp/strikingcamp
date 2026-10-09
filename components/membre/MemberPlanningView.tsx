@@ -1458,6 +1458,10 @@ export default function MemberPlanningView() {
                           <div className="px-3 py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-xl text-[11px] font-heading font-semibold uppercase text-center">
                             Réservé Cours Adulte
                           </div>
+                        ) : (session.planningCategory === "lady_striking" || session.discipline.toLowerCase().includes("lady")) && !isLadyStriking && (!memberSelectedDiscipline || !memberSelectedDiscipline.toLowerCase().includes("lady")) ? (
+                          <div className="px-3 py-2 bg-zinc-900 border border-pink-500/20 text-pink-400/80 rounded-xl text-[11px] font-heading font-semibold uppercase text-center">
+                            100% Féminin
+                          </div>
                         ) : (
                           <button
                             onClick={() => setSelectedSlotForBooking(session)}

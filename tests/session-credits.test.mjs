@@ -5,6 +5,7 @@
 
 import assert from "node:assert/strict";
 import { SESSION_PACKS, computePackExpirationDate } from "../lib/stripe.ts";
+import { checkSessionEligibility, computeCumulativeAccess } from "../lib/access-control.ts";
 
 async function main() {
   console.log("=================================================================");
@@ -667,9 +668,9 @@ async function main() {
   });
 
   // -------------------------------------------------------------
-  // Test 24: Un nouveau membre peut demander le mois découverte (89 €)
+  // Test 24: Un nouveau membre peut demander la Formule Adulte — Sans engagement (89 €)
   // -------------------------------------------------------------
-  await runTest("24. TEST 1: Nouveau membre peut demander le 1 Mois Découverte (89 €)", () => {
+  await runTest("24. TEST 1: Nouveau membre peut demander la Formule Adulte — Sans engagement (89 €)", () => {
     const pack = SESSION_PACKS["discovery_monthly"];
     assert.ok(pack, "Pack discovery_monthly doit exister dans SESSION_PACKS");
     assert.equal(pack.priceCents, 8900, "Prix doit être 89.00 € (8900 cents)");
@@ -677,22 +678,21 @@ async function main() {
     assert.equal(pack.isUnlimited, true, "Doit être un accès illimité");
     assert.equal(pack.totalCredits, 0, "Pas de compteur de crédits");
     assert.equal(pack.validityDays, 30, "Validité de 30 jours");
+    assert.equal(pack.name, "Adulte — Sans engagement", "Nom commercial mis à jour");
 
-    const userId = "new-user-discovery-month";
+    const userId = "new-user-adult-monthly";
     const dbRequests = [];
-    const dbSubs = [];
     
-    // Eligibility check
-    const hasAnyReq = dbRequests.some((r) => r.user_id === userId && r.plan_code === "discovery_monthly");
-    const hasAnySub = dbSubs.some((s) => s.user_id === userId && s.plan_code === "discovery_monthly");
-    const isEligible = !hasAnyReq && !hasAnySub;
-    assert.equal(isEligible, true, "Nouveau membre doit être éligible au 1 Mois Découverte");
+    // Eligibility check : pas de blocage à vie
+    const hasPendingReq = dbRequests.some((r) => r.user_id === userId && r.plan_code === "discovery_monthly" && r.status === "pending");
+    const isEligible = !hasPendingReq;
+    assert.equal(isEligible, true, "Nouveau membre doit être éligible à la formule Adulte — Sans engagement");
   });
 
   // -------------------------------------------------------------
-  // Test 25: Le mois découverte est bien limité à 30 jours
+  // Test 25: La formule mensuelle est bien limitée à 30 jours
   // -------------------------------------------------------------
-  await runTest("25. TEST 2: Le 1 Mois Découverte est strictement limité à 30 jours", () => {
+  await runTest("25. TEST 2: La formule Adulte — Sans engagement est strictement d'une durée de 30 jours", () => {
     const pack = SESSION_PACKS["discovery_monthly"];
     const now = new Date("2026-10-10T10:00:00Z");
     const exp = computePackExpirationDate(pack, now);
@@ -704,7 +704,7 @@ async function main() {
   // -------------------------------------------------------------
   // Test 26: Une réservation pendant la période active est autorisée
   // -------------------------------------------------------------
-  await runTest("26. TEST 3: Une réservation pendant la période active du mois découverte est autorisée", () => {
+  await runTest("26. TEST 3: Une réservation pendant la période active de la formule mensuelle est autorisée", () => {
     const sub = {
       id: "sub-disc-1",
       user_id: "u-active",
@@ -761,9 +761,9 @@ async function main() {
   });
 
   // -------------------------------------------------------------
-  // Test 28: Une réservation avec le mois découverte ne consomme aucun crédit
+  // Test 28: Une réservation avec la formule mensuelle ne consomme aucun crédit
   // -------------------------------------------------------------
-  await runTest("28. TEST 5: Réservation avec le mois découverte -> ne consomme aucun crédit (credit_pack_id = null)", () => {
+  await runTest("28. TEST 5: Réservation avec la formule Adulte Sans engagement -> ne consomme aucun crédit (credit_pack_id = null)", () => {
     const sub = {
       id: "sub-disc-unlimited",
       user_id: "u-unlimited",
@@ -775,12 +775,10 @@ async function main() {
     ];
 
     function createBookingWithPass(userSub, memberCredits) {
-      // Si l'utilisateur a un abonnement illimité (ou 1 Mois Découverte actif),
-      // il ne touche pas aux packs de crédits
       const isUnlimited = userSub && userSub.status === "active";
       if (isUnlimited) {
         return {
-          booking: { id: "b-unlimited", credit_pack_id: null, plan_type: "discovery_pass" },
+          booking: { id: "b-unlimited", credit_pack_id: null, plan_type: "adult_monthly" },
           creditsConsumed: 0,
         };
       }
@@ -794,31 +792,132 @@ async function main() {
   });
 
   // -------------------------------------------------------------
-  // Test 29: Une personne ayant déjà utilisé le mois découverte ne peut pas le réclamer une deuxième fois
+  // Test 29: Renouvellement après expiration -> autorise une nouvelle période de 30 jours
   // -------------------------------------------------------------
-  await runTest("29. TEST 6: Membre ayant déjà utilisé le mois découverte -> refusé à vie côté serveur", () => {
-    const userId = "u-already-discovered";
-    const dbSubscriptions = [
-      { id: "sub-1", user_id: userId, plan_code: "discovery_monthly", status: "expired" },
-    ];
-    const dbRequests = [
-      { id: "req-1", user_id: userId, plan_code: "discovery_monthly", status: "approved" },
-    ];
+  await runTest("29. TEST 6: Renouvellement après expiration -> accorde 30 jours à compter de la validation", () => {
+    const userId = "u-renew-expired";
+    const pastSub = {
+      id: "sub-old",
+      user_id: userId,
+      plan_code: "discovery_monthly",
+      status: "active",
+      started_at: "2026-09-01T00:00:00Z",
+      ends_at: "2026-10-01T00:00:00Z", // Expiré
+    };
 
-    function checkServerEligibility(uId, planCode) {
-      if (planCode === "discovery_monthly") {
-        const hasReq = dbRequests.some((r) => r.user_id === uId && r.plan_code === planCode);
-        const hasSub = dbSubscriptions.some((s) => s.user_id === uId && s.plan_code === planCode);
-        if (hasReq || hasSub) {
-          return { isEligible: false, alreadyUsed: true, error: "Offre découverte déjà utilisée" };
-        }
+    const approvalDate = new Date("2026-10-09T10:00:00Z");
+    const isPastSubActive = new Date(pastSub.ends_at) > approvalDate;
+    assert.equal(isPastSubActive, false, "L'ancien pass est bien expiré");
+
+    function approveMonthlyRenewal(userSub, planCode, now) {
+      const isExistingActive = userSub && userSub.plan_code === planCode && new Date(userSub.ends_at) > now;
+      let newEndsAt;
+      if (isExistingActive) {
+        newEndsAt = new Date(new Date(userSub.ends_at).getTime() + 30 * 24 * 3600 * 1000);
+      } else {
+        newEndsAt = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
       }
-      return { isEligible: true, alreadyUsed: false };
+      return {
+        id: "sub-new-period",
+        started_at: now.toISOString(),
+        ends_at: newEndsAt.toISOString(),
+        status: "active",
+      };
     }
 
-    const check = checkServerEligibility(userId, "discovery_monthly");
-    assert.equal(check.isEligible, false, "Doit être non éligible");
-    assert.equal(check.alreadyUsed, true, "alreadyUsed = true");
+    const newSub = approveMonthlyRenewal(pastSub, "discovery_monthly", approvalDate);
+    assert.equal(newSub.status, "active");
+    assert.equal(newSub.started_at, "2026-10-09T10:00:00.000Z");
+    assert.equal(newSub.ends_at, "2026-11-08T10:00:00.000Z", "La nouvelle période de 30 jours démarre à l'approbation");
+  });
+
+  // -------------------------------------------------------------
+  // Test 29b: Renouvellement anticipé avant expiration -> prolonge la date de fin de 30 jours sans perte
+  // -------------------------------------------------------------
+  await runTest("29b. TEST 6b: Renouvellement anticipé -> prolongation de 30 jours à partir de la date de fin actuelle", () => {
+    const userId = "u-renew-early";
+    const currentActiveSub = {
+      id: "sub-active-now",
+      user_id: userId,
+      plan_code: "discovery_monthly",
+      status: "active",
+      started_at: "2026-10-01T00:00:00Z",
+      ends_at: "2026-10-31T00:00:00Z", // Il reste 22 jours
+    };
+
+    const approvalDate = new Date("2026-10-09T10:00:00Z");
+    const isCurrentActive = new Date(currentActiveSub.ends_at) > approvalDate;
+    assert.equal(isCurrentActive, true, "L'abonnement est encore actif");
+
+    function approveEarlyRenewal(userSub, planCode, now) {
+      const isExistingActive = userSub && userSub.plan_code === planCode && new Date(userSub.ends_at) > now;
+      let newEndsAt;
+      if (isExistingActive) {
+        newEndsAt = new Date(new Date(userSub.ends_at).getTime() + 30 * 24 * 3600 * 1000);
+      } else {
+        newEndsAt = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
+      }
+      return {
+        id: userSub.id,
+        ends_at: newEndsAt.toISOString(),
+        prolonged: true,
+      };
+    }
+
+    const updatedSub = approveEarlyRenewal(currentActiveSub, "discovery_monthly", approvalDate);
+    assert.equal(updatedSub.ends_at, "2026-11-30T00:00:00.000Z", "La fin de validité est reportée au 30 Novembre (100% des jours restants préservés)");
+  });
+
+  // -------------------------------------------------------------
+  // Test 29c: Double demande en attente -> refusée côté serveur
+  // -------------------------------------------------------------
+  await runTest("29c. TEST 6c: Double demande en attente (pending) -> refusée pour éviter les doublons", () => {
+    const dbRequests = [
+      { id: "req-1", user_id: "u-duplicate", plan_code: "discovery_monthly", status: "pending" },
+    ];
+
+    function checkCanSubmit(userId, planCode) {
+      const hasPending = dbRequests.some((r) => r.user_id === userId && r.status === "pending");
+      if (hasPending) {
+        return { success: false, error: "PENDING_REQUEST_EXISTS" };
+      }
+      return { success: true };
+    }
+
+    const check = checkCanSubmit("u-duplicate", "discovery_monthly");
+    assert.equal(check.success, false);
+    assert.equal(check.error, "PENDING_REQUEST_EXISTS");
+  });
+
+  // -------------------------------------------------------------
+  // Test 29d: Protection et isolation des formules différentes actives
+  // -------------------------------------------------------------
+  await runTest("29d. TEST 6d: Formule active différente (ex: All Access annuel) -> non affectée par la formule mensuelle", () => {
+    const allAccessSub = {
+      id: "sub-annual-all-access",
+      user_id: "u-all-access",
+      plan_code: "adult_all_access",
+      status: "active",
+      started_at: "2026-01-01T00:00:00Z",
+      ends_at: "2026-12-31T23:59:59Z",
+    };
+
+    // La prolongation de 30 jours ne doit JAMAIS s'appliquer à une formule différente
+    function approvePlanSafely(existingSub, requestedPlanCode, now) {
+      const isSamePlan = existingSub && existingSub.plan_code === requestedPlanCode;
+      if (!isSamePlan) {
+        // Crée une souscription distincte ou rejette le cumul conflictuel
+        return {
+          existingSubUntouched: true,
+          originalEndsAt: existingSub.ends_at,
+        };
+      }
+      return { existingSubUntouched: false };
+    }
+
+    const res = approvePlanSafely(allAccessSub, "discovery_monthly", new Date("2026-10-09T10:00:00Z"));
+    assert.equal(res.existingSubUntouched, true, "L'abonnement All Access annuel n'a subi aucune altération");
+    assert.equal(res.originalEndsAt, "2026-12-31T23:59:59Z");
   });
 
   // -------------------------------------------------------------
@@ -892,6 +991,310 @@ async function main() {
     const cancelRes = cancelBooking(booking);
     assert.equal(cancelRes.success, true);
     assert.equal(cancelRes.refundCredit, false, "Aucun crédit à recréditer pour l'accès illimité");
+  });
+
+  // -------------------------------------------------------------
+  // Test 34: Essentiel + Lady Striking : Réservation Lady Striking autorisée (sans décompte de crédit)
+  // -------------------------------------------------------------
+  await runTest("34. SCÉNARIO LADY STRIKING 1: Essentiel + Lady Striking permet de réserver un cours Lady Striking", () => {
+    const access = computeCumulativeAccess([
+      {
+        id: "sub-essential-lady",
+        status: "active",
+        selected_discipline: "Lady Striking",
+        plan: {
+          code: "adult_essential",
+          name: "Essentiel",
+          type: "small_group",
+          commitment: "annual",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const sessionLady = {
+      discipline: "Lady Striking",
+      category: "lady_striking",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+
+    const result = checkSessionEligibility(access, sessionLady, null, []);
+    assert.equal(result.isEligible, true, "Réservation Lady Striking doit être autorisée");
+    assert.equal(result.isUsingCredit, false, "Aucun crédit ne doit être utilisé");
+  });
+
+  // -------------------------------------------------------------
+  // Test 35: Essentiel + Lady Striking : Réservation Kick Boxing refusée
+  // -------------------------------------------------------------
+  await runTest("35. SCÉNARIO LADY STRIKING 2: Essentiel + Lady Striking refuse les cours d'autres disciplines (Kick Boxing)", () => {
+    const access = computeCumulativeAccess([
+      {
+        id: "sub-essential-lady",
+        status: "active",
+        selected_discipline: "Lady Striking",
+        plan: {
+          code: "adult_essential",
+          name: "Essentiel",
+          type: "small_group",
+          commitment: "annual",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const sessionKick = {
+      discipline: "Kick Boxing",
+      category: "cours_adulte",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+
+    const result = checkSessionEligibility(access, sessionKick, null, []);
+    assert.equal(result.isEligible, false, "Réservation Kick Boxing doit être refusée");
+    assert.ok(result.reason.includes("Lady Striking"), "Motif de refus explicite attendu");
+  });
+
+  // -------------------------------------------------------------
+  // Test 36: Essentiel + Kick Boxing : Réservation Lady Striking refusée
+  // -------------------------------------------------------------
+  await runTest("36. SCÉNARIO LADY STRIKING 3: Essentiel + Kick Boxing refuse les cours 100% féminins Lady Striking", () => {
+    const access = computeCumulativeAccess([
+      {
+        id: "sub-essential-kick",
+        status: "active",
+        selected_discipline: "Kick Boxing",
+        plan: {
+          code: "adult_essential",
+          name: "Essentiel",
+          type: "small_group",
+          commitment: "annual",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const sessionLady = {
+      discipline: "Lady Striking",
+      category: "lady_striking",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+
+    const result = checkSessionEligibility(access, sessionLady, null, []);
+    assert.equal(result.isEligible, false, "Réservation Lady Striking doit être refusée pour un adhérent Kick Boxing");
+    assert.ok(result.reason.includes("Lady Striking"), "Motif de refus explicite attendu");
+  });
+
+  // -------------------------------------------------------------
+  // Test 37: Essentiel + Boxe Thaï : Réservation Lady Striking refusée
+  // -------------------------------------------------------------
+  await runTest("37. SCÉNARIO LADY STRIKING 4: Essentiel + Boxe Thaï refuse les cours Lady Striking", () => {
+    const access = computeCumulativeAccess([
+      {
+        id: "sub-essential-muay",
+        status: "active",
+        selected_discipline: "Boxe Thaï",
+        plan: {
+          code: "adult_essential",
+          name: "Essentiel",
+          type: "small_group",
+          commitment: "annual",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const sessionLady = {
+      discipline: "Lady Striking",
+      category: "lady_striking",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+
+    const result = checkSessionEligibility(access, sessionLady, null, []);
+    assert.equal(result.isEligible, false, "Réservation Lady Striking doit être refusée pour Boxe Thaï");
+  });
+
+  // -------------------------------------------------------------
+  // Test 38: All Access : Comportement inchangé (Refus Lady Striking, Accès illimité cours adultes)
+  // -------------------------------------------------------------
+  await runTest("38. SCÉNARIO LADY STRIKING 5: All Access refuse Lady Striking et autorise tous les cours adultes mixtes", () => {
+    const access = computeCumulativeAccess([
+      {
+        id: "sub-all-access",
+        status: "active",
+        plan: {
+          code: "adult_all_access",
+          name: "All Access",
+          type: "small_group",
+          commitment: "annual",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const sessionLady = {
+      discipline: "Lady Striking",
+      category: "lady_striking",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+    const sessionKick = {
+      discipline: "Kick Boxing",
+      category: "cours_adulte",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+
+    const resLady = checkSessionEligibility(access, sessionLady, null, []);
+    assert.equal(resLady.isEligible, false, "All Access ne doit pas avoir accès à Lady Striking");
+
+    const resKick = checkSessionEligibility(access, sessionKick, null, []);
+    assert.equal(resKick.isEligible, true, "All Access a un accès complet aux cours adultes");
+  });
+
+  // -------------------------------------------------------------
+  // Test 39: Sans engagement (89 €) : Comportement inchangé (Refus Lady Striking, Accès illimité cours adultes)
+  // -------------------------------------------------------------
+  await runTest("39. SCÉNARIO LADY STRIKING 6: Sans engagement (89 €) refuse Lady Striking et autorise cours adultes", () => {
+    const access = computeCumulativeAccess([
+      {
+        id: "sub-monthly-no-commit",
+        status: "active",
+        plan: {
+          code: "discovery_monthly",
+          name: "Adulte — Sans engagement",
+          type: "small_group",
+          tier: "adult_monthly",
+          commitment: "monthly",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const sessionLady = {
+      discipline: "Lady Striking",
+      category: "lady_striking",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+    const sessionMuay = {
+      discipline: "Boxe Thaï",
+      category: "cours_adulte",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+
+    const resLady = checkSessionEligibility(access, sessionLady, null, []);
+    assert.equal(resLady.isEligible, false, "Sans engagement ne doit pas avoir accès à Lady Striking");
+
+    const resMuay = checkSessionEligibility(access, sessionMuay, null, []);
+    assert.equal(resMuay.isEligible, true, "Sans engagement a un accès complet aux cours adultes");
+  });
+
+  // -------------------------------------------------------------
+  // Test 40: Quota 3 séances/semaine pour Essentiel (Lady Striking)
+  // -------------------------------------------------------------
+  await runTest("40. SCÉNARIO LADY STRIKING 7: Quota hebdomadaire strict de 3 séances pour Essentiel Lady Striking", () => {
+    const access = computeCumulativeAccess([
+      {
+        id: "sub-essential-lady",
+        status: "active",
+        selected_discipline: "Lady Striking",
+        plan: {
+          code: "adult_essential",
+          name: "Essentiel",
+          type: "small_group",
+          commitment: "annual",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const monday = new Date("2026-10-12T10:00:00Z");
+    const session4 = {
+      discipline: "Lady Striking",
+      category: "lady_striking",
+      target_age_group: "all",
+      starts_at: new Date("2026-10-17T12:30:00Z").toISOString(), // Samedi
+    };
+
+    // 3 réservations déjà confirmées dans la même semaine
+    const existingBookings = [
+      { starts_at: new Date("2026-10-13T17:00:00Z").toISOString(), status: "confirmed" }, // Mardi
+      { starts_at: new Date("2026-10-15T17:30:00Z").toISOString(), status: "confirmed" }, // Jeudi
+      { starts_at: new Date("2026-10-16T18:00:00Z").toISOString(), status: "confirmed" }, // Vendredi
+    ];
+
+    const result = checkSessionEligibility(access, session4, null, existingBookings);
+    assert.equal(result.isEligible, false, "La 4ème réservation dans la semaine doit être refusée");
+    assert.ok(result.reason.includes("3 séances"), "Motif de dépassement de quota attendu");
+  });
+
+  // -------------------------------------------------------------
+  // Test 41: Enregistrement et transmission de la discipline choisie
+  // -------------------------------------------------------------
+  await runTest("41. SCÉNARIO LADY STRIKING 8: Transmission de la discipline choisie de la demande à l'abonnement", () => {
+    const request = {
+      id: "req-123",
+      user_id: "u-lady",
+      plan_id: "plan-essential",
+      status: "pending",
+      commitment_type: "annual",
+      selected_discipline: "Lady Striking",
+    };
+
+    function simulateApproval(req) {
+      return {
+        id: "sub-new-456",
+        user_id: req.user_id,
+        plan_id: req.plan_id,
+        status: "active",
+        selected_discipline: req.selected_discipline,
+      };
+    }
+
+    const sub = simulateApproval(request);
+    assert.equal(sub.selected_discipline, "Lady Striking", "La discipline doit être fidèlement copiée sur l'abonnement");
+  });
+
+  // -------------------------------------------------------------
+  // Test 42: Absence de régression sur les autres formules (Kid Boxing & Privés)
+  // -------------------------------------------------------------
+  await runTest("42. SCÉNARIO LADY STRIKING 9: Kid Boxing et Cours Privés conservent leurs règles strictes sans régression", () => {
+    const accessKid = computeCumulativeAccess([
+      {
+        id: "sub-kid",
+        status: "active",
+        plan: {
+          code: "kid_boxing_season",
+          name: "Kid Boxing",
+          type: "small_group",
+          commitment: "annual",
+          allows_small_group: true,
+        },
+      },
+    ]);
+
+    const sessionLady = {
+      discipline: "Lady Striking",
+      category: "lady_striking",
+      target_age_group: "all",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+
+    const resKidLady = checkSessionEligibility(accessKid, sessionLady, "2015-05-10", []);
+    assert.equal(resKidLady.isEligible, false, "Kid Boxing ne peut pas réserver Lady Striking");
+
+    const sessionKid = {
+      discipline: "Kid Boxing",
+      category: "kid_boxing",
+      target_age_group: "9_13",
+      starts_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    };
+    const resKidOk = checkSessionEligibility(accessKid, sessionKid, "2015-05-10", []);
+    assert.equal(resKidOk.isEligible, true, "Kid Boxing 9-13 ans autorisé avec âge valide");
   });
 
   console.log("\n=================================================================");

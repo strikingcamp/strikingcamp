@@ -156,6 +156,7 @@ export default function PricingSection({
     const prices = {
       adult_essential: 399,
       adult_all_access: 899,
+      adult_monthly: 89,
       lady_striking: 399,
       kid_boxing: 349,
       private_annual: 299,
@@ -171,6 +172,8 @@ export default function PricingSection({
         prices.adult_essential = euros;
       } else if (code === "adult_all_access") {
         prices.adult_all_access = euros;
+      } else if (code === "discovery_monthly" || code === "adult_monthly") {
+        prices.adult_monthly = euros;
       } else if (code === "lady_striking_annual" || code === "lady_striking") {
         prices.lady_striking = euros;
       } else if (code === "kid_boxing_season" || code === "kid_boxing") {
@@ -236,7 +239,7 @@ export default function PricingSection({
       </section>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          2. SECTION 1 — COURS ADULTES (ABONNEMENTS ANNUELS)
+          2. SECTION 1 — COURS ADULTES (FORMULES ANNUELLES & MENSUELLES)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isSmallGroupActive && (
         <section id="cours-adultes" className="scroll-mt-28 space-y-10">
@@ -248,14 +251,93 @@ export default function PricingSection({
               COURS <span className="text-brand-blue">ADULTES</span>
             </h2>
             <p className="text-brand-white/70 text-xs sm:text-sm">
-              Formules annuelles d&apos;entraînement encadré en groupe réduit pour une progression technique rapide et sécurisée.
+              Formules annuelles ou sans engagement d&apos;entraînement encadré en groupe réduit pour une progression technique rapide et sécurisée.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch max-w-6xl mx-auto">
             
-            {/* CARTE 1 : ESSENTIEL */}
-            <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-6 sm:p-8 flex flex-col justify-between hover:border-brand-blue/30 transition-all duration-200">
+            {/* CARTE 1 : SANS ENGAGEMENT (89 € / MOIS) */}
+            <div className="rounded-2xl bg-[#0b1322] border border-brand-blue/30 p-6 sm:p-7 flex flex-col justify-between hover:border-brand-blue/60 transition-all duration-200">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-brand-blue/15 text-brand-blue text-xs font-heading font-bold uppercase tracking-wider border border-brand-blue/30">
+                    SANS ENGAGEMENT
+                  </span>
+                  <span className="text-xs text-brand-blue font-semibold uppercase">
+                    MENSUEL
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
+                    SANS ENGAGEMENT
+                  </h3>
+                  <p className="text-xs text-brand-white/70 mt-1.5 leading-relaxed">
+                    La liberté totale pour s&apos;entraîner en accès illimité, renouvelable chaque mois sans engagement de durée.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-heading font-black text-brand-white">
+                      {planPrices.adult_monthly} €
+                    </span>
+                    <span className="text-xs text-brand-white/60 font-bold uppercase">
+                      / MOIS
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-brand-white/50 mt-1">
+                    Valable 30 jours • Renouvelable chaque mois
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/85">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Accès illimité aux cours adultes</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Toutes les disciplines adultes incluses</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Encadrement en groupe réduit (12 max)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Tous niveaux (débutant à confirmé)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Espace membre personnalisé</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Réservation libre sur le planning</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
+                    <span>Parking privé inclus</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  href="/membre/adhesion?plan=discovery_monthly"
+                  onClick={() => trackBookingClick("membership", "discovery_monthly")}
+                  className="w-full py-3.5 px-4 rounded-xl bg-brand-white/10 hover:bg-brand-blue hover:text-brand-black text-brand-white font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                >
+                  <span>CHOISIR CETTE FORMULE</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* CARTE 2 : ESSENTIEL */}
+            <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-6 sm:p-7 flex flex-col justify-between hover:border-brand-blue/30 transition-all duration-200">
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <span className="px-3 py-1 rounded-full bg-brand-white/10 text-brand-white/90 text-xs font-heading font-bold uppercase tracking-wider">
@@ -417,73 +499,6 @@ export default function PricingSection({
                   href="/membre/adhesion?plan=adult_all_access"
                   onClick={() => trackBookingClick("membership", "adult_all_access")}
                   className="w-full py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-brand-blue/25 flex items-center justify-center gap-2"
-                >
-                  <span>CHOISIR CETTE FORMULE</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-
-            {/* CARTE 3 : LADY STRIKING */}
-            <div className="rounded-2xl bg-[#0b1322] border border-pink-500/30 p-6 sm:p-8 flex flex-col justify-between hover:border-pink-500/50 transition-all duration-200">
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full bg-pink-500/15 text-pink-400 text-xs font-heading font-bold uppercase tracking-wider border border-pink-500/30">
-                    100 % FÉMININ
-                  </span>
-                  <span className="text-xs text-pink-400/80 font-semibold uppercase">
-                    3 CRÉNEAUX / SEM.
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-2xl font-heading font-black uppercase text-brand-white">
-                    LADY STRIKING
-                  </h3>
-                  <p className="text-xs text-brand-white/70 mt-1.5 leading-relaxed">
-                    Programme 100 % femmes sans prérequis : apprentissage de la boxe, frappe aux sacs, cardio combat et confiance en soi.
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl font-heading font-black text-pink-400">
-                      {planPrices.lady_striking} €
-                    </span>
-                    <span className="text-xs text-brand-white/60 font-bold uppercase">
-                      / AN
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-brand-white/50 mt-1">
-                    + 90 € de frais d&apos;adhésion annuelle
-                  </p>
-                </div>
-
-                <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/85">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
-                    <span>Accès aux créneaux Lady Striking</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
-                    <span>Encadrement en groupe réduit</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
-                    <span>Tous niveaux (débutantes à confirmées)</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 size={15} className="text-pink-400 shrink-0 mt-0.5" />
-                    <span>Parking privé inclus</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-8">
-                <Link
-                  href="/membre/adhesion?plan=lady_striking_annual"
-                  onClick={() => trackBookingClick("membership", "lady_striking_annual")}
-                  className="w-full py-3.5 px-4 rounded-xl bg-pink-500/20 hover:bg-pink-500 text-pink-300 hover:text-white border border-pink-500/30 font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                 >
                   <span>CHOISIR CETTE FORMULE</span>
                   <ArrowRight size={14} />

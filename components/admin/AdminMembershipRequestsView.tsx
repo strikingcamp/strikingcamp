@@ -474,9 +474,9 @@ export default function AdminMembershipRequestsView() {
                     </span>
 
                     {/* Badge Formule / Pack / Pass */}
-                    {req.plan?.tier === "discovery_pass" || req.plan?.code === "discovery_monthly" ? (
+                    {req.plan?.tier === "adult_monthly" || req.plan?.tier === "discovery_pass" || req.plan?.code === "discovery_monthly" ? (
                       <span className="text-[10px] font-heading font-black uppercase px-2.5 py-0.5 rounded border tracking-wider bg-brand-blue/20 text-brand-blue border-brand-blue/40">
-                        {req.plan?.name || "1 Mois Découverte"}
+                        {req.plan?.name || "Adulte — Sans engagement"}
                       </span>
                     ) : req.plan?.tier === "credit_pack" ? (
                       <span className="text-[10px] font-heading font-black uppercase px-2.5 py-0.5 rounded border tracking-wider bg-amber-400/15 text-amber-300 border-amber-400/30">
@@ -510,9 +510,9 @@ export default function AdminMembershipRequestsView() {
                     )}
 
                     {/* Badge Type d'engagement ou Validité */}
-                    {req.plan?.tier === "discovery_pass" || req.plan?.code === "discovery_monthly" ? (
+                    {req.plan?.tier === "adult_monthly" || req.plan?.tier === "discovery_pass" || req.plan?.code === "discovery_monthly" ? (
                       <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 text-brand-blue">
-                        Accès illimité • Validité 30 jours
+                        Mensuel sans engagement • 30 jours
                       </span>
                     ) : req.plan?.tier === "credit_pack" ? (
                       <span className="text-[10px] font-heading font-bold uppercase px-2 py-0.5 rounded bg-amber-400/10 border border-amber-400/20 text-amber-300">
@@ -674,7 +674,7 @@ export default function AdminMembershipRequestsView() {
                   <div className="flex justify-between">
                     <span className="text-brand-white/50">Offre :</span>
                     <strong className={cn(
-                      approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly"
+                      approvingReq.plan?.tier === "adult_monthly" || approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly"
                         ? "text-brand-blue"
                         : approvingReq.plan?.tier === "credit_pack"
                         ? "text-amber-300"
@@ -683,11 +683,11 @@ export default function AdminMembershipRequestsView() {
                       {approvingReq.plan?.name}
                     </strong>
                   </div>
-                  {approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly" ? (
+                  {approvingReq.plan?.tier === "adult_monthly" || approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly" ? (
                     <div className="flex justify-between">
                       <span className="text-brand-white/50">Type :</span>
                       <span className="text-brand-blue font-bold">
-                        1 Mois Découverte (Accès illimité 30 jours)
+                        Formule Mensuelle (Sans engagement • 30 jours)
                       </span>
                     </div>
                   ) : approvingReq.plan?.tier === "credit_pack" ? (
@@ -707,9 +707,9 @@ export default function AdminMembershipRequestsView() {
                   )}
                 </div>
 
-                {approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly" ? (
+                {approvingReq.plan?.tier === "adult_monthly" || approvingReq.plan?.tier === "discovery_pass" || approvingReq.plan?.code === "discovery_monthly" ? (
                   <div className="p-3.5 bg-brand-blue/10 border border-brand-blue/30 rounded-xl text-brand-blue text-[11px] leading-relaxed">
-                    ✓ Un pass découverte avec <strong>accès illimité aux cours adultes pendant 30 jours</strong> sera activé immédiatement.
+                    ✓ Une formule mensuelle avec <strong>accès illimité aux cours adultes pendant 30 jours</strong> sera activée ou prolongée.
                     <br />
                     ✓ Le membre aura accès au planning pour réserver ses séances sans débit de crédits.
                   </div>

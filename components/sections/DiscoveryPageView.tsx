@@ -63,7 +63,6 @@ export default function DiscoveryPageView({
   const [packEligibility, setPackEligibility] = useState<Record<string, PackEligibilityResult>>({
     decouverte_1: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
     decouverte_3: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
-    discovery_monthly: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
   });
 
   const loadEligibility = useCallback(async () => {
@@ -85,8 +84,7 @@ export default function DiscoveryPageView({
     if (
       requestedPackParam &&
       (requestedPackParam === "decouverte_1" ||
-        requestedPackParam === "decouverte_3" ||
-        requestedPackParam === "discovery_monthly")
+        requestedPackParam === "decouverte_3")
     ) {
       handleOpenPackModal(requestedPackParam);
     }
@@ -235,7 +233,7 @@ export default function DiscoveryPageView({
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto items-stretch">
           
           {/* OFFRE 1 : DÉCOUVERTE — 1 SÉANCE */}
           <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-6 sm:p-7 flex flex-col justify-between hover:border-brand-blue/30 transition-all duration-200">
@@ -319,109 +317,11 @@ export default function DiscoveryPageView({
             </div>
           </div>
 
-          {/* OFFRE 2 : 1 MOIS DÉCOUVERTE (MISE EN AVANT) */}
-          <div className="rounded-2xl bg-gradient-to-b from-[#101d36] to-[#070d18] border-2 border-brand-blue p-6 sm:p-7 flex flex-col justify-between shadow-[0_0_35px_rgba(47,174,224,0.18)] relative">
+          {/* OFFRE 2 : DÉCOUVERTE — 3 SÉANCES */}
+          <div className="rounded-2xl bg-[#0b1322] border border-brand-blue/30 p-6 sm:p-7 flex flex-col justify-between hover:border-brand-blue/60 transition-all duration-200">
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-brand-blue/20 text-brand-blue text-[11px] font-heading font-black uppercase tracking-wider border border-brand-blue/30">
-                  ACCÈS ILLIMITÉ
-                </span>
-                <span className="text-xs text-brand-blue font-bold uppercase">
-                  30 jours
-                </span>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-heading font-black uppercase text-brand-white">
-                  1 MOIS DÉCOUVERTE
-                </h3>
-                <p className="text-xs text-brand-white/75 mt-1.5 leading-relaxed">
-                  30 jours pour découvrir Striking Camp
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-heading font-black text-brand-blue">
-                    89 €
-                  </span>
-                  <span className="text-xs text-brand-white/60 font-bold uppercase">
-                    / 30 jours sans reconduction
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 pt-4 border-t border-brand-white/10 text-xs text-brand-white/90">
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>Accès illimité aux cours adultes pendant 30 jours</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>Accès à toutes les disciplines adultes</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>Encadrement en groupe réduit</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>Tous niveaux</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>Espace membre personnalisé</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>Réservation libre sur le planning</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-brand-blue shrink-0 mt-0.5" />
-                  <span>Parking privé inclus</span>
-                </div>
-              </div>
-
-              <p className="text-[11px] text-brand-white/50 pt-2 border-t border-brand-white/5">
-                Offre découverte utilisable une seule fois par membre.
-              </p>
-            </div>
-
-            <div className="pt-6">
-              {packEligibility.discovery_monthly?.alreadyUsed ? (
-                <button
-                  type="button"
-                  disabled
-                  className="w-full py-3.5 px-4 rounded-xl bg-brand-white/5 border border-brand-white/10 text-brand-white/40 font-heading font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <span>Offre découverte déjà utilisée</span>
-                </button>
-              ) : packEligibility.discovery_monthly?.hasPending ? (
-                <button
-                  type="button"
-                  disabled
-                  className="w-full py-3.5 px-4 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-brand-blue/80 font-heading font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <span>Demande en attente</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleBuyPack("discovery_monthly")}
-                  className="w-full py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-blue/25"
-                >
-                  <span>CHOISIR CETTE OFFRE</span>
-                  <ArrowRight size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* OFFRE 3 : DÉCOUVERTE — 3 SÉANCES */}
-          <div className="rounded-2xl bg-[#0b1322] border border-brand-white/10 p-6 sm:p-7 flex flex-col justify-between hover:border-brand-blue/30 transition-all duration-200">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-brand-white/10 text-brand-white/90 text-[11px] font-heading font-bold uppercase tracking-wider">
+                <span className="px-3 py-1 rounded-full bg-brand-blue/15 text-brand-blue text-[11px] font-heading font-bold uppercase tracking-wider border border-brand-blue/30">
                   3 SÉANCES
                 </span>
                 <span className="text-xs text-brand-white/50 font-medium">
@@ -434,7 +334,7 @@ export default function DiscoveryPageView({
                   DÉCOUVERTE — 3 SÉANCES
                 </h3>
                 <p className="text-xs text-brand-white/70 mt-1.5 leading-relaxed">
-                  3 séances pour tester différentes disciplines.
+                  3 séances pour tester différentes disciplines en groupe réduit.
                 </p>
               </div>
 
@@ -490,7 +390,7 @@ export default function DiscoveryPageView({
                 <button
                   type="button"
                   onClick={() => handleBuyPack("decouverte_3")}
-                  className="w-full py-3.5 px-4 rounded-xl bg-brand-white/10 hover:bg-brand-blue hover:text-brand-black text-brand-white font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 px-4 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-blue/25"
                 >
                   <span>CHOISIR CETTE OFFRE</span>
                   <ArrowRight size={14} />
@@ -499,6 +399,28 @@ export default function DiscoveryPageView({
             </div>
           </div>
 
+        </div>
+
+        {/* BANDEAU VERS LES FORMULES MENSUELLES & ANNUELLES */}
+        <div className="max-w-4xl mx-auto mt-10 p-6 rounded-2xl bg-gradient-to-r from-[#0b162c] to-[#070d18] border border-brand-blue/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-lg">
+          <div className="space-y-1">
+            <span className="text-[10px] font-heading font-black text-brand-blue uppercase tracking-widest px-2.5 py-0.5 rounded bg-brand-blue/10 border border-brand-blue/20 inline-block">
+              Entraînement régulier
+            </span>
+            <h3 className="text-base font-heading font-black uppercase text-brand-white">
+              Vous cherchez une formule mensuelle sans engagement ou annuelle ?
+            </h3>
+            <p className="text-xs text-brand-white/70 max-w-lg">
+              Découvrez la formule Adulte — Sans engagement à 89 €/mois (accès illimité 30 jours) et toutes nos formules d&apos;abonnement.
+            </p>
+          </div>
+          <Link
+            href="/tarifs"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider transition-all shrink-0 shadow-md shadow-brand-blue/20"
+          >
+            <span>Voir tous les tarifs</span>
+            <ArrowRight size={14} />
+          </Link>
         </div>
       </section>
 
@@ -528,7 +450,7 @@ export default function DiscoveryPageView({
                 CHOISISSEZ VOTRE OFFRE
               </h3>
               <p className="text-xs text-brand-white/70 leading-relaxed">
-                Choisissez entre 1 séance découverte — 20 €, 3 séances découverte — 49 € ou 1 mois découverte illimité — 89 €.
+                Choisissez entre 1 séance découverte — 20 € ou 3 séances découverte — 49 € pour tester les cours en groupe réduit.
               </p>
             </div>
           </div>

@@ -132,8 +132,10 @@ export function computePlanAccess(plan: PlanLike | null | undefined): PlanAccess
     code === "col_annual" ||
     code === "sg_annual" ||
     rawName.includes("all access") ||
+    rawName.includes("sans engagement") ||
     rawName.includes("1 mois découverte") ||
     rawName.includes("1 mois decouverte") ||
+    plan.tier === "adult_monthly" ||
     plan.tier === "discovery_pass";
   const isLadyStriking = code === "lady_striking_annual" || rawName.includes("lady");
   const isKidBoxing = code === "kid_boxing_season" || rawName.includes("kid");
@@ -474,12 +476,6 @@ export function checkSessionEligibility(
 
     // Formule Adulte Essentiel
     if (access.isEssential) {
-      if (category && category !== "cours_adulte" && category !== "small_group") {
-        return {
-          isEligible: false,
-          reason: "Votre formule Essentiel ne donne pas accès à cette catégorie.",
-        };
-      }
       const chosen = (access.selectedDiscipline || "").toLowerCase().trim();
       if (!chosen) {
         return {
@@ -487,11 +483,38 @@ export function checkSessionEligibility(
           reason: "Veuillez sélectionner votre discipline dans votre espace adhésion.",
         };
       }
-      if (disc !== chosen && !disc.includes(chosen) && !chosen.includes(disc)) {
-        return {
-          isEligible: false,
-          reason: `Votre formule Essentiel est restreinte à la discipline ${access.selectedDiscipline}.`,
-        };
+
+      const isLadyChosen = chosen.includes("lady");
+      const isLadySession = category === "lady_striking" || disc.includes("lady");
+
+      // CAS A : Adhérente Essentiel avec discipline Lady Striking choisie
+      if (isLadyChosen) {
+        if (!isLadySession) {
+          return {
+            isEligible: false,
+            reason: "Votre formule Essentiel (Lady Striking) donne accès exclusivement aux cours 100% féminins Lady Striking.",
+          };
+        }
+      } else {
+        // CAS B & C : Adhérent Essentiel avec autre discipline (Kick, Boxe Thaï, Anglaise...)
+        if (isLadySession) {
+          return {
+            isEligible: false,
+            reason: "Ce cours Lady Striking est réservé aux adhérentes inscrites en discipline Lady Striking.",
+          };
+        }
+        if (category && category !== "cours_adulte" && category !== "small_group") {
+          return {
+            isEligible: false,
+            reason: "Votre formule Essentiel ne donne pas accès à cette catégorie.",
+          };
+        }
+        if (disc !== chosen && !disc.includes(chosen) && !chosen.includes(disc)) {
+          return {
+            isEligible: false,
+            reason: `Votre formule Essentiel est restreinte à la discipline ${access.selectedDiscipline}.`,
+          };
+        }
       }
 
       const weekly = computeWeeklySessionCount(weeklyBookings, session.starts_at);

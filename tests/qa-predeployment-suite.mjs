@@ -29,10 +29,16 @@ async function runPhase1() {
   const details = [];
   const migrationFile = "supabase/migrations/20261008_session_credits_system.sql";
   const migrationDiscoveryMonthly = "supabase/migrations/20261009_discovery_monthly_plan.sql";
+  const migrationAdultMonthly = "supabase/migrations/20261010_adult_monthly_no_commitment_plan.sql";
+  const migrationLadyEssential = "supabase/migrations/20261011_integrate_lady_striking_into_essential.sql";
   const migrationExists = fs.existsSync(migrationFile);
   const migrationMonthlyExists = fs.existsSync(migrationDiscoveryMonthly);
+  const migrationAdultMonthlyExists = fs.existsSync(migrationAdultMonthly);
+  const migrationLadyEssentialExists = fs.existsSync(migrationLadyEssential);
   details.push(`Fichier de migration crédits présent : ${migrationExists ? "OUI" : "NON"} (${migrationFile})`);
   details.push(`Fichier de migration 1 mois découverte présent : ${migrationMonthlyExists ? "OUI" : "NON"} (${migrationDiscoveryMonthly})`);
+  details.push(`Fichier de migration formule adulte sans engagement présent : ${migrationAdultMonthlyExists ? "OUI" : "NON"} (${migrationAdultMonthly})`);
+  details.push(`Fichier de migration Lady Striking dans Essentiel présent : ${migrationLadyEssentialExists ? "OUI" : "NON"} (${migrationLadyEssential})`);
 
   // Vérifier la présence des plans dans public.plans
   const envContent = fs.readFileSync(".env.local", "utf-8");
@@ -507,25 +513,24 @@ function runPhase11() {
   const normPricing = pricingContent.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
   const normDiscovery = discoveryContent.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
-  // Vérification /tarifs : Contient Pack 10 mais NE CONTIENT PLUS les offres découverte
+  // Vérification /tarifs : Contient Formule Adulte Sans engagement (89 €), All Access, Essentiel, Pack 10
   const hasPack10 = normPricing.includes("PACK 10");
+  const hasAdultMonthly = normPricing.includes("SANS ENGAGEMENT") && normPricing.includes("89");
   const tarifsHasNoDecouverte1 = !normPricing.includes("DECOUVERTE — 1") && !normPricing.includes("DECOUVERTE - 1");
   const tarifsHasNoDecouverte3 = !normPricing.includes("DECOUVERTE — 3") && !normPricing.includes("DECOUVERTE - 3");
-  const tarifsHasNoMoisDecouverte = !normPricing.includes("1 MOIS DECOUVERTE");
 
-  // Vérification /cours-decouverte : Contient exactement les 3 offres découverte et le parcours 5 étapes
+  // Vérification /cours-decouverte : Contient exactement les 2 offres découverte d'essai (20 € et 49 €) et le parcours 5 étapes
   const hasDecouverte1 = normDiscovery.includes("20 €") && (normDiscovery.includes("1 SEANCE") || normDiscovery.includes("DECOUVERTE"));
-  const hasMoisDecouverte = normDiscovery.includes("89 €") && normDiscovery.includes("1 MOIS DECOUVERTE") && normDiscovery.includes("ACCES ILLIMITE");
   const hasDecouverte3 = normDiscovery.includes("49 €") && (normDiscovery.includes("3 SEANCES") || normDiscovery.includes("DECOUVERTE"));
   const hasHeroTitle = normDiscovery.includes("COMMENCEZ PAR") && normDiscovery.includes("UNE SEANCE");
   const hasSteps = normDiscovery.includes("01") && normDiscovery.includes("05");
 
-  assert.ok(hasPack10 && tarifsHasNoDecouverte1 && tarifsHasNoDecouverte3 && tarifsHasNoMoisDecouverte, "Page /tarifs vérifiée sans offres découverte");
-  assert.ok(hasDecouverte1 && hasMoisDecouverte && hasDecouverte3 && hasHeroTitle && hasSteps, "Page /cours-decouverte vérifiée avec les 3 offres découverte et étapes");
+  assert.ok(hasPack10 && hasAdultMonthly && tarifsHasNoDecouverte1 && tarifsHasNoDecouverte3, "Page /tarifs vérifiée avec Formule Adulte Sans engagement (89 €) et Pack 10");
+  assert.ok(hasDecouverte1 && hasDecouverte3 && hasHeroTitle && hasSteps, "Page /cours-decouverte vérifiée avec les 2 offres découverte d'essai et étapes");
 
-  details.push(`Page /tarifs : Formules classiques et Pack 10 (180 €) conservés, offres découverte strictement absentes de /tarifs.`);
-  details.push(`Page /cours-decouverte : 3 Offres Découverte dédiées (1 séance 20 €, 1 Mois Découverte 89 € avec badge ACCÈS ILLIMITÉ, 3 séances 49 €).`);
-  details.push(`Parcours 5 étapes complet et flux de demande sans reconduction ni paiement Stripe récurrent.`);
+  details.push(`Page /tarifs : Formule Adulte Sans engagement (89 €/mois) intégrée avec Essentiel, All Access, Lady Striking et Pack 10 (180 €).`);
+  details.push(`Page /cours-decouverte : 2 Offres Découverte d'essai dédiées (1 séance 20 €, 3 séances 49 €) avec lien d'orientation vers /tarifs.`);
+  details.push(`Parcours 5 étapes complet et flux de demande sans reconduction automatique.`);
 
   logPhase(11, "UI Section Tarifs & Cours Découverte", "OK", details);
 }

@@ -52,6 +52,7 @@ export default function MembershipOnboardingView() {
     "Boxe Thaï",
     "Boxe anglaise",
     "Striking",
+    "Lady Striking",
     "Boxing Bag",
     "KB Shred",
   ];
@@ -67,14 +68,34 @@ export default function MembershipOnboardingView() {
         (p) =>
           p.tier !== "credit_pack" &&
           p.tier !== "discovery_pass" &&
-          p.code !== "discovery_monthly" &&
           !p.code?.startsWith("decouverte")
       );
       setPlans(classicPlans);
       setLatestRequest(req);
       if (classicPlans.length > 0 && !selectedPlanId) {
-        const defaultPlan = classicPlans.find((p) => p.code === "adult_all_access") || classicPlans[0];
-        setSelectedPlanId(defaultPlan.id);
+        // Détecter un éventuel paramètre d'URL (ex: ?plan=adult_essential ou legacy ?plan=lady_striking_annual)
+        let requestedPlanCode: string | null = null;
+        if (typeof window !== "undefined") {
+          const urlParams = new URLSearchParams(window.location.search);
+          requestedPlanCode = urlParams.get("plan");
+        }
+
+        if (requestedPlanCode === "lady_striking_annual" || requestedPlanCode?.includes("lady")) {
+          const essentialPlan = classicPlans.find((p) => p.code === "adult_essential") || classicPlans[0];
+          setSelectedPlanId(essentialPlan.id);
+          setSelectedDiscipline("Lady Striking");
+        } else if (requestedPlanCode) {
+          const target = classicPlans.find((p) => p.code === requestedPlanCode);
+          if (target) {
+            setSelectedPlanId(target.id);
+          } else {
+            const defaultPlan = classicPlans.find((p) => p.code === "adult_all_access") || classicPlans[0];
+            setSelectedPlanId(defaultPlan.id);
+          }
+        } else {
+          const defaultPlan = classicPlans.find((p) => p.code === "adult_all_access") || classicPlans[0];
+          setSelectedPlanId(defaultPlan.id);
+        }
       }
     } catch (err) {
       console.error("[MembershipOnboardingView] Erreur chargement :", err);
@@ -133,10 +154,12 @@ export default function MembershipOnboardingView() {
     if (p.type === "small_group" && !isSmallGroupEnabled) return false;
 
     if (categoryFilter === "adult") {
-      return p.code === "adult_essential" || p.code === "adult_all_access" || (p.type === "small_group" && !p.code?.includes("lady") && !p.code?.includes("kid"));
-    }
-    if (categoryFilter === "lady") {
-      return p.code === "lady_striking_annual" || p.name.toLowerCase().includes("lady");
+      return (
+        p.code === "adult_essential" ||
+        p.code === "adult_all_access" ||
+        p.code === "discovery_monthly" ||
+        (p.type === "small_group" && !p.code?.includes("kid"))
+      );
     }
     if (categoryFilter === "kid") {
       return p.code === "kid_boxing_season" || p.name.toLowerCase().includes("kid");
@@ -324,18 +347,6 @@ export default function MembershipOnboardingView() {
           </button>
           <button
             type="button"
-            onClick={() => setCategoryFilter("lady")}
-            className={cn(
-              "px-4 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
-              categoryFilter === "lady"
-                ? "bg-pink-500 text-white shadow-md shadow-pink-500/20"
-                : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
-            )}
-          >
-            Lady Striking
-          </button>
-          <button
-            type="button"
             onClick={() => setCategoryFilter("kid")}
             className={cn(
               "px-4 py-2 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all cursor-pointer",
@@ -381,6 +392,7 @@ export default function MembershipOnboardingView() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredPlans.map((plan) => {
             const isSelected = selectedPlanId === plan.id;
+            const isMonthlyNoCommitment = plan.code === "discovery_monthly" || plan.tier === "adult_monthly";
             const isPriv = plan.allows_private || plan.type === "private";
             const isAllAccess = plan.code === "adult_all_access";
             const isEssential = plan.code === "adult_essential";
@@ -390,7 +402,10 @@ export default function MembershipOnboardingView() {
             let periodLabel = "/ AN";
             let commitmentLabel = "ENGAGEMENT ANNUEL";
 
-            if (isPriv) {
+            if (isMonthlyNoCommitment) {
+              periodLabel = "/ MOIS";
+              commitmentLabel = "SANS ENGAGEMENT (30 JOURS)";
+            } else if (isPriv) {
               periodLabel = "/ MOIS";
               commitmentLabel = plan.commitment === "annual" ? "ENGAGEMENT ANNUEL" : "ENGAGEMENT MENSUEL";
             } else if (isKid) {
@@ -428,6 +443,8 @@ export default function MembershipOnboardingView() {
                         ? "Section 100% Féminine"
                         : isKid
                         ? "Enfants (5–13 ans)"
+                        : isMonthlyNoCommitment
+                        ? "Formule Mensuelle Sans Engagement"
                         : "Cours Adultes"}
                     </span>
                     <h3 className="text-lg font-heading font-black uppercase tracking-wider text-brand-white">
@@ -453,6 +470,23 @@ export default function MembershipOnboardingView() {
                     <p className="text-[11px] font-heading font-bold uppercase tracking-wider text-brand-blue mb-1">
                       INCLUS DANS VOTRE FORMULE :
                     </p>
+
+                    {isMonthlyNoCommitment && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Accès illimité aux séances Cours Adulte</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Toutes disciplines adultes incluses</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={14} className="text-brand-blue shrink-0" />
+                          <span>Renouvelable chaque mois sans engagement</span>
+                        </div>
+                      </>
+                    )}
 
                     {isEssential && (
                       <>
@@ -544,10 +578,12 @@ export default function MembershipOnboardingView() {
                       <Check size={14} className="text-brand-blue shrink-0" />
                       <span>Accès aux événements (stages)</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Check size={14} className="text-brand-blue shrink-0" />
-                      <span>Frais d&apos;adhésion : 90 €</span>
-                    </div>
+                    {!isMonthlyNoCommitment && (
+                      <div className="flex items-center gap-2">
+                        <Check size={14} className="text-brand-blue shrink-0" />
+                        <span>Frais d&apos;adhésion : 90 €</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

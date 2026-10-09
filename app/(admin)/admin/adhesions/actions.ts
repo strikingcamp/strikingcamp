@@ -181,41 +181,68 @@ export async function approveMembershipRequestServerAction(
       };
     }
 
-    // 3.B. Cas particulier : 1 Mois Découverte (Accès illimité 30 jours non récurrent)
-    if (plan?.code === "discovery_monthly" || plan?.tier === "discovery_pass") {
-      const startsAt = new Date();
-      const expiresAt = new Date(startsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+    // 3.B. Formule Adulte — Sans engagement (89 € / mois - Accès illimité 30 jours renouvelable)
+    if (plan?.code === "discovery_monthly" || plan?.tier === "adult_monthly" || plan?.tier === "discovery_pass") {
+      const now = new Date();
 
-      // Restriction stricte : vérification d'utilisation antérieure
-      const { data: existingSubs } = await supabase
+      // Recherche d'un abonnement actif pour ce MÊME plan non encore expiré (renouvellement anticipé)
+      const { data: existingActiveSub } = await supabase
         .from("subscriptions")
-        .select("id")
+        .select("id, started_at, ends_at")
         .eq("user_id", req.user_id)
-        .eq("plan_id", req.plan_id);
+        .eq("plan_id", req.plan_id)
+        .eq("status", "active")
+        .gt("ends_at", now.toISOString())
+        .order("ends_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (existingSubs && existingSubs.length > 0) {
-        return {
-          success: false,
-          error: `Ce membre a déjà bénéficié de l'offre ${plan.name}. Cette offre découverte est strictement limitée à 1 fois par membre à vie.`,
-        };
-      }
+      let targetSubId: string;
 
-      // Création de l'accès actif de 30 jours dans public.subscriptions
-      const { data: newSub, error: subErr } = await supabase
-        .from("subscriptions")
-        .insert({
-          user_id: req.user_id,
-          plan_id: req.plan_id,
-          status: "active",
-          started_at: startsAt.toISOString(),
-          ends_at: expiresAt.toISOString(),
-        })
-        .select("id")
-        .single();
+      if (existingActiveSub && existingActiveSub.ends_at) {
+        // Prolongation de 30 jours à partir de la date de fin actuelle (aucun jour payé perdu)
+        const currentEndsAt = new Date(existingActiveSub.ends_at);
+        const newExpiresAt = new Date(currentEndsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      if (subErr || !newSub) {
-        console.error("[approveMembershipRequestServerAction] Erreur création subscription 30 jours :", subErr);
-        return { success: false, error: "Erreur lors de l'activation du pass 30 jours." };
+        const { error: updateSubErr } = await supabase
+          .from("subscriptions")
+          .update({
+            ends_at: newExpiresAt.toISOString(),
+            updated_at: now.toISOString(),
+          })
+          .eq("id", existingActiveSub.id);
+
+        if (updateSubErr) {
+          console.error("[approveMembershipRequestServerAction] Erreur prolongation subscription :", updateSubErr);
+          return { success: false, error: "Erreur lors de la prolongation de l'abonnement." };
+        }
+
+        targetSubId = existingActiveSub.id;
+      } else {
+        // Nouvel abonnement ou renouvellement après expiration : 30 jours à compter de maintenant
+        const startsAt = now;
+        const expiresAt = new Date(startsAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        const { data: newSub, error: subErr } = await supabase
+          .from("subscriptions")
+          .insert({
+            user_id: req.user_id,
+            plan_id: req.plan_id,
+            status: "active",
+            started_at: startsAt.toISOString(),
+            ends_at: expiresAt.toISOString(),
+            created_at: startsAt.toISOString(),
+            updated_at: startsAt.toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (subErr || !newSub) {
+          console.error("[approveMembershipRequestServerAction] Erreur création subscription 30 jours :", subErr);
+          return { success: false, error: "Erreur lors de l'activation de la formule mensuelle." };
+        }
+
+        targetSubId = newSub.id;
       }
 
       // Mise à jour de la demande en approved
@@ -224,9 +251,9 @@ export async function approveMembershipRequestServerAction(
         .update({
           status: "approved",
           reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
+          reviewed_at: now.toISOString(),
           admin_notes: cleanNotes,
-          updated_at: new Date().toISOString(),
+          updated_at: now.toISOString(),
         })
         .eq("id", requestId);
 
@@ -239,8 +266,8 @@ export async function approveMembershipRequestServerAction(
 
       return {
         success: true,
-        subscriptionId: newSub.id,
-        message: "Demande validée avec succès. L'accès illimité de 30 jours du membre a été activé.",
+        subscriptionId: targetSubId,
+        message: "Demande validée avec succès. L'accès illimité de 30 jours du membre a été activé ou prolongé.",
       };
     }
 

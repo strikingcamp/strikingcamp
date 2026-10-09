@@ -310,9 +310,7 @@ export async function checkMemberPackEligibility(
 ): Promise<PackEligibilityResult> {
   const isDiscovery =
     planCode === "decouverte_1" ||
-    planCode === "decouverte_3" ||
-    planCode === "discovery_monthly" ||
-    planCode === "decouverte_1_mois";
+    planCode === "decouverte_3";
 
   // Récupérer la formule correspondante
   const { data: plan, error: planErr } = await supabase
@@ -324,7 +322,7 @@ export async function checkMemberPackEligibility(
   if (planErr || !plan) {
     return {
       isEligible: false,
-      reason: "Offre découverte introuvable.",
+      reason: "Formule ou pack introuvable.",
       alreadyUsed: false,
       hasPending: false,
       isDiscovery,
@@ -380,11 +378,11 @@ export async function checkMemberPackEligibility(
     };
   }
 
-  // Pour pack_10_small_group (répétable) :
+  // Pour pack_10_small_group et discovery_monthly (répétables / renouvelables) :
   if (hasPending) {
     return {
       isEligible: false,
-      reason: "Une demande pour ce pack est déjà en cours de validation.",
+      reason: "Une demande pour cette formule est déjà en cours de validation.",
       alreadyUsed: false,
       hasPending: true,
       isDiscovery: false,
@@ -407,7 +405,7 @@ export async function getMemberPacksEligibilityMap(
 ): Promise<Record<string, PackEligibilityResult>> {
   const result: Record<string, PackEligibilityResult> = {
     decouverte_1: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
-    discovery_monthly: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
+    discovery_monthly: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: false },
     decouverte_3: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: true },
     pack_10_small_group: { isEligible: true, alreadyUsed: false, hasPending: false, isDiscovery: false },
   };
@@ -506,9 +504,9 @@ export async function submitPackRequest(
       return { success: false, error: reqErr?.message || "Erreur lors de l'enregistrement de la demande." };
     }
 
-    const isMonthlyUnlimited = payload.planCode === "discovery_monthly" || plan.tier === "discovery_pass";
+    const isMonthlyUnlimited = payload.planCode === "discovery_monthly" || plan.tier === "adult_monthly" || plan.tier === "discovery_pass";
     const successMsg = isMonthlyUnlimited
-      ? `Votre demande pour le ${plan.name} a été transmise avec succès. Dès validation par l'équipe, votre accès illimité de 30 jours sera activé.`
+      ? `Votre demande pour la formule ${plan.name} a été transmise avec succès. Dès validation par l'équipe, votre accès de 30 jours sera activé ou prolongé.`
       : `Votre demande pour le ${plan.name} a été transmise avec succès. Dès validation par l'équipe, vos crédits seront disponibles.`;
 
     return {

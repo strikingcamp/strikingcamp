@@ -65,14 +65,14 @@ export const SESSION_PACKS: Record<string, SessionPackDefinition> = {
   discovery_monthly: {
     id: "discovery_monthly",
     planCode: "discovery_monthly",
-    name: "1 Mois Découverte",
+    name: "Adulte — Sans engagement",
     priceCents: 8900,
     priceEuros: 89,
     totalCredits: 0,
     isUnlimited: true,
     validityDays: 30,
-    description: "Accès illimité aux cours adultes pendant 30 jours.",
-    badgeText: "Accès illimité",
+    description: "Accès illimité aux cours adultes pendant 30 jours, sans engagement et renouvelable chaque mois.",
+    badgeText: "Sans engagement",
   },
   decouverte_3: {
     id: "decouverte_3",
