@@ -237,11 +237,10 @@ export default function MemberHomeView({
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━
-          BANDEAU PACKS DE SÉANCES ACTIFS OU EN ATTENTE
+          BANDEAU PACKS DE SÉANCES / CRÉDITS
           ━━━━━━━━━━━━━━━━━━━━ */}
-      {((memberCreditPacks && memberCreditPacks.length > 0) || pendingPackRequest) && (
-        <MemberCreditsCard packs={memberCreditPacks} pendingRequest={pendingPackRequest} />
-      )}
+      <MemberCreditsCard packs={memberCreditPacks} pendingRequest={pendingPackRequest} />
+
 
       {/* ━━━━━━━━━━━━━━━━━━━━
           SECTION : MES DÉFIS (DYNAMIQUE & CONNECTÉE)

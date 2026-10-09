@@ -25,19 +25,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Traitement de l'événement checkout.session.completed
+  // Traitement de l'événement checkout.session.completed (désactivé pour l'attribution automatique)
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as any;
 
-    try {
-      await handleCheckoutSessionCompleted(session);
-    } catch (err: any) {
-      console.error("[Stripe Webhook] Exception traitement checkout.session.completed :", err);
-      return NextResponse.json(
-        { error: "Erreur lors de l'enregistrement des crédits." },
-        { status: 500 }
-      );
-    }
+    console.log(
+      `[Stripe Webhook] Événement checkout.session.completed reçu pour la session ${session?.id}. L'attribution automatique est désactivée (circuit validation administrative obligatoire).`
+    );
+    // STRIKING CAMP : L'attribution de crédits et d'abonnements est strictement réservée
+    // à la validation administrative via les RPC sécurisées.
+    return NextResponse.json({
+      received: true,
+      message: "Direct credit allocation via Stripe webhook is disabled. Administrative approval required.",
+    });
   }
 
   return NextResponse.json({ received: true });

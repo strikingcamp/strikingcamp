@@ -64,11 +64,10 @@ const MONTH_NAMES_FR = [
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 const PRIVATE_DISCIPLINES = [
-  { name: "Boxe Anglaise", desc: "Technique de poings, esquives, combinaisons et précision" },
+  { name: "Boxe anglaise", desc: "Technique de poings, esquives, combinaisons et précision" },
   { name: "Kick Boxing", desc: "Pieds-poings, timing, enchaînements et déplacements" },
+  { name: "Boxe Thaï", desc: "Poings, pieds, coudes, genoux et clinch (Muay Thaï)" },
   { name: "Striking", desc: "Percussion polyvalente, transitions et puissance" },
-  { name: "Boxing Bag", desc: "Travail intensif aux sacs de frappe, cardio et frappe lourde" },
-  { name: "KB Shred", desc: "Conditioning martial haute intensité et renforcement" },
 ];
 
 const PRIVATE_LEVELS = [
@@ -225,10 +224,8 @@ function generateSlotsFromData(
           : (bookedCount >= maxCapacity && !isBookedByMe);
 
         const endsAtIso = s.ends_at || null;
-        // Règle temporelle exacte :
-        // - now < ends_at  => cours actif (isPast = false)
-        // - now >= ends_at => cours passé et verrouillé (isPast = true)
-        const isPast = Boolean(endsAtIso && Date.now() >= new Date(endsAtIso).getTime());
+        // Règle temporelle stricte : un cours dont l'heure de début est passée est verrouillé
+        const isPast = Boolean(s.starts_at && Date.now() >= new Date(s.starts_at).getTime());
 
         const rawDisc = s.discipline || "";
         const discipline = rawDisc.toLowerCase() === "boxing" ? "Boxe anglaise" : rawDisc;
@@ -293,19 +290,27 @@ export default function MemberPlanningView() {
     refreshCredits,
   } = useMember();
 
-  // Catégories autorisées
+  // Catégories autorisées selon les droits réels du membre ET l'activation globale des services
   const availableCategories: Category[] = useMemo(() => {
     const cats: Category[] = [];
-    if (isPrivateEnabled) cats.push("Cours privés");
-    if (isSmallGroupEnabled) cats.push("Small Group");
+    const canAccessPrivate = isPrivateEnabled && hasPrivateAccess;
+    const canAccessSmallGroup = isSmallGroupEnabled && (hasSmallGroupAccess || hasCreditAccess || !hasActiveSubscription);
+
+    if (canAccessPrivate) cats.push("Cours privés");
+    if (canAccessSmallGroup) cats.push("Small Group");
+
+    // Fallback de sécurité si aucun abonnement actif détecté
+    if (cats.length === 0 && isSmallGroupEnabled) {
+      cats.push("Small Group");
+    }
     return cats;
-  }, [isPrivateEnabled, isSmallGroupEnabled]);
+  }, [isPrivateEnabled, hasPrivateAccess, isSmallGroupEnabled, hasSmallGroupAccess, hasCreditAccess, hasActiveSubscription]);
 
   // Onglets & Navigation
-  const [activeCategory, setActiveCategory] = useState<Category>(() => availableCategories[0] || "Cours privés");
+  const [activeCategory, setActiveCategory] = useState<Category>(() => availableCategories[0] || "Small Group");
   const [weekOffset, setWeekOffset] = useState<number>(0);
 
-  // Synchronisation automatique de la catégorie active selon les services activés
+  // Synchronisation automatique de la catégorie active selon les droits réels
   useEffect(() => {
     if (availableCategories.length > 0 && !availableCategories.includes(activeCategory)) {
       setActiveCategory(availableCategories[0]);
@@ -464,12 +469,45 @@ export default function MemberPlanningView() {
 
   const activeDaysWithSessions = DAYS_ORDER.filter(day => (weekSessionsByDay[day]?.length || 0) > 0);
 
+  const parisTodayStr = formatToParisDate(new Date());
+
+  // Synchronisation automatique : si le jour sélectionné est antérieur à aujourd'hui, basculer sur un jour valide
+  useEffect(() => {
+    const todayStr = formatToParisDate(new Date());
+    const selectedDateStr = dayDateMap[selectedDayName]?.dateStr;
+    if (selectedDateStr && selectedDateStr < todayStr) {
+      const currentDay = getCurrentDayName();
+      if (dayDateMap[currentDay]?.dateStr && dayDateMap[currentDay].dateStr >= todayStr) {
+        setSelectedDayName(currentDay);
+      } else {
+        const firstValidDay = DAYS_ORDER.find((d) => dayDateMap[d]?.dateStr && dayDateMap[d].dateStr >= todayStr);
+        if (firstValidDay) {
+          setSelectedDayName(firstValidDay);
+        }
+      }
+    }
+  }, [dayDateMap, selectedDayName]);
+
+  const canGoPrevDay = useMemo(() => {
+    const currentIndex = DAYS_ORDER.indexOf(selectedDayName);
+    if (currentIndex > 0) {
+      const prevDay = DAYS_ORDER[currentIndex - 1];
+      const prevDateStr = dayDateMap[prevDay]?.dateStr;
+      return Boolean(prevDateStr && prevDateStr >= parisTodayStr);
+    }
+    return weekOffset > 0;
+  }, [selectedDayName, dayDateMap, parisTodayStr, weekOffset]);
+
   // Navigation jour par jour
   const handlePrevDay = () => {
     const currentIndex = DAYS_ORDER.indexOf(selectedDayName);
     if (currentIndex > 0) {
-      setSelectedDayName(DAYS_ORDER[currentIndex - 1]);
-    } else {
+      const targetDay = DAYS_ORDER[currentIndex - 1];
+      const targetDateStr = dayDateMap[targetDay]?.dateStr;
+      if (!targetDateStr || targetDateStr >= parisTodayStr) {
+        setSelectedDayName(targetDay);
+      }
+    } else if (weekOffset > 0) {
       setWeekOffset((prev) => prev - 1);
       setSelectedDayName("Samedi");
     }
@@ -670,12 +708,9 @@ export default function MemberPlanningView() {
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ONGLETS DES CATÉGORIES ACTIVÉES
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {availableCategories.length > 0 && (
-        <div className={cn(
-          "bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid gap-1.5 shadow-xl shadow-black/30",
-          availableCategories.length === 2 ? "grid-cols-2" : "grid-cols-1"
-        )}>
-          {isPrivateEnabled && (
+      {availableCategories.length > 1 && (
+        <div className="bg-[#0f172a] p-1.5 rounded-2xl border border-brand-white/10 grid grid-cols-2 gap-1.5 shadow-xl shadow-black/30">
+          {availableCategories.includes("Cours privés") && (
             <button
               onClick={() => setActiveCategory("Cours privés")}
               className={cn(
@@ -689,7 +724,7 @@ export default function MemberPlanningView() {
             </button>
           )}
 
-          {isSmallGroupEnabled && (
+          {availableCategories.includes("Small Group") && (
             <button
               onClick={() => setActiveCategory("Small Group")}
               className={cn(
@@ -710,8 +745,14 @@ export default function MemberPlanningView() {
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between shadow-lg">
         <button
-          onClick={() => setWeekOffset(prev => prev - 1)}
-          className="p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-heading font-bold uppercase"
+          onClick={() => setWeekOffset(prev => Math.max(0, prev - 1))}
+          disabled={weekOffset <= 0}
+          className={cn(
+            "p-2.5 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-heading font-bold uppercase",
+            weekOffset <= 0
+              ? "opacity-30 bg-brand-white/5 text-brand-white/30 cursor-not-allowed select-none"
+              : "bg-brand-white/5 hover:bg-brand-white/10 text-brand-white cursor-pointer"
+          )}
         >
           <ChevronLeft size={16} />
           <span className="hidden sm:inline">Semaine précédente</span>
@@ -887,25 +928,36 @@ export default function MemberPlanningView() {
                   const isSel = selectedDayName === day;
                   const dayInfo = dayDateMap[day];
                   const daySlotsCount = slots.filter(s => s.category === "Cours privés" && s.day === day).length;
+                  const isPastDay = Boolean(dayInfo?.dateStr && dayInfo.dateStr < parisTodayStr);
 
                   return (
                     <button
                       key={day}
-                      onClick={() => setSelectedDayName(day)}
+                      type="button"
+                      disabled={isPastDay}
+                      onClick={() => !isPastDay && setSelectedDayName(day)}
                       className={cn(
-                        "p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1",
-                        isSel
-                          ? "bg-[#00d8ff] text-black font-black border-[#00d8ff] shadow-lg shadow-[#00d8ff]/20"
-                          : "bg-brand-white/5 border-brand-white/10 text-brand-white/70 hover:text-brand-white hover:bg-brand-white/10"
+                        "p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1",
+                        isPastDay
+                          ? "opacity-35 bg-zinc-900/40 border-zinc-800/40 text-zinc-600 cursor-not-allowed select-none"
+                          : isSel
+                          ? "bg-[#00d8ff] text-black font-black border-[#00d8ff] shadow-lg shadow-[#00d8ff]/20 cursor-pointer"
+                          : "bg-brand-white/5 border-brand-white/10 text-brand-white/70 hover:text-brand-white hover:bg-brand-white/10 cursor-pointer"
                       )}
                     >
-                      <span className={cn("text-[10px] uppercase font-bold tracking-wider", isSel ? "text-black/80" : "text-brand-white/50")}>
+                      <span className={cn(
+                        "text-[10px] uppercase font-bold tracking-wider",
+                        isPastDay ? "text-zinc-600" : isSel ? "text-black/80" : "text-brand-white/50"
+                      )}>
                         {day}
                       </span>
                       <span className="text-xl font-heading font-black leading-none">
                         {dayInfo.dateNum}
                       </span>
-                      <span className={cn("text-[9px] uppercase font-semibold", isSel ? "text-black/70" : "text-[#00d8ff]")}>
+                      <span className={cn(
+                        "text-[9px] uppercase font-semibold",
+                        isPastDay ? "text-zinc-600" : isSel ? "text-black/70" : "text-[#00d8ff]"
+                      )}>
                         {daySlotsCount} créneau{daySlotsCount > 1 ? "x" : ""}
                       </span>
                     </button>
@@ -1224,25 +1276,30 @@ export default function MemberPlanningView() {
               const dayInfo = dayDateMap[day];
               const daySessionsCount = weekSessionsByDay[day]?.length || 0;
               const isToday = weekOffset === 0 && day === getCurrentDayName();
+              const isPastDay = Boolean(dayInfo?.dateStr && dayInfo.dateStr < parisTodayStr);
 
               return (
                 <button
                   key={day}
-                  onClick={() => setSelectedDayName(day)}
+                  type="button"
+                  disabled={isPastDay}
+                  onClick={() => !isPastDay && setSelectedDayName(day)}
                   className={cn(
-                    "p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 relative",
-                    isSel
-                      ? "bg-[#00d8ff] text-black font-black border-[#00d8ff] shadow-lg shadow-[#00d8ff]/20"
-                      : "bg-brand-white/5 border-brand-white/10 text-brand-white/70 hover:text-brand-white hover:bg-brand-white/10"
+                    "p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 relative",
+                    isPastDay
+                      ? "opacity-35 bg-zinc-900/40 border-zinc-800/40 text-zinc-600 cursor-not-allowed select-none"
+                      : isSel
+                      ? "bg-[#00d8ff] text-black font-black border-[#00d8ff] shadow-lg shadow-[#00d8ff]/20 cursor-pointer"
+                      : "bg-brand-white/5 border-brand-white/10 text-brand-white/70 hover:text-brand-white hover:bg-brand-white/10 cursor-pointer"
                   )}
                 >
-                  {isToday && !isSel && (
+                  {isToday && !isSel && !isPastDay && (
                     <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#00d8ff]" />
                   )}
                   <span
                     className={cn(
                       "text-[10px] uppercase font-bold tracking-wider",
-                      isSel ? "text-black/80" : "text-brand-white/50"
+                      isPastDay ? "text-zinc-600" : isSel ? "text-black/80" : "text-brand-white/50"
                     )}
                   >
                     {day}
@@ -1253,7 +1310,7 @@ export default function MemberPlanningView() {
                   <span
                     className={cn(
                       "text-[9px] uppercase font-semibold",
-                      isSel ? "text-black/70" : "text-[#00d8ff]"
+                      isPastDay ? "text-zinc-600" : isSel ? "text-black/70" : "text-[#00d8ff]"
                     )}
                   >
                     {daySessionsCount} cours
@@ -1266,8 +1323,15 @@ export default function MemberPlanningView() {
           {/* 2. BARRE DE NAVIGATION JOUR PAR JOUR */}
           <div className="bg-[#0b1322] border border-brand-white/10 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
             <button
+              type="button"
+              disabled={!canGoPrevDay}
               onClick={handlePrevDay}
-              className="p-2.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-heading font-bold uppercase self-start sm:self-auto"
+              className={cn(
+                "p-2.5 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-heading font-bold uppercase self-start sm:self-auto",
+                !canGoPrevDay
+                  ? "opacity-30 bg-brand-white/5 text-brand-white/30 cursor-not-allowed select-none"
+                  : "bg-brand-white/5 hover:bg-brand-white/10 text-brand-white cursor-pointer"
+              )}
             >
               <ChevronLeft size={16} />
               <span>Jour précédent</span>

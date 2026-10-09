@@ -103,70 +103,30 @@ export async function approveMembershipRequestServerAction(
 
     // 3. Cas particulier : Offre de type Pack de Crédits (Achat unique sans abonnement)
     if (plan?.tier === "credit_pack") {
-      const planCode = plan.code || "";
-      const packDef = SESSION_PACKS[planCode];
-      const totalCredits =
-        packDef?.totalCredits ||
-        (planCode === "pack_10_small_group" ? 10 : planCode === "decouverte_3" ? 3 : 1);
-      const startsAt = new Date();
-      const expiresAt = computePackExpirationDate(packDef || planCode, startsAt);
-
-      // Restriction stricte : les offres découverte ne peuvent être validées qu'une seule fois à vie
-      if (planCode === "decouverte_1" || planCode === "decouverte_3") {
-        const { data: existingCredits } = await supabase
-          .from("member_session_credits")
-          .select("id")
-          .eq("user_id", req.user_id)
-          .eq("plan_id", req.plan_id);
-
-        if (existingCredits && existingCredits.length > 0) {
-          return {
-            success: false,
-            error: `Ce membre a déjà bénéficié de l'offre découverte ${plan.name}. Les offres découverte sont strictement limitées à 1 fois par membre à vie.`,
-          };
+      // Appel de la RPC transactionnelle et atomique avec verrouillage FOR UPDATE
+      const { data: rpcPackData, error: rpcPackErr } = await supabase.rpc(
+        "admin_approve_credit_pack_request",
+        {
+          p_request_id: requestId,
+          p_admin_notes: cleanNotes,
         }
+      );
+
+      if (rpcPackErr) {
+        console.error("[approveMembershipRequestServerAction] Erreur RPC credit pack :", rpcPackErr);
+        return {
+          success: false,
+          error: rpcPackErr.message || "Erreur lors de la validation du pack de crédits.",
+        };
       }
 
-      // Création du pack actif dans public.member_session_credits
-      const { data: newPack, error: packErr } = await supabase
-        .from("member_session_credits")
-        .insert({
-          user_id: req.user_id,
-          plan_id: req.plan_id,
-          total_credits: totalCredits,
-          remaining_credits: totalCredits,
-          starts_at: startsAt.toISOString(),
-          expires_at: expiresAt.toISOString(),
-          status: "active",
-        })
-        .select("id")
-        .single();
-
-      if (packErr || !newPack) {
-        console.error("[approveMembershipRequestServerAction] Erreur création member_session_credits :", packErr);
-        return { success: false, error: "Erreur lors de la création du pack de crédits." };
+      const res = rpcPackData as { success?: boolean; error?: string; message?: string; total_credits?: number };
+      if (!res || res.success === false) {
+        return {
+          success: false,
+          error: res?.message || res?.error || "La validation du pack a échoué.",
+        };
       }
-
-      // Insertion de la transaction d'audit
-      await supabase.from("session_credit_transactions").insert({
-        credit_pack_id: newPack.id,
-        user_id: req.user_id,
-        delta: totalCredits,
-        transaction_type: "purchase",
-        reason: `Validation manuelle par l'administrateur : ${plan.name}`,
-      });
-
-      // Mise à jour de la demande en approved
-      await supabase
-        .from("membership_requests")
-        .update({
-          status: "approved",
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          admin_notes: cleanNotes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", requestId);
 
       revalidatePath("/admin/adhesions");
       revalidatePath("/admin/abonnements");
@@ -177,7 +137,7 @@ export async function approveMembershipRequestServerAction(
 
       return {
         success: true,
-        message: `Demande de pack validée avec succès. ${totalCredits} séance(s) ont été créditées sur le compte du membre.`,
+        message: res.message || "Demande de pack validée avec succès.",
       };
     }
 

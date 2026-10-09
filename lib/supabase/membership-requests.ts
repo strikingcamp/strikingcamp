@@ -286,6 +286,52 @@ export async function submitMembershipRequest(
   }
 }
 
+export interface UpdateMyPendingMembershipRequestPayload {
+  requestId: string;
+  planId: string;
+  commitmentType: CommitmentType;
+  selectedDiscipline?: string;
+  memberNotes?: string;
+}
+
+/**
+ * Permet au membre connecté de modifier sa demande d'adhésion en attente (pending)
+ * sans créer de doublon.
+ */
+export async function updateMyPendingMembershipRequest(
+  supabase: SupabaseClient,
+  payload: UpdateMyPendingMembershipRequestPayload
+): Promise<{ success: boolean; error?: string; message?: string }> {
+  try {
+    const { data, error } = await supabase.rpc("update_my_pending_membership_request", {
+      p_request_id: payload.requestId,
+      p_plan_id: payload.planId,
+      p_commitment_type: payload.commitmentType,
+      p_selected_discipline: payload.selectedDiscipline || null,
+      p_member_notes: payload.memberNotes || null,
+    });
+
+    if (error) {
+      console.error("[updateMyPendingMembershipRequest] Erreur RPC :", error);
+      return { success: false, error: error.message };
+    }
+
+    const res = data as { success?: boolean; error?: string; message?: string };
+    if (res?.success === false) {
+      return { success: false, error: res.message || res.error };
+    }
+
+    return {
+      success: true,
+      message: res?.message || "Demande mise à jour avec succès.",
+    };
+  } catch (err) {
+    console.error("[updateMyPendingMembershipRequest] Exception :", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+
 export interface PackEligibilityResult {
   isEligible: boolean;
   reason?: string;
