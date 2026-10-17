@@ -18,6 +18,13 @@ import {
   CheckCircle,
   Mail,
   ExternalLink,
+  Search,
+  Filter,
+  Copy,
+  Users,
+  Eye,
+  FileText,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,6 +40,8 @@ import {
   formatToParisDate,
   formatToParisTime,
 } from "@/lib/supabase/admin";
+import AdminPrintAttendanceSheet from "./reservations/AdminPrintAttendanceSheet";
+import AdminSessionDetailsModal from "./reservations/AdminSessionDetailsModal";
 
 const DAYS_SHORT_FR: Record<string, string> = {
   Lundi: "Lun",
@@ -76,6 +85,7 @@ interface AdminReservationsViewProps {
   initialTab?: ReservationTab;
   initialViewMode?: ViewMode;
   initialSelectedDateStr?: string;
+  initialTargetSessionId?: string;
   // Compatibilité ascendante facultative
   session?: AdminClassSessionSummary | null;
   participants?: AdminBookingParticipant[];
@@ -88,6 +98,7 @@ export default function AdminReservationsView({
   initialTab = "trial",
   initialViewMode = "day",
   initialSelectedDateStr,
+  initialTargetSessionId,
 }: AdminReservationsViewProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -182,6 +193,75 @@ export default function AdminReservationsView({
   const [loadingBookingId, setLoadingBookingId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Record<string, boolean>>({});
 
+  // 2. bis Recherche & Filtres instantanés (côté client sans rechargement)
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string>("all");
+  const [selectedFillFilter, setSelectedFillFilter] = useState<
+    "all" | "with_bookings" | "available" | "full"
+  >("all");
+
+  // Fiche séance modale & Impression
+  const [selectedSessionForModal, setSelectedSessionForModal] =
+    useState<AdminClassSessionSummary | null>(null);
+  const [printSessionId, setPrintSessionId] = useState<string | null>(null);
+
+  // Mise en évidence de séance ciblée (paramètre ?session=ID)
+  const [targetHighlightedSessionId, setTargetHighlightedSessionId] =
+    useState<string | null>(initialTargetSessionId || null);
+
+  // Notifications visuelles (feedback des actions) & Copie
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  // Auto-scroll et dépliement lors de l'accès direct via ?session=ID
+  useEffect(() => {
+    if (initialTargetSessionId) {
+      setExpandedSessions((prev) => ({
+        ...prev,
+        [initialTargetSessionId]: true,
+      }));
+      setTargetHighlightedSessionId(initialTargetSessionId);
+
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`session-${initialTargetSessionId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 350);
+
+      return () => clearTimeout(timer);
+    }
+  }, [initialTargetSessionId]);
+
+  // Copie rapide avec confirmation visuelle
+  const handleCopyText = (text: string, label: string) => {
+    if (!text || text === "—") return;
+    navigator.clipboard.writeText(text);
+    setCopiedText(`${label}:${text}`);
+    setTimeout(() => {
+      setCopiedText(null);
+    }, 2000);
+  };
+
+  // Déclenchement de l'impression (ciblée ou globale)
+  const handleTriggerPrint = (sessionId?: string) => {
+    setPrintSessionId(sessionId || null);
+    setTimeout(() => {
+      window.print();
+    }, 80);
+  };
+
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setPrintSessionId(null);
+    };
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
+  }, []);
+
   // Objet du jour actif sélectionné
   const currentDayInfo = useMemo(() => {
     return (
@@ -265,6 +345,151 @@ export default function AdminReservationsView({
     }).length;
   }, [allTrialBookings]);
 
+  // 7. Liste dynamique des disciplines présentes sur la semaine
+  const availableDisciplines = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of weeklyData.smallGroupSessions || []) {
+      if (s.discipline) set.add(s.discipline.trim());
+    }
+    for (const p of weeklyData.privateSessions || []) {
+      if (p.discipline) set.add(p.discipline.trim());
+    }
+    for (const tb of allTrialBookings) {
+      if (tb.sessionDiscipline) set.add(tb.sessionDiscipline.trim());
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "fr"));
+  }, [weeklyData, allTrialBookings]);
+
+  // Fonction de filtrage des séances Small Group
+  const isSessionMatchingFilters = (
+    session: AdminClassSessionSummary,
+    sessionBookings: AdminBookingParticipant[]
+  ) => {
+    // A. Filtre Discipline
+    if (
+      selectedDiscipline !== "all" &&
+      session.discipline.toLowerCase().trim() !== selectedDiscipline.toLowerCase().trim()
+    ) {
+      return false;
+    }
+
+    const confirmedCount = sessionBookings.filter((b) => b.status === "confirmed").length;
+    const capacity = session.max_capacity || (session.type === "private" ? 1 : 12);
+    const placesRemaining = Math.max(0, capacity - confirmedCount);
+
+    // B. Filtre Remplissage
+    if (selectedFillFilter === "with_bookings" && confirmedCount === 0) return false;
+    if (selectedFillFilter === "available" && placesRemaining === 0) return false;
+    if (selectedFillFilter === "full" && placesRemaining > 0) return false;
+
+    // C. Recherche textuelle multi-champs
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSession =
+        session.discipline.toLowerCase().includes(q) ||
+        (session.level || "").toLowerCase().includes(q);
+
+      const matchesParticipant = sessionBookings.some((b) => {
+        return (
+          b.memberName.toLowerCase().includes(q) ||
+          (b.phone && b.phone.toLowerCase().includes(q)) ||
+          (b.email && b.email.toLowerCase().includes(q)) ||
+          b.planName.toLowerCase().includes(q)
+        );
+      });
+
+      if (!matchesSession && !matchesParticipant) return false;
+    }
+
+    return true;
+  };
+
+  // Fonction de filtrage des cours d'essai
+  const isTrialMatchingFilters = (tb: AdminBookingParticipant) => {
+    if (
+      selectedDiscipline !== "all" &&
+      (tb.sessionDiscipline || "").toLowerCase().trim() !== selectedDiscipline.toLowerCase().trim()
+    ) {
+      return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matches =
+        tb.memberName.toLowerCase().includes(q) ||
+        (tb.phone && tb.phone.toLowerCase().includes(q)) ||
+        (tb.email && tb.email.toLowerCase().includes(q)) ||
+        (tb.sessionDiscipline || "").toLowerCase().includes(q);
+      if (!matches) return false;
+    }
+    return true;
+  };
+
+  // Séances Small Group du jour filtrées
+  const filteredSmallGroupSessionsForDay = useMemo(() => {
+    return smallGroupSessionsForDay.filter((s) => {
+      const bks = bookingsBySession[s.id] || [];
+      return isSessionMatchingFilters(s, bks);
+    });
+  }, [smallGroupSessionsForDay, bookingsBySession, selectedDiscipline, selectedFillFilter, searchQuery]);
+
+  // Cours d'essai du jour filtrés
+  const filteredTrialBookingsForDay = useMemo(() => {
+    return trialBookingsForDay.filter(isTrialMatchingFilters);
+  }, [trialBookingsForDay, selectedDiscipline, searchQuery]);
+
+  // Fonction de filtrage des créneaux privés
+  const isPrivateSlotMatchingFilters = (
+    matchingSession?: AdminClassSessionSummary,
+    confirmedBooking?: AdminBookingParticipant,
+    cancelledBooking?: AdminBookingParticipant
+  ) => {
+    // A. Filtre Discipline
+    if (selectedDiscipline !== "all") {
+      const disc = (matchingSession?.discipline || "").toLowerCase().trim();
+      if (disc !== selectedDiscipline.toLowerCase().trim()) return false;
+    }
+
+    // B. Filtre Remplissage
+    if (selectedFillFilter === "with_bookings" && !confirmedBooking) return false;
+    if (selectedFillFilter === "available" && confirmedBooking) return false;
+    if (selectedFillFilter === "full" && !confirmedBooking) return false;
+
+    // C. Recherche textuelle
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchSess =
+        (matchingSession?.discipline || "").toLowerCase().includes(q) ||
+        (matchingSession?.level || "").toLowerCase().includes(q);
+      const matchConf =
+        confirmedBooking &&
+        (confirmedBooking.memberName.toLowerCase().includes(q) ||
+          (confirmedBooking.phone && confirmedBooking.phone.toLowerCase().includes(q)) ||
+          (confirmedBooking.email && confirmedBooking.email.toLowerCase().includes(q)) ||
+          confirmedBooking.planName.toLowerCase().includes(q));
+      const matchCanc =
+        cancelledBooking &&
+        (cancelledBooking.memberName.toLowerCase().includes(q) ||
+          (cancelledBooking.phone && cancelledBooking.phone.toLowerCase().includes(q)) ||
+          (cancelledBooking.email && cancelledBooking.email.toLowerCase().includes(q)) ||
+          cancelledBooking.planName.toLowerCase().includes(q));
+
+      if (!matchSess && !matchConf && !matchCanc) return false;
+    }
+
+    return true;
+  };
+
+  const isFilterActive =
+    searchQuery.trim().length > 0 ||
+    selectedDiscipline !== "all" ||
+    selectedFillFilter !== "all";
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setSelectedDiscipline("all");
+    setSelectedFillFilter("all");
+  };
+
   // Navigation de semaine en semaine
   const handleNavigateWeek = (offsetChange: number) => {
     const newOffset = weekOffset + offsetChange;
@@ -297,7 +522,11 @@ export default function AdminReservationsView({
       : await markAttendanceAdmin(supabase, bookingId, targetStatus);
 
     if (!res.success) {
-      alert("Erreur lors de l'émargement : " + (res.error || ""));
+      setActionFeedback({
+        message: "Erreur lors de l'émargement : " + (res.error || ""),
+        type: "error",
+      });
+      setTimeout(() => setActionFeedback(null), 4000);
       setLoadingBookingId(null);
       return;
     }
@@ -320,6 +549,17 @@ export default function AdminReservationsView({
       return { ...prev, [sessionId]: updated };
     });
 
+    setActionFeedback({
+      message:
+        targetStatus === "present"
+          ? "Présence validée avec succès."
+          : targetStatus === "absent"
+          ? "Absence (No-Show) enregistrée."
+          : "Statut réinitialisé en attente.",
+      type: "success",
+    });
+    setTimeout(() => setActionFeedback(null), 3000);
+
     setLoadingBookingId(null);
   };
 
@@ -330,7 +570,11 @@ export default function AdminReservationsView({
 
     const res = await cancelTrialBookingAdmin(supabase, trialBookingId, "Annulé par l'administrateur");
     if (!res.success) {
-      alert("Erreur lors de l'annulation : " + (res.error || ""));
+      setActionFeedback({
+        message: "Erreur lors de l'annulation : " + (res.error || ""),
+        type: "error",
+      });
+      setTimeout(() => setActionFeedback(null), 4000);
       setLoadingBookingId(null);
       return;
     }
@@ -349,6 +593,12 @@ export default function AdminReservationsView({
       });
       return { ...prev, [sessionId]: updated };
     });
+
+    setActionFeedback({
+      message: "Cours d'essai annulé.",
+      type: "success",
+    });
+    setTimeout(() => setActionFeedback(null), 3000);
 
     setLoadingBookingId(null);
   };
@@ -715,13 +965,17 @@ export default function AdminReservationsView({
   ) => {
     const sStartTime = formatToParisTime(session.starts_at);
     const sEndTime = session.ends_at ? formatToParisTime(session.ends_at) : "";
+    const isTargeted = session.id === targetHighlightedSessionId;
 
     return (
       <div
         key={booking.bookingId}
+        id={`session-${session.id}`}
         className={cn(
-          "bg-[#0f172a] border rounded-2xl p-4 sm:p-5 shadow-xl space-y-3.5 transition-all relative overflow-hidden",
-          booking.status === "confirmed"
+          "bg-[#0f172a] border rounded-2xl p-4 sm:p-5 shadow-xl space-y-3.5 transition-all duration-300 relative overflow-hidden",
+          isTargeted
+            ? "border-brand-blue ring-2 ring-brand-blue/50 ring-offset-2 ring-offset-[#070d18] shadow-[0_0_30px_rgba(47,174,224,0.35)]"
+            : booking.status === "confirmed"
             ? "border-brand-blue/40 shadow-[0_0_20px_rgba(47,174,224,0.08)]"
             : "border-red-500/30 bg-[#0f172a]/70"
         )}
@@ -749,17 +1003,27 @@ export default function AdminReservationsView({
           </div>
 
           <div className="flex flex-col items-end gap-1.5">
-            {booking.status === "confirmed" ? (
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
-                <CheckCircle2 size={11} />
-                Confirmé
-              </span>
-            ) : (
-              <span className="px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
-                <XCircle size={11} />
-                Annulé
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleTriggerPrint(session.id)}
+                className="p-1 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer border border-brand-white/10"
+                title="Imprimer cette feuille d'émargement"
+              >
+                <Printer size={12} />
+              </button>
+
+              {booking.status === "confirmed" ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
+                  <CheckCircle2 size={11} />
+                  Confirmé
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
+                  <XCircle size={11} />
+                  Annulé
+                </span>
+              )}
+            </div>
 
             {options?.showDayLink && options.dayDateStr && (
               <button
@@ -922,31 +1186,62 @@ export default function AdminReservationsView({
     );
     const confirmedCount = confirmedParticipants.length;
     const capacity = session.max_capacity || 12;
+    const placesRemaining = Math.max(0, capacity - confirmedCount);
+    const isFull = placesRemaining === 0;
+    const isAlmostFull = placesRemaining > 0 && placesRemaining <= 2;
+    const isVirtual = session.id.startsWith("tmpl_");
 
     const isPast = session.ends_at
       ? new Date(session.ends_at).getTime() <= Date.now()
       : false;
 
-    const isExpanded = expandedSessions[session.id] ?? true;
+    // Auto-dépliement si un inscrit correspond à la recherche active ou si session ciblée
+    const isParticipantMatch =
+      searchQuery.trim().length > 0 &&
+      sessionBookings.some((b) => {
+        const q = searchQuery.toLowerCase().trim();
+        return (
+          b.memberName.toLowerCase().includes(q) ||
+          (b.phone && b.phone.toLowerCase().includes(q)) ||
+          (b.email && b.email.toLowerCase().includes(q)) ||
+          b.planName.toLowerCase().includes(q)
+        );
+      });
+
+    const isExpanded =
+      expandedSessions[session.id] ??
+      (isParticipantMatch || session.id === targetHighlightedSessionId || true);
 
     const sStartTime = getLocalTimeStr(session.starts_at);
     const sEndTime = getLocalTimeStr(session.ends_at);
+    const isTargeted = session.id === targetHighlightedSessionId;
 
     return (
       <div
         key={session.id}
-        className="bg-[#0f172a] border border-brand-white/10 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5"
+        id={`session-${session.id}`}
+        className={cn(
+          "bg-[#0f172a] border rounded-2xl p-5 sm:p-6 shadow-xl space-y-5 transition-all duration-300",
+          isTargeted
+            ? "border-brand-blue ring-2 ring-brand-blue/50 ring-offset-2 ring-offset-[#070d18] shadow-[0_0_30px_rgba(47,174,224,0.35)]"
+            : "border-brand-white/10"
+        )}
       >
         {/* Header de la séance */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-heading font-black uppercase tracking-wider">
                 Cours Adulte
               </span>
               {session.level && (
                 <span className="px-2.5 py-0.5 rounded bg-brand-white/10 text-brand-white/80 border border-brand-white/15 text-[10px] font-bold uppercase tracking-wider">
                   {session.level}
+                </span>
+              )}
+              {isVirtual && (
+                <span className="px-2.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-heading font-black uppercase tracking-wider">
+                  Modèle récurrent (Non instancié)
                 </span>
               )}
               {isPast && (
@@ -979,22 +1274,27 @@ export default function AdminReservationsView({
             </div>
           </div>
 
-          {/* Jauge réelle & Statut du cours */}
+          {/* Jauge réelle & Places restantes & Actions rapides */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-[#070d18] border border-brand-white/5 rounded-xl p-3.5 sm:px-5 w-full lg:w-auto">
             <div className="flex items-center justify-between gap-4 w-full sm:w-auto">
-              <div className="flex-1 sm:min-w-[140px] space-y-1.5">
+              <div className="flex-1 sm:min-w-[170px] space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-heading font-bold uppercase">
-                  <span className="text-brand-white/60">Inscrits :</span>
+                  <span className="text-brand-white/60">
+                    Inscrits : {confirmedCount} / {capacity}
+                  </span>
                   <span
                     className={cn(
-                      confirmedCount >= capacity
-                        ? "text-red-400"
-                        : confirmedCount >= 15
-                        ? "text-amber-400"
-                        : "text-[#00d8ff]"
+                      "text-[10px] font-heading font-black uppercase px-2 py-0.5 rounded-full border",
+                      isFull
+                        ? "bg-red-500/15 text-red-400 border-red-500/30"
+                        : isAlmostFull
+                        ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                        : "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30"
                     )}
                   >
-                    {confirmedCount} / {capacity}
+                    {isFull
+                      ? "Complet"
+                      : `${placesRemaining} libre${placesRemaining > 1 ? "s" : ""}`}
                   </span>
                 </div>
 
@@ -1002,11 +1302,11 @@ export default function AdminReservationsView({
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-300",
-                      confirmedCount >= capacity
+                      isFull
                         ? "bg-red-500"
-                        : confirmedCount >= 15
+                        : isAlmostFull
                         ? "bg-amber-400"
-                        : "bg-[#00d8ff]"
+                        : "bg-[#22c55e]"
                     )}
                     style={{
                       width: `${Math.min(100, (confirmedCount / capacity) * 100)}%`,
@@ -1016,29 +1316,53 @@ export default function AdminReservationsView({
               </div>
 
               {/* Statut du cours */}
-              <div className="border-l border-brand-white/10 pl-4 flex items-center shrink-0">
+              <div className="border-l border-brand-white/10 pl-3 flex items-center shrink-0">
                 {isPast ? (
-                  <span className="px-2.5 py-1 rounded bg-zinc-700/30 text-zinc-400 border border-zinc-600/30 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="px-2 py-1 rounded bg-zinc-700/30 text-zinc-400 border border-zinc-600/30 text-[10px] font-bold uppercase tracking-wider">
                     Terminé
                   </span>
-                ) : confirmedCount >= capacity ? (
-                  <span className="px-2.5 py-1 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
+                ) : isFull ? (
+                  <span className="px-2 py-1 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
                     Complet
                   </span>
                 ) : (
-                  <span className="px-2.5 py-1 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="px-2 py-1 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase tracking-wider">
                     Actif
                   </span>
                 )}
               </div>
             </div>
 
-            <button
-              onClick={() => toggleSessionExpand(session.id)}
-              className="w-full sm:w-auto text-center px-3 py-2 sm:py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white font-heading font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer shrink-0"
-            >
-              {isExpanded ? "Masquer la liste" : `Voir les inscrits (${confirmedCount})`}
-            </button>
+            {/* Boutons d'action : Fiche émargement, Impression, Dépliement */}
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+              {!isVirtual && (
+                <>
+                  <button
+                    onClick={() => setSelectedSessionForModal(session)}
+                    className="px-3 py-1.5 rounded-lg bg-brand-blue/15 hover:bg-brand-blue/25 text-brand-blue font-heading font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer border border-brand-blue/30 flex items-center gap-1.5"
+                    title="Ouvrir la feuille d'émargement détaillée de cette séance"
+                  >
+                    <Users size={13} />
+                    <span>Fiche Séance</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleTriggerPrint(session.id)}
+                    className="p-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer border border-brand-white/10"
+                    title="Imprimer cette feuille d'émargement"
+                  >
+                    <Printer size={14} />
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={() => toggleSessionExpand(session.id)}
+                className="px-3 py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white font-heading font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+              >
+                {isExpanded ? "Masquer" : `Voir les inscrits (${confirmedCount})`}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1051,25 +1375,33 @@ export default function AdminReservationsView({
               exit={{ opacity: 0, height: 0 }}
               className="pt-4 border-t border-brand-white/10 space-y-3"
             >
-              {sessionBookings.length === 0 ? (
-                <div className="py-6 text-center text-brand-white/40 text-xs">
-                  Aucune réservation pour cette séance (0 / {capacity}).
+              {isVirtual ? (
+                <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0c1626]/40 rounded-xl border border-brand-white/5">
+                  Créneau issu du planning récurrent officiel (0 réservation enregistrée).
+                </div>
+              ) : sessionBookings.length === 0 ? (
+                <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0c1626]/40 rounded-xl border border-brand-white/5">
+                  Aucune réservation pour cette séance (0 / {capacity}). {placesRemaining} places disponibles.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto border border-brand-white/5 rounded-xl bg-[#070d18]">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-brand-white/10 text-brand-white/40 uppercase tracking-widest text-[10px]">
-                        <th className="py-2.5 px-3 font-heading">Membre</th>
-                        <th className="py-2.5 px-3 font-heading">Téléphone</th>
-                        <th className="py-2.5 px-3 font-heading">Formule</th>
-                        <th className="py-2.5 px-3 font-heading">Date d&apos;inscription</th>
-                        <th className="py-2.5 px-3 font-heading text-right">Statut</th>
+                      <tr className="border-b border-brand-white/10 text-brand-white/40 uppercase tracking-widest text-[10px] bg-[#0c1626]">
+                        <th className="py-3 px-3 font-heading">Participant</th>
+                        <th className="py-3 px-3 font-heading">Coordonnées</th>
+                        <th className="py-3 px-3 font-heading">Formule / Statut</th>
+                        <th className="py-3 px-3 font-heading">Date d&apos;inscription</th>
+                        <th className="py-3 px-3 font-heading text-right">Émargement & Statut</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-brand-white/5">
                       {sessionBookings.map((p) => {
                         const isCancelled = p.status === "cancelled";
+                        const isCopyingPhone = copiedText === `phone:${p.phone}`;
+                        const isCopyingEmail = copiedText === `email:${p.email}`;
+                        const isCurrentLoading = loadingBookingId === p.bookingId;
+
                         return (
                           <tr
                             key={p.bookingId}
@@ -1079,104 +1411,194 @@ export default function AdminReservationsView({
                               p.isTrial && "bg-amber-500/[0.03]"
                             )}
                           >
-                            <td className="py-2.5 px-3 font-semibold text-brand-white">
+                            {/* Nom & Type de participant */}
+                            <td className="py-3 px-3 font-semibold text-brand-white">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span>{p.memberName}</span>
-                                {p.isTrial && (
+                                <span className="font-heading uppercase tracking-wide">
+                                  {p.memberName}
+                                </span>
+                                {p.isTrial ? (
                                   <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-heading font-black uppercase tracking-wider">
-                                    Essai
+                                    Prospect Essai
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[9px] font-heading font-bold uppercase tracking-wider">
+                                    Adhérent
                                   </span>
                                 )}
                               </div>
-                              {p.isTrial && p.email && (
-                                <a
-                                  href={`mailto:${p.email}`}
-                                  className="text-[11px] text-brand-white/50 hover:text-brand-blue flex items-center gap-1 mt-0.5 font-normal"
-                                >
-                                  <Mail size={10} />
-                                  {p.email}
-                                </a>
-                              )}
                             </td>
-                            <td className="py-2.5 px-3 text-brand-blue">
+
+                            {/* Coordonnées disponibles */}
+                            <td className="py-3 px-3 space-y-1">
                               {p.phone && p.phone !== "—" ? (
-                                <a
-                                  href={`tel:${p.phone}`}
-                                  className="hover:underline flex items-center gap-1"
-                                >
-                                  <Phone size={12} />
-                                  {p.phone}
-                                </a>
+                                <div className="flex items-center gap-1.5">
+                                  <a
+                                    href={`tel:${p.phone}`}
+                                    className="hover:underline flex items-center gap-1 text-brand-blue font-semibold text-xs"
+                                  >
+                                    <Phone size={11} />
+                                    {p.phone}
+                                  </a>
+                                  <button
+                                    onClick={() => handleCopyText(p.phone, "phone")}
+                                    className="text-brand-white/40 hover:text-brand-white transition-colors p-0.5 rounded cursor-pointer"
+                                    title="Copier le numéro"
+                                  >
+                                    {isCopyingPhone ? (
+                                      <Check size={11} className="text-emerald-400" />
+                                    ) : (
+                                      <Copy size={11} />
+                                    )}
+                                  </button>
+                                </div>
                               ) : (
-                                <span className="text-brand-white/40">—</span>
+                                <span className="text-brand-white/40 text-[11px]">Tél : —</span>
+                              )}
+
+                              {p.email && (
+                                <div className="flex items-center gap-1.5">
+                                  <a
+                                    href={`mailto:${p.email}`}
+                                    className="text-[11px] text-brand-white/60 hover:text-brand-blue flex items-center gap-1"
+                                  >
+                                    <Mail size={10} />
+                                    {p.email}
+                                  </a>
+                                  <button
+                                    onClick={() => handleCopyText(p.email!, "email")}
+                                    className="text-brand-white/40 hover:text-brand-white transition-colors p-0.5 rounded cursor-pointer"
+                                    title="Copier l'email"
+                                  >
+                                    {isCopyingEmail ? (
+                                      <Check size={10} className="text-emerald-400" />
+                                    ) : (
+                                      <Copy size={10} />
+                                    )}
+                                  </button>
+                                </div>
                               )}
                             </td>
-                            <td className="py-2.5 px-3">
+
+                            {/* Formule */}
+                            <td className="py-3 px-3">
                               {p.isTrial ? (
-                                <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] uppercase font-heading font-black tracking-wider">
+                                <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] uppercase font-heading font-black tracking-wider inline-block">
                                   COURS D&apos;ESSAI
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded bg-brand-white/5 text-[10px] uppercase font-bold text-brand-white/80 border border-brand-white/10">
+                                <span className="px-2 py-0.5 rounded bg-brand-white/5 text-[10px] uppercase font-bold text-brand-white/80 border border-brand-white/10 inline-block">
                                   {p.planName}
                                 </span>
                               )}
                             </td>
-                            <td className="py-2.5 px-3 text-brand-white/40 text-[11px]">
+
+                            {/* Date résa */}
+                            <td className="py-3 px-3 text-brand-white/40 text-[11px]">
                               {p.createdAt}
                             </td>
-                            <td className="py-2.5 px-3 text-right">
+
+                            {/* Émargement pour TOUS les participants */}
+                            <td className="py-3 px-3 text-right">
                               {isCancelled ? (
                                 <span className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase">
                                   Annulé
                                 </span>
-                              ) : p.isTrial ? (
-                                <div className="inline-flex items-center gap-1 justify-end">
-                                  <button
-                                    onClick={() =>
-                                      handleMarkAttendance(
-                                        p.bookingId,
-                                        session.id,
-                                        "present",
-                                        true
-                                      )
-                                    }
-                                    disabled={loadingBookingId === p.bookingId}
-                                    className={cn(
-                                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
-                                      p.attendanceStatus === "present"
-                                        ? "bg-[#22c55e] text-black font-black"
-                                        : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
-                                    )}
-                                    title="Marquer présent"
-                                  >
-                                    Présent
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleMarkAttendance(
-                                        p.bookingId,
-                                        session.id,
-                                        "absent",
-                                        true
-                                      )
-                                    }
-                                    disabled={loadingBookingId === p.bookingId}
-                                    className={cn(
-                                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
-                                      p.attendanceStatus === "absent"
-                                        ? "bg-red-500 text-white font-black"
-                                        : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
-                                    )}
-                                    title="Marquer absent"
-                                  >
-                                    Absent
-                                  </button>
-                                </div>
                               ) : (
-                                <span className="px-2 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase">
-                                  Inscrit
-                                </span>
+                                <div className="inline-flex flex-col items-end gap-1">
+                                  {/* Statut actuel */}
+                                  <div className="flex items-center gap-1 text-[10px]">
+                                    {p.attendanceStatus === "present" ? (
+                                      <span className="text-[#22c55e] font-bold flex items-center gap-1">
+                                        <CheckCircle size={11} />
+                                        Présent {p.attendedAt ? `(${p.attendedAt})` : ""}
+                                      </span>
+                                    ) : p.attendanceStatus === "absent" ? (
+                                      <span className="text-red-400 font-bold flex items-center gap-1">
+                                        <XCircle size={11} />
+                                        Absent
+                                      </span>
+                                    ) : (
+                                      <span className="text-amber-300 font-semibold">
+                                        En attente
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Boutons d'émargement complets */}
+                                  <div className="inline-flex items-center gap-1 justify-end">
+                                    <button
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          p.bookingId,
+                                          session.id,
+                                          "present",
+                                          Boolean(p.isTrial)
+                                        )
+                                      }
+                                      disabled={isCurrentLoading}
+                                      className={cn(
+                                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer flex items-center gap-0.5",
+                                        p.attendanceStatus === "present"
+                                          ? "bg-[#22c55e] text-black font-black"
+                                          : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
+                                      )}
+                                      title="Marquer présent"
+                                    >
+                                      <Check size={10} />
+                                      Présent
+                                    </button>
+
+                                    <button
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          p.bookingId,
+                                          session.id,
+                                          "absent",
+                                          Boolean(p.isTrial)
+                                        )
+                                      }
+                                      disabled={isCurrentLoading}
+                                      className={cn(
+                                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer flex items-center gap-0.5",
+                                        p.attendanceStatus === "absent"
+                                          ? "bg-red-500 text-white font-black"
+                                          : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
+                                      )}
+                                      title="Marquer absent"
+                                    >
+                                      <X size={10} />
+                                      Absent
+                                    </button>
+
+                                    <button
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          p.bookingId,
+                                          session.id,
+                                          "pending",
+                                          Boolean(p.isTrial)
+                                        )
+                                      }
+                                      disabled={isCurrentLoading}
+                                      className="p-1 rounded text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
+                                      title="Réinitialiser en attente"
+                                    >
+                                      <RotateCcw size={10} />
+                                    </button>
+
+                                    {p.isTrial && (
+                                      <button
+                                        onClick={() => handleCancelTrial(p.bookingId, session.id)}
+                                        disabled={isCurrentLoading}
+                                        className="px-1.5 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[9px] font-bold uppercase border border-red-500/20 transition-colors ml-1"
+                                        title="Annuler ce cours d'essai"
+                                      >
+                                        Annuler
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
                               )}
                             </td>
                           </tr>
@@ -1218,8 +1640,9 @@ export default function AdminReservationsView({
           </Link>
 
           <button
-            onClick={() => window.print()}
+            onClick={() => handleTriggerPrint()}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md shadow-brand-blue/20 cursor-pointer"
+            title="Imprimer la feuille d'émargement"
           >
             <Printer size={14} />
             Imprimer
@@ -1490,7 +1913,7 @@ export default function AdminReservationsView({
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           4. BANDEAU DE CONTEXTE (JOUR OU SEMAINE)
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="bg-[#0c1626] border border-brand-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[#0c1626] border border-brand-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded text-[10px] font-heading font-black uppercase tracking-wider border bg-brand-blue/15 text-brand-blue border-brand-blue/30">
@@ -1650,20 +2073,146 @@ export default function AdminReservationsView({
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          BARRE DE RECHERCHE INSTANTANÉE ET FILTRES MULTI-CRITÈRES
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="bg-[#0c1626] border border-brand-white/10 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3.5 print:hidden">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          {/* Champ de recherche instantanée multi-champs (Nom, prénom, tél, email) */}
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-white/40">
+              <Search size={16} />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher par nom, prénom, téléphone, e-mail, formule..."
+              className="w-full bg-[#070d18] border border-brand-white/10 rounded-xl pl-10 pr-9 py-2.5 text-xs text-brand-white placeholder:text-brand-white/30 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
+                title="Effacer la recherche"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Menus déroulants de filtrage */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Filtre par Discipline */}
+            <div className="relative min-w-[170px] flex-1 sm:flex-initial">
+              <select
+                value={selectedDiscipline}
+                onChange={(e) => setSelectedDiscipline(e.target.value)}
+                className="w-full appearance-none bg-[#070d18] border border-brand-white/10 rounded-xl px-3 py-2.5 text-xs text-brand-white font-heading uppercase font-bold focus:outline-none focus:border-brand-blue transition-all cursor-pointer pr-8"
+              >
+                <option value="all">Toutes disciplines</option>
+                {availableDisciplines.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-brand-white/40">
+                <Filter size={12} />
+              </div>
+            </div>
+
+            {/* Filtre par Remplissage / Disponibilité */}
+            {activeTab !== "trial" && (
+              <div className="relative min-w-[170px] flex-1 sm:flex-initial">
+                <select
+                  value={selectedFillFilter}
+                  onChange={(e) =>
+                    setSelectedFillFilter(
+                      e.target.value as "all" | "with_bookings" | "available" | "full"
+                    )
+                  }
+                  className="w-full appearance-none bg-[#070d18] border border-brand-white/10 rounded-xl px-3 py-2.5 text-xs text-brand-white font-heading uppercase font-bold focus:outline-none focus:border-brand-blue transition-all cursor-pointer pr-8"
+                >
+                  <option value="all">Tous remplissages</option>
+                  <option value="with_bookings">Séances avec inscrits</option>
+                  <option value="available">Places disponibles</option>
+                  <option value="full">Séances complètes</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-brand-white/40">
+                  <Filter size={12} />
+                </div>
+              </div>
+            )}
+
+            {/* Bouton de réinitialisation si au moins un filtre est actif */}
+            {isFilterActive && (
+              <button
+                onClick={handleResetFilters}
+                className="px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-heading font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                title="Réinitialiser tous les filtres"
+              >
+                <RotateCcw size={12} />
+                <span>Réinitialiser</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Badge récapitulatif des filtres actifs */}
+        {isFilterActive && (
+          <div className="flex items-center justify-between text-[11px] pt-2 text-brand-white/50 border-t border-brand-white/5 flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span>Filtres appliqués :</span>
+              {searchQuery && (
+                <span className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 font-semibold">
+                  &ldquo;{searchQuery}&rdquo;
+                </span>
+              )}
+              {selectedDiscipline !== "all" && (
+                <span className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 font-semibold">
+                  {selectedDiscipline}
+                </span>
+              )}
+              {selectedFillFilter !== "all" && (
+                <span className="px-2 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 font-semibold">
+                  {selectedFillFilter === "with_bookings"
+                    ? "Avec inscrits"
+                    : selectedFillFilter === "available"
+                    ? "Places libres"
+                    : "Complètes"}
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleResetFilters}
+              className="text-brand-blue hover:underline cursor-pointer font-semibold text-xs"
+            >
+              Effacer les critères
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           5. CONTENU DES RÉSERVATIONS
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-
-      {/* ─────────────────────────────────────────────────────────────────
-          1. ONGLET COURS D'ESSAI
-          ───────────────────────────────────────────────────────────────── */}
-      {activeTab === "trial" && (
+      <div className="print:hidden space-y-6">
+        {/* ─────────────────────────────────────────────────────────────────
+            1. ONGLET COURS D'ESSAI
+            ───────────────────────────────────────────────────────────────── */}
+        {activeTab === "trial" && (
         viewMode === "day" ? (
           /* 1.A COURS D'ESSAI — MODE JOUR */
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
               <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80 flex items-center gap-2">
                 <Calendar size={16} className="text-brand-blue" />
-                Réservations Cours d&apos;Essai — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName} ({trialBookingsForDay.length})
+                Réservations Cours d&apos;Essai — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName} ({filteredTrialBookingsForDay.length}
+                {isFilterActive && filteredTrialBookingsForDay.length !== trialBookingsForDay.length
+                  ? ` / ${trialBookingsForDay.length}`
+                  : ""}
+                )
               </h3>
               <span className="text-[11px] text-brand-white/50">
                 Prospects ayant réservé un essai sur les créneaux du jour
@@ -1680,9 +2229,25 @@ export default function AdminReservationsView({
                   Les réservations de cours d&apos;essai effectuées par les visiteurs apparaîtront automatiquement ici avec leurs coordonnées complètes.
                 </p>
               </div>
+            ) : filteredTrialBookingsForDay.length === 0 ? (
+              <div className="bg-[#0c1626]/60 border border-brand-white/10 border-dashed rounded-2xl p-10 text-center space-y-3">
+                <Filter size={28} className="mx-auto text-brand-blue/50" />
+                <p className="text-sm font-heading font-bold uppercase text-brand-white/80">
+                  Aucun cours d&apos;essai ne correspond à vos filtres actuels.
+                </p>
+                <p className="text-xs text-brand-white/40">
+                  {trialBookingsForDay.length} réservation(s) de cours d&apos;essai enregistrée(s) ce jour.
+                </p>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-3 py-1.5 rounded-lg bg-brand-blue/15 hover:bg-brand-blue/25 text-brand-blue border border-brand-blue/30 text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {trialBookingsForDay.map((booking) =>
+                {filteredTrialBookingsForDay.map((booking) =>
                   renderTrialBookingCard(booking)
                 )}
               </div>
@@ -1692,10 +2257,12 @@ export default function AdminReservationsView({
           /* 1.B COURS D'ESSAI — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
           <div className="space-y-6">
             {weekDays.map((day) => {
-              const dayTrials = allTrialBookings.filter((tb) => {
+              const allDayTrials = allTrialBookings.filter((tb) => {
                 const dStr = tb.sessionStartsAt ? getLocalDateStr(tb.sessionStartsAt) : "";
                 return dStr === day.dateStr;
               });
+
+              const dayTrials = allDayTrials.filter(isTrialMatchingFilters);
 
               const confirmedCount = dayTrials.filter(
                 (b) => b.status === "confirmed"
@@ -1737,7 +2304,9 @@ export default function AdminReservationsView({
                         )}
                         {dayTrials.length === 0 && (
                           <span className="text-xs text-brand-white/40">
-                            0 cours d&apos;essai réservé
+                            {allDayTrials.length > 0
+                              ? `0 essai correspondant aux filtres (${allDayTrials.length} total)`
+                              : "0 cours d'essai réservé"}
                           </span>
                         )}
                       </div>
@@ -1759,7 +2328,9 @@ export default function AdminReservationsView({
                   {/* Liste des cours d'essai du jour ou état vide */}
                   {dayTrials.length === 0 ? (
                     <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0f172a]/30 rounded-xl border border-brand-white/5">
-                      Aucun cours d&apos;essai réservé pour le {day.dayName} {day.dateNum} {day.monthName}.
+                      {allDayTrials.length > 0
+                        ? `Aucun cours d'essai ne correspond à vos filtres pour le ${day.dayName} ${day.dateNum} ${day.monthName}.`
+                        : `Aucun cours d'essai réservé pour le ${day.dayName} ${day.dateNum} ${day.monthName}.`}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1787,7 +2358,11 @@ export default function AdminReservationsView({
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
               <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80">
-                Séances Cours Adulte programmées ({smallGroupSessionsForDay.length})
+                Séances Cours Adulte programmées ({filteredSmallGroupSessionsForDay.length}
+                {isFilterActive && filteredSmallGroupSessionsForDay.length !== smallGroupSessionsForDay.length
+                  ? ` / ${smallGroupSessionsForDay.length}`
+                  : ""}
+                )
               </h3>
               <span className="text-[11px] text-brand-white/50">
                 Capacité maximale : 12 personnes par séance
@@ -1804,9 +2379,25 @@ export default function AdminReservationsView({
                   Consultez le planning officiel pour ajouter des séances récurrentes ou exceptionnelles.
                 </p>
               </div>
+            ) : filteredSmallGroupSessionsForDay.length === 0 ? (
+              <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-10 text-center space-y-3">
+                <Filter size={28} className="mx-auto text-brand-blue/50" />
+                <p className="text-sm font-heading font-bold uppercase text-brand-white/80">
+                  Aucune séance ne correspond à vos critères de filtrage.
+                </p>
+                <p className="text-xs text-brand-white/40">
+                  {smallGroupSessionsForDay.length} séance(s) programmée(s) pour ce jour.
+                </p>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-3 py-1.5 rounded-lg bg-brand-blue/15 hover:bg-brand-blue/25 text-brand-blue border border-brand-blue/30 text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
             ) : (
               <div className="space-y-4">
-                {smallGroupSessionsForDay.map((session) =>
+                {filteredSmallGroupSessionsForDay.map((session) =>
                   renderSmallGroupSessionCard(session)
                 )}
               </div>
@@ -1816,12 +2407,16 @@ export default function AdminReservationsView({
           /* 2.B SMALL GROUP — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
           <div className="space-y-6">
             {weekDays.map((day) => {
-              const daySgSessions = (weeklyData.smallGroupSessions || [])
+              const allDaySgSessions = (weeklyData.smallGroupSessions || [])
                 .filter((s) => getLocalDateStr(s.starts_at) === day.dateStr)
                 .sort(
                   (a, b) =>
                     new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
                 );
+
+              const daySgSessions = allDaySgSessions.filter((s) =>
+                isSessionMatchingFilters(s, bookingsBySession[s.id] || [])
+              );
 
               const totalInscrits = daySgSessions.reduce((acc, s) => {
                 const bks = bookingsBySession[s.id] || [];
@@ -1841,7 +2436,11 @@ export default function AdminReservationsView({
                       </div>
 
                       <span className="text-xs text-brand-white/60">
-                        {daySgSessions.length} séance{daySgSessions.length > 1 ? "s" : ""} • {totalInscrits} inscrit{totalInscrits > 1 ? "s" : ""}
+                        {daySgSessions.length} séance{daySgSessions.length > 1 ? "s" : ""}
+                        {allDaySgSessions.length !== daySgSessions.length
+                          ? ` (sur ${allDaySgSessions.length})`
+                          : ""}{" "}
+                        • {totalInscrits} inscrit{totalInscrits > 1 ? "s" : ""}
                       </span>
                     </div>
 
@@ -1861,7 +2460,9 @@ export default function AdminReservationsView({
                   {/* Liste des séances du jour ou état vide */}
                   {daySgSessions.length === 0 ? (
                     <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0f172a]/30 rounded-xl border border-brand-white/5">
-                      Aucune séance Cours Adulte programmée pour le {day.dayName} {day.dateNum} {day.monthName}.
+                      {allDaySgSessions.length > 0
+                        ? `Aucune séance ne correspond aux critères de filtrage pour le ${day.dayName} ${day.dateNum} ${day.monthName}.`
+                        : `Aucune séance Cours Adulte programmée pour le ${day.dayName} ${day.dateNum} ${day.monthName}.`}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -1896,8 +2497,8 @@ export default function AdminReservationsView({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {OFFICIAL_PRIVATE_HOURS.map((hourSlot) => {
+            {(() => {
+              const matchingSlots = OFFICIAL_PRIVATE_HOURS.filter((hourSlot) => {
                 const matchingSession = privateSessionsForDay.find((s) => {
                   const sTime = getLocalTimeStr(s.starts_at);
                   return sTime === hourSlot.start;
@@ -1914,251 +2515,326 @@ export default function AdminReservationsView({
                   (b) => b.status === "cancelled"
                 );
 
-                const isPast = matchingSession?.ends_at
-                  ? new Date(matchingSession.ends_at).getTime() <= Date.now()
-                  : false;
+                return isPrivateSlotMatchingFilters(
+                  matchingSession,
+                  confirmedBooking,
+                  cancelledBooking
+                );
+              });
 
-                // CAS 1 : CRÉNEAU RÉSERVÉ & CONFIRMÉ
-                if (confirmedBooking && matchingSession) {
-                  return (
-                    <div
-                      key={hourSlot.start}
-                      className="bg-[#0f172a] border border-[#00d8ff]/40 rounded-2xl p-5 shadow-xl space-y-4 relative overflow-hidden"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="px-3 py-1.5 rounded-xl bg-[#00d8ff]/15 border border-[#00d8ff]/30 text-[#00d8ff] font-heading font-black text-sm">
-                            {hourSlot.start} → {hourSlot.end}
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold uppercase text-brand-white block">
-                              {matchingSession.discipline || "Cours Privé"}
-                            </span>
-                            <span className="text-[10px] text-brand-white/50">
-                              {matchingSession.level || "Individuel"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <span className="px-2.5 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase tracking-wider">
-                          Confirmé
-                        </span>
-                      </div>
-
-                      {/* Fiche du membre réservé */}
-                      <div className="bg-[#070d18] border border-brand-white/5 rounded-xl p-3.5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-heading font-bold text-brand-white uppercase">
-                            {confirmedBooking.memberName}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-brand-white/10 text-brand-white/70 font-semibold uppercase">
-                            {confirmedBooking.planName}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-white/60">
-                          <div className="flex items-center gap-3 flex-wrap">
-                            {confirmedBooking.phone && confirmedBooking.phone !== "—" ? (
-                              <a
-                                href={`tel:${confirmedBooking.phone}`}
-                                className="flex items-center gap-1.5 text-brand-blue hover:underline"
-                              >
-                                <Phone size={13} />
-                                {confirmedBooking.phone}
-                              </a>
-                            ) : (
-                              <span className="text-brand-white/40 text-[11px]">Tél non renseigné</span>
-                            )}
-
-                            {confirmedBooking.email && (
-                              <a
-                                href={`mailto:${confirmedBooking.email}`}
-                                className="flex items-center gap-1 text-brand-white/50 hover:text-brand-white hover:underline text-[11px]"
-                              >
-                                <Mail size={12} />
-                                {confirmedBooking.email}
-                              </a>
-                            )}
-                          </div>
-
-                          <span className="text-[10px] text-brand-white/40">
-                            {confirmedBooking.createdAt}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Pointage d'émargement */}
-                      <div className="pt-2 border-t border-brand-white/5 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold uppercase text-brand-white/50">
-                            Émargement :
-                          </span>
-                          {confirmedBooking.attendanceStatus === "present" ? (
-                            <span className="text-[10px] font-bold text-[#22c55e] flex items-center gap-1">
-                              <CheckCircle size={12} />
-                              Présent {confirmedBooking.attendedAt ? `(${confirmedBooking.attendedAt})` : ""}
-                            </span>
-                          ) : confirmedBooking.attendanceStatus === "absent" ? (
-                            <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
-                              <XCircle size={12} />
-                              Absent
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-amber-300">
-                              En attente
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() =>
-                              handleMarkAttendance(
-                                confirmedBooking.bookingId,
-                                matchingSession.id,
-                                "present"
-                              )
-                            }
-                            disabled={loadingBookingId === confirmedBooking.bookingId}
-                            className={cn(
-                              "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
-                              confirmedBooking.attendanceStatus === "present"
-                                ? "bg-[#22c55e] text-black font-black"
-                                : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
-                            )}
-                          >
-                            Présent
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              handleMarkAttendance(
-                                confirmedBooking.bookingId,
-                                matchingSession.id,
-                                "absent"
-                              )
-                            }
-                            disabled={loadingBookingId === confirmedBooking.bookingId}
-                            className={cn(
-                              "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
-                              confirmedBooking.attendanceStatus === "absent"
-                                ? "bg-red-500 text-white font-black"
-                                : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
-                            )}
-                          >
-                            Absent
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              handleMarkAttendance(
-                                confirmedBooking.bookingId,
-                                matchingSession.id,
-                                "pending"
-                              )
-                            }
-                            disabled={loadingBookingId === confirmedBooking.bookingId}
-                            className="p-1 rounded text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
-                            title="Réinitialiser en attente"
-                          >
-                            <RotateCcw size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // CAS 2 : CRÉNEAU AVEC RÉSERVATION ANNULÉE (Historique préservé)
-                if (cancelledBooking && matchingSession) {
-                  return (
-                    <div
-                      key={hourSlot.start}
-                      className="bg-[#0f172a]/60 border border-red-500/30 rounded-2xl p-5 shadow-lg space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-heading font-black text-sm">
-                            {hourSlot.start} → {hourSlot.end}
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold uppercase text-brand-white/80 block">
-                              {matchingSession.discipline || "Cours Privé"}
-                            </span>
-                            <span className="text-[10px] text-brand-white/40">
-                              1 place redevenue disponible
-                            </span>
-                          </div>
-                        </div>
-
-                        <span className="px-2.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
-                          Annulé
-                        </span>
-                      </div>
-
-                      <div className="bg-[#070d18] border border-red-500/10 rounded-xl p-3 text-xs text-brand-white/60 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-heading font-bold text-brand-white/80">
-                            {cancelledBooking.memberName}
-                          </span>
-                          <span className="text-[10px] text-red-400 font-semibold">
-                            {cancelledBooking.isLateCancellation
-                              ? "Annulation tardive (< 24h)"
-                              : "Annulation standard (≥ 24h)"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-brand-white/40">
-                          <div className="flex items-center gap-2">
-                            {cancelledBooking.phone && cancelledBooking.phone !== "—" && (
-                              <a href={`tel:${cancelledBooking.phone}`} className="text-brand-blue hover:underline">
-                                Tél : {cancelledBooking.phone}
-                              </a>
-                            )}
-                            {cancelledBooking.email && (
-                              <span>• {cancelledBooking.email}</span>
-                            )}
-                          </div>
-                          <span>{cancelledBooking.planName}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // CAS 3 : CRÉNEAU DISPONIBLE / NON RÉSERVÉ
+              if (matchingSlots.length === 0) {
                 return (
-                  <div
-                    key={hourSlot.start}
-                    className="bg-[#0b1322]/60 border border-brand-white/5 border-dashed rounded-2xl p-5 flex items-center justify-between gap-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="px-3 py-1.5 rounded-xl bg-brand-white/5 border border-brand-white/10 text-brand-white/60 font-heading font-black text-sm">
-                        {hourSlot.start} → {hourSlot.end}
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold uppercase text-brand-white/70 block">
-                          Cours Privé Individuel
-                        </span>
-                        <span className="text-[10px] text-brand-white/40">
-                          {isPast ? "Séance passée non réservée" : "Créneau disponible à la réservation"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <span
-                      className={cn(
-                        "px-2.5 py-1 rounded text-[10px] font-heading font-bold uppercase tracking-wider border",
-                        isPast
-                          ? "bg-brand-white/5 text-brand-white/40 border-brand-white/10"
-                          : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
-                      )}
+                  <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-10 text-center space-y-3">
+                    <Filter size={28} className="mx-auto text-brand-blue/50" />
+                    <p className="text-sm font-heading font-bold uppercase text-brand-white/80">
+                      Aucun créneau de cours privé ne correspond à vos filtres actuels.
+                    </p>
+                    <button
+                      onClick={handleResetFilters}
+                      className="px-3 py-1.5 rounded-lg bg-brand-blue/15 hover:bg-brand-blue/25 text-brand-blue border border-brand-blue/30 text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer"
                     >
-                      {isPast ? "Passé" : "1 place libre"}
-                    </span>
+                      Réinitialiser les filtres
+                    </button>
                   </div>
                 );
-              })}
-            </div>
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {matchingSlots.map((hourSlot) => {
+                    const matchingSession = privateSessionsForDay.find((s) => {
+                      const sTime = getLocalTimeStr(s.starts_at);
+                      return sTime === hourSlot.start;
+                    });
+
+                    const sessionBookings = matchingSession
+                      ? bookingsBySession[matchingSession.id] || []
+                      : [];
+
+                    const confirmedBooking = sessionBookings.find(
+                      (b) => b.status === "confirmed"
+                    );
+                    const cancelledBooking = sessionBookings.find(
+                      (b) => b.status === "cancelled"
+                    );
+
+                    const isPast = matchingSession?.ends_at
+                      ? new Date(matchingSession.ends_at).getTime() <= Date.now()
+                      : false;
+                    const isTargeted = Boolean(
+                      matchingSession && matchingSession.id === targetHighlightedSessionId
+                    );
+
+                    // CAS 1 : CRÉNEAU RÉSERVÉ & CONFIRMÉ
+                    if (confirmedBooking && matchingSession) {
+                      return (
+                        <div
+                          key={hourSlot.start}
+                          id={`session-${matchingSession.id}`}
+                          className={cn(
+                            "bg-[#0f172a] border rounded-2xl p-5 shadow-xl space-y-4 relative overflow-hidden transition-all duration-300",
+                            isTargeted
+                              ? "border-brand-blue ring-2 ring-brand-blue/50 ring-offset-2 ring-offset-[#070d18] shadow-[0_0_30px_rgba(47,174,224,0.35)]"
+                              : "border-[#00d8ff]/40"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="px-3 py-1.5 rounded-xl bg-[#00d8ff]/15 border border-[#00d8ff]/30 text-[#00d8ff] font-heading font-black text-sm">
+                                {hourSlot.start} → {hourSlot.end}
+                              </div>
+                              <div>
+                                <span className="text-xs font-bold uppercase text-brand-white block">
+                                  {matchingSession.discipline || "Cours Privé"}
+                                </span>
+                                <span className="text-[10px] text-brand-white/50">
+                                  {matchingSession.level || "Individuel"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleTriggerPrint(matchingSession.id)}
+                                className="p-1 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer border border-brand-white/10"
+                                title="Imprimer cette feuille d'émargement"
+                              >
+                                <Printer size={12} />
+                              </button>
+                              <span className="px-2.5 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase tracking-wider">
+                                Confirmé
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Fiche du membre réservé */}
+                          <div className="bg-[#070d18] border border-brand-white/5 rounded-xl p-3.5 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-heading font-bold text-brand-white uppercase">
+                                {confirmedBooking.memberName}
+                              </span>
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-brand-white/10 text-brand-white/70 font-semibold uppercase">
+                                {confirmedBooking.planName}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-white/60">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {confirmedBooking.phone && confirmedBooking.phone !== "—" ? (
+                                  <a
+                                    href={`tel:${confirmedBooking.phone}`}
+                                    className="flex items-center gap-1.5 text-brand-blue hover:underline"
+                                  >
+                                    <Phone size={13} />
+                                    {confirmedBooking.phone}
+                                  </a>
+                                ) : (
+                                  <span className="text-brand-white/40 text-[11px]">Tél non renseigné</span>
+                                )}
+
+                                {confirmedBooking.email && (
+                                  <a
+                                    href={`mailto:${confirmedBooking.email}`}
+                                    className="flex items-center gap-1 text-brand-white/50 hover:text-brand-white hover:underline text-[11px]"
+                                  >
+                                    <Mail size={12} />
+                                    {confirmedBooking.email}
+                                  </a>
+                                )}
+                              </div>
+
+                              <span className="text-[10px] text-brand-white/40">
+                                {confirmedBooking.createdAt}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Pointage d'émargement */}
+                          <div className="pt-2 border-t border-brand-white/5 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold uppercase text-brand-white/50">
+                                Émargement :
+                              </span>
+                              {confirmedBooking.attendanceStatus === "present" ? (
+                                <span className="text-[10px] font-bold text-[#22c55e] flex items-center gap-1">
+                                  <CheckCircle size={12} />
+                                  Présent {confirmedBooking.attendedAt ? `(${confirmedBooking.attendedAt})` : ""}
+                                </span>
+                              ) : confirmedBooking.attendanceStatus === "absent" ? (
+                                <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
+                                  <XCircle size={12} />
+                                  Absent
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-amber-300">
+                                  En attente
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() =>
+                                  handleMarkAttendance(
+                                    confirmedBooking.bookingId,
+                                    matchingSession.id,
+                                    "present"
+                                  )
+                                }
+                                disabled={loadingBookingId === confirmedBooking.bookingId}
+                                className={cn(
+                                  "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
+                                  confirmedBooking.attendanceStatus === "present"
+                                    ? "bg-[#22c55e] text-black font-black"
+                                    : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
+                                )}
+                              >
+                                Présent
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleMarkAttendance(
+                                    confirmedBooking.bookingId,
+                                    matchingSession.id,
+                                    "absent"
+                                  )
+                                }
+                                disabled={loadingBookingId === confirmedBooking.bookingId}
+                                className={cn(
+                                  "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
+                                  confirmedBooking.attendanceStatus === "absent"
+                                    ? "bg-red-500 text-white font-black"
+                                    : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
+                                )}
+                              >
+                                Absent
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleMarkAttendance(
+                                    confirmedBooking.bookingId,
+                                    matchingSession.id,
+                                    "pending"
+                                  )
+                                }
+                                disabled={loadingBookingId === confirmedBooking.bookingId}
+                                className="p-1 rounded text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
+                                title="Réinitialiser en attente"
+                              >
+                                <RotateCcw size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // CAS 2 : CRÉNEAU AVEC RÉSERVATION ANNULÉE (Historique préservé)
+                    if (cancelledBooking && matchingSession) {
+                      return (
+                        <div
+                          key={hourSlot.start}
+                          id={`session-${matchingSession.id}`}
+                          className={cn(
+                            "bg-[#0f172a]/60 border rounded-2xl p-5 shadow-lg space-y-3 transition-all duration-300",
+                            isTargeted
+                              ? "border-brand-blue ring-2 ring-brand-blue/50 ring-offset-2 ring-offset-[#070d18] shadow-[0_0_30px_rgba(47,174,224,0.35)]"
+                              : "border-red-500/30"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-heading font-black text-sm">
+                                {hourSlot.start} → {hourSlot.end}
+                              </div>
+                              <div>
+                                <span className="text-xs font-bold uppercase text-brand-white/80 block">
+                                  {matchingSession.discipline || "Cours Privé"}
+                                </span>
+                                <span className="text-[10px] text-brand-white/40">
+                                  1 place redevenue disponible
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className="px-2.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
+                              Annulé
+                            </span>
+                          </div>
+
+                          <div className="bg-[#070d18] border border-red-500/10 rounded-xl p-3 text-xs text-brand-white/60 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-heading font-bold text-brand-white/80">
+                                {cancelledBooking.memberName}
+                              </span>
+                              <span className="text-[10px] text-red-400 font-semibold">
+                                {cancelledBooking.isLateCancellation
+                                  ? "Annulation tardive (< 24h)"
+                                  : "Annulation standard (≥ 24h)"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] text-brand-white/40">
+                              <div className="flex items-center gap-2">
+                                {cancelledBooking.phone && cancelledBooking.phone !== "—" && (
+                                  <a href={`tel:${cancelledBooking.phone}`} className="text-brand-blue hover:underline">
+                                    Tél : {cancelledBooking.phone}
+                                  </a>
+                                )}
+                                {cancelledBooking.email && (
+                                  <span>• {cancelledBooking.email}</span>
+                                )}
+                              </div>
+                              <span>{cancelledBooking.planName}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // CAS 3 : CRÉNEAU DISPONIBLE / NON RÉSERVÉ
+                    return (
+                      <div
+                        key={hourSlot.start}
+                        id={matchingSession ? `session-${matchingSession.id}` : undefined}
+                        className={cn(
+                          "bg-[#0b1322]/60 border rounded-2xl p-5 flex items-center justify-between gap-4 transition-all duration-300",
+                          isTargeted
+                            ? "border-brand-blue ring-2 ring-brand-blue/50 ring-offset-2 ring-offset-[#070d18] shadow-[0_0_30px_rgba(47,174,224,0.35)]"
+                            : "border-brand-white/5 border-dashed"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="px-3 py-1.5 rounded-xl bg-brand-white/5 border border-brand-white/10 text-brand-white/60 font-heading font-black text-sm">
+                            {hourSlot.start} → {hourSlot.end}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold uppercase text-brand-white/70 block">
+                              Cours Privé Individuel
+                            </span>
+                            <span className="text-[10px] text-brand-white/40">
+                              {isPast ? "Séance passée non réservée" : "Créneau disponible à la réservation"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span
+                          className={cn(
+                            "px-2.5 py-1 rounded text-[10px] font-heading font-bold uppercase tracking-wider border",
+                            isPast
+                              ? "bg-brand-white/5 text-brand-white/40 border-brand-white/10"
+                              : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
+                          )}
+                        >
+                          {isPast ? "Passé" : "1 place libre"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         ) : (
           /* 3.B COURS PRIVÉS — MODE SEMAINE (Regroupé chronologiquement jour par jour) */
@@ -2177,7 +2853,15 @@ export default function AdminReservationsView({
               for (const session of dayPrivateSessions) {
                 const bks = bookingsBySession[session.id] || [];
                 for (const b of bks) {
-                  dayBookings.push({ booking: b, session });
+                  if (
+                    isPrivateSlotMatchingFilters(
+                      session,
+                      b.status === "confirmed" ? b : undefined,
+                      b.status === "cancelled" ? b : undefined
+                    )
+                  ) {
+                    dayBookings.push({ booking: b, session });
+                  }
                 }
               }
 
@@ -2260,6 +2944,67 @@ export default function AdminReservationsView({
           </div>
         )
       )}
+      </div>
+
+      {/* Feuille d'émargement imprimable (uniquement visible à l'impression papier via print:block) */}
+      <AdminPrintAttendanceSheet
+        dayLabel={viewMode === "day" ? currentDayInfo.fullLabel : weekRangeLabel}
+        sessions={
+          printSessionId
+            ? [
+                ...(weeklyData.smallGroupSessions || []),
+                ...(weeklyData.privateSessions || []),
+              ].filter((s) => s.id === printSessionId)
+            : activeTab === "private"
+            ? viewMode === "day"
+              ? privateSessionsForDay
+              : weeklyData.privateSessions || []
+            : viewMode === "day"
+            ? smallGroupSessionsForDay
+            : weeklyData.smallGroupSessions || []
+        }
+        bookingsBySession={bookingsBySession}
+        singleSessionId={printSessionId}
+      />
+
+      {/* Fiche détaillée d'émargement en modale pour une séance spécifique */}
+      <AdminSessionDetailsModal
+        session={selectedSessionForModal}
+        participants={
+          selectedSessionForModal
+            ? bookingsBySession[selectedSessionForModal.id] || []
+            : []
+        }
+        loadingBookingId={loadingBookingId}
+        onClose={() => setSelectedSessionForModal(null)}
+        onMarkAttendance={handleMarkAttendance}
+        onCancelTrial={handleCancelTrial}
+        onPrintSession={handleTriggerPrint}
+      />
+
+      {/* Notification toast d'action (présent, absent, réinitialisé) */}
+      <AnimatePresence>
+        {actionFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className={cn(
+              "fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl border shadow-2xl flex items-center gap-2.5 text-xs font-heading font-bold uppercase tracking-wider backdrop-blur-md print:hidden",
+              actionFeedback.type === "success"
+                ? "bg-[#0c1626]/95 border-emerald-500/40 text-emerald-400 shadow-emerald-500/10"
+                : "bg-[#0c1626]/95 border-red-500/40 text-red-400 shadow-red-500/10"
+            )}
+          >
+            {actionFeedback.type === "success" ? (
+              <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle size={16} className="text-red-400 shrink-0" />
+            )}
+            <span>{actionFeedback.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
