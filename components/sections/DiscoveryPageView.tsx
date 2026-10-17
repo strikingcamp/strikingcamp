@@ -79,17 +79,6 @@ export default function DiscoveryPageView({
     loadEligibility();
   }, [loadEligibility]);
 
-  // Si l'utilisateur revient après connexion avec ?pack=...
-  useEffect(() => {
-    if (
-      requestedPackParam &&
-      (requestedPackParam === "decouverte_1" ||
-        requestedPackParam === "decouverte_3")
-    ) {
-      handleOpenPackModal(requestedPackParam);
-    }
-  }, [requestedPackParam]);
-
   const handleOpenPackModal = async (packId: string) => {
     setPackError(null);
     setPackSuccessMessage(null);
@@ -135,6 +124,17 @@ export default function DiscoveryPageView({
       setSelectedPackForModal(packDef);
     }
   };
+
+  // Si l'utilisateur revient après connexion avec ?pack=...
+  useEffect(() => {
+    if (
+      requestedPackParam &&
+      (requestedPackParam === "decouverte_1" ||
+        requestedPackParam === "decouverte_3")
+    ) {
+      handleOpenPackModal(requestedPackParam);
+    }
+  }, [requestedPackParam]);
 
   const handleBuyPack = handleOpenPackModal;
 

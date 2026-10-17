@@ -391,70 +391,81 @@ export async function bookSmallGroupSession(
   creditPackId?: string;
   message?: string;
 }> {
-  // 1. Contrôle temporel strict : vérifier que la séance n'est pas terminée (now < ends_at)
-  const { data: sessionData, error: sessionError } = await supabase
-    .from("class_sessions")
-    .select("id, ends_at, starts_at")
-    .eq("id", classSessionId)
-    .single();
+  try {
+    // 1. Contrôle temporel strict : vérifier que la séance n'est pas terminée (now < ends_at)
+    const { data: sessionData, error: sessionError } = await supabase
+      .from("class_sessions")
+      .select("id, ends_at, starts_at")
+      .eq("id", classSessionId)
+      .single();
 
-  if (sessionError || !sessionData) {
-    return {
-      success: false,
-      error: "Séance introuvable. Veuillez rafraîchir le planning.",
-    };
-  }
-
-  if (sessionData.ends_at) {
-    const sessionEndTime = new Date(sessionData.ends_at).getTime();
-    if (Date.now() >= sessionEndTime) {
+    if (sessionError || !sessionData) {
       return {
         success: false,
-        error: "Cette séance est déjà terminée et ne peut plus être réservée.",
+        error: "Séance introuvable. Veuillez rafraîchir le planning.",
       };
     }
-  }
 
-  const { data, error } = await supabase.rpc("create_small_group_booking", {
-    p_class_session_id: classSessionId,
-  });
+    if (sessionData.ends_at) {
+      const sessionEndTime = new Date(sessionData.ends_at).getTime();
+      if (Date.now() >= sessionEndTime) {
+        return {
+          success: false,
+          error: "Cette séance est déjà terminée et ne peut plus être réservée.",
+        };
+      }
+    }
 
-  if (error) {
-    console.error("Erreur RPC create_small_group_booking :", {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
+    const { data, error } = await supabase.rpc("create_small_group_booking", {
+      p_class_session_id: classSessionId,
     });
-    return {
-      success: false,
-      error: error.message || "Erreur lors de la réservation.",
-    };
-  }
 
-  if (data && typeof data === "object") {
-    const res = data as Record<string, unknown>;
-    if (res.success === false) {
+    if (error) {
+      console.error("Erreur RPC create_small_group_booking :", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return {
         success: false,
-        error: (res.message as string) || (res.error as string) || "Impossible de réserver ce cours.",
+        error: error.message || "Erreur lors de la réservation.",
+      };
+    }
+
+    if (data && typeof data === "object") {
+      const res = data as Record<string, unknown>;
+      if (res.success === false) {
+        return {
+          success: false,
+          error: (res.message as string) || (res.error as string) || "Impossible de réserver ce cours.",
+        };
+      }
+
+      return {
+        success: true,
+        bookingId: (res.booking_id as string) || undefined,
+        usedCredit: Boolean(res.used_credit),
+        remainingCredits: typeof res.remaining_credits === "number" ? res.remaining_credits : undefined,
+        creditPackId: (res.credit_pack_id as string) || undefined,
+        message: (res.message as string) || undefined,
       };
     }
 
     return {
-      success: true,
-      bookingId: (res.booking_id as string) || undefined,
-      usedCredit: Boolean(res.used_credit),
-      remainingCredits: typeof res.remaining_credits === "number" ? res.remaining_credits : undefined,
-      creditPackId: (res.credit_pack_id as string) || undefined,
-      message: (res.message as string) || undefined,
+      success: false,
+      error: "Réponse inattendue du serveur.",
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Erreur de connexion. Veuillez vérifier votre accès internet et réessayer.";
+    console.error("Erreur inattendue ou réseau dans bookSmallGroupSession :", err);
+    return {
+      success: false,
+      error: errorMsg.includes("fetch") || errorMsg.includes("network")
+        ? "Erreur de connexion. Veuillez vérifier votre accès internet et réessayer."
+        : errorMsg || "Erreur réseau inattendue.",
     };
   }
-
-  return {
-    success: false,
-    error: "Réponse inattendue du serveur.",
-  };
 }
 
 /**
