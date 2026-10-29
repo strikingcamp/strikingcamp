@@ -91,62 +91,58 @@ export const disciplinesData: Record<string, DisciplineDetail> = {
     slug: "kick-boxing",
     title: "KICK BOXING",
     h1: "Kick Boxing",
-    subtitle: "La fluidité des enchaînements pieds-poings, puissance et condition physique athlétique.",
+    subtitle: "Trois influences. Une méthode. Votre progression.",
     category: "Pieds-Poings",
     image: "/kickboxing.jpg",
     alt: "Entraînement de Kick Boxing à Marseille - Striking Camp",
-    shortDescription: "Discipline combinant les techniques de poings et de jambes avec un travail important sur les déplacements, la distance et le timing.",
+    shortDescription: "Notre méthode de Kick Boxing s'appuie sur trois influences techniques : le Dutch Style, le Soviet Style et le style japonais.",
     intro: [
-      "Le Kick Boxing est un sport de combat dynamique combinant harmonieusement la puissance des frappes de poings et la variété des coups de pied sous toutes leurs formes.",
-      "Au club Striking Camp de Marseille, notre pédagogie met l'accent sur la fluidité des combinaisons, la précision des trajectoires et le développement d'un cardio combat complet."
+      "Au Striking Camp, notre méthode de Kick Boxing s'appuie sur trois influences techniques : le Dutch Style, le Soviet Style et le style japonais.",
+      "Nous combinons et adaptons leurs principes au sein d'un enseignement structuré, axé sur les fondamentaux, la maîtrise technique, les enchaînements et la progression de chaque pratiquant."
     ],
     sections: [
       {
-        title: "FONDAMENTAUX",
-        badge: "Pieds & Poings",
-        description: "La construction des fondamentaux indispensables pour lier les segments hauts et bas :",
+        title: "DUTCH STYLE",
+        badge: "Pression & Combinaisons",
+        description: "Une approche axée sur les combinaisons poings-jambes, le travail offensif, la pression et les transitions entre défense et attaque :",
         points: [
-          "Posture d'équilibre et garde adaptée aux attaques pieds-poings",
-          "Déplacements vifs, replacement après frappe et gestion de la distance",
-          "Cadrage de l'adversaire et occupation du centre de l'espace",
-          "Utilisation du jab pour préparer les attaques en jambes",
-          "Techniques complètes de poings : directs, crochets et uppercuts",
-          "Techniques de coups de pied : low kicks, middle kicks, high kicks et front kicks",
-          "Premières combinaisons de liaison poings-pieds et pieds-poings"
+          "Combinaisons poings-jambes dynamiques",
+          "Enchaînements au sac de frappe et aux paos",
+          "Gestion de la pression offensive continue",
+          "Transitions directes entre défense et contre-attaque"
         ]
       },
       {
-        title: "DRILLS",
-        badge: "Enchaînements & Rythme",
-        description: "Des ateliers ciblés pour développer la puissance explosive et la fluidité motrice :",
+        title: "SOVIET STYLE",
+        badge: "Déplacements & Précision",
+        description: "Une approche mettant l'accent sur les fondamentaux, l'équilibre, les déplacements, la précision et la construction des attaques :",
         points: [
-          "Enchaînements dynamiques pieds-poings avec variations de hauteur et de rythme",
-          "Recherche de la précision d'impact et de l'accélération sur le dernier coup",
-          "Travail aux paos thaï et pattes d'ours pour encaisser et restituer l'énergie",
-          "Séries au sac de frappe pour forger le cardio et l'endurance musculaire",
-          "Exercices par binômes pour développer le coup d'œil et le sens du timing"
+          "Garde hermétique, alignement et équilibre",
+          "Déplacements vifs et gestion millimétrée de la distance",
+          "Précision des frappes directes",
+          "Construction méthodique des attaques et contre-attaques"
         ]
       },
       {
-        title: "SPARRING GUIDÉ",
-        badge: "Application & Décision",
-        description: "Une mise en application progressive des combinaisons dans un environnement bienveillant :",
+        title: "STYLE JAPONAIS",
+        badge: "Timing & Explosivité",
+        description: "Une approche axée sur le timing, la coordination entre les poings et les jambes, l'explosivité et la variété des actions techniques :",
         points: [
-          "Opposition encadrée avec consignes précises données par le coach",
-          "Travail spécifique de la distance de frappe et des angles d'attaque",
-          "Prise de décision rapide sous pression modérée",
-          "Respect mutuel et contrôle strict de la puissance pour progresser sans blessure"
+          "Coordination fluide entre poings et jambes",
+          "Sens du timing et déclenchement rapide des attaques",
+          "Explosivité du geste et précision d'impact",
+          "Transitions vives entre attaque et défense"
         ]
       }
     ],
     highlights: [
-      "Enchaînements pieds-poings",
-      "Low, middle & high kicks",
-      "Travail aux paos & sac",
-      "Cardio combat & timing"
+      "Dutch Style (combinaisons)",
+      "Soviet Style (déplacements)",
+      "Style japonais (timing)",
+      "Méthode en 5 étapes"
     ],
     metaTitle: "Cours de Kick Boxing à Marseille 13010",
-    metaDescription: "Apprenez le Kick Boxing à Marseille au Striking Camp : combinaisons pieds-poings, drills techniques, paos, sac et sparring guidé par le coach Mahfoud.",
+    metaDescription: "Découvrez le Kick Boxing au Striking Camp Marseille (13010). Notre méthode s'appuie sur trois influences : Dutch Style, Soviet Style et style japonais. Cours d'essai encadré.",
     preselectedDiscipline: "Kick Boxing"
   },
 

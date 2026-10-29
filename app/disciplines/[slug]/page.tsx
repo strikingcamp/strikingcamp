@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getDisciplineBySlug, getAllDisciplineSlugs } from "@/data/disciplines";
 import DisciplineDetailView from "@/components/sections/DisciplineDetailView";
+import KickBoxingDetailView from "@/components/sections/KickBoxingDetailView";
 
 interface DisciplinePageProps {
   params: Promise<{
@@ -124,7 +125,11 @@ export default async function DisciplinePage({ params }: DisciplinePageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <DisciplineDetailView discipline={discipline} />
+      {discipline.slug === "kick-boxing" ? (
+        <KickBoxingDetailView discipline={discipline} />
+      ) : (
+        <DisciplineDetailView discipline={discipline} />
+      )}
     </>
   );
 }
