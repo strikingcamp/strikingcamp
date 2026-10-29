@@ -567,7 +567,7 @@ export default function MembershipOnboardingView() {
                   Pack 10 séances — Small Group
                 </h3>
                 <p className="text-xs text-brand-white/70 mt-1 max-w-xl">
-                  Accès à toutes les disciplines de cours collectifs en groupe réduit (12 personnes max). Achetez et rechargez selon votre rythme.
+                  Accès à toutes les disciplines de cours collectifs en groupe réduit. Achetez et rechargez selon votre rythme.
                 </p>
               </div>
 

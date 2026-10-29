@@ -206,7 +206,7 @@ export default function PricingSection({
 
         <p className="text-brand-white/75 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
           Striking Camp propose plusieurs façons de pratiquer selon votre objectif, votre niveau et votre rythme.
-          Entraînement en groupe réduit (12 personnes max) ou coaching privé sur-mesure avec le coach Mahfoud.
+          Entraînement en groupe réduit ou coaching privé sur-mesure avec le coach Mahfoud.
         </p>
 
         {/* Navigation rapide par ancres */}
@@ -245,7 +245,7 @@ export default function PricingSection({
         <section id="cours-adultes" className="scroll-mt-28 space-y-10">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <div className="inline-flex items-center px-3 py-1 bg-brand-blue/10 border border-brand-blue/20 rounded-full text-brand-blue text-xs font-heading font-bold uppercase tracking-wider">
-              <span>Small Group • 12 personnes max</span>
+              <span>Groupe réduit</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-heading font-black uppercase tracking-tight text-brand-white">
               COURS <span className="text-brand-blue">ADULTES</span>
@@ -303,7 +303,7 @@ export default function PricingSection({
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />
-                    <span>Encadrement en groupe réduit (12 max)</span>
+                    <span>Encadrement en groupe réduit</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle2 size={15} className="text-brand-blue shrink-0 mt-0.5" />

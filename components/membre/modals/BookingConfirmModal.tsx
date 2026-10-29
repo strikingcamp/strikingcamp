@@ -130,7 +130,7 @@ export default function BookingConfirmModal() {
                           : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
                       )}
                     >
-                      {isPrivate ? "Cours Privé" : "Cours Adulte"} · {isPrivate ? "1 personne" : "Capacité 12"}
+                      {isPrivate ? "Cours Privé" : "Cours Adulte"} · {isPrivate ? "1 personne" : "Groupe réduit"}
                     </span>
                   </div>
 

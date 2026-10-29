@@ -6,7 +6,7 @@ import DiscoveryPageView, { type PublicPlan } from "@/components/sections/Discov
 export const metadata: Metadata = {
   title: "Cours Découverte — Boxe & Sports de Combat à Marseille (13010)",
   description:
-    "Commencez par une offre découverte au Striking Camp Marseille (13010). Testez le club en groupe réduit de 12 personnes max : 1 séance (20 €), 1 mois découverte illimité (89 €) ou 3 séances (49 €).",
+    "Commencez par une offre découverte au Striking Camp Marseille (13010). Testez le club en groupe réduit : 1 séance (20 €), 1 mois découverte illimité (89 €) ou 3 séances (49 €).",
   alternates: {
     canonical: "https://www.strikingcamp.com/cours-decouverte",
   },

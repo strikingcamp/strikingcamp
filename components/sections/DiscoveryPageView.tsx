@@ -534,7 +534,7 @@ export default function DiscoveryPageView({
               <span>Groupe Réduit</span>
             </h3>
             <p className="text-xs text-brand-white/70 leading-relaxed">
-              12 personnes maximum par séance pour garantir un encadrement technique rigoureux et sécurisé par le coach.
+              Groupe réduit pour garantir un encadrement technique rigoureux et sécurisé par le coach.
             </p>
           </div>
 
