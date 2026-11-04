@@ -314,7 +314,7 @@ export default function TrialBookingModal({
           SESSION_ALREADY_STARTED: "Cette séance a déjà débuté.",
           PRIVATE_SESSION_NOT_ALLOWED: "Les cours privés ne sont pas éligibles aux cours d'essai.",
           COLLECTIVE_TRIAL_NOT_ALLOWED: "Les cours collectifs ne sont plus disponibles en cours d'essai.",
-          INVALID_SESSION_TYPE: "Les cours d'essai sont exclusivement réservés aux créneaux Cours Adulte (Mardi 18:00 Kick Boxing, Vendredi 18:00 Boxe Thaï et Samedi 09:00 Boxe Anglaise).",
+          INVALID_SESSION_TYPE: "Les cours d'essai sont exclusivement réservés aux 4 créneaux officiels : Mardi 18:00 Boxe Thaï, Samedi 09:00 Boxe Anglaise, Samedi 10:00 Kick Boxing et Samedi 12:30 Lady Striking.",
           SERVICE_UNAVAILABLE: "Le service Cours Adulte est actuellement désactivé et indisponible à la réservation.",
           ALREADY_BOOKED_THIS_SESSION: "Tu as déjà réservé un cours d'essai pour ce créneau !",
           ACTIVE_TRIAL_ALREADY_EXISTS:
@@ -498,7 +498,7 @@ export default function TrialBookingModal({
                 ───────────────────────────────────────────────────────────────── */}
             {!loadingSessions && !loadError && isSmallGroupActive && step === 1 && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {TRIAL_DISCIPLINES.map((d) => {
                     const count = availableCountsByDiscipline[d.name as keyof typeof availableCountsByDiscipline] || 0;
                     const isSelected = selectedDiscipline === d.name;
@@ -923,7 +923,7 @@ export default function TrialBookingModal({
                 <div className="p-3.5 rounded-xl bg-brand-white/5 border border-brand-white/10 text-xs text-brand-white/70 flex items-center gap-2.5">
                   <Shield size={16} className="shrink-0 text-brand-blue" />
                   <span>
-                    Tarif du cours d&apos;essai : <strong>{getTrialPriceFormatted("small_group")}</strong>. Règlement sur place auprès du coach ou via le lien de confirmation.
+                    Tarif du cours d&apos;essai : <strong>{getTrialPriceFormatted("small_group")}</strong>. Règlement exclusivement sur place au club (espèces ou carte bancaire).
                   </span>
                 </div>
 

@@ -123,7 +123,7 @@ export async function getAvailableTrialSessions(
       .from("class_sessions")
       .select("id, discipline, type, level, starts_at, ends_at, max_capacity, is_active")
       .eq("type", "small_group")
-      .in("discipline", ["Kick Boxing", "Boxe Thaï", "Boxe Anglaise", "Boxe anglaise", "Boxing"])
+      .in("discipline", ["Kick Boxing", "Kick boxing", "Kickboxing", "Boxe Thaï", "Boxe thai", "Muay Thaï", "Boxe Anglaise", "Boxe anglaise", "Boxing", "Lady Striking", "Lady striking"])
       .eq("is_active", true)
       .gt("starts_at", nowIso)
       .order("starts_at", { ascending: true })

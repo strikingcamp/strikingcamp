@@ -1382,28 +1382,38 @@ export async function cancelTrialBookingAdmin(
   trialBookingId: string,
   reason?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { data, error } = await supabase.rpc("admin_cancel_trial_booking", {
-    p_trial_booking_id: trialBookingId,
-    p_reason: reason || null,
-  });
+  // L'annulation administrative passe impérativement par la route serveur
+  // pour garantir le passage à 'cancelled', la libération de la place,
+  // et l'envoi systématique des deux e-mails Resend (prospect et administrateur).
+  // Aucun fallback direct n'est autorisé afin d'éviter toute annulation silencieuse sans emails.
+  try {
+    const res = await fetch("/api/admin/trial-bookings/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trialBookingId, reason }),
+    });
 
-  if (error) {
-    console.error("Erreur RPC admin_cancel_trial_booking :", error);
-    return { success: false, error: error.message };
-  }
+    const data = await res.json();
 
-  if (data && typeof data === "object") {
-    const res = data as Record<string, unknown>;
-    if (!res.success) {
+    if (!res.ok || !data.success) {
       return {
         success: false,
-        error: (res.error as string) || "Impossible d'annuler ce cours d'essai.",
+        error:
+          data.message ||
+          data.error ||
+          "Échec lors de l'annulation administrative. Les e-mails de notification n'ont pas pu être garantis.",
       };
     }
-    return { success: true };
-  }
 
-  return { success: false, error: "Réponse inattendue du serveur." };
+    return { success: true };
+  } catch (fetchErr) {
+    console.error("Erreur réseau route /api/admin/trial-bookings/cancel :", fetchErr);
+    return {
+      success: false,
+      error:
+        "Erreur de communication avec le serveur. L'annulation n'a pas été effectuée afin d'éviter toute désynchronisation des notifications par e-mail.",
+    };
+  }
 }
 
 /**

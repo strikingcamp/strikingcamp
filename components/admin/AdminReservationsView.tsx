@@ -341,7 +341,7 @@ export default function AdminReservationsView({
       const isFuture = tb.sessionStartsAt
         ? new Date(tb.sessionStartsAt).getTime() >= now
         : true;
-      return tb.status === "confirmed" && (tb.attendanceStatus === "pending" || isFuture);
+      return tb.status === "confirmed" && isFuture;
     }).length;
   }, [allTrialBookings]);
 
@@ -773,20 +773,10 @@ export default function AdminReservationsView({
                 <XCircle size={11} />
                 Annulé
               </span>
-            ) : booking.attendanceStatus === "present" ? (
+            ) : (
               <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
                 <CheckCircle2 size={11} />
-                Présent
-              </span>
-            ) : booking.attendanceStatus === "absent" ? (
-              <span className="px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
-                <XCircle size={11} />
-                Absent (No-Show)
-              </span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-full bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-heading font-black uppercase tracking-wider flex items-center gap-1">
-                <Clock size={11} />
-                Confirmé • En attente
+                Confirmé
               </span>
             )}
 
@@ -857,100 +847,20 @@ export default function AdminReservationsView({
           </div>
         </div>
 
-        {/* Émargement interactif & Annulation pour l'Admin */}
+        {/* Annulation pour l'Admin (Émargement supprimé pour les séances d'essai) */}
         {!isCancelled && (
-          <div className="pt-2 border-t border-brand-white/5 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase text-brand-white/50">
-                Émargement :
-              </span>
-              {booking.attendanceStatus === "present" ? (
-                <span className="text-[10px] font-bold text-[#22c55e] flex items-center gap-1">
-                  <CheckCircle size={12} />
-                  Présent {booking.attendedAt ? `(${booking.attendedAt})` : ""}
-                </span>
-              ) : booking.attendanceStatus === "absent" ? (
-                <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
-                  <XCircle size={12} />
-                  Absent
-                </span>
-              ) : (
-                <span className="text-[10px] font-bold text-amber-300">
-                  En attente
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                onClick={() =>
-                  handleMarkAttendance(
-                    booking.bookingId,
-                    sessionId,
-                    "present",
-                    true
-                  )
-                }
-                disabled={loadingBookingId === booking.bookingId}
-                className={cn(
-                  "px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer flex items-center gap-1",
-                  booking.attendanceStatus === "present"
-                    ? "bg-[#22c55e] text-black font-black shadow-md shadow-[#22c55e]/20"
-                    : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
-                )}
-              >
-                <Check size={12} />
-                Présent
-              </button>
-
-              <button
-                onClick={() =>
-                  handleMarkAttendance(
-                    booking.bookingId,
-                    sessionId,
-                    "absent",
-                    true
-                  )
-                }
-                disabled={loadingBookingId === booking.bookingId}
-                className={cn(
-                  "px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-colors cursor-pointer flex items-center gap-1",
-                  booking.attendanceStatus === "absent"
-                    ? "bg-red-500 text-white font-black shadow-md shadow-red-500/20"
-                    : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
-                )}
-              >
-                <X size={12} />
-                Absent
-              </button>
-
-              <button
-                onClick={() =>
-                  handleCancelTrial(booking.bookingId, sessionId)
-                }
-                disabled={loadingBookingId === booking.bookingId}
-                className="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-bold uppercase transition-colors cursor-pointer border border-red-500/20"
-                title="Annuler ce cours d'essai"
-              >
-                Annuler
-              </button>
-
-              <button
-                onClick={() =>
-                  handleMarkAttendance(
-                    booking.bookingId,
-                    sessionId,
-                    "pending",
-                    true
-                  )
-                }
-                disabled={loadingBookingId === booking.bookingId}
-                className="p-1 rounded text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
-                title="Réinitialiser en attente"
-              >
-                <RotateCcw size={13} />
-              </button>
-            </div>
+          <div className="pt-2 border-t border-brand-white/5 flex items-center justify-end">
+            <button
+              onClick={() =>
+                handleCancelTrial(booking.bookingId, sessionId)
+              }
+              disabled={loadingBookingId === booking.bookingId}
+              className="px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/30 text-red-400 text-xs font-heading font-black uppercase tracking-wider border border-red-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
+              title="Annuler ce cours d'essai"
+            >
+              <X size={13} />
+              Annuler ce cours d&apos;essai
+            </button>
           </div>
         )}
       </div>
@@ -1498,12 +1408,26 @@ export default function AdminReservationsView({
                               {p.createdAt}
                             </td>
 
-                            {/* Émargement pour TOUS les participants */}
+                            {/* Émargement pour membres réguliers & Badge/Annulation pour essais */}
                             <td className="py-3 px-3 text-right">
                               {isCancelled ? (
                                 <span className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase">
                                   Annulé
                                 </span>
+                              ) : p.isTrial ? (
+                                <div className="inline-flex items-center gap-2 justify-end">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-heading font-black uppercase bg-brand-blue/15 text-brand-blue border border-brand-blue/30">
+                                    Essai (10 €)
+                                  </span>
+                                  <button
+                                    onClick={() => handleCancelTrial(p.bookingId, session.id)}
+                                    disabled={isCurrentLoading}
+                                    className="px-2 py-1 rounded bg-red-500/15 hover:bg-red-500/30 text-red-400 text-[10px] font-heading font-black uppercase border border-red-500/30 transition-colors cursor-pointer"
+                                    title="Annuler ce cours d'essai"
+                                  >
+                                    Annuler
+                                  </button>
+                                </div>
                               ) : (
                                 <div className="inline-flex flex-col items-end gap-1">
                                   {/* Statut actuel */}
@@ -1525,7 +1449,7 @@ export default function AdminReservationsView({
                                     )}
                                   </div>
 
-                                  {/* Boutons d'émargement complets */}
+                                  {/* Boutons d'émargement complets pour membre */}
                                   <div className="inline-flex items-center gap-1 justify-end">
                                     <button
                                       onClick={() =>
@@ -1533,7 +1457,7 @@ export default function AdminReservationsView({
                                           p.bookingId,
                                           session.id,
                                           "present",
-                                          Boolean(p.isTrial)
+                                          false
                                         )
                                       }
                                       disabled={isCurrentLoading}
@@ -1555,7 +1479,7 @@ export default function AdminReservationsView({
                                           p.bookingId,
                                           session.id,
                                           "absent",
-                                          Boolean(p.isTrial)
+                                          false
                                         )
                                       }
                                       disabled={isCurrentLoading}
@@ -1577,7 +1501,7 @@ export default function AdminReservationsView({
                                           p.bookingId,
                                           session.id,
                                           "pending",
-                                          Boolean(p.isTrial)
+                                          false
                                         )
                                       }
                                       disabled={isCurrentLoading}
@@ -1586,17 +1510,6 @@ export default function AdminReservationsView({
                                     >
                                       <RotateCcw size={10} />
                                     </button>
-
-                                    {p.isTrial && (
-                                      <button
-                                        onClick={() => handleCancelTrial(p.bookingId, session.id)}
-                                        disabled={isCurrentLoading}
-                                        className="px-1.5 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[9px] font-bold uppercase border border-red-500/20 transition-colors ml-1"
-                                        title="Annuler ce cours d'essai"
-                                      >
-                                        Annuler
-                                      </button>
-                                    )}
                                   </div>
                                 </div>
                               )}
