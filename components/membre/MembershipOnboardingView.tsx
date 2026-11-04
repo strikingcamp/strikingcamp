@@ -75,13 +75,13 @@ export default function MembershipOnboardingView() {
       const classicPlans = plansList.filter(
         (p) =>
           p.tier !== "credit_pack" &&
-          p.tier !== "discovery_pass" &&
-          !p.code?.startsWith("decouverte")
+          (p.tier !== "discovery_pass" || p.code === "discovery_monthly") &&
+          !p.code?.startsWith("decouverte_")
       );
       setPlans(classicPlans);
       setLatestRequest(req);
       if (classicPlans.length > 0 && !selectedPlanId) {
-        // Détecter un éventuel paramètre d'URL (ex: ?plan=adult_essential ou legacy ?plan=lady_striking_annual)
+        // Détecter un éventuel paramètre d'URL (ex: ?plan=discovery_monthly ou ?plan=adult_essential)
         let requestedPlanCode: string | null = null;
         if (typeof window !== "undefined") {
           const urlParams = new URLSearchParams(window.location.search);
@@ -97,12 +97,16 @@ export default function MembershipOnboardingView() {
           if (target) {
             setSelectedPlanId(target.id);
           } else {
-            const defaultPlan = classicPlans.find((p) => p.code === "adult_all_access") || classicPlans[0];
-            setSelectedPlanId(defaultPlan.id);
+            // RÈGLE COMMERCIALE STRICTE : Si la formule demandée en URL est introuvable ou indisponible,
+            // NE JAMAIS sélectionner automatiquement une autre formule (All Access ou formule plus chère).
+            setSelectedPlanId(null);
+            setErrorMessage(
+              `La formule demandée (« ${requestedPlanCode} ») est actuellement indisponible ou introuvable. Veuillez choisir une formule parmi les options disponibles ci-dessous.`
+            );
           }
         } else {
-          const defaultPlan = classicPlans.find((p) => p.code === "adult_all_access") || classicPlans[0];
-          setSelectedPlanId(defaultPlan.id);
+          // Aucun paramètre dans l'URL : ne pas présélectionner de formule automatiquement pour laisser le libre choix
+          setSelectedPlanId(null);
         }
       }
     } catch (err) {

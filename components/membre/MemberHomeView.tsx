@@ -49,7 +49,11 @@ export default function MemberHomeView({
 
   const isDiscoveryMonthlyActive =
     activePlanCodes?.includes("discovery_monthly") ||
-    activePlanNames?.some((n) => n.toLowerCase().includes("1 mois"));
+    activePlanNames?.some((n) => n.toLowerCase().includes("1 mois") || n.toLowerCase().includes("sans engagement"));
+
+  const discoveryMonthlyPlanName =
+    activePlanNames?.find((n) => n.toLowerCase().includes("sans engagement") || n.toLowerCase().includes("1 mois")) ||
+    "Adulte — Sans engagement";
 
   const [challenges, setChallenges] = useState<MemberChallengeCardData[]>([]);
   const [isLoadingChallenges, setIsLoadingChallenges] = useState(true);
@@ -218,7 +222,7 @@ export default function MemberHomeView({
                 </span>
               </div>
               <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wide text-brand-white">
-                1 MOIS DÉCOUVERTE
+                {discoveryMonthlyPlanName}
               </h3>
               <p className="text-xs text-brand-white/70">
                 Accès illimité à tous les cours adultes pendant 30 jours.
