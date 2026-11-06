@@ -397,7 +397,7 @@ export async function getAdminDashboardData(
           level: s.level,
           starts_at: s.starts_at,
           ends_at: s.ends_at,
-          max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
+          max_capacity: s.max_capacity || (s.type === "private" ? 6 : 12),
           bookedCount: count,
           is_active: s.is_active ?? true,
         });
@@ -564,7 +564,7 @@ export async function getAdminWeeklyPlanning(
     level: s.level,
     starts_at: s.starts_at,
     ends_at: s.ends_at,
-    max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
+    max_capacity: s.max_capacity || (s.type === "private" ? 6 : 12),
     bookedCount: bookingCountsMap.get(s.id) || 0,
     is_active: s.is_active ?? true,
   }));
@@ -617,7 +617,7 @@ export async function getAdminSessionReservations(
       level: s.level,
       starts_at: s.starts_at,
       ends_at: s.ends_at,
-      max_capacity: s.max_capacity || (s.type === "private" ? 1 : 12),
+      max_capacity: s.max_capacity || (s.type === "private" ? 6 : 12),
       bookedCount: countsMap.get(s.id) || 0,
       is_active: s.is_active ?? true,
     }));
@@ -643,7 +643,7 @@ export async function getAdminSessionReservations(
       level: activeSessionRaw.level,
       starts_at: activeSessionRaw.starts_at,
       ends_at: activeSessionRaw.ends_at,
-      max_capacity: activeSessionRaw.max_capacity || (activeSessionRaw.type === "private" ? 1 : 12),
+      max_capacity: activeSessionRaw.max_capacity || (activeSessionRaw.type === "private" ? 6 : 12),
       bookedCount: countsMap.get(activeSessionRaw.id) || 0,
       is_active: activeSessionRaw.is_active ?? true,
     };
@@ -1177,7 +1177,7 @@ export async function getAdminWeeklyReservationsData(
       }
     }
 
-    // 6. Extraction des Cours Privés (max_capacity = 1)
+    // 6. Extraction des Cours Individuels (max_capacity = 6 par défaut)
     const privateSessions: AdminClassSessionSummary[] = [];
     for (const s of weekSessions) {
       const rawType = (s.type || "").toLowerCase().trim();
@@ -1195,7 +1195,7 @@ export async function getAdminWeeklyReservationsData(
           level: s.level || "Individuel",
           starts_at: s.starts_at,
           ends_at: s.ends_at,
-          max_capacity: s.max_capacity || 1,
+          max_capacity: s.max_capacity || 6,
           bookedCount: confirmedCountsMap.get(s.id) || 0,
           is_active: s.is_active ?? true,
         });
@@ -1432,7 +1432,7 @@ export async function createClassSessionAdmin(
         level: formData.level?.trim() || null,
         starts_at: formData.starts_at,
         ends_at: formData.ends_at,
-        max_capacity: formData.max_capacity || (formData.type === "private" ? 1 : 12),
+        max_capacity: formData.max_capacity || (formData.type === "private" ? 6 : 12),
         is_active: formData.is_active ?? true,
       },
     ])

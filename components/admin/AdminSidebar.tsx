@@ -38,7 +38,7 @@ const navItems = [
     icon: Calendar,
   },
   {
-    label: "Cours Privés",
+    label: "Cours Individuels",
     href: "/admin/cours-prives",
     icon: User,
   },

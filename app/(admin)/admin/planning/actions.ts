@@ -25,6 +25,18 @@ export interface RecurringTemplateItem {
   updated_at?: string;
 }
 
+export interface AdminDatedSessionParticipant {
+  bookingId: string;
+  userId: string;
+  memberName: string;
+  phone: string;
+  email?: string;
+  planName: string;
+  status: string;
+  attendanceStatus: "pending" | "present" | "absent";
+  createdAt: string;
+}
+
 export interface AdminDatedSessionItem {
   id: string;
   template_id?: string | null;
@@ -38,6 +50,7 @@ export interface AdminDatedSessionItem {
   max_capacity: number;
   is_active: boolean;
   bookedCount: number;
+  participants?: AdminDatedSessionParticipant[];
 }
 
 export interface AdminPlanningDataResult {
@@ -353,6 +366,7 @@ export async function createRecurringTemplateServerAction(payload: {
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
     revalidatePath("/admin/cours-prives");
+    revalidatePath("/admin/reservations");
     revalidatePath("/membre/planning");
 
     return {
@@ -595,6 +609,7 @@ export async function updateRecurringTemplateServerAction(
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
     revalidatePath("/admin/cours-prives");
+    revalidatePath("/admin/reservations");
     revalidatePath("/membre/planning");
 
     return {
@@ -649,6 +664,7 @@ export async function toggleDayTemplatesStatusServerAction(
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
     revalidatePath("/admin/cours-prives");
+    revalidatePath("/admin/reservations");
     revalidatePath("/membre/planning");
 
     return {
@@ -729,6 +745,7 @@ export async function deleteRecurringTemplateServerAction(templateId: string): P
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
     revalidatePath("/admin/cours-prives");
+    revalidatePath("/admin/reservations");
     revalidatePath("/membre/planning");
 
     return {
@@ -843,6 +860,7 @@ export async function updateSingleDatedSessionServerAction(
 
     revalidatePath("/admin/planning");
     revalidatePath("/admin/cours-prives");
+    revalidatePath("/admin/reservations");
     revalidatePath("/membre/planning");
 
     return {
@@ -904,6 +922,7 @@ export async function triggerScheduleGenerationServerAction(): Promise<MutationR
     revalidatePath("/planning");
     revalidatePath("/admin/planning");
     revalidatePath("/admin/cours-prives");
+    revalidatePath("/admin/reservations");
     revalidatePath("/membre/planning");
 
     return {

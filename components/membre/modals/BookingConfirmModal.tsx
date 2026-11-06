@@ -14,7 +14,7 @@ export default function BookingConfirmModal() {
 
   if (!selectedSlot && !isSuccess) return null;
 
-  const isPrivate = selectedSlot?.sessionType === "Cours Privé";
+  const isPrivate = selectedSlot?.sessionType === "Cours Privé" || selectedSlot?.sessionType === "Cours Individuel";
   const quotaRemaining = privateQuota?.sessionsRemaining ?? 0;
 
   const handleConfirm = async () => {
@@ -84,7 +84,7 @@ export default function BookingConfirmModal() {
                         : "bg-brand-blue/10 border-brand-blue/20 text-brand-blue"
                     )}
                   >
-                    {isPrivate ? "Réservation Cours Privé" : "Réservation Cours Adulte"}
+                    {isPrivate ? "Réservation Cours Individuel" : "Réservation Cours Adulte"}
                   </div>
                   <h3 className="text-2xl font-heading font-bold uppercase tracking-wider text-brand-white">
                     Confirmer votre réservation
@@ -99,7 +99,7 @@ export default function BookingConfirmModal() {
                   <div className="mb-4 p-3.5 bg-emerald-950/30 border border-emerald-500/30 rounded-lg flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold uppercase text-emerald-300">
-                        Quota mensuel Cours Privés
+                        Quota mensuel Cours Individuels
                       </p>
                       <p className="text-[11px] text-emerald-400/80">
                         {quotaRemaining} / {privateQuota?.quotaTotal || 8} séance{quotaRemaining > 1 ? "s" : ""} restante{quotaRemaining > 1 ? "s" : ""} ce cycle
@@ -130,7 +130,7 @@ export default function BookingConfirmModal() {
                           : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
                       )}
                     >
-                      {isPrivate ? "Cours Privé" : "Cours Adulte"} · {isPrivate ? "1 personne" : "Groupe réduit"}
+                      {isPrivate ? "Cours Individuel" : "Cours Adulte"} · {isPrivate ? "Petit groupe (4 à 6 pers.)" : "Groupe réduit"}
                     </span>
                   </div>
 
@@ -160,7 +160,7 @@ export default function BookingConfirmModal() {
                         Format
                       </span>
                       <span className="text-brand-white/80 font-medium">
-                        {isPrivate ? "Cours individuel sur mesure" : selectedSlot.level}
+                        {isPrivate ? "Cours individuel en petit groupe (4 à 6 pers.)" : selectedSlot.level}
                       </span>
                     </div>
                   )}

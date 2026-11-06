@@ -153,7 +153,7 @@ export default function MemberHomeView({
               Choisissez votre formule d&apos;entraînement
             </h3>
             <p className="text-xs text-brand-white/60 max-w-md">
-              Sélectionnez votre formule (Cours Privé ou Cours Adulte) pour activer vos réservations.
+              Sélectionnez votre formule (Cours Individuel ou Cours Adulte) pour activer vos réservations.
             </p>
           </div>
 
@@ -168,7 +168,7 @@ export default function MemberHomeView({
       )}
 
       {/* ━━━━━━━━━━━━━━━━━━━━
-          BANDEAU QUOTA COURS PRIVÉS (SI ABONNÉ PRIVÉ ET SERVICE ACTIVÉ)
+          BANDEAU QUOTA COURS INDIVIDUELS (SI ABONNÉ PRIVÉ ET SERVICE ACTIVÉ)
           ━━━━━━━━━━━━━━━━━━━━ */}
       {hasPrivateAccess && isPrivateEnabled && (
         <motion.div
@@ -178,17 +178,17 @@ export default function MemberHomeView({
         >
           <div>
             <p className="text-xs uppercase tracking-wider font-bold text-brand-blue">
-              Formule Cours Privés active
+              Formule Cours Individuels active
             </p>
             <h3 className="text-sm font-heading font-black uppercase text-brand-white">
-              Solde mensuel de séances individuelles
+              Solde mensuel de cours individuels
             </h3>
             <p className="text-xs text-brand-white/60">
               Il vous reste{" "}
               <span className="font-bold text-brand-blue">
                 {quotaRemaining} sur {quotaTotal}
               </span>{" "}
-              séances privées ce mois-ci.
+              séances ce mois-ci.
             </p>
           </div>
 
@@ -196,7 +196,7 @@ export default function MemberHomeView({
             href="/membre/planning"
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-blue hover:bg-brand-white text-brand-black font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-brand-blue/20 shrink-0"
           >
-            Réserver un cours privé
+            Réserver un cours individuel
             <ArrowRight size={14} />
           </Link>
         </motion.div>
@@ -448,12 +448,12 @@ export default function MemberHomeView({
                   <div
                     className={cn(
                       "w-11 h-11 rounded-xl flex items-center justify-center font-heading font-black text-xs uppercase shrink-0 border",
-                      slot.sessionType === "Cours Privé"
+                      slot.sessionType === "Cours Privé" || slot.sessionType === "Cours Individuel"
                         ? "bg-brand-blue/15 text-brand-blue border-brand-blue/30"
                         : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                     )}
                   >
-                    {slot.sessionType === "Cours Privé" ? "PRIVÉ" : "ADULTE"}
+                    {slot.sessionType === "Cours Privé" || slot.sessionType === "Cours Individuel" ? "INDIVIDUEL" : "ADULTE"}
                   </div>
 
                   <div className="space-y-1">
@@ -462,7 +462,7 @@ export default function MemberHomeView({
                         {slot.discipline}
                       </span>
                       <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-white/5 text-brand-white/70 border border-brand-white/10">
-                        {slot.sessionType === "Small Group" ? "Cours Adulte" : slot.sessionType}
+                        {slot.sessionType === "Small Group" ? "Cours Adulte" : slot.sessionType === "Cours Privé" ? "Cours Individuel" : slot.sessionType}
                       </span>
                     </div>
 

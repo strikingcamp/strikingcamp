@@ -1384,7 +1384,7 @@ export default function AdminMembersView({
                     >
                       <div className="space-y-0.5">
                         <span className="font-semibold text-brand-white block">
-                          {b.discipline} • {b.sessionType === "private" ? "Cours Privé" : "Cours Adulte"}
+                          {b.discipline} • {b.sessionType === "private" ? "Cours Individuel" : "Cours Adulte"}
                         </span>
                         <span className="text-[11px] text-brand-white/40">
                           {new Date(b.starts_at).toLocaleDateString("fr-FR", {

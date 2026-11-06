@@ -521,7 +521,7 @@ export default function MembershipOnboardingView() {
                 : "bg-brand-white/5 text-brand-white/60 hover:text-brand-white"
             )}
           >
-            Cours Privés
+            Cours Individuels
           </button>
           <button
             type="button"

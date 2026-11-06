@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         discipline = session.discipline || discipline;
         sessionType =
           session.type === "private"
-            ? "Cours Privé"
+            ? "Cours Individuel"
             : "Cours Adulte";
 
         if (session.starts_at) {

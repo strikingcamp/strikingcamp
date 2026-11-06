@@ -25,6 +25,7 @@ import {
   Eye,
   FileText,
   AlertCircle,
+  Edit2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -374,7 +375,7 @@ export default function AdminReservationsView({
     }
 
     const confirmedCount = sessionBookings.filter((b) => b.status === "confirmed").length;
-    const capacity = session.max_capacity || (session.type === "private" ? 1 : 12);
+    const capacity = session.max_capacity || (session.type === "private" ? 6 : 12);
     const placesRemaining = Math.max(0, capacity - confirmedCount);
 
     // B. Filtre Remplissage
@@ -437,11 +438,12 @@ export default function AdminReservationsView({
     return trialBookingsForDay.filter(isTrialMatchingFilters);
   }, [trialBookingsForDay, selectedDiscipline, searchQuery]);
 
-  // Fonction de filtrage des créneaux privés
+  // Fonction de filtrage des créneaux individuels
   const isPrivateSlotMatchingFilters = (
     matchingSession?: AdminClassSessionSummary,
     confirmedBooking?: AdminBookingParticipant,
-    cancelledBooking?: AdminBookingParticipant
+    cancelledBooking?: AdminBookingParticipant,
+    allBookings?: AdminBookingParticipant[]
   ) => {
     // A. Filtre Discipline
     if (selectedDiscipline !== "all") {
@@ -449,10 +451,15 @@ export default function AdminReservationsView({
       if (disc !== selectedDiscipline.toLowerCase().trim()) return false;
     }
 
+    const sessionBks = allBookings || (confirmedBooking ? [confirmedBooking] : []);
+    const confCount = sessionBks.filter((b) => b.status === "confirmed").length;
+    const cap = matchingSession?.max_capacity || 6;
+    const rem = Math.max(0, cap - confCount);
+
     // B. Filtre Remplissage
-    if (selectedFillFilter === "with_bookings" && !confirmedBooking) return false;
-    if (selectedFillFilter === "available" && confirmedBooking) return false;
-    if (selectedFillFilter === "full" && !confirmedBooking) return false;
+    if (selectedFillFilter === "with_bookings" && confCount === 0) return false;
+    if (selectedFillFilter === "available" && rem === 0) return false;
+    if (selectedFillFilter === "full" && rem > 0) return false;
 
     // C. Recherche textuelle
     if (searchQuery.trim()) {
@@ -460,12 +467,13 @@ export default function AdminReservationsView({
       const matchSess =
         (matchingSession?.discipline || "").toLowerCase().includes(q) ||
         (matchingSession?.level || "").toLowerCase().includes(q);
-      const matchConf =
-        confirmedBooking &&
-        (confirmedBooking.memberName.toLowerCase().includes(q) ||
-          (confirmedBooking.phone && confirmedBooking.phone.toLowerCase().includes(q)) ||
-          (confirmedBooking.email && confirmedBooking.email.toLowerCase().includes(q)) ||
-          confirmedBooking.planName.toLowerCase().includes(q));
+      const matchBks = sessionBks.some(
+        (b) =>
+          b.memberName.toLowerCase().includes(q) ||
+          (b.phone && b.phone.toLowerCase().includes(q)) ||
+          (b.email && b.email.toLowerCase().includes(q)) ||
+          b.planName.toLowerCase().includes(q)
+      );
       const matchCanc =
         cancelledBooking &&
         (cancelledBooking.memberName.toLowerCase().includes(q) ||
@@ -473,7 +481,7 @@ export default function AdminReservationsView({
           (cancelledBooking.email && cancelledBooking.email.toLowerCase().includes(q)) ||
           cancelledBooking.planName.toLowerCase().includes(q));
 
-      if (!matchSess && !matchConf && !matchCanc) return false;
+      if (!matchSess && !matchBks && !matchCanc) return false;
     }
 
     return true;
@@ -899,7 +907,7 @@ export default function AdminReservationsView({
                 {sStartTime} {sEndTime ? `→ ${sEndTime}` : ""}
               </span>
               <span className="text-xs font-bold uppercase text-brand-white">
-                {session.discipline || "Cours Privé"}
+                {session.discipline || "Cours Individuel"}
               </span>
               {session.level && (
                 <span className="text-[10px] text-brand-white/50">
@@ -1607,7 +1615,7 @@ export default function AdminReservationsView({
             <span>Cours Adulte</span>
           </button>
 
-          {/* 3. COURS PRIVÉS */}
+          {/* 3. COURS INDIVIDUELS */}
           <button
             onClick={() => setActiveTab("private")}
             className={cn(
@@ -1617,7 +1625,7 @@ export default function AdminReservationsView({
                 : "text-brand-white/60 hover:text-brand-white hover:bg-brand-white/5"
             )}
           >
-            <span>Cours Privés</span>
+            <span>Cours Individuels</span>
           </button>
         </div>
 
@@ -1833,7 +1841,7 @@ export default function AdminReservationsView({
               {activeTab === "trial"
                 ? "Cours d'Essai Prospects"
                 : activeTab === "private"
-                ? "Cours Privés Individuels"
+                ? "Cours Individuels"
                 : "Séances Cours Adulte"}
             </span>
             <span className="text-xs text-brand-white/50">•</span>
@@ -2440,7 +2448,7 @@ export default function AdminReservationsView({
                   <div className="bg-[#0f172a]/60 border border-brand-white/10 border-dashed rounded-2xl p-10 text-center space-y-3">
                     <Filter size={28} className="mx-auto text-brand-blue/50" />
                     <p className="text-sm font-heading font-bold uppercase text-brand-white/80">
-                      Aucun créneau de cours privé ne correspond à vos filtres actuels.
+                      Aucun créneau de cours individuel ne correspond à vos filtres actuels.
                     </p>
                     <button
                       onClick={handleResetFilters}
@@ -2464,12 +2472,18 @@ export default function AdminReservationsView({
                       ? bookingsBySession[matchingSession.id] || []
                       : [];
 
-                    const confirmedBooking = sessionBookings.find(
+                    const confirmedBookings = sessionBookings.filter(
                       (b) => b.status === "confirmed"
                     );
-                    const cancelledBooking = sessionBookings.find(
+                    const cancelledBookings = sessionBookings.filter(
                       (b) => b.status === "cancelled"
                     );
+
+                    const capacity = matchingSession?.max_capacity || 6;
+                    const confirmedCount = confirmedBookings.length;
+                    const remainingPlaces = Math.max(0, capacity - confirmedCount);
+                    const isFull = remainingPlaces === 0;
+                    const isAlmostFull = remainingPlaces > 0 && remainingPlaces <= 2;
 
                     const isPast = matchingSession?.ends_at
                       ? new Date(matchingSession.ends_at).getTime() <= Date.now()
@@ -2478,8 +2492,8 @@ export default function AdminReservationsView({
                       matchingSession && matchingSession.id === targetHighlightedSessionId
                     );
 
-                    // CAS 1 : CRÉNEAU RÉSERVÉ & CONFIRMÉ
-                    if (confirmedBooking && matchingSession) {
+                    // CAS 1 : CRÉNEAU AVEC INSCRITS CONFIRMÉS (1 à plusieurs membres)
+                    if (confirmedCount > 0 && matchingSession) {
                       return (
                         <div
                           key={hourSlot.start}
@@ -2488,164 +2502,215 @@ export default function AdminReservationsView({
                             "bg-[#0f172a] border rounded-2xl p-5 shadow-xl space-y-4 relative overflow-hidden transition-all duration-300",
                             isTargeted
                               ? "border-brand-blue ring-2 ring-brand-blue/50 ring-offset-2 ring-offset-[#070d18] shadow-[0_0_30px_rgba(47,174,224,0.35)]"
+                              : isFull
+                              ? "border-red-500/40"
                               : "border-[#00d8ff]/40"
                           )}
                         >
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start justify-between gap-3 flex-wrap">
                             <div className="flex items-center gap-2.5">
                               <div className="px-3 py-1.5 rounded-xl bg-[#00d8ff]/15 border border-[#00d8ff]/30 text-[#00d8ff] font-heading font-black text-sm">
                                 {hourSlot.start} → {hourSlot.end}
                               </div>
                               <div>
                                 <span className="text-xs font-bold uppercase text-brand-white block">
-                                  {matchingSession.discipline || "Cours Privé"}
+                                  {matchingSession.discipline || "Cours Individuel"}
                                 </span>
-                                <span className="text-[10px] text-brand-white/50">
-                                  {matchingSession.level || "Individuel"}
+                                <span className="text-[11px] font-semibold text-brand-white/70">
+                                  {confirmedCount} / {capacity} participant{capacity > 1 ? "s" : ""} —{" "}
+                                  <span
+                                    className={cn(
+                                      isFull
+                                        ? "text-red-400 font-bold"
+                                        : isAlmostFull
+                                        ? "text-amber-300 font-bold"
+                                        : "text-[#22c55e] font-bold"
+                                    )}
+                                  >
+                                    {isFull
+                                      ? "Complet"
+                                      : `${remainingPlaces} place${
+                                          remainingPlaces > 1 ? "s" : ""
+                                        } restante${remainingPlaces > 1 ? "s" : ""}`}
+                                  </span>
                                 </span>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2">
                               <button
+                                onClick={() => setSelectedSessionForModal(matchingSession)}
+                                className="px-2.5 py-1 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer border border-brand-white/10 flex items-center gap-1.5"
+                                title="Modifier la capacité ou voir la fiche"
+                              >
+                                <Edit2 size={12} />
+                                <span>Capacité & Fiche</span>
+                              </button>
+
+                              <button
                                 onClick={() => handleTriggerPrint(matchingSession.id)}
-                                className="p-1 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer border border-brand-white/10"
+                                className="p-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/70 hover:text-brand-white transition-colors cursor-pointer border border-brand-white/10"
                                 title="Imprimer cette feuille d'émargement"
                               >
-                                <Printer size={12} />
+                                <Printer size={13} />
                               </button>
-                              <span className="px-2.5 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30 text-[10px] font-bold uppercase tracking-wider">
-                                Confirmé
+
+                              <span
+                                className={cn(
+                                  "px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
+                                  isFull
+                                    ? "bg-red-500/15 text-red-400 border-red-500/30"
+                                    : "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30"
+                                )}
+                              >
+                                {isFull ? "Complet" : "Confirmé"}
                               </span>
                             </div>
                           </div>
 
-                          {/* Fiche du membre réservé */}
-                          <div className="bg-[#070d18] border border-brand-white/5 rounded-xl p-3.5 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-heading font-bold text-brand-white uppercase">
-                                {confirmedBooking.memberName}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-brand-white/10 text-brand-white/70 font-semibold uppercase">
-                                {confirmedBooking.planName}
-                              </span>
-                            </div>
+                          {/* Liste des membres inscrits */}
+                          <div className="space-y-2.5">
+                            {confirmedBookings.map((confirmedBooking) => (
+                              <div
+                                key={confirmedBooking.bookingId}
+                                className="bg-[#070d18] border border-brand-white/5 rounded-xl p-3 space-y-2"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-heading font-bold text-brand-white uppercase">
+                                    {confirmedBooking.memberName}
+                                  </span>
+                                  <span className="text-[10px] px-2 py-0.5 rounded bg-brand-white/10 text-brand-white/70 font-semibold uppercase">
+                                    {confirmedBooking.planName}
+                                  </span>
+                                </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-white/60">
-                              <div className="flex items-center gap-3 flex-wrap">
-                                {confirmedBooking.phone && confirmedBooking.phone !== "—" ? (
-                                  <a
-                                    href={`tel:${confirmedBooking.phone}`}
-                                    className="flex items-center gap-1.5 text-brand-blue hover:underline"
-                                  >
-                                    <Phone size={13} />
-                                    {confirmedBooking.phone}
-                                  </a>
-                                ) : (
-                                  <span className="text-brand-white/40 text-[11px]">Tél non renseigné</span>
-                                )}
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-white/60">
+                                  <div className="flex items-center gap-3 flex-wrap">
+                                    {confirmedBooking.phone && confirmedBooking.phone !== "—" ? (
+                                      <a
+                                        href={`tel:${confirmedBooking.phone}`}
+                                        className="flex items-center gap-1.5 text-brand-blue hover:underline"
+                                      >
+                                        <Phone size={13} />
+                                        {confirmedBooking.phone}
+                                      </a>
+                                    ) : (
+                                      <span className="text-brand-white/40 text-[11px]">Tél non renseigné</span>
+                                    )}
 
-                                {confirmedBooking.email && (
-                                  <a
-                                    href={`mailto:${confirmedBooking.email}`}
-                                    className="flex items-center gap-1 text-brand-white/50 hover:text-brand-white hover:underline text-[11px]"
-                                  >
-                                    <Mail size={12} />
-                                    {confirmedBooking.email}
-                                  </a>
-                                )}
+                                    {confirmedBooking.email && (
+                                      <a
+                                        href={`mailto:${confirmedBooking.email}`}
+                                        className="flex items-center gap-1 text-brand-white/50 hover:text-brand-white hover:underline text-[11px]"
+                                      >
+                                        <Mail size={12} />
+                                        {confirmedBooking.email}
+                                      </a>
+                                    )}
+                                  </div>
+
+                                  <span className="text-[10px] text-brand-white/40">
+                                    {confirmedBooking.createdAt}
+                                  </span>
+                                </div>
+
+                                {/* Pointage d'émargement */}
+                                <div className="pt-2 border-t border-brand-white/5 flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold uppercase text-brand-white/50">
+                                      Émargement :
+                                    </span>
+                                    {confirmedBooking.attendanceStatus === "present" ? (
+                                      <span className="text-[10px] font-bold text-[#22c55e] flex items-center gap-1">
+                                        <CheckCircle size={12} />
+                                        Présent {confirmedBooking.attendedAt ? `(${confirmedBooking.attendedAt})` : ""}
+                                      </span>
+                                    ) : confirmedBooking.attendanceStatus === "absent" ? (
+                                      <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
+                                        <XCircle size={12} />
+                                        Absent
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-amber-300">
+                                        En attente
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          confirmedBooking.bookingId,
+                                          matchingSession.id,
+                                          "present"
+                                        )
+                                      }
+                                      disabled={loadingBookingId === confirmedBooking.bookingId}
+                                      className={cn(
+                                        "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
+                                        confirmedBooking.attendanceStatus === "present"
+                                          ? "bg-[#22c55e] text-black font-black"
+                                          : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
+                                      )}
+                                    >
+                                      Présent
+                                    </button>
+
+                                    <button
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          confirmedBooking.bookingId,
+                                          matchingSession.id,
+                                          "absent"
+                                        )
+                                      }
+                                      disabled={loadingBookingId === confirmedBooking.bookingId}
+                                      className={cn(
+                                        "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
+                                        confirmedBooking.attendanceStatus === "absent"
+                                          ? "bg-red-500 text-white font-black"
+                                          : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
+                                      )}
+                                    >
+                                      Absent
+                                    </button>
+
+                                    <button
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          confirmedBooking.bookingId,
+                                          matchingSession.id,
+                                          "pending"
+                                        )
+                                      }
+                                      disabled={loadingBookingId === confirmedBooking.bookingId}
+                                      className="p-1 rounded text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
+                                      title="Réinitialiser en attente"
+                                    >
+                                      <RotateCcw size={13} />
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
-
-                              <span className="text-[10px] text-brand-white/40">
-                                {confirmedBooking.createdAt}
-                              </span>
-                            </div>
+                            ))}
                           </div>
 
-                          {/* Pointage d'émargement */}
-                          <div className="pt-2 border-t border-brand-white/5 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold uppercase text-brand-white/50">
-                                Émargement :
+                          {/* Historique annulations éventuelles */}
+                          {cancelledBookings.length > 0 && (
+                            <div className="pt-2 border-t border-brand-white/5 text-[11px] text-brand-white/40">
+                              <span>
+                                {cancelledBookings.length} réservation(s) annulée(s) précédemment sur ce créneau.
                               </span>
-                              {confirmedBooking.attendanceStatus === "present" ? (
-                                <span className="text-[10px] font-bold text-[#22c55e] flex items-center gap-1">
-                                  <CheckCircle size={12} />
-                                  Présent {confirmedBooking.attendedAt ? `(${confirmedBooking.attendedAt})` : ""}
-                                </span>
-                              ) : confirmedBooking.attendanceStatus === "absent" ? (
-                                <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
-                                  <XCircle size={12} />
-                                  Absent
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-bold text-amber-300">
-                                  En attente
-                                </span>
-                              )}
                             </div>
-
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() =>
-                                  handleMarkAttendance(
-                                    confirmedBooking.bookingId,
-                                    matchingSession.id,
-                                    "present"
-                                  )
-                                }
-                                disabled={loadingBookingId === confirmedBooking.bookingId}
-                                className={cn(
-                                  "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
-                                  confirmedBooking.attendanceStatus === "present"
-                                    ? "bg-[#22c55e] text-black font-black"
-                                    : "bg-[#22c55e]/15 hover:bg-[#22c55e]/30 text-[#22c55e]"
-                                )}
-                              >
-                                Présent
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  handleMarkAttendance(
-                                    confirmedBooking.bookingId,
-                                    matchingSession.id,
-                                    "absent"
-                                  )
-                                }
-                                disabled={loadingBookingId === confirmedBooking.bookingId}
-                                className={cn(
-                                  "px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-colors cursor-pointer",
-                                  confirmedBooking.attendanceStatus === "absent"
-                                    ? "bg-red-500 text-white font-black"
-                                    : "bg-red-500/15 hover:bg-red-500/30 text-red-400"
-                                )}
-                              >
-                                Absent
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  handleMarkAttendance(
-                                    confirmedBooking.bookingId,
-                                    matchingSession.id,
-                                    "pending"
-                                  )
-                                }
-                                disabled={loadingBookingId === confirmedBooking.bookingId}
-                                className="p-1 rounded text-brand-white/40 hover:text-brand-white transition-colors cursor-pointer"
-                                title="Réinitialiser en attente"
-                              >
-                                <RotateCcw size={13} />
-                              </button>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       );
                     }
 
-                    // CAS 2 : CRÉNEAU AVEC RÉSERVATION ANNULÉE (Historique préservé)
-                    if (cancelledBooking && matchingSession) {
+                    // CAS 2 : CRÉNEAU AVEC RÉSERVATIONS ANNULÉES SEULEMENT (0 confirmé)
+                    if (cancelledBookings.length > 0 && matchingSession) {
+                      const firstCancelled = cancelledBookings[0];
                       return (
                         <div
                           key={hourSlot.start}
@@ -2657,49 +2722,59 @@ export default function AdminReservationsView({
                               : "border-red-500/30"
                           )}
                         >
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start justify-between gap-3 flex-wrap">
                             <div className="flex items-center gap-2.5">
                               <div className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-heading font-black text-sm">
                                 {hourSlot.start} → {hourSlot.end}
                               </div>
                               <div>
                                 <span className="text-xs font-bold uppercase text-brand-white/80 block">
-                                  {matchingSession.discipline || "Cours Privé"}
+                                  {matchingSession.discipline || "Cours Individuel"}
                                 </span>
-                                <span className="text-[10px] text-brand-white/40">
-                                  1 place redevenue disponible
+                                <span className="text-[11px] text-brand-white/60">
+                                  0 / {capacity} participants —{" "}
+                                  <span className="text-[#22c55e] font-semibold">{capacity} places disponibles</span>
                                 </span>
                               </div>
                             </div>
 
-                            <span className="px-2.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
-                              Annulé
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setSelectedSessionForModal(matchingSession)}
+                                className="px-2.5 py-1 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer border border-brand-white/10 flex items-center gap-1.5"
+                              >
+                                <Edit2 size={12} />
+                                <span>Capacité & Fiche</span>
+                              </button>
+                              <span className="px-2.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold uppercase tracking-wider">
+                                Annulé ({cancelledBookings.length})
+                              </span>
+                            </div>
                           </div>
 
                           <div className="bg-[#070d18] border border-red-500/10 rounded-xl p-3 text-xs text-brand-white/60 space-y-1">
                             <div className="flex items-center justify-between">
                               <span className="font-heading font-bold text-brand-white/80">
-                                {cancelledBooking.memberName}
+                                {firstCancelled.memberName}
                               </span>
                               <span className="text-[10px] text-red-400 font-semibold">
-                                {cancelledBooking.isLateCancellation
+                                {firstCancelled.isLateCancellation
                                   ? "Annulation tardive (< 24h)"
                                   : "Annulation standard (≥ 24h)"}
                               </span>
                             </div>
                             <div className="flex items-center justify-between text-[10px] text-brand-white/40">
                               <div className="flex items-center gap-2">
-                                {cancelledBooking.phone && cancelledBooking.phone !== "—" && (
-                                  <a href={`tel:${cancelledBooking.phone}`} className="text-brand-blue hover:underline">
-                                    Tél : {cancelledBooking.phone}
+                                {firstCancelled.phone && firstCancelled.phone !== "—" && (
+                                  <a href={`tel:${firstCancelled.phone}`} className="text-brand-blue hover:underline">
+                                    Tél : {firstCancelled.phone}
                                   </a>
                                 )}
-                                {cancelledBooking.email && (
-                                  <span>• {cancelledBooking.email}</span>
+                                {firstCancelled.email && (
+                                  <span>• {firstCancelled.email}</span>
                                 )}
                               </div>
-                              <span>{cancelledBooking.planName}</span>
+                              <span>{firstCancelled.planName}</span>
                             </div>
                           </div>
                         </div>
@@ -2724,24 +2799,39 @@ export default function AdminReservationsView({
                           </div>
                           <div>
                             <span className="text-xs font-bold uppercase text-brand-white/70 block">
-                              Cours Privé Individuel
+                              Cours Individuel
                             </span>
                             <span className="text-[10px] text-brand-white/40">
-                              {isPast ? "Séance passée non réservée" : "Créneau disponible à la réservation"}
+                              {isPast
+                                ? "Séance passée non réservée"
+                                : `Créneau disponible — 0 / ${capacity} participants (${capacity} places libres)`}
                             </span>
                           </div>
                         </div>
 
-                        <span
-                          className={cn(
-                            "px-2.5 py-1 rounded text-[10px] font-heading font-bold uppercase tracking-wider border",
-                            isPast
-                              ? "bg-brand-white/5 text-brand-white/40 border-brand-white/10"
-                              : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
+                        <div className="flex items-center gap-2">
+                          {matchingSession && (
+                            <button
+                              onClick={() => setSelectedSessionForModal(matchingSession)}
+                              className="px-2.5 py-1 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white text-xs font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer border border-brand-white/10 flex items-center gap-1.5"
+                              title="Modifier la capacité"
+                            >
+                              <Edit2 size={12} />
+                              <span className="hidden sm:inline">Capacité</span>
+                            </button>
                           )}
-                        >
-                          {isPast ? "Passé" : "1 place libre"}
-                        </span>
+
+                          <span
+                            className={cn(
+                              "px-2.5 py-1 rounded text-[10px] font-heading font-bold uppercase tracking-wider border",
+                              isPast
+                                ? "bg-brand-white/5 text-brand-white/40 border-brand-white/10"
+                                : "bg-[#00d8ff]/10 text-[#00d8ff] border-[#00d8ff]/20"
+                            )}
+                          >
+                            {isPast ? "Passé" : `${capacity} places libres`}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
@@ -2839,7 +2929,7 @@ export default function AdminReservationsView({
                   {/* Liste des réservations du jour ou état vide */}
                   {dayBookings.length === 0 ? (
                     <div className="py-6 text-center text-brand-white/40 text-xs italic bg-[#0f172a]/30 rounded-xl border border-brand-white/5">
-                      Aucune réservation de cours privé pour le {day.dayName} {day.dateNum} {day.monthName}.
+                      Aucune réservation de cours individuel pour le {day.dayName} {day.dateNum} {day.monthName}.
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -187,7 +187,7 @@ function generateSlotsFromData(
           endTime = formatToParisTime(eDate);
         }
 
-        const maxCapacity = s.max_capacity ?? (isPriv ? 1 : 12);
+        const maxCapacity = s.max_capacity ?? (isPriv ? 6 : 12);
 
         // Réservations confirmées associées à cette séance (class_session.id)
         const bookingsForSession = allConfirmedBookings.filter(
@@ -219,9 +219,7 @@ function generateSlotsFromData(
           }
         }
 
-        const isOccupiedByOther = isPriv
-          ? (bookingsForSession.some((b) => b.user_id !== currentUserId) || (bookedCount >= 1 && !isBookedByMe))
-          : (bookedCount >= maxCapacity && !isBookedByMe);
+        const isOccupiedByOther = bookedCount >= maxCapacity && !isBookedByMe;
 
         const endsAtIso = s.ends_at || null;
         // Règle temporelle stricte : un cours dont l'heure de début est passée est verrouillé
@@ -604,17 +602,17 @@ export default function MemberPlanningView() {
         id: selectedSlotForBooking.id,
         classSessionId: sessionId,
         discipline,
-        sessionType: "Cours Privé",
+        sessionType: "Cours Individuel",
         day,
         time: `${selectedSlotForBooking.startTime} → ${selectedSlotForBooking.endTime}`,
         date: dayDateMap[day]?.fullDateLabel || "31 Août 2026",
         level,
       });
 
-      console.log("[MemberPlanningView] Résultat réservation privée :", result);
+      console.log("[MemberPlanningView] Résultat réservation cours individuel :", result);
 
       if (!result.success) {
-        setBookingError(result.error || "Impossible de réserver ce cours privé.");
+        setBookingError(result.error || "Impossible de réserver ce cours individuel.");
         setIsSubmitting(false);
         return;
       }
@@ -720,7 +718,7 @@ export default function MemberPlanningView() {
                   : "text-brand-white/70 hover:text-brand-white hover:bg-brand-white/5"
               )}
             >
-              <span>Cours privés</span>
+              <span>Cours Individuels</span>
             </button>
           )}
 
@@ -788,7 +786,7 @@ export default function MemberPlanningView() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl sm:text-2xl font-heading font-black uppercase tracking-wider text-brand-white">
-                    COURS PRIVÉS
+                    COURS INDIVIDUELS
                   </h2>
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-[#00d8ff]/15 text-[#00d8ff] border border-[#00d8ff]/30">
                     Formule Active
@@ -804,7 +802,7 @@ export default function MemberPlanningView() {
 
               <div className="text-xs text-brand-white/70 bg-black/40 px-3.5 py-2.5 rounded-xl border border-brand-white/10 flex items-center gap-2">
                 <Clock size={15} className="text-[#00d8ff] shrink-0" />
-                <span>Séance individuelle sur mesure · <strong>50 min</strong></span>
+                <span>Petit groupe (4 à 6 pers.) · <strong>50 min</strong></span>
               </div>
             </div>
 
@@ -1082,14 +1080,14 @@ export default function MemberPlanningView() {
                             {slot.startTime} → {slot.endTime}
                           </span>
                           <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-                            Réservé
+                            Complet
                           </span>
                         </div>
                         <div className="text-xs text-zinc-600">
-                          Déjà réservé par un autre membre
+                          Séance complète ({slot.bookedCount}/{slot.maxCapacity})
                         </div>
                         <div className="w-full py-2 bg-zinc-800/80 border border-zinc-700/80 rounded-lg text-xs font-semibold uppercase text-zinc-500 text-center">
-                          Indisponible
+                          Complet
                         </div>
                       </div>
                     );
@@ -1108,23 +1106,25 @@ export default function MemberPlanningView() {
                             {slot.startTime} → {slot.endTime}
                           </span>
                           <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-                            Formule Privée requise
+                            Formule Cours Individuel requise
                           </span>
                         </div>
                         <div className="text-xs text-zinc-400">
-                          Séance individuelle (50 min) · Réservé aux abonnés Cours Privés
+                          Petit groupe (4 à 6 pers. · 50 min) · Réservé aux abonnés Cours Individuels
                         </div>
                         <button
                           onClick={() => setIsPrivatePlanRequiredModalOpen(true)}
                           className="w-full py-2.5 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 hover:border-zinc-500 font-heading font-bold text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center"
                         >
-                          Formule Privée requise
+                          Formule Cours Individuel requise
                         </button>
                       </div>
                     );
                   }
 
-                  // 🔷 Membre avec formule privée active : bouton actif & modal de confirmation standard
+                  // 🔷 Membre avec formule cours individuel active : bouton actif & modal de confirmation standard
+                  const remainingPlaces = Math.max(0, slot.maxCapacity - slot.bookedCount);
+
                   return (
                     <div
                       key={slot.id}
@@ -1136,11 +1136,11 @@ export default function MemberPlanningView() {
                           {slot.startTime} → {slot.endTime}
                         </span>
                         <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-[#00d8ff]/15 text-[#00d8ff] border border-[#00d8ff]/30">
-                          1 place libre
+                          {remainingPlaces} place{remainingPlaces > 1 ? "s" : ""} libre{remainingPlaces > 1 ? "s" : ""}
                         </span>
                       </div>
                       <div className="text-xs text-brand-white/60">
-                        Séance individuelle (50 min)
+                        Petit groupe ({slot.bookedCount}/{slot.maxCapacity} inscrits · 50 min)
                       </div>
                       <button
                         onClick={() => {
@@ -1840,7 +1840,7 @@ export default function MemberPlanningView() {
             >
               <div className="pb-3 border-b border-brand-white/10">
                 <h3 className="text-lg sm:text-xl font-heading font-black uppercase tracking-wider text-brand-white">
-                  Formule Cours Privé requise
+                  Formule Cours Individuel requise
                 </h3>
                 <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#00d8ff]/20 text-[#00d8ff] border border-[#00d8ff]/30 inline-block mt-0.5">
                   Accès réservé
@@ -1849,10 +1849,10 @@ export default function MemberPlanningView() {
 
               <div className="bg-[#0b1b33]/60 border border-[#00d8ff]/20 rounded-xl p-4 space-y-2 text-xs text-brand-white/80 leading-relaxed">
                 <p className="font-semibold text-brand-white">
-                  Vous devez posséder une formule Cours Privé active pour pouvoir réserver cette séance.
+                  Vous devez posséder une formule Cours Individuel active pour pouvoir réserver cette séance.
                 </p>
                 <p className="text-brand-white/60">
-                  Consultez nos formules pour accéder aux réservations privées et bénéficier d&apos;un accompagnement 100% sur-mesure avec votre coach.
+                  Consultez nos formules pour accéder aux réservations de cours individuels en petit groupe et bénéficier d&apos;un accompagnement personnalisé avec votre coach.
                 </p>
               </div>
 

@@ -27,7 +27,7 @@ export default function BookingCancelModal() {
   const [cancelResultMsg, setCancelResultMsg] = useState<string | null>(null);
   const [isLateResult, setIsLateResult] = useState<boolean>(false);
 
-  const isPrivate = slotToCancel?.sessionType === "Cours Privé";
+  const isPrivate = slotToCancel?.sessionType === "Cours Privé" || slotToCancel?.sessionType === "Cours Individuel";
 
   // Calcul précis du délai restant avant la séance
   const { isLateWarning } = useMemo(() => {
@@ -183,7 +183,7 @@ export default function BookingCancelModal() {
                           : "bg-brand-blue/20 text-brand-blue border-brand-blue/30"
                       )}
                     >
-                      {isPrivate ? "Cours Privé" : "Cours Adulte"}
+                      {isPrivate ? "Cours Individuel" : "Cours Adulte"}
                     </span>
                   </div>
 

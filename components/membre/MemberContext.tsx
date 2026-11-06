@@ -41,7 +41,7 @@ import { formatToParisDate, formatToParisTime } from "@/lib/supabase/admin";
 export type BookingSlot = {
   id?: string;
   discipline: string;
-  sessionType: "Cours Privé" | "Small Group";
+  sessionType: "Cours Privé" | "Cours Individuel" | "Small Group";
   day: string;
   time: string;
   level?: string;
@@ -263,7 +263,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    if (newSlot.sessionType === "Cours Privé") {
+    if (newSlot.sessionType === "Cours Privé" || newSlot.sessionType === "Cours Individuel") {
       setPrivateQuota((prev) => {
         if (!prev) return prev;
         const remaining = Math.max(0, prev.sessionsRemaining - 1);
@@ -298,7 +298,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    if (removedSlot?.sessionType === "Cours Privé" && shouldRestituteQuota) {
+    if ((removedSlot?.sessionType === "Cours Privé" || removedSlot?.sessionType === "Cours Individuel") && shouldRestituteQuota) {
       setPrivateQuota((prev) => {
         if (!prev) return prev;
         const remaining = Math.min(prev.quotaTotal, prev.sessionsRemaining + 1);
@@ -587,14 +587,14 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   };
 
   const bookSlot = async (slot: BookingSlot) => {
-    if (slot.sessionType === "Cours Privé") {
+    if (slot.sessionType === "Cours Privé" || slot.sessionType === "Cours Individuel") {
       return bookPrivate(slot);
     }
     return bookSmallGroup(slot);
   };
 
   const cancelSlot = async (bookingId: string) => {
-    if (slotToCancel?.sessionType === "Cours Privé") {
+    if (slotToCancel?.sessionType === "Cours Privé" || slotToCancel?.sessionType === "Cours Individuel") {
       return cancelPrivate(bookingId);
     }
     return cancelSmallGroup(bookingId);

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -17,12 +18,15 @@ import {
   AlertCircle,
   CheckCircle2,
   Calendar,
+  Edit2,
+  Save,
 } from "lucide-react";
 import type {
   AdminClassSessionSummary,
   AdminBookingParticipant,
 } from "@/lib/supabase/admin";
 import { formatToParisTime, formatToParisDate } from "@/lib/supabase/admin";
+import { updateSingleDatedSessionServerAction } from "@/app/(admin)/admin/planning/actions";
 import { cn } from "@/lib/utils";
 
 interface AdminSessionDetailsModalProps {
@@ -49,7 +53,28 @@ export default function AdminSessionDetailsModal({
   onCancelTrial,
   onPrintSession,
 }: AdminSessionDetailsModalProps) {
+  const router = useRouter();
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  const defaultCap = session
+    ? session.max_capacity || (session.type === "private" ? 6 : 12)
+    : 6;
+  const [currentCapacity, setCurrentCapacity] = useState<number>(defaultCap);
+  const [isEditingCapacity, setIsEditingCapacity] = useState(false);
+  const [capacityInput, setCapacityInput] = useState<string>(String(defaultCap));
+  const [capacityError, setCapacityError] = useState<string | null>(null);
+  const [isSavingCapacity, setIsSavingCapacity] = useState(false);
+  const [capacitySuccessMsg, setCapacitySuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (session) {
+      const cap = session.max_capacity || (session.type === "private" ? 6 : 12);
+      setCurrentCapacity(cap);
+      setCapacityInput(String(cap));
+      setIsEditingCapacity(false);
+      setCapacityError(null);
+    }
+  }, [session]);
 
   if (!session) return null;
 
@@ -61,8 +86,7 @@ export default function AdminSessionDetailsModal({
     (p) => p.status === "cancelled"
   );
 
-  const capacity =
-    session.max_capacity || (session.type === "private" ? 1 : 12);
+  const capacity = currentCapacity;
   const confirmedCount = confirmedParticipants.length;
   const placesRemaining = Math.max(0, capacity - confirmedCount);
 
@@ -81,6 +105,43 @@ export default function AdminSessionDetailsModal({
     setTimeout(() => {
       setCopiedText(null);
     }, 2000);
+  };
+
+  const handleSaveCapacity = async () => {
+    setCapacityError(null);
+    setCapacitySuccessMsg(null);
+    const parsed = parseInt(capacityInput, 10);
+    if (isNaN(parsed) || parsed < 1) {
+      setCapacityError("La capacité doit être un nombre entier positif (ex: 4, 5, 6).");
+      return;
+    }
+    if (parsed < confirmedCount) {
+      setCapacityError(
+        `Impossible de réduire à ${parsed} : ${confirmedCount} personne(s) sont déjà inscrite(s).`
+      );
+      return;
+    }
+
+    setIsSavingCapacity(true);
+    try {
+      const res = await updateSingleDatedSessionServerAction(session.id, {
+        max_capacity: parsed,
+      });
+      if (res.success) {
+        setCurrentCapacity(parsed);
+        setIsEditingCapacity(false);
+        setCapacitySuccessMsg(`Capacité mise à jour : ${parsed} participants.`);
+        setTimeout(() => setCapacitySuccessMsg(null), 3000);
+        router.refresh();
+      } else {
+        setCapacityError(res.error || "Erreur lors de la modification de capacité.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur inattendue.";
+      setCapacityError(msg);
+    } finally {
+      setIsSavingCapacity(false);
+    }
   };
 
   return (
@@ -108,7 +169,7 @@ export default function AdminSessionDetailsModal({
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="px-2.5 py-0.5 rounded bg-brand-blue/15 text-brand-blue border border-brand-blue/30 text-[10px] font-heading font-black uppercase tracking-wider">
-                  {session.type === "private" ? "Cours Privé" : "Cours Adulte"}
+                  {session.type === "private" ? "Cours Individuel" : "Cours Adulte"}
                 </span>
                 {session.level && (
                   <span className="px-2.5 py-0.5 rounded bg-brand-white/10 text-brand-white/80 border border-brand-white/15 text-[10px] font-bold uppercase">
@@ -180,6 +241,107 @@ export default function AdminSessionDetailsModal({
 
           {/* Corps de la modale avec défilement */}
           <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+            {/* Contrôle administrateur de capacité (Séance datée réelle) */}
+            {!isVirtual && (
+              <div className="bg-[#0f172a] border border-brand-white/10 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Users size={16} className="text-[#00d8ff]" />
+                  <span className="text-xs font-heading font-bold uppercase tracking-wider text-brand-white">
+                    Capacité maximale de la séance :
+                  </span>
+                  <span className="text-sm font-heading font-black text-[#00d8ff]">
+                    {capacity} participant{capacity > 1 ? "s" : ""}
+                  </span>
+                  <span className="text-[11px] text-brand-white/40">
+                    ({confirmedCount} inscrit{confirmedCount > 1 ? "s" : ""} — {placesRemaining} place{placesRemaining > 1 ? "s" : ""} libre{placesRemaining > 1 ? "s" : ""})
+                  </span>
+                </div>
+
+                {!isEditingCapacity ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCapacityInput(String(capacity));
+                      setIsEditingCapacity(true);
+                      setCapacityError(null);
+                    }}
+                    className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-brand-white/5 hover:bg-brand-white/10 border border-brand-white/15 text-brand-white text-xs font-heading font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Edit2 size={12} />
+                    <span>Modifier la capacité</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1 bg-[#070d18] border border-brand-white/20 rounded-lg p-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const val = Math.max(confirmedCount, Math.max(1, parseInt(capacityInput || "1", 10) - 1));
+                          setCapacityInput(String(val));
+                        }}
+                        disabled={isSavingCapacity || parseInt(capacityInput || "1", 10) <= confirmedCount}
+                        className="w-7 h-7 flex items-center justify-center rounded bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-bold disabled:opacity-40 cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min={confirmedCount || 1}
+                        value={capacityInput}
+                        onChange={(e) => setCapacityInput(e.target.value)}
+                        className="w-14 bg-transparent text-center font-mono font-bold text-xs text-brand-white focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const val = parseInt(capacityInput || "1", 10) + 1;
+                          setCapacityInput(String(val));
+                        }}
+                        disabled={isSavingCapacity}
+                        className="w-7 h-7 flex items-center justify-center rounded bg-brand-white/5 hover:bg-brand-white/10 text-brand-white text-xs font-bold disabled:opacity-40 cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveCapacity}
+                      disabled={isSavingCapacity}
+                      className="px-3 py-1.5 bg-[#00d8ff] hover:bg-brand-white text-black text-xs font-heading font-black uppercase tracking-wider rounded-lg flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Save size={12} />
+                      <span>{isSavingCapacity ? "Enregistrement..." : "Valider"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingCapacity(false);
+                        setCapacityError(null);
+                      }}
+                      disabled={isSavingCapacity}
+                      className="px-2.5 py-1.5 text-xs text-brand-white/50 hover:text-brand-white cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {capacityError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-center gap-2">
+                <AlertCircle size={14} className="shrink-0" />
+                <span>{capacityError}</span>
+              </div>
+            )}
+            {capacitySuccessMsg && (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 flex items-center gap-2">
+                <CheckCircle size={14} className="shrink-0" />
+                <span>{capacitySuccessMsg}</span>
+              </div>
+            )}
+
             {/* Cas de la séance virtuelle (tmpl_*) */}
             {isVirtual ? (
               <div className="bg-[#0f172a] border border-brand-blue/30 rounded-xl p-6 text-center space-y-3">

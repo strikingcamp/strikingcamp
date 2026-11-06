@@ -38,7 +38,7 @@ export interface BookingEmailData {
   memberEmail: string;
   memberName: string;
   discipline: string;
-  sessionType: string; // "Cours Adulte" | "Cours Privé"
+  sessionType: string; // "Cours Adulte" | "Cours Individuel"
   date: string;
   time: string;
   location?: string;

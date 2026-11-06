@@ -74,14 +74,14 @@ export default function QuickActionModal() {
                 >
                   <div className="flex items-center justify-between w-full">
                     <h4 className="text-base font-heading font-bold uppercase tracking-wide text-brand-white group-hover:text-emerald-400 transition-colors">
-                      Cours Privé (Individuel)
+                      Cours Individuel (Petit groupe)
                     </h4>
                     <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                       {quotaRemaining} restante{quotaRemaining > 1 ? "s" : ""}
                     </span>
                   </div>
                   <p className="text-xs text-brand-white/60 mt-0.5 leading-relaxed">
-                    Séance privée 1-à-1 sur mesure (50 min) avec suivi personnalisé.
+                    Séance en petit groupe de 4 à 6 participants (50 min) avec suivi personnalisé.
                   </p>
                 </button>
               )}
