@@ -277,24 +277,76 @@ export default function AdminDashboardView({
               </div>
             ) : (
               <div className="divide-y divide-brand-white/5">
-                {recentBookings.map((b) => (
-                  <div
-                    key={b.id}
-                    className="py-3 flex items-center justify-between text-xs"
-                  >
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-brand-white block">
-                        {b.memberName}
-                      </span>
-                      <span className="text-brand-white/50">
-                        {b.sessionName} · {b.sessionDate} ({b.sessionTime})
-                      </span>
+                {recentBookings.map((b) => {
+                  const isPrivate =
+                    b.sessionType === "private" ||
+                    (b.sessionName || "").toLowerCase().includes("priv");
+
+                  return (
+                    <div
+                      key={b.id}
+                      className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-heading font-black text-sm text-brand-white uppercase tracking-wide">
+                            {b.memberName}
+                          </span>
+                          {isPrivate ? (
+                            <span className="px-2 py-0.5 rounded-md bg-[#00d8ff]/15 text-[#00d8ff] border border-[#00d8ff]/30 text-[10px] font-heading font-black uppercase tracking-wider">
+                              Cours Individuel (50 min)
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md bg-brand-white/10 text-brand-white/70 border border-brand-white/15 text-[10px] font-heading font-bold uppercase tracking-wider">
+                              Cours Collectif
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2.5 text-xs text-brand-white/60 flex-wrap">
+                          <span className="text-brand-white/80 font-semibold">
+                            {b.sessionName}
+                          </span>
+                          <span className="text-brand-white/30">•</span>
+                          <span className="flex items-center gap-1 text-brand-white/70">
+                            <Calendar size={12} className="text-[#00d8ff]" />
+                            {b.sessionDate}
+                          </span>
+                          <span className="text-brand-white/30">•</span>
+                          <span className="flex items-center gap-1 font-mono text-[#00d8ff] font-semibold">
+                            <Clock size={12} />
+                            {b.sessionTime}
+                          </span>
+                          {b.durationFormatted && (
+                            <span className="text-[11px] text-brand-white/40 font-mono">
+                              ({b.durationFormatted})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        <span
+                          className={
+                            b.status === "confirmed"
+                              ? "inline-flex items-center gap-1 text-[10px] font-heading font-black uppercase px-2.5 py-1 rounded-full bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30"
+                              : "inline-flex items-center gap-1 text-[10px] font-heading font-black uppercase px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30"
+                          }
+                        >
+                          {b.status === "confirmed" ? "Confirmé" : b.status}
+                        </span>
+
+                        <Link
+                          href={isPrivate ? "/admin/reservations?tab=private" : "/admin/reservations"}
+                          className="p-1 rounded bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/60 hover:text-brand-white transition-colors cursor-pointer"
+                          title="Voir dans le planning"
+                        >
+                          <ArrowRight size={13} />
+                        </Link>
+                      </div>
                     </div>
-                    <span className="inline-flex items-center text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/20">
-                      {b.status}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
