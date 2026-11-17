@@ -67,8 +67,12 @@ export interface AdminBookingSummary {
   id: string;
   memberName: string;
   sessionName: string;
+  sessionType?: string;
   sessionDate: string;
   sessionTime: string;
+  sessionStartTime?: string;
+  sessionEndTime?: string;
+  durationFormatted?: string;
   status: string;
   created_at: string;
 }
@@ -416,45 +420,98 @@ export async function getAdminDashboardData(
         new Set(recentBookingsData.map((b) => b.class_session_id).filter(Boolean))
       );
 
-      const [profsRes, sesssRes] = await Promise.all([
+      const authAdmin = (supabase as any).auth?.admin;
+      const hasAuthAdmin = authAdmin && typeof authAdmin.listUsers === "function";
+
+      const [profsRes, authListRes, sesssRes] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, first_name, last_name")
+          .select("id, first_name, last_name, phone")
           .in("id", recentUserIds),
+        hasAuthAdmin ? authAdmin.listUsers() : Promise.resolve({ data: null }),
         supabase
           .from("class_sessions")
-          .select("id, discipline, starts_at, ends_at")
+          .select("id, discipline, type, starts_at, ends_at")
           .in("id", recentSessionIds),
       ]);
 
       const profMap = new Map((profsRes.data || []).map((p) => [p.id, p]));
+      const authUsersMap = new Map<string, { email?: string; first_name?: string; last_name?: string }>();
+      if (authListRes?.data?.users) {
+        for (const u of authListRes.data.users) {
+          if (recentUserIds.includes(u.id)) {
+            authUsersMap.set(u.id, {
+              email: u.email,
+              first_name: u.user_metadata?.first_name,
+              last_name: u.user_metadata?.last_name,
+            });
+          }
+        }
+      }
       const sessMap = new Map((sesssRes.data || []).map((s) => [s.id, s]));
 
       for (const b of recentBookingsData) {
         const rawProf = profMap.get(b.user_id);
+        const rawAuth = authUsersMap.get(b.user_id);
         const rawSess = sessMap.get(b.class_session_id);
 
-        const memberName = rawProf
-          ? `${rawProf.first_name || ""} ${rawProf.last_name || ""}`.trim() || "Membre"
-          : "Membre";
+        const fName = (rawProf?.first_name || rawAuth?.first_name || "").trim();
+        const lName = (rawProf?.last_name || rawAuth?.last_name || "").trim();
+
+        let memberName = "";
+        if (fName || lName) {
+          memberName = `${fName} ${lName ? lName.toUpperCase() : ""}`.trim();
+        } else if (rawAuth?.email) {
+          memberName = rawAuth.email;
+        } else {
+          memberName = "Membre";
+        }
 
         let sessionDate = "—";
         let sessionTime = "—";
+        let sessionStartTime = "";
+        let sessionEndTime = "";
+        let durationFormatted = "";
 
         if (rawSess?.starts_at) {
-          const d = new Date(rawSess.starts_at);
-          sessionDate = `${DAY_NAMES_FR[d.getDay()]} ${d.getDate()} ${MONTH_NAMES_FR[d.getMonth()]}`;
-          const h = String(d.getHours()).padStart(2, "0");
-          const m = String(d.getMinutes()).padStart(2, "0");
-          sessionTime = `${h}:${m}`;
+          const sDate = new Date(rawSess.starts_at);
+          const rawFormattedDate = new Intl.DateTimeFormat("fr-FR", {
+            timeZone: "Europe/Paris",
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }).format(sDate);
+          sessionDate = rawFormattedDate.charAt(0).toUpperCase() + rawFormattedDate.slice(1);
+
+          sessionStartTime = formatToParisTime(rawSess.starts_at);
+          sessionEndTime = rawSess.ends_at ? formatToParisTime(rawSess.ends_at) : "";
+
+          if (rawSess.ends_at) {
+            const diffMs = new Date(rawSess.ends_at).getTime() - new Date(rawSess.starts_at).getTime();
+            const diffMin = Math.round(diffMs / 60000);
+            durationFormatted = `${diffMin} min`;
+          } else {
+            durationFormatted = rawSess.type === "private" ? "50 min" : "60 min";
+          }
+
+          sessionTime = sessionEndTime ? `${sessionStartTime} → ${sessionEndTime}` : sessionStartTime;
         }
+
+        const isPrivate =
+          rawSess?.type === "private" ||
+          (rawSess?.discipline || "").toLowerCase().includes("priv");
 
         recentBookings.push({
           id: b.id as string,
           memberName,
-          sessionName: rawSess?.discipline || "Cours Adulte",
+          sessionName: rawSess?.discipline || (isPrivate ? "Cours Individuel" : "Cours Adulte"),
+          sessionType: rawSess?.type || (isPrivate ? "private" : "small_group"),
           sessionDate,
           sessionTime,
+          sessionStartTime,
+          sessionEndTime,
+          durationFormatted,
           status: (b.status as string) || "confirmé",
           created_at: b.created_at as string,
         });
@@ -675,29 +732,47 @@ export async function getAdminSessionReservations(
 
     const userIds = Array.from(new Set(bookings.map((b) => b.user_id)));
 
-    // 4. Récupérer les profils des participants
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("id, first_name, last_name, phone")
-      .in("id", userIds);
+    const authAdmin = (supabase as any).auth?.admin;
+    const hasAuthAdmin = authAdmin && typeof authAdmin.listUsers === "function";
+
+    // 4. Récupérer les profils, les métadonnées auth et les abonnements des participants
+    const [profilesRes, authListRes, subsRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, first_name, last_name, phone")
+        .in("id", userIds),
+      hasAuthAdmin ? authAdmin.listUsers() : Promise.resolve({ data: null }),
+      supabase
+        .from("subscriptions")
+        .select("id, user_id, status, plan:plans(name, type)")
+        .in("user_id", userIds)
+        .eq("status", "active"),
+    ]);
 
     const profilesMap = new Map<string, { first_name?: string; last_name?: string; phone?: string }>();
-    if (profilesData) {
-      for (const p of profilesData) {
+    if (profilesRes.data) {
+      for (const p of profilesRes.data) {
         profilesMap.set(p.id, p);
       }
     }
 
-    // 5. Récupérer les abonnements actifs des participants
-    const { data: subsData } = await supabase
-      .from("subscriptions")
-      .select("id, user_id, status, plan:plans(name, type)")
-      .in("user_id", userIds)
-      .eq("status", "active");
+    const authUsersMap = new Map<string, { email?: string; first_name?: string; last_name?: string; phone?: string }>();
+    if (authListRes?.data?.users) {
+      for (const u of authListRes.data.users) {
+        if (userIds.includes(u.id)) {
+          authUsersMap.set(u.id, {
+            email: u.email,
+            first_name: u.user_metadata?.first_name,
+            last_name: u.user_metadata?.last_name,
+            phone: u.user_metadata?.phone || u.phone,
+          });
+        }
+      }
+    }
 
     const subsMap = new Map<string, string>();
-    if (subsData) {
-      for (const sub of subsData) {
+    if (subsRes.data) {
+      for (const sub of subsRes.data) {
         const rawPlan = Array.isArray(sub.plan) ? sub.plan[0] : sub.plan;
         if (rawPlan?.name) {
           subsMap.set(sub.user_id, rawPlan.name);
@@ -708,7 +783,20 @@ export async function getAdminSessionReservations(
     // 6. Assembler la liste des participants avec l'émargement réel
     const participants: AdminBookingParticipant[] = bookings.map((b) => {
       const prof = profilesMap.get(b.user_id);
-      const phone = prof?.phone || "—";
+      const auth = authUsersMap.get(b.user_id);
+      const fName = (prof?.first_name || auth?.first_name || "").trim();
+      const lName = (prof?.last_name || auth?.last_name || "").trim();
+      let memberName = "";
+      if (fName || lName) {
+        memberName = `${fName} ${lName ? lName.toUpperCase() : ""}`.trim();
+      } else if (auth?.email) {
+        memberName = auth.email;
+      } else {
+        memberName = "Membre";
+      }
+
+      const phone = prof?.phone || auth?.phone || "—";
+      const email = auth?.email;
       const planName = subsMap.get(b.user_id) || "Formule Active";
 
       let formattedDate = "—";
@@ -734,8 +822,9 @@ export async function getAdminSessionReservations(
       return {
         bookingId: b.id,
         userId: b.user_id,
-        memberName: prof ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim() : "Membre",
+        memberName,
         phone,
+        email,
         planName,
         status: b.status || "confirmed",
         attendanceStatus: rawAttStatus,

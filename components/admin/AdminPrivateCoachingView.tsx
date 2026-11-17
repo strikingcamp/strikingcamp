@@ -631,7 +631,6 @@ export default function AdminPrivateCoachingView({
                 const remaining = Math.max(0, capacity - booked);
                 const isFull = remaining === 0;
                 const isAlmostFull = remaining > 0 && remaining <= 2;
-                const isExpanded = expandedSessionId === session.id;
                 const isEditingThisSession = editingSessionId === session.id;
                 const participants = session.participants || [];
 
@@ -761,18 +760,6 @@ export default function AdminPrivateCoachingView({
                             </button>
                           </div>
                         )}
-
-                        {/* Bouton déplier/replier les participants */}
-                        <button
-                          onClick={() =>
-                            setExpandedSessionId(isExpanded ? null : session.id)
-                          }
-                          className="px-3 py-1.5 rounded-xl bg-brand-white/5 hover:bg-brand-white/10 text-brand-white/80 hover:text-brand-white border border-brand-white/10 text-xs font-heading font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Users size={13} />
-                          <span>Inscrits ({participants.length})</span>
-                          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </button>
                       </div>
                     </div>
 
@@ -784,78 +771,92 @@ export default function AdminPrivateCoachingView({
                       </div>
                     )}
 
-                    {/* Section dépliable : Liste des membres inscrits */}
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="pt-4 border-t border-brand-white/10 space-y-3"
-                      >
+                    {/* Bloc Inscrits directement visible sur la carte sans clic */}
+                    {participants.length > 0 ? (
+                      <div className="pt-3 border-t border-brand-white/10 space-y-2.5">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-heading font-black uppercase tracking-wider text-brand-white/70 flex items-center gap-2">
-                            <Users size={14} className="text-[#00d8ff]" />
-                            Liste des membres inscrits ({participants.length} / {capacity})
-                          </h4>
-                          <span className="text-[11px] text-brand-white/40">
-                            Séance individuelle en petit groupe
+                          <span className="text-[11px] font-heading font-black uppercase tracking-wider text-brand-white/70 flex items-center gap-1.5">
+                            <Users size={13} className="text-[#00d8ff]" />
+                            {participants.length === 1 ? "Membre inscrit" : `Membres inscrits (${participants.length})`}
+                          </span>
+                          <span className="text-[10px] text-brand-white/40 uppercase font-semibold">
+                            Durée : 50 min • Séance individuelle
                           </span>
                         </div>
 
-                        {participants.length === 0 ? (
-                          <div className="py-4 px-4 rounded-xl bg-[#070d18] border border-brand-white/5 text-center text-xs text-brand-white/50">
-                            Aucun participant inscrit pour l&apos;instant. Il reste {capacity} place{capacity > 1 ? "s" : ""} disponible{capacity > 1 ? "s" : ""}.
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {participants.map((p) => (
-                              <div
-                                key={p.bookingId}
-                                className="bg-[#070d18] border border-brand-white/5 rounded-xl p-3.5 space-y-2"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-heading font-bold text-brand-white uppercase">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                          {participants.map((p) => (
+                            <div
+                              key={p.bookingId}
+                              className="bg-[#070d18] border border-brand-white/10 rounded-xl p-3.5 space-y-2 hover:border-[#00d8ff]/30 transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="text-sm font-heading font-black text-brand-white uppercase tracking-wide block">
                                     {p.memberName}
+                                  </span>
+                                  <span className="text-[11px] text-brand-white/50 block">
+                                    {sDate} • {sStart} → {sEnd} (50 min)
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  <span
+                                    className={cn(
+                                      "px-2 py-0.5 rounded text-[10px] font-heading font-black uppercase tracking-wider border",
+                                      p.status === "confirmed"
+                                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                                        : "bg-red-500/15 text-red-400 border-red-500/30"
+                                    )}
+                                  >
+                                    {p.status === "confirmed" ? "Confirmé" : p.status}
                                   </span>
                                   <span className="text-[10px] px-2 py-0.5 rounded bg-brand-white/10 text-brand-white/70 font-semibold uppercase">
                                     {p.planName}
                                   </span>
                                 </div>
-
-                                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-white/60">
-                                  <div className="flex items-center gap-3 flex-wrap">
-                                    {p.phone && p.phone !== "—" ? (
-                                      <a
-                                        href={`tel:${p.phone}`}
-                                        className="flex items-center gap-1.5 text-brand-blue hover:underline"
-                                      >
-                                        <Phone size={12} />
-                                        <span>{p.phone}</span>
-                                      </a>
-                                    ) : (
-                                      <span className="text-brand-white/40 text-[11px]">Tél non renseigné</span>
-                                    )}
-
-                                    {p.email && (
-                                      <a
-                                        href={`mailto:${p.email}`}
-                                        className="flex items-center gap-1 text-brand-white/50 hover:text-brand-white hover:underline text-[11px]"
-                                      >
-                                        <Mail size={12} />
-                                        <span>{p.email}</span>
-                                      </a>
-                                    )}
-                                  </div>
-
-                                  <span className="text-[10px] text-brand-white/40">
-                                    Réservé le {formatToParisDate(p.createdAt)}
-                                  </span>
-                                </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </motion.div>
+
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-white/60 pt-2 border-t border-brand-white/5">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  {p.phone && p.phone !== "—" ? (
+                                    <a
+                                      href={`tel:${p.phone}`}
+                                      className="flex items-center gap-1.5 text-brand-blue hover:underline font-semibold"
+                                    >
+                                      <Phone size={12} />
+                                      <span>{p.phone}</span>
+                                    </a>
+                                  ) : (
+                                    <span className="text-brand-white/40 text-[11px] flex items-center gap-1">
+                                      <Phone size={11} /> Tél non renseigné
+                                    </span>
+                                  )}
+
+                                  {p.email && (
+                                    <a
+                                      href={`mailto:${p.email}`}
+                                      className="flex items-center gap-1 text-brand-white/50 hover:text-brand-white hover:underline text-[11px]"
+                                    >
+                                      <Mail size={12} />
+                                      <span>{p.email}</span>
+                                    </a>
+                                  )}
+                                </div>
+
+                                <span className="text-[10px] text-brand-white/40">
+                                  Réservé le {formatToParisDate(p.createdAt)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pt-2 border-t border-brand-white/5 flex items-center justify-between text-xs text-brand-white/40">
+                        <span>Créneau individuel disponible — Durée : 50 min</span>
+                        <span>0 / {capacity} inscrit</span>
+                      </div>
                     )}
                   </div>
                 );

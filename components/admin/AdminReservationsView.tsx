@@ -2411,7 +2411,7 @@ export default function AdminReservationsView({
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-brand-white/10 pb-2">
               <h3 className="text-xs sm:text-sm font-heading font-black uppercase tracking-wider text-brand-white/80">
-                Grille des 6 créneaux officiels — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}
+                Créneaux & Réservations Individuelles — {currentDayInfo.dayName} {currentDayInfo.dateNum} {currentDayInfo.monthName}
               </h3>
               <span className="text-[11px] text-brand-white/50">
                 Durée : 50 min par séance individuelle
@@ -2419,8 +2419,36 @@ export default function AdminReservationsView({
             </div>
 
             {(() => {
-              const matchingSlots = OFFICIAL_PRIVATE_HOURS.filter((hourSlot) => {
-                const matchingSession = privateSessionsForDay.find((s) => {
+              // 1. Dictionnaire des créneaux par heure de début (garantissant que tous les créneaux réels apparaissent)
+              const slotsMap = new Map<
+                string,
+                { start: string; end: string; session?: AdminClassSessionSummary }
+              >();
+
+              // 1.a Créneaux officiels de base
+              for (const off of OFFICIAL_PRIVATE_HOURS) {
+                slotsMap.set(off.start, { start: off.start, end: off.end });
+              }
+
+              // 1.b Inclusion systématique de toutes les séances privées réelles présentes dans class_sessions
+              for (const s of privateSessionsForDay) {
+                const sStart = getLocalTimeStr(s.starts_at);
+                const sEnd = s.ends_at ? getLocalTimeStr(s.ends_at) : "";
+                slotsMap.set(sStart, {
+                  start: sStart,
+                  end: sEnd || `${sStart.slice(0, 2)}:50`,
+                  session: s,
+                });
+              }
+
+              // 2. Tri chronologique de tous les créneaux du jour
+              const allDaySlots = Array.from(slotsMap.values()).sort((a, b) =>
+                a.start.localeCompare(b.start)
+              );
+
+              // 3. Filtrage selon les options sélectionnées
+              const matchingSlots = allDaySlots.filter((hourSlot) => {
+                const matchingSession = hourSlot.session || privateSessionsForDay.find((s) => {
                   const sTime = getLocalTimeStr(s.starts_at);
                   return sTime === hourSlot.start;
                 });
@@ -2463,7 +2491,7 @@ export default function AdminReservationsView({
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {matchingSlots.map((hourSlot) => {
-                    const matchingSession = privateSessionsForDay.find((s) => {
+                    const matchingSession = hourSlot.session || privateSessionsForDay.find((s) => {
                       const sTime = getLocalTimeStr(s.starts_at);
                       return sTime === hourSlot.start;
                     });
